@@ -11,6 +11,8 @@ describe("public intro first frame", () => {
     expect(html).toContain("看见命局");
     expect(html).toContain("读懂时运");
     expect(html).toContain("开始排盘");
+    expect(html).not.toContain("建立出生坐标");
+    expect(html).not.toContain("请确认出生信息");
     expect(html).not.toContain("正在读取本机档案");
     expect(html).not.toMatch(/<(?:p|small)\b/);
   });
