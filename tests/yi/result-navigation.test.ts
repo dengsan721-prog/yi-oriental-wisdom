@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createResultScrollPositions, getAvailableSections, getResultSections, restoreScrollTop } from "../../components/yi/ResultShell";
+import { createResultScrollPositions, getAvailableSections, getResultSections, getSectionMountPolicy, restoreScrollTop } from "../../components/yi/ResultShell";
 
 describe("result navigation", () => {
   it("keeps the seven report sections in a stable reading order", () => {
@@ -12,6 +12,10 @@ describe("result navigation", () => {
       ["compatibility", "合盘"],
       ["tradition", "传统"],
     ]);
+  });
+
+  it("keeps report sections mounted so compatibility draft and result state survive navigation", () => {
+    expect(getSectionMountPolicy()).toBe("persistent");
   });
 
   it("opens only implemented sections and keeps reusable scroll positions", () => {

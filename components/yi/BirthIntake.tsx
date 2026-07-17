@@ -11,6 +11,7 @@ export type BirthSubmission = BirthInput & { birthDate: BirthDateSelection; time
 export type BirthSubmissionDraft = {
   name: string; location: string; date: BirthDateSelection; timeMode: TimeMode;
   hour: number | null; minute: number | null; earthlyIndex: number | null;
+  gender: BirthInput["gender"];
 };
 
 export function clampWheelDate(current: Pick<BirthDateSelection, "year" | "month" | "day">, patch: Partial<Pick<BirthDateSelection, "year" | "month" | "day">>) {
@@ -35,7 +36,7 @@ export function normalizeBirthSubmission(draft: BirthSubmissionDraft): BirthSubm
   return {
     name: draft.name.trim(), location: draft.location.trim(),
     date: `${solar.year}-${String(solar.month).padStart(2, "0")}-${String(solar.day).padStart(2, "0")}`,
-    time, gender: "unspecified", timeConfidence, birthDate: draft.date, timeMode: draft.timeMode,
+    time, gender: draft.gender, timeConfidence, birthDate: draft.date, timeMode: draft.timeMode,
   };
 }
 
@@ -43,7 +44,7 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
   const currentYear = new Date().getFullYear();
   const [draft, setDraft] = useState<BirthSubmissionDraft>({
     name: "", location: "杭州", date: { mode: "solar", year: 1990, month: 6, day: 15, isLeapMonth: false },
-    timeMode: "exact", hour: 9, minute: 30, earthlyIndex: null,
+    timeMode: "exact", hour: 9, minute: 30, earthlyIndex: null, gender: "unspecified",
   });
   const [dateOpen, setDateOpen] = useState(false);
   const [pendingDate, setPendingDate] = useState(draft.date);
@@ -100,6 +101,9 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
         <label><span>姓名</span><input required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="请输入姓名" /></label>
         <label><span>出生地点</span><input required value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} /></label>
       </div>
+      <section className="calendar-switch" role="group" aria-label="出生性别（用于大运顺逆）">
+        {(["male", "female", "unspecified"] as const).map(value => <button type="button" key={value} aria-pressed={draft.gender === value} className={draft.gender === value ? "active" : ""} onClick={() => setDraft({ ...draft, gender: value })}>{value === "male" ? "男" : value === "female" ? "女" : "暂不指定"}</button>)}
+      </section>
       <section className="summary-control"><span>出生日期</span><strong>{dateSummary}</strong><button ref={dateTriggerRef} type="button" onClick={() => { setPendingDate(draft.date); setDateOpen(true); }}>选择日期</button></section>
       <TimePicker mode={draft.timeMode} hour={draft.hour} minute={draft.minute} earthlyIndex={draft.earthlyIndex} onChange={(time) => setDraft({ ...draft, timeMode: time.mode, hour: time.hour, minute: time.minute, earthlyIndex: time.earthlyIndex })} />
       <section className="date-confirm dual-confirm"><div><span>阳历</span><b>{labels.solar}</b></div><div><span>农历</span><b>{labels.lunar}</b></div><small>{timeSummary}</small></section>

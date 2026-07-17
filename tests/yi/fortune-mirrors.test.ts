@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
-import { buildFortuneTimeline } from "../../lib/yi/fortune";
+import { buildFortuneTimeline, calculateTenGod } from "../../lib/yi/fortune";
 import { matchAnimalArchetype, matchHistoricalMirror } from "../../lib/yi/mirrors";
 
 const input = { name: "林知远", date: "1990-06-15", time: "09:30", location: "杭州", gender: "male", timeConfidence: "exact" } as const;
 const chart = calculateFourPillars(input);
 
 describe("fortune timeline", () => {
+  it("distinguishes all ten gods by element and polarity", () => {
+    expect(["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"].map(stem => calculateTenGod("甲", stem))).toEqual(["比肩", "劫财", "食神", "伤官", "偏财", "正财", "七杀", "正官", "偏印", "正印"]);
+  });
   it("builds selectable decades with traceable yearly readings", () => {
     const timeline = buildFortuneTimeline(chart, input);
     expect(timeline.length).toBeGreaterThanOrEqual(8);

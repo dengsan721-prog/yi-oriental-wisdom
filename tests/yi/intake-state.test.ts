@@ -10,6 +10,7 @@ import { TimePicker } from "../../components/yi/TimePicker";
 import { getNextWheelIndex, WheelPicker } from "../../components/yi/WheelPicker";
 
 const baseInput: BirthSubmissionDraft = {
+  gender: "male",
   name: "小艺",
   location: "杭州",
   date: { mode: "solar", year: 2026, month: 3, day: 31, isLeapMonth: false },
