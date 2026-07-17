@@ -38,6 +38,7 @@ export type TenGodEntry = {
   position: "stem" | "branch";
   symbol: string;
   tenGod: TenGodName;
+  hiddenStemIndex?: number;
 };
 
 export type ChartRelation = {
@@ -49,12 +50,13 @@ export type ChartRelation = {
 
 export type ProfessionalChart = {
   dayMaster: { stem: string; element: ElementName; polarity: "yang" | "yin" };
-  strength: "strong" | "balanced" | "weak";
-  strengthScore: number;
+  structureBalance: "support-heavy" | "mixed" | "expression-heavy";
+  supportScore: number;
+  observationConfidence: "medium" | "limited";
   pattern: string;
   climate: string;
-  favorableElements: ElementName[];
-  unfavorableElements: ElementName[];
+  sameAndResourceElements: ElementName[];
+  lowerCountElements: ElementName[];
   tenGods: TenGodEntry[];
   relations: ChartRelation[];
 };
@@ -81,17 +83,18 @@ export type InterpretationItem = {
   confidence: "high" | "medium" | "limited";
   sourceTradition: string;
   sourceReferences: string[];
+  sourceRuleIds: string[];
   affectedByUnknownHour: boolean;
 };
 
 export type ProfessionalOverview = {
   dayMaster: string;
   dayMasterElement: ElementName;
-  strength: ProfessionalChart["strength"];
+  structureBalance: ProfessionalChart["structureBalance"];
   pattern: string;
   climate: string;
-  favorableElements: ElementName[];
-  unfavorableElements: ElementName[];
+  sameAndResourceElements: ElementName[];
+  lowerCountElements: ElementName[];
   tenGodSummary: string;
   relationSummary: string;
   confidence: FourPillarsResult["confidence"];
