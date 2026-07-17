@@ -39,6 +39,9 @@ test("GitHub build is the full bundled React app", async () => {
   for (const professionalTerm of ["月令", "透干", "藏干", "根气", "干支关系"]) {
     assert.match(js, new RegExp(professionalTerm));
   }
+  for (const fortuneTerm of ["阶段气候", "原局互动", "机会来源", "压力来源", "岁运关系", "典型场景", "年度动作"]) {
+    assert.match(js, new RegExp(fortuneTerm));
+  }
   assert.match(css, /@keyframes yi-breathe/);
   assert.match(css, /\.birth-fact-band/);
   assert.match(css, /\.professional-pillars/);
