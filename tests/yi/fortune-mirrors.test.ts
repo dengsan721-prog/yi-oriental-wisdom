@@ -4,7 +4,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { FortuneSection } from "../../components/yi/FortuneSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
-import { analyzeFortuneRelations, buildFortuneTimeline, buildFortuneYearReading, calculateTenGod } from "../../lib/yi/fortune";
+import { analyzeFortuneRelations, buildFortuneGuidance, buildFortuneTimeline, buildFortuneYearReading, calculateTenGod } from "../../lib/yi/fortune";
 import { matchAnimalArchetype, matchHistoricalMirror } from "../../lib/yi/mirrors";
 import { branchElements, stemElements } from "../../lib/yi/stems-branches";
 import type { FourPillarsResult, PillarKey } from "../../lib/yi/types";
@@ -30,6 +30,10 @@ function longestCommonPrefix(values: string[]): string {
     while (index < prefix.length && prefix[index] === value[index]) index += 1;
     return prefix.slice(0, index);
   });
+}
+
+function stripTenGodNames(value: string): string {
+  return value.replace(/比肩|劫财|食神|伤官|偏财|正财|七杀|正官|偏印|正印/g, "十神");
 }
 
 describe("fortune timeline", () => {
@@ -122,6 +126,37 @@ describe("fortune timeline", () => {
     expect(clashed.scenario).not.toContain("年柱乙寅");
     expect(combined.scenario).not.toBe(clashed.scenario);
     expect(combined.action).not.toBe(clashed.action);
+  });
+
+  describe("three-layer annual guidance", () => {
+    it("changes substance for a different annual ten-god under the same period and relation", () => {
+      const authorityYear = buildFortuneGuidance("七杀", "正印", "branch-combination");
+      const expressionYear = buildFortuneGuidance("伤官", "正印", "branch-combination");
+
+      expect(stripTenGodNames(authorityYear.scene)).not.toBe(stripTenGodNames(expressionYear.scene));
+      expect(stripTenGodNames(authorityYear.action)).not.toBe(stripTenGodNames(expressionYear.action));
+    });
+
+    it("changes substance for a different decade ten-god under the same annual trigger and relation", () => {
+      const learningPeriod = buildFortuneGuidance("伤官", "正印", "branch-clash");
+      const dutyPeriod = buildFortuneGuidance("伤官", "正官", "branch-clash");
+
+      expect(stripTenGodNames(learningPeriod.scene)).not.toBe(stripTenGodNames(dutyPeriod.scene));
+      expect(stripTenGodNames(learningPeriod.action)).not.toBe(stripTenGodNames(dutyPeriod.action));
+    });
+
+    it("uses both annual trigger and decade context when no relation is detected", () => {
+      const baseline = buildFortuneGuidance("伤官", "正印", null);
+      const changedAnnual = buildFortuneGuidance("七杀", "正印", null);
+      const changedPeriod = buildFortuneGuidance("伤官", "正官", null);
+
+      expect(baseline.scene).toContain("未命中");
+      expect(baseline.action).toContain("未命中");
+      expect(stripTenGodNames(baseline.scene)).not.toBe(stripTenGodNames(changedAnnual.scene));
+      expect(stripTenGodNames(baseline.action)).not.toBe(stripTenGodNames(changedAnnual.action));
+      expect(stripTenGodNames(baseline.scene)).not.toBe(stripTenGodNames(changedPeriod.scene));
+      expect(stripTenGodNames(baseline.action)).not.toBe(stripTenGodNames(changedPeriod.action));
+    });
   });
 
   it("compares every annual stem-branch with both the natal chart and active decade", () => {
