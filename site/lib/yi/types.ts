@@ -1,5 +1,17 @@
 export type ElementName = "木" | "火" | "土" | "金" | "水";
 
+export type CalendarMode = "solar" | "lunar";
+
+export type TimeMode = "exact" | "earthly" | "unknown";
+
+export type BirthDateSelection = {
+  mode: CalendarMode;
+  year: number;
+  month: number;
+  day: number;
+  isLeapMonth: boolean;
+};
+
 export type BirthInput = {
   name: string;
   date: string;
