@@ -1,8 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { DetailSection } from "../../components/yi/DetailSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
-import { buildInterpretations, buildProfessionalOverview } from "../../lib/yi/interpretation";
+import { buildInterpretations, buildProfessionalOverview, interpretationLength } from "../../lib/yi/interpretation";
+import { scenarioLibrary } from "../../lib/yi/scenario-library";
 import { YI_RULE_SOURCES } from "../../lib/yi/sources";
+
+const expectedIds = [
+  "self-day-master", "self-support", "self-interface",
+  "talent-public", "talent-hidden", "talent-future",
+  "career-environment", "career-organization", "career-pace",
+  "wealth-interface", "wealth-loop", "wealth-basket",
+  "relationship-expression", "relationship-boundary", "relationship-repair",
+  "family-root", "family-care", "family-future",
+  "rhythm-recovery", "rhythm-transition", "rhythm-long-term",
+] as const;
 
 const knownChart = calculateFourPillars({
   name: "林知远",
@@ -64,6 +78,70 @@ describe("professional interpretation", () => {
     }
   });
 
+  it("delivers exactly twenty-one paid-depth readings with the stable scenario IDs", () => {
+    const items = buildInterpretations(knownChart);
+    expect(items.map(item => item.id)).toEqual(expectedIds);
+    expect(Object.keys(scenarioLibrary)).toEqual(expectedIds);
+    expect(items).toHaveLength(21);
+
+    for (const domain of ["self", "talent", "career", "wealth", "relationship", "family", "rhythm"] as const) {
+      expect(items.filter(item => item.domain === domain)).toHaveLength(3);
+    }
+  });
+
+  it("keeps every paid-depth reading within the seven-layer content contract", () => {
+    const items = buildInterpretations(knownChart);
+    for (const item of items) {
+      expect(interpretationLength(item), item.id).toBeGreaterThanOrEqual(220);
+      expect(interpretationLength(item), item.id).toBeLessThanOrEqual(450);
+      expect(item.scenario.length, `${item.id} scenario`).toBeGreaterThanOrEqual(45);
+      expect(item.scenario.length, `${item.id} scenario`).toBeLessThanOrEqual(85);
+      expect(item.action.length, `${item.id} action`).toBeGreaterThanOrEqual(35);
+      expect(item.action.length, `${item.id} action`).toBeLessThanOrEqual(70);
+      expect(item.sourceTradition.length, item.id).toBeGreaterThan(0);
+      expect(item.sourceReferences.length, item.id).toBeGreaterThan(0);
+    }
+    expect(new Set(items.map(item => item.scenario)).size).toBe(21);
+    expect(new Set(items.map(item => item.action)).size).toBe(21);
+  });
+
+  it("grounds every basis in a real chart coordinate and names the complete relation set", () => {
+    const items = buildInterpretations(knownChart);
+    expect(items.every(item => /日主|月令|月干|月支|日支|年柱|年干|年支|时柱|时干|时支|十神|藏干|五行|根气|透干|支持度|柱/.test(item.basis))).toBe(true);
+
+    const noRelationChart = {
+      ...knownChart,
+      professional: { ...knownChart.professional, relations: [] },
+    };
+    const fallbacks = buildInterpretations(noRelationChart)
+      .filter(item => item.sourceRuleIds.includes("relation.gan-zhi.v1"))
+      .map(item => item.basis).join("\n");
+    expect(fallbacks).toContain("五合、六合、三合、冲、刑、害、破");
+  });
+
+  it("renders concise summaries and all expanded evidence labels with sources", () => {
+    const items = buildInterpretations(knownChart);
+    const html = renderToStaticMarkup(createElement(DetailSection, { items }));
+    const firstPlainSentence = items[0].plainLanguage.match(/^.*?[。！？]/)?.[0] ?? items[0].plainLanguage;
+    const confidenceText = { high: "高置信", medium: "中等置信", limited: "有限置信" }[items[0].confidence];
+    expect(html).toContain(items[0].professionalTitle);
+    expect(html).toContain(items[0].innovationTitle);
+    expect(html).toContain(confidenceText);
+    expect(html).not.toContain(`（${items[0].confidence}）`);
+    expect(html).toContain(firstPlainSentence);
+    for (const label of ["专业判断", "命理依据", "白话解释", "典型场景", "自然镜像", "行动建议", "边界提醒", "理论传统", "参考依据"]) {
+      expect(html).toContain(label);
+    }
+  });
+
+  it("keeps dense detail summaries wrap-safe with a mobile touch target", () => {
+    const html = renderToStaticMarkup(createElement(DetailSection, { items: buildInterpretations(knownChart) }));
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+    expect(html).toContain('class="detail-summary"');
+    expect(css).toMatch(/\.detail-groups summary\{[^}]*min-height:52px/);
+    expect(css).toMatch(/\.detail-summary\{[^}]*min-width:0[^}]*display:grid/);
+  });
+
   it("marks hour-dependent content limited when hour is unknown", () => {
     const items = buildInterpretations(unknownHourChart);
     const hourDependent = items.filter(item => item.affectedByUnknownHour);
@@ -72,6 +150,19 @@ describe("professional interpretation", () => {
     expect(items.filter(item => !item.pillarDependencies.includes("hour")).every(item => !item.affectedByUnknownHour)).toBe(true);
     expect(hourDependent.every(item => item.confidence === "limited")).toBe(true);
     expect(hourDependent.every(item => !item.basis.includes("时柱为"))).toBe(true);
+    expect(hourDependent.every(item => /时辰未知|时辰不详|出生时间/.test(`${item.basis}${item.plainLanguage}${item.caution}`))).toBe(true);
+    expect(JSON.stringify(hourDependent)).not.toMatch(/子女会|晚年会|晚景会|必有子女|无子女|健康结果/);
+  });
+
+  it("keeps wealth, rhythm, relationship and family readings inside public-safe boundaries", () => {
+    const items = buildInterpretations(knownChart);
+    const wealth = items.filter(item => item.domain === "wealth").map(item => `${item.plainLanguage}${item.action}${item.caution}`).join("\n");
+    const rhythm = items.filter(item => item.domain === "rhythm").map(item => `${item.plainLanguage}${item.action}${item.caution}`).join("\n");
+    const relational = items.filter(item => item.domain === "relationship" || item.domain === "family").map(item => `${item.plainLanguage}${item.action}${item.caution}`).join("\n");
+    expect(wealth).toMatch(/不构成投资建议|不替代财务判断|咨询持牌专业人士/);
+    expect(rhythm).toMatch(/不替代医疗|医疗帮助|不是医学/);
+    expect(relational).toMatch(/不预测|不作.*结果|不.*标签|不.*归罪/);
+    expect(JSON.stringify(items)).not.toMatch(/保证收益|必然发财|注定离婚|克夫|克妻|克子|必有疾病|必然生病/);
   });
 
   it("limits every rule derived from ambiguous year or month pillars on a boundary day", () => {
@@ -128,10 +219,12 @@ describe("professional interpretation", () => {
 
   it("does not claim a classical pattern or favorable elements from a product score", () => {
     const overview = buildProfessionalOverview(knownChart);
+    const items = buildInterpretations(knownChart);
     expect(overview.pattern).toMatch(/^结构观察：/);
     expect(overview.climate).toMatch(/^调候提示：/);
     expect(overview).not.toHaveProperty("favorableElements");
     expect(overview).not.toHaveProperty("unfavorableElements");
+    expect(JSON.stringify(items)).not.toMatch(/support-heavy|expression-heavy/);
   });
 
   it("contains no random or input-year-modulo professional rule", () => {
