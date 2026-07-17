@@ -10,6 +10,9 @@ describe("fortune timeline", () => {
   it("distinguishes all ten gods by element and polarity", () => {
     expect(["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"].map(stem => calculateTenGod("甲", stem))).toEqual(["比肩", "劫财", "食神", "伤官", "偏财", "正财", "七杀", "正官", "偏印", "正印"]);
   });
+  it("uses the same polarity rules for a yin day master", () => {
+    expect(["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"].map(stem => calculateTenGod("乙", stem))).toEqual(["劫财", "比肩", "伤官", "食神", "正财", "偏财", "正官", "七杀", "正印", "偏印"]);
+  });
   it("builds selectable decades with traceable yearly readings", () => {
     const timeline = buildFortuneTimeline(chart, input);
     expect(timeline.length).toBeGreaterThanOrEqual(8);
