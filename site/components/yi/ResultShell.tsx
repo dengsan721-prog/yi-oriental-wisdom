@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useReducer, useState } from "react";
+import type { RelationshipType } from "../../lib/yi/compatibility";
+import type { BirthSubmission } from "./BirthIntake";
 import type { BirthInput, FourPillarsResult, InterpretationItem, ProfessionalOverview } from "../../lib/yi/types";
 import { PortraitSection } from "./PortraitSection";
 import { ChartSection } from "./ChartSection";
@@ -21,18 +23,26 @@ type SectionId = ReturnType<typeof getResultSections>[number][0];
 export const getAvailableSections = (includeExtended = false): SectionId[] => includeExtended ? getResultSections().map(([id]) => id) : ["portrait", "chart", "detail"];
 export const createResultScrollPositions = () => new Map<SectionId, number>();
 export const restoreScrollTop = (positions: Map<SectionId, number>, section: SectionId) => positions.get(section) ?? 0;
-export const getSectionMountPolicy = () => "persistent" as const;
+export type ResultShellState = { activeSection: SectionId; compatibility: { relationship: RelationshipType; secondBirth: BirthSubmission | null } };
+export type ResultShellAction = { type: "select-section"; section: SectionId } | { type: "set-relationship"; relationship: RelationshipType } | { type: "set-second-birth"; birth: BirthSubmission };
+export const createInitialResultShellState = (): ResultShellState => ({ activeSection: "portrait", compatibility: { relationship: "partner", secondBirth: null } });
+export function resultShellReducer(state: ResultShellState, action: ResultShellAction): ResultShellState {
+  if (action.type === "select-section") return { ...state, activeSection: action.section };
+  if (action.type === "set-relationship") return { ...state, compatibility: { ...state.compatibility, relationship: action.relationship } };
+  return { ...state, compatibility: { ...state.compatibility, secondBirth: action.birth } };
+}
 
 export function ResultShell({ name, chart, birth, overview, interpretations, onRestart }: {
   name: string; chart: FourPillarsResult; overview: ProfessionalOverview;
   birth: BirthInput; interpretations: InterpretationItem[]; onRestart: () => void;
 }) {
-  const [activeSection, setActiveSection] = useState<SectionId>("portrait");
+  const [state, dispatch] = useReducer(resultShellReducer, undefined, createInitialResultShellState);
+  const activeSection = state.activeSection;
   const [scrollPositions] = useState(createResultScrollPositions);
   const availableSections = getAvailableSections(true);
   function selectSection(next: SectionId) {
     scrollPositions.set(activeSection, window.scrollY);
-    setActiveSection(next);
+    dispatch({ type: "select-section", section: next });
     window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollTop(scrollPositions, next) }));
   }
   return <section className="result-shell">
@@ -46,7 +56,7 @@ export function ResultShell({ name, chart, birth, overview, interpretations, onR
       <div hidden={activeSection !== "detail"}><DetailSection items={interpretations} /></div>
       <div hidden={activeSection !== "fortune"}><FortuneSection chart={chart} birth={birth} /></div>
       <div hidden={activeSection !== "mirror"}><MirrorSection chart={chart} /></div>
-      <div hidden={activeSection !== "compatibility"}><CompatibilitySection chart={chart} /></div>
+      <div hidden={activeSection !== "compatibility"}><CompatibilitySection chart={chart} relationship={state.compatibility.relationship} secondBirth={state.compatibility.secondBirth} onRelationshipChange={relationship => dispatch({ type: "set-relationship", relationship })} onSecondBirthChange={birth => dispatch({ type: "set-second-birth", birth })} /></div>
       <div hidden={activeSection !== "tradition"}><TraditionSection chart={chart} birth={birth} /></div>
       <SourceNote chart={chart} items={interpretations} />
     </div>

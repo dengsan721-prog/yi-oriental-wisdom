@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { calculateCompatibility, type RelationshipType } from "../../lib/yi/compatibility";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import type { FourPillarsResult } from "../../lib/yi/types";
@@ -8,14 +7,12 @@ import { BirthIntake, type BirthSubmission } from "./BirthIntake";
 
 const labels: Record<RelationshipType, string> = { partner: "伴侣", "parent-child": "亲子", business: "商业伙伴", friend: "朋友" };
 
-export function CompatibilitySection({ chart }: { chart: FourPillarsResult }) {
-  const [relationship, setRelationship] = useState<RelationshipType>("partner");
-  const [secondBirth, setSecondBirth] = useState<BirthSubmission | null>(null);
+export function CompatibilitySection({ chart, relationship, secondBirth, onRelationshipChange, onSecondBirthChange }: { chart: FourPillarsResult; relationship: RelationshipType; secondBirth: BirthSubmission | null; onRelationshipChange: (value: RelationshipType) => void; onSecondBirthChange: (value: BirthSubmission) => void }) {
   const result = secondBirth ? calculateCompatibility(chart, calculateFourPillars(secondBirth), relationship) : null;
   return <section className="report-section">
     <header><small>关系合盘</small><h1>不打分，拆开看互动</h1><p>第二份完整出生录入会随报告保留，支持阳历、农历、精确时刻、十二时辰或未知时辰。</p></header>
-    <label className="relationship-kind">关系类型<select value={relationship} onChange={event => setRelationship(event.target.value as RelationshipType)}>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-    <BirthIntake onSubmit={setSecondBirth} />
+    <label className="relationship-kind">关系类型<select value={relationship} onChange={event => onRelationshipChange(event.target.value as RelationshipType)}>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+    <BirthIntake onSubmit={onSecondBirthChange} />
     {result && <div className="detail-groups">
       <section><h2>沟通场景</h2><p>{result.communicationScenario}</p></section>
       <section><h2>五行互动</h2>{result.elementDynamics.map(item => <p key={item.element}><b>{item.element} {item.first}:{item.second}</b>　{item.observation}</p>)}</section>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createResultScrollPositions, getAvailableSections, getResultSections, getSectionMountPolicy, restoreScrollTop } from "../../components/yi/ResultShell";
+import { createInitialResultShellState, createResultScrollPositions, getAvailableSections, getResultSections, resultShellReducer, restoreScrollTop } from "../../components/yi/ResultShell";
 
 describe("result navigation", () => {
   it("keeps the seven report sections in a stable reading order", () => {
@@ -14,8 +14,12 @@ describe("result navigation", () => {
     ]);
   });
 
-  it("keeps report sections mounted so compatibility draft and result state survive navigation", () => {
-    expect(getSectionMountPolicy()).toBe("persistent");
+  it("preserves real compatibility state when switching report sections", () => {
+    const initial = createInitialResultShellState();
+    const withRelationship = resultShellReducer(initial, { type: "set-relationship", relationship: "business" });
+    const switched = resultShellReducer(withRelationship, { type: "select-section", section: "portrait" });
+    expect(switched.compatibility.relationship).toBe("business");
+    expect(switched.compatibility).toBe(withRelationship.compatibility);
   });
 
   it("opens only implemented sections and keeps reusable scroll positions", () => {
