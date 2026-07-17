@@ -133,6 +133,8 @@ describe("complete zodiac mirror", () => {
     expect(mirror).toMatchObject({ confidence: "limited", yearAmbiguous: true, monthAmbiguous: true });
     expect(mirror.chartAgreement).toContain("年柱待核");
     expect(mirror.chartAgreement).toContain("月令代表候选");
+    expect(mirror.chartAgreement).toContain("月令坐标仍待核");
+    expect(mirror.chartAgreement).not.toContain("月令主题会");
     expect(html).toContain(`代表候选：${mirror.branch}${mirror.zodiac}`);
     expect(html).toContain("limited");
   });

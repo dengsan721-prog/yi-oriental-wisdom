@@ -25,7 +25,7 @@ export type ZodiacMirror = {
   monthAmbiguous: boolean;
 };
 
-type ZodiacContent = Omit<ZodiacMirror, "branch" | "element" | "yinYang" | "chartAgreement" | "chartDifference" | "sources">;
+type ZodiacContent = Omit<ZodiacMirror, "branch" | "element" | "yinYang" | "chartAgreement" | "chartDifference" | "sources" | "confidence" | "yearAmbiguous" | "monthAmbiguous">;
 
 const content: Record<string, ZodiacContent> = {
   子: {
@@ -241,9 +241,9 @@ export function buildZodiacMirror(chart: FourPillarsResult): ZodiacMirror {
   const monthBranch = chart.pillars.month.branch;
   const command = monthCommand(chart);
   const interaction = elementInteraction(element, dayMaster.element);
-  const lens = commandLens(command);
   const yearAmbiguous = chart.ambiguousPillars.includes("year");
   const monthAmbiguous = chart.ambiguousPillars.includes("month");
+  const lens = commandLens(monthAmbiguous ? "待核" : command);
   const yearBasis = yearAmbiguous ? `年柱待核，当前代表候选年支${branch}属${element}` : `年支${branch}属${element}`;
   const monthBasis = monthAmbiguous ? `月令代表候选为月支${monthBranch}、本气十神${command}` : `月支${monthBranch}本气十神为${command}`;
   return {
