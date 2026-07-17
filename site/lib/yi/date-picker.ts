@@ -33,7 +33,7 @@ export function toEarthlyHour(hour: number): string {
 }
 
 export function getWheelOptions(selection: BirthDateSelection, currentYear = new Date().getFullYear()): WheelOptions {
-  if (!Number.isInteger(currentYear) || currentYear < 1900 || selection.year < 1900 || selection.year > currentYear) {
+  if (!Number.isInteger(currentYear) || currentYear < 1900 || !Number.isInteger(selection.year) || selection.year < 1900 || selection.year > currentYear) {
     throw new Error("年份范围无效");
   }
 
