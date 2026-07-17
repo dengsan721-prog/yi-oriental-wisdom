@@ -7,6 +7,7 @@ import type {
   ElementName,
   FourPillarsResult,
   HiddenStemFact,
+  MonthCommandFact,
   PillarFact,
   PillarKey,
   ProfessionalReport,
@@ -33,9 +34,10 @@ function formatBirthFacts(chart: FourPillarsResult, birth: BirthInput): Professi
   const solar = Solar.fromYmd(year, month, day);
   const lunar = solar.getLunar();
   const dateLabel = `${year}年${month}月${day}日`;
-  const timeLabel = birth.timeConfidence === "unknown" || birth.time === null
+  const effectiveTimeConfidence = birth.time === null ? "unknown" : birth.timeConfidence;
+  const timeLabel = effectiveTimeConfidence === "unknown"
     ? `${dateLabel}（时辰不详）`
-    : birth.timeConfidence === "approximate"
+    : effectiveTimeConfidence === "approximate"
       ? `${dateLabel} 约${birth.time}`
       : `${dateLabel} ${birth.time}`;
   const location = birth.location.trim();
@@ -52,7 +54,7 @@ function formatBirthFacts(chart: FourPillarsResult, birth: BirthInput): Professi
     trueSolarTime,
     zodiac: zodiacLabel,
     starSign: `${solar.getXingZuo()}座`,
-    timeConfidence: birth.timeConfidence === "exact" ? "精确时间" : birth.timeConfidence === "approximate" ? "约略时间" : "时辰不详",
+    timeConfidence: effectiveTimeConfidence === "exact" ? "精确时间" : effectiveTimeConfidence === "approximate" ? "约略时间" : "时辰不详",
   };
 }
 
@@ -76,6 +78,7 @@ function buildPillarFacts(chart: FourPillarsResult): PillarFact[] {
       branchElement: pillar.branchElement,
       stemTenGod: visibleTenGod,
       hiddenStems,
+      ambiguous: chart.ambiguousPillars.includes(key),
     }];
   });
 }
@@ -102,20 +105,26 @@ function diagnosticConclusion(
       : "未直接得到月令本气支持";
   const root = roots.length ? `藏干根气线索见${roots.join("、")}` : "未见同类藏干根气线索";
   const exposedText = exposed.length ? `透干线索见${exposed.join("、")}` : "未见同类透干线索";
-  return `${element}在可见八字中${count === 0 ? "未直接出现" : `出现${count}处`}；${season}，${root}，${exposedText}。数量只是分布记录，未出现不等于应当补足；是否为结构所需仍须结合月令、根气、生克与调候审慎研判。`;
+  return `${element}在稳定柱可见干支中${count === 0 ? "未直接出现" : `出现${count}处`}；${season}，${root}，${exposedText}。数量只是分布记录，未出现不等于应当补足；是否为结构所需仍须结合月令、根气、生克与调候审慎研判。`;
 }
 
 function buildElementDiagnostics(chart: FourPillarsResult, pillarFacts: PillarFact[]): ElementDiagnostic[] {
   const monthAmbiguous = chart.ambiguousPillars.includes("month");
   const monthMainStem = pillarFacts.find((pillar) => pillar.key === "month")?.hiddenStems[0]?.stem;
   const monthMainElement = monthMainStem ? stemElements[monthMainStem] : null;
+  const stablePillars = pillarFacts.filter((pillar) => !pillar.ambiguous);
+  const stableCounts: Record<ElementName, number> = { 木: 0, 火: 0, 土: 0, 金: 0, 水: 0 };
+  for (const pillar of stablePillars) {
+    stableCounts[pillar.stemElement] += 1;
+    stableCounts[pillar.branchElement] += 1;
+  }
   return elementOrder.map((element) => {
-    const roots = pillarFacts.flatMap((pillar) => pillar.hiddenStems
+    const roots = stablePillars.flatMap((pillar) => pillar.hiddenStems
       .filter((hidden) => stemElements[hidden.stem] === element)
       .map((hidden) => rootClue(pillar, hidden)));
-    const exposed = pillarFacts.filter((pillar) => pillar.stemElement === element).map(exposedClue);
+    const exposed = stablePillars.filter((pillar) => pillar.stemElement === element).map(exposedClue);
     const inSeason = monthAmbiguous ? null : monthMainElement === element;
-    const count = chart.elementCounts[element];
+    const count = stableCounts[element];
     return { element, count, inSeason, roots, exposed, conclusion: diagnosticConclusion(element, count, inSeason, roots, exposed) };
   });
 }
@@ -125,13 +134,20 @@ export function buildProfessionalReport(chart: FourPillarsResult, birth: BirthIn
   const monthFact = pillarFacts.find((pillar) => pillar.key === "month");
   const monthHidden = monthFact?.hiddenStems[0];
   if (!monthFact || !monthHidden) throw new Error("月令藏干资料不完整");
-  const monthCommand = { branch: monthFact.branch, hiddenStem: monthHidden.stem, tenGod: monthHidden.tenGod };
+  const representativeMonth = { branch: monthFact.branch, hiddenStem: monthHidden.stem, tenGod: monthHidden.tenGod };
+  const monthCommand: MonthCommandFact = monthFact.ambiguous
+    ? { branch: "待核", hiddenStem: "待核", tenGod: "待核", ambiguous: true, representative: representativeMonth }
+    : { ...representativeMonth, ambiguous: false };
   const dayMaster = chart.professional.dayMaster.stem;
-  const exposedStems = pillarFacts.map(exposedClue);
-  const roots = pillarFacts.flatMap((pillar) => pillar.hiddenStems
+  const stablePillarFacts = pillarFacts.filter((pillar) => !pillar.ambiguous);
+  const exposedStems = stablePillarFacts.map(exposedClue);
+  const roots = stablePillarFacts.flatMap((pillar) => pillar.hiddenStems
     .filter((hidden) => stemElements[hidden.stem] === chart.professional.dayMaster.element)
     .map((hidden) => rootClue(pillar, hidden)));
   const elementDiagnostics = buildElementDiagnostics(chart, pillarFacts);
+  const stableRelations = chart.professional.relations.filter((relation) =>
+    relation.pillars.every((pillar) => !chart.ambiguousPillars.includes(pillar)));
+  const confidence = birth.time === null ? "limited" : chart.confidence;
   const copyContext: ReportCopyContext = {
     dayMaster,
     dayMasterElement: chart.professional.dayMaster.element,
@@ -139,10 +155,10 @@ export function buildProfessionalReport(chart: FourPillarsResult, birth: BirthIn
     exposedStems,
     roots,
     elementDiagnostics,
-    relations: chart.professional.relations,
+    relations: stableRelations,
     pillarCount: pillarFacts.length,
-    monthAmbiguous: chart.ambiguousPillars.includes("month"),
-    confidence: chart.confidence,
+    stablePillarCount: stablePillarFacts.length,
+    confidence,
   };
   return {
     birthFacts: formatBirthFacts(chart, birth),
@@ -152,10 +168,10 @@ export function buildProfessionalReport(chart: FourPillarsResult, birth: BirthIn
     exposedStems,
     roots,
     elementDiagnostics,
-    relations: [...chart.professional.relations],
+    relations: stableRelations,
     summary: buildReportSummary(copyContext),
     keyJudgments: buildKeyJudgments(copyContext),
     actions: buildReportActions(copyContext),
-    confidence: chart.confidence,
+    confidence,
   };
 }

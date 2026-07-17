@@ -114,5 +114,6 @@ function calculateFourPillarsInternal(input: BirthInput, compareUnknownTimeEndpo
 }
 
 export function calculateFourPillars(input: BirthInput): FourPillarsResult {
-  return calculateFourPillarsInternal(input, true);
+  const normalizedInput = input.time === null ? { ...input, timeConfidence: "unknown" as const } : input;
+  return calculateFourPillarsInternal(normalizedInput, true);
 }

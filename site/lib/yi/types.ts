@@ -75,7 +75,7 @@ export type FourPillarsResult = {
 
 export type HiddenStemFact = {
   stem: string;
-  tenGod: string;
+  tenGod: TenGodName;
   index: number;
 };
 
@@ -86,9 +86,20 @@ export type PillarFact = {
   branch: string;
   stemElement: ElementName;
   branchElement: ElementName;
-  stemTenGod: string;
+  stemTenGod: TenGodName | "日主" | "待核";
   hiddenStems: HiddenStemFact[];
+  ambiguous: boolean;
 };
+
+export type MonthCommandCoordinate = {
+  branch: string;
+  hiddenStem: string;
+  tenGod: TenGodName;
+};
+
+export type MonthCommandFact =
+  | (MonthCommandCoordinate & { ambiguous: false; representative?: never })
+  | { branch: "待核"; hiddenStem: "待核"; tenGod: "待核"; ambiguous: true; representative: MonthCommandCoordinate };
 
 export type ElementDiagnostic = {
   element: ElementName;
@@ -112,7 +123,7 @@ export type ProfessionalReport = {
   };
   pillarFacts: PillarFact[];
   dayMaster: string;
-  monthCommand: { branch: string; hiddenStem: string; tenGod: string };
+  monthCommand: MonthCommandFact;
   exposedStems: string[];
   roots: string[];
   elementDiagnostics: ElementDiagnostic[];
