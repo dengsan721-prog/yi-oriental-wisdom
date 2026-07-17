@@ -36,7 +36,7 @@
 - `lib/yi/stems-branches.ts`: deterministic stem/branch and five-element mappings.
 - `lib/yi/four-pillars.ts`: Demo-grade foundational Four Pillars calculation.
 - `lib/yi/interpret.ts`: deterministic structured narrative selection.
-- `lib/content/demo.ts`: traceable demo copy, relationship scenarios, historical-mirror fixtures.
+- `lib/content/demo.ts`: traceable demo copy, relationship scenarios, historical-mirror fixtures, and an open expert/source graph.
 - `tests/yi/four-pillars.test.ts`: fixed-vector domain tests.
 - `tests/yi/interpret.test.ts`: narrative contract and safety-language tests.
 
@@ -148,7 +148,7 @@ git commit -m "feat: add foundational four pillars kernel"
 
 **Interfaces:**
 - Consumes: `FourPillarsResult`.
-- Produces: `InterpretationCard`, `buildInterpretation(result: FourPillarsResult): InterpretationCard[]`, `relationshipFixtures`, `historicalMirrors`, `actionPlan`.
+- Produces: `InterpretationCard`, `buildInterpretation(result: FourPillarsResult): InterpretationCard[]`, `relationshipFixtures`, `historicalMirrors`, `expertSourceGraph`, `actionPlan`.
 
 - [ ] **Step 1: Write the interpretation contract tests.**
 
@@ -189,7 +189,7 @@ export type InterpretationCard = {
 };
 ```
 
-Select copy from the dominant and supporting element counts; never call an external model. Fixtures must label historical figures as `人生主题相似` and Zi Wei content as `Beta 演示，不参与本次四柱主结论`.
+Select copy from the dominant and supporting element counts; never call an external model. Fixtures must label historical figures as `人生主题相似` and Zi Wei content as `Beta 演示，不参与本次四柱主结论`. `expertSourceGraph` must classify sources into 命理原典、易学修身、历法天文、民俗相学、关系心理、历史社会 and 当代实践; each entry records name, true expertise, source type, applicability, dispute note, and verification status.
 
 - [ ] **Step 4: Run all tests.**
 
