@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createResultScrollPositions, getAvailableSections, getResultSections } from "../../components/yi/ResultShell";
+import { createResultScrollPositions, getAvailableSections, getResultSections, restoreScrollTop } from "../../components/yi/ResultShell";
 
 describe("result navigation", () => {
   it("keeps the seven report sections in a stable reading order", () => {
@@ -20,5 +20,7 @@ describe("result navigation", () => {
     expect(positions).toBeInstanceOf(Map);
     positions.set("detail", 320);
     expect(positions.get("detail")).toBe(320);
+    expect(restoreScrollTop(positions, "detail")).toBe(320);
+    expect(restoreScrollTop(positions, "portrait")).toBe(0);
   });
 });
