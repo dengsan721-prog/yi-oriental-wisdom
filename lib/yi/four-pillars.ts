@@ -29,6 +29,7 @@ function buildProfessional(
   pillars: FourPillarsResult["pillars"],
   elementCounts: Record<ElementName, number>,
   tenGods: TenGodEntry[],
+  ambiguousPillars: PillarKey[],
 ): ProfessionalChart {
   const dayElement = pillars.day.element;
   const resourceElement = elementOrder[(elementOrder.indexOf(dayElement) + 4) % 5];
@@ -44,7 +45,8 @@ function buildProfessional(
   const lowerCountElements = (Object.entries(elementCounts) as [ElementName, number][])
     .filter(([element]) => !sameAndResourceElements.includes(element)).sort((a, b) => a[1] - b[1]).slice(0, 2).map(([element]) => element);
   const monthGod = tenGods.find(item => item.pillar === "month" && item.position === "branch")?.tenGod ?? "月支十神未取";
-  const climate = ["亥", "子", "丑"].includes(pillars.month.branch) ? "调候提示：生于寒月，可观察温养、启动与燥湿平衡"
+  const climate = ambiguousPillars.includes("month") ? "调候提示：出生当日跨节且时辰未知，月令可能变化，暂不作单一季节判断"
+    : ["亥", "子", "丑"].includes(pillars.month.branch) ? "调候提示：生于寒月，可观察温养、启动与燥湿平衡"
     : ["巳", "午", "未"].includes(pillars.month.branch) ? "调候提示：生于暑月，可观察润燥、休息与持续性"
       : "调候提示：春秋转换期，可观察升降收放与日常节律";
   const relations: ChartRelation[] = [];
@@ -57,7 +59,7 @@ function buildProfessional(
   return {
     dayMaster: { stem: pillars.day.stem, element: dayElement, polarity: polarity(pillars.day.stem) },
     structureBalance, supportScore, observationConfidence: pillars.hour ? "medium" : "limited",
-    pattern: `结构观察：月支本气呈${monthGod}，仅作为十神侧重，不判定古法格局`,
+    pattern: ambiguousPillars.includes("month") ? "结构观察：出生当日月柱跨节，月支十神暂不作单一判断" : `结构观察：月支本气呈${monthGod}，仅作为十神侧重，不判定古法格局`,
     climate, sameAndResourceElements, lowerCountElements, tenGods, relations,
   };
 }
@@ -75,6 +77,15 @@ export function calculateFourPillars(input: BirthInput): FourPillarsResult {
   if (hour > 23 || minute > 59) throw new Error("请输入有效的出生时间");
 
   const eightChar = Solar.fromYmdHms(year, month, day, hour, minute, 0).getLunar().getEightChar();
+  const ambiguousPillars: PillarKey[] = [];
+  if (!input.time || input.timeConfidence === "unknown") {
+    const start = Solar.fromYmdHms(year, month, day, 0, 0, 0).getLunar().getEightChar();
+    const end = Solar.fromYmdHms(year, month, day, 23, 59, 0).getLunar().getEightChar();
+    if (start.getYear() !== end.getYear()) ambiguousPillars.push("year");
+    if (start.getMonth() !== end.getMonth()) ambiguousPillars.push("month");
+    if (start.getDay() !== end.getDay()) ambiguousPillars.push("day");
+    ambiguousPillars.push("hour");
+  }
   const yearPillar = makePillar(eightChar.getYearGan(), eightChar.getYearZhi(), labels.year);
   const monthPillar = makePillar(eightChar.getMonthGan(), eightChar.getMonthZhi(), labels.month);
   const dayPillar = makePillar(eightChar.getDayGan(), eightChar.getDayZhi(), labels.day);
@@ -99,7 +110,7 @@ export function calculateFourPillars(input: BirthInput): FourPillarsResult {
     return entries.concat(hidden.map((symbol, hiddenStemIndex) => ({ pillar, position: "branch", symbol, tenGod: hiddenGods[hiddenStemIndex] as TenGodName, hiddenStemIndex })));
   });
   return {
-    pillars, elementCounts, professional: buildProfessional(pillars, elementCounts, tenGods),
+    pillars, elementCounts, professional: buildProfessional(pillars, elementCounts, tenGods, ambiguousPillars), ambiguousPillars,
     confidence: input.timeConfidence === "exact" ? "high" : input.timeConfidence === "approximate" ? "medium" : "limited",
     disclaimer: "传统文化体验与自我观察参考，不作为重大人生决策依据。",
   };
