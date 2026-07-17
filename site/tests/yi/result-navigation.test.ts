@@ -14,6 +14,10 @@ describe("result navigation", () => {
     ]);
   });
 
+  it("exposes all seven production sections", () => {
+    expect(getAvailableSections(true)).toHaveLength(7);
+  });
+
   it("preserves real compatibility state when switching report sections", () => {
     const initial = createInitialResultShellState();
     const withRelationship = resultShellReducer(initial, { type: "set-relationship", relationship: "business" });

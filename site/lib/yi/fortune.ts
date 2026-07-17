@@ -31,7 +31,7 @@ function periodTheme(god: TenGodName) {
 }
 
 export function buildFortuneTimeline(chart: FourPillarsResult, input: BirthInput): FortunePeriod[] {
-  if (input.gender === "unspecified") return [];
+  if (input.gender === "unspecified" || input.timeConfidence === "unknown" || input.time === null) return [];
   const [year, month, day] = input.date.split("-").map(Number);
   const [hour, minute] = input.time?.split(":").map(Number) ?? [12, 0];
   const eightChar = Solar.fromYmdHms(year, month, day, hour, minute, 0).getLunar().getEightChar();

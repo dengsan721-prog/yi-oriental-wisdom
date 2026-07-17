@@ -22,10 +22,10 @@ describe("fortune timeline", () => {
     expect(timeline[0].method.basis).toContain("lunar-typescript");
   });
 
-  it("marks hour-dependent claims as limited when time is unknown", () => {
+  it("does not manufacture an exact fortune timeline when time is unknown", () => {
     const unknownInput = { ...input, time: null, timeConfidence: "unknown" } as const;
     const unknown = calculateFourPillars(unknownInput);
-    expect(buildFortuneTimeline(unknown, unknownInput)[0].confidence).toBe("limited");
+    expect(buildFortuneTimeline(unknown, unknownInput)).toEqual([]);
   });
 
   it("does not invent direction when gender is unspecified", () => {

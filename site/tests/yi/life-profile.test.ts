@@ -8,6 +8,7 @@ import {
   loadLifeProfile,
   getBrowserStorage,
   saveLifeProfile,
+  exportLifeProfile,
   type LifeProfile,
   type ProfileStorage,
 } from "../../lib/yi/life-profile";
@@ -45,6 +46,21 @@ function memoryStorage(): ProfileStorage {
 }
 
 describe("life profile", () => {
+  it("minimizes persisted and exported birth data by removing location", () => {
+    const storage = memoryStorage();
+    expect(saveLifeProfile(storage, savedProfile)).toEqual({ ok: true });
+    const raw = storage.getItem(LIFE_PROFILE_STORAGE_KEY)!;
+    expect(raw).not.toContain("浙江省杭州市某医院");
+    expect(loadLifeProfile(storage)?.birth.location).toBe("");
+    expect(exportLifeProfile(savedProfile)).not.toContain("浙江省杭州市某医院");
+  });
+
+  it("labels generated yearly and monthly entries as review planning templates, not fortune inference", () => {
+    const chart = calculateFourPillars(savedProfile.birth);
+    const profile = createLifeProfile({ name: savedProfile.name, birth: savedProfile.birth, chart, overview: buildProfessionalOverview(chart), interpretations: buildInterpretations(chart), now: new Date("2026-07-17T12:00:00+08:00") });
+    expect(profile.annualMap.every(item => item.theme.includes("复盘计划模板"))).toBe(true);
+    expect(profile.monthlyRhythm.every(item => item.theme.includes("行动计划模板"))).toBe(true);
+  });
   it("creates a useful profile from a calculated report", () => {
     const chart = calculateFourPillars(savedProfile.birth);
     const overview = buildProfessionalOverview(chart);
@@ -103,7 +119,7 @@ describe("life profile", () => {
     const storage = memoryStorage();
 
     expect(saveLifeProfile(storage, savedProfile)).toEqual({ ok: true });
-    expect(loadLifeProfile(storage)).toEqual(savedProfile);
+    expect(loadLifeProfile(storage)).toEqual({ ...savedProfile, birth: { ...savedProfile.birth, location: "" } });
     expect(clearLifeProfile(storage)).toEqual({ ok: true });
 
     expect(storage.getItem(LIFE_PROFILE_STORAGE_KEY)).toBeNull();

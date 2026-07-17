@@ -52,6 +52,7 @@ export function getBrowserStorage(source: object): ProfileStorage | null {
 const monthKey = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
 
 const monthlyThemes = ["整理边界", "积蓄能量", "表达与连接", "稳步推进", "校准方向", "照顾身心", "作出选择", "建立秩序", "完成收束", "尝试新路", "复盘关系", "为来年留白"];
+const minimizeProfile = (profile: LifeProfile): LifeProfile => ({ ...profile, birth: { ...profile.birth, location: "" } });
 
 export function createLifeProfile(input: {
   name: string;
@@ -69,19 +70,19 @@ export function createLifeProfile(input: {
   const year = now.getFullYear();
   const annualMap = [-1, 0, 1].map(offset => ({
     year: year + offset,
-    theme: offset < 0 ? "回看与沉淀" : offset > 0 ? "展开与准备" : stage,
+    theme: `复盘计划模板 · ${offset < 0 ? "回看与沉淀" : offset > 0 ? "展开与准备" : stage}`,
     focus: offset === 0 ? action : offset < 0 ? "保留真正有效的经验" : "给重要方向预留空间",
   }));
   const monthlyRhythm = Array.from({ length: 12 }, (_, index) => ({
     month: `${year}-${pad(index + 1)}`,
-    theme: monthlyThemes[index],
+    theme: `行动计划模板 · ${monthlyThemes[index]}`,
     action: index === now.getMonth() ? action : `围绕“${monthlyThemes[index]}”留下一条记录`,
   }));
   const timestamp = now.toISOString();
   return {
     version: 1,
     name: input.name || "访客",
-    birth: input.birth,
+    birth: { ...input.birth, location: "" },
     createdAt: input.existing?.createdAt ?? timestamp,
     updatedAt: timestamp,
     currentStage: stage,
@@ -153,11 +154,15 @@ function storageFailure(error: unknown): StorageResult {
 
 export function saveLifeProfile(storage: ProfileStorage, profile: LifeProfile): StorageResult {
   try {
-    storage.setItem(LIFE_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    storage.setItem(LIFE_PROFILE_STORAGE_KEY, JSON.stringify(minimizeProfile(profile)));
     return { ok: true };
   } catch (error) {
     return storageFailure(error);
   }
+}
+
+export function exportLifeProfile(profile: LifeProfile): string {
+  return JSON.stringify(minimizeProfile(profile), null, 2);
 }
 
 export function loadLifeProfile(storage: ProfileStorage): LifeProfile | null {

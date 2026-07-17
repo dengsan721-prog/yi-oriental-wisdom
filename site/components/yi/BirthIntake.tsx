@@ -43,7 +43,7 @@ export function normalizeBirthSubmission(draft: BirthSubmissionDraft): BirthSubm
 export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) => void }) {
   const currentYear = new Date().getFullYear();
   const [draft, setDraft] = useState<BirthSubmissionDraft>({
-    name: "", location: "杭州", date: { mode: "solar", year: 1990, month: 6, day: 15, isLeapMonth: false },
+    name: "", location: "", date: { mode: "solar", year: 1990, month: 6, day: 15, isLeapMonth: false },
     timeMode: "exact", hour: 9, minute: 30, earthlyIndex: null, gender: "unspecified",
   });
   const [dateOpen, setDateOpen] = useState(false);
@@ -99,7 +99,7 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
       <div className="step-head"><span>建立出生坐标</span><h1>请确认出生信息</h1><p>阳历、农历均可录入；不知道时辰也能继续。</p></div>
       <div className="identity-row">
         <label><span>姓名</span><input required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="请输入姓名" /></label>
-        <label><span>出生地点</span><input required value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} /></label>
+        <label><span>出生地点（可选）</span><input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} placeholder="仅作本次记录" /><small>当前版本不做真太阳时校正，地点不会参与计算，也不会保存到本机档案。</small></label>
       </div>
       <section className="calendar-switch" role="group" aria-label="出生性别（用于大运顺逆）">
         {(["male", "female", "unspecified"] as const).map(value => <button type="button" key={value} aria-pressed={draft.gender === value} className={draft.gender === value ? "active" : ""} onClick={() => setDraft({ ...draft, gender: value })}>{value === "male" ? "男" : value === "female" ? "女" : "暂不指定"}</button>)}
