@@ -20,6 +20,9 @@ export type ZodiacMirror = {
   longTermPractice: string;
   caution: string;
   sources: string[];
+  confidence: "high" | "limited";
+  yearAmbiguous: boolean;
+  monthAmbiguous: boolean;
 };
 
 type ZodiacContent = Omit<ZodiacMirror, "branch" | "element" | "yinYang" | "chartAgreement" | "chartDifference" | "sources">;
@@ -212,6 +215,23 @@ function elementInteraction(yearElement: ElementName, dayElement: ElementName): 
   return "年支与日主存在传统制衡关系，更适合把差异转成边界和反馈问题";
 }
 
+function commandLens(command: TenGodName | "待核"): { agreement: string; calibration: string } {
+  const lenses: Record<TenGodName | "待核", { agreement: string; calibration: string }> = {
+    比肩: { agreement: "月令主题会把观察落到自主选择和同伴协作，生肖优势要通过清楚分工才容易稳定呈现", calibration: "若只强调自己的节奏，主盘所需的同伴反馈会不足；校准点是先说边界，再确认共同目标" },
+    劫财: { agreement: "月令主题会放大资源共享与竞争边界，生肖行动力需要在权责清楚后使用", calibration: "若热情先于规则，资源与责任容易混在一起；校准点是先写归属、上限和退出条件" },
+    食神: { agreement: "月令主题偏向稳定表达、作品体验和持续产出，生肖特点宜先转成小规模可感知成果", calibration: "若只停在舒适表达，关键决定可能被延后；校准点是为交付和决定分别设截止时间" },
+    伤官: { agreement: "月令主题偏向观点突破、问题发现与重新表达，生肖镜像可用于寻找更有效的公开接口", calibration: "若表达强度超过证据，合作方可能只听见反驳；校准点是同时给出问题、依据和替代方案" },
+    偏财: { agreement: "月令主题把注意力带向流动资源、外部机会和快速交换，生肖优势要接受投入产出检验", calibration: "若机会数量替代了优先级，主盘会出现承诺分散；校准点是给试验设预算上限和复盘日期" },
+    正财: { agreement: "月令主题重视稳定资源、现实承诺和可持续兑现，生肖特点需要落到清晰的时间与成本", calibration: "若只顾完成眼前责任，长期弹性会下降；校准点是同时保留基本盘、试验额和停止条件" },
+    七杀: { agreement: "月令主题把规则压力、硬期限和风险边界推到前台，生肖行动必须先确认权限与停止条件", calibration: "若在压力下直接放大生肖惯性，容易把速度当成安全；校准点是先拆风险、求助对象和最小步骤" },
+    正官: { agreement: "月令主题重视职责、秩序和可被检验的公共标准，生肖优势需要通过角色与流程承接", calibration: "若只追求符合规则，真实问题可能被形式遮住；校准点是同时核对制度要求与任务目的" },
+    偏印: { agreement: "月令主题偏向非标准学习、独立研究和经验重组，生肖镜像可作为提出新假设的入口", calibration: "若长期停留在内部推演，现实反馈会不足；校准点是把一个判断转成可被反证的小试验" },
+    正印: { agreement: "月令主题重视系统学习、支持输入和恢复基础，生肖优势要先获得足够资料与稳定补给", calibration: "若持续准备却迟迟不交付，支持会变成停滞；校准点是规定学习结束点并输出一个可检查成果" },
+    待核: { agreement: "月令坐标仍待核，只能保留生肖与日主的初步对照，不把当前月令候选写成确定主题", calibration: "校准点是补充可靠出生时刻；在此之前以已知主盘和现实经历为先，不扩写月令结论" },
+  };
+  return lenses[command];
+}
+
 export function buildZodiacMirror(chart: FourPillarsResult): ZodiacMirror {
   const branch = chart.pillars.year.branch;
   const record = content[branch];
@@ -221,13 +241,21 @@ export function buildZodiacMirror(chart: FourPillarsResult): ZodiacMirror {
   const monthBranch = chart.pillars.month.branch;
   const command = monthCommand(chart);
   const interaction = elementInteraction(element, dayMaster.element);
+  const lens = commandLens(command);
+  const yearAmbiguous = chart.ambiguousPillars.includes("year");
+  const monthAmbiguous = chart.ambiguousPillars.includes("month");
+  const yearBasis = yearAmbiguous ? `年柱待核，当前代表候选年支${branch}属${element}` : `年支${branch}属${element}`;
+  const monthBasis = monthAmbiguous ? `月令代表候选为月支${monthBranch}、本气十神${command}` : `月支${monthBranch}本气十神为${command}`;
   return {
     ...record,
     branch,
     element,
     yinYang: yangBranches.has(branch) ? "阳" : "阴",
-    chartAgreement: `与八字主盘相互印证：年支${branch}属${element}，日主${dayMaster.stem}${dayMaster.element}，月支${monthBranch}本气十神为${command}。${interaction}；再以月令环境检查这种生肖语言在工作、关系和家庭里是否真的出现。`,
-    chartDifference: `主盘差异提醒：生肖只读取年支${branch}属${element}这一层，主盘还包含日主${dayMaster.stem}${dayMaster.element}、月支${monthBranch}${command}及其余干支。若生肖第一印象与主盘或现实经历冲突，以完整主盘和可观察事实为先。`,
+    chartAgreement: `与八字主盘相互印证：${yearBasis}，日主${dayMaster.stem}${dayMaster.element}，${monthBasis}。${interaction}；${lens.agreement}。`,
+    chartDifference: `主盘差异提醒：生肖只读取${yearAmbiguous ? "年柱代表候选" : "年支"}${branch}属${element}这一层，主盘还包含日主${dayMaster.stem}${dayMaster.element}、${monthAmbiguous ? "待核的月支候选" : "月支"}${monthBranch}${command}及其余干支。${lens.calibration}；若与现实经历冲突，以完整主盘和可观察事实为先。`,
     sources: sourceIds,
+    confidence: yearAmbiguous || monthAmbiguous ? "limited" : "high",
+    yearAmbiguous,
+    monthAmbiguous,
   };
 }

@@ -16,6 +16,23 @@ const mappings = [
   ["辰", "龙"], ["巳", "蛇"], ["午", "马"], ["未", "羊"],
   ["申", "猴"], ["酉", "鸡"], ["戌", "狗"], ["亥", "猪"],
 ] as const;
+const tenGodNames: TenGodName[] = ["比肩", "劫财", "食神", "伤官", "偏财", "正财", "七杀", "正官", "偏印", "正印"];
+
+function withoutTenGodNames(value: string): string {
+  return tenGodNames.reduce((result, name) => result.replaceAll(name, "十神"), value);
+}
+
+function withMonthCommand(source: FourPillarsResult, tenGod: TenGodName): FourPillarsResult {
+  return {
+    ...source,
+    professional: {
+      ...source.professional,
+      tenGods: source.professional.tenGods.map(item => item.pillar === "month" && item.position === "branch" && item.hiddenStemIndex === 0
+        ? { ...item, tenGod }
+        : item),
+    },
+  };
+}
 
 function chartWithYearBranch(branch: string): FourPillarsResult {
   return {
@@ -84,6 +101,42 @@ describe("complete zodiac mirror", () => {
     expect(altered.chartDifference).not.toBe(baseline.chartDifference);
   });
 
+  it("changes the comparison meaning when only the day-master interaction or month-command theme changes", () => {
+    const dayChanged = buildZodiacMirror({
+      ...chart,
+      pillars: { ...chart.pillars, day: { ...chart.pillars.day, stem: "甲", element: "木" } },
+      professional: { ...chart.professional, dayMaster: { stem: "甲", element: "木", polarity: "yang" } },
+    });
+    const baseline = buildZodiacMirror(chart);
+    expect(dayChanged.chartAgreement).not.toBe(baseline.chartAgreement);
+    expect(dayChanged.chartDifference).not.toBe(baseline.chartDifference);
+
+    const resourceTheme = buildZodiacMirror(withMonthCommand(chart, "正印"));
+    const pressureTheme = buildZodiacMirror(withMonthCommand(chart, "七杀"));
+    expect(withoutTenGodNames(resourceTheme.chartAgreement)).not.toBe(withoutTenGodNames(pressureTheme.chartAgreement));
+    expect(withoutTenGodNames(resourceTheme.chartDifference)).not.toBe(withoutTenGodNames(pressureTheme.chartDifference));
+  });
+
+  it("marks the year and month as representative limited candidates at the 2024-02-04 unknown-time boundary", () => {
+    const boundaryChart = calculateFourPillars({
+      name: "边界样本",
+      date: "2024-02-04",
+      time: null,
+      location: "杭州",
+      gender: "unspecified",
+      timeConfidence: "unknown",
+    });
+    const mirror = buildZodiacMirror(boundaryChart);
+    const html = renderToStaticMarkup(createElement(MirrorSection, { chart: boundaryChart }));
+
+    expect(boundaryChart.ambiguousPillars).toEqual(expect.arrayContaining(["year", "month"]));
+    expect(mirror).toMatchObject({ confidence: "limited", yearAmbiguous: true, monthAmbiguous: true });
+    expect(mirror.chartAgreement).toContain("年柱待核");
+    expect(mirror.chartAgreement).toContain("月令代表候选");
+    expect(html).toContain(`代表候选：${mirror.branch}${mirror.zodiac}`);
+    expect(html).toContain("limited");
+  });
+
   it("resolves authoritative and contextual source ids to graded https records", () => {
     const expected = {
       "calendar.gb-t-33661-2017": ["A", "GB/T 33661-2017 农历的编算和颁行"],
@@ -118,10 +171,14 @@ describe("complete zodiac mirror", () => {
       const source = YI_REFERENCE_SOURCES[id];
       expect(html).toContain(`href="${source.url}"`);
       expect(html).toContain(source.title);
+      expect(html).toContain(source.role);
+      expect(html).toContain(source.boundary);
     }
+    expect(html).toContain("生活场景、信任方式与行动建议属于产品观察模型和生活化转译，不是古籍原文");
     expect(css).toMatch(/\.zodiac-scenes\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
     expect(css).toMatch(/\.zodiac-evidence summary\{[^}]*min-height:44px/);
     expect(css).toMatch(/@media\(max-width:760px\)\{[^}]*\.zodiac-scenes\{grid-template-columns:1fr\}/);
     expect(css).toMatch(/\.zodiac-mirror[^}]*overflow-wrap:anywhere/);
+    expect(css).toMatch(/\.zodiac-sources a\{[^}]*min-height:44px/);
   });
 });
