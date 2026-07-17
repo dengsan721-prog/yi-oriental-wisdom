@@ -73,6 +73,56 @@ export type FourPillarsResult = {
   disclaimer: string;
 };
 
+export type HiddenStemFact = {
+  stem: string;
+  tenGod: string;
+  index: number;
+};
+
+export type PillarFact = {
+  key: PillarKey;
+  label: string;
+  stem: string;
+  branch: string;
+  stemElement: ElementName;
+  branchElement: ElementName;
+  stemTenGod: string;
+  hiddenStems: HiddenStemFact[];
+};
+
+export type ElementDiagnostic = {
+  element: ElementName;
+  count: number;
+  inSeason: boolean | null;
+  roots: string[];
+  exposed: string[];
+  conclusion: string;
+};
+
+export type ProfessionalReport = {
+  birthFacts: {
+    solar: string;
+    lunar: string;
+    location: string;
+    timezone: string;
+    trueSolarTime: string;
+    zodiac: string;
+    starSign: string;
+    timeConfidence: "精确时间" | "约略时间" | "时辰不详";
+  };
+  pillarFacts: PillarFact[];
+  dayMaster: string;
+  monthCommand: { branch: string; hiddenStem: string; tenGod: string };
+  exposedStems: string[];
+  roots: string[];
+  elementDiagnostics: ElementDiagnostic[];
+  relations: ChartRelation[];
+  summary: string;
+  keyJudgments: string[];
+  actions: string[];
+  confidence: FourPillarsResult["confidence"];
+};
+
 export type InterpretationItem = {
   id: string;
   domain: "self" | "talent" | "career" | "wealth" | "relationship" | "family" | "rhythm";
