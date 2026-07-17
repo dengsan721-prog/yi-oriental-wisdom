@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
-import { formatYiHash, parseYiHash, resolveYiHydratedRoute } from "../../lib/yi/hash-router";
+import { formatYiHash, guardYiRoute, parseYiHash, resolveYiHydratedRoute } from "../../lib/yi/hash-router";
 import { buildInterpretations, buildProfessionalOverview } from "../../lib/yi/interpretation";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 import { BirthIntake, type BirthSubmission } from "./BirthIntake";
@@ -25,7 +25,7 @@ function RitualIntro({ restoring, onStart }: { restoring: boolean; onStart: () =
 
 export function YiExperience() {
   const { route, push, replace } = useYiRoute();
-  const [loading, setLoading] = useState(true);
+  const [hydrated, setHydrated] = useState(false);
   const [name, setName] = useState("");
   const [calcStep, setCalcStep] = useState(0);
   const [result, setResult] = useState<FourPillarsResult | null>(null);
@@ -39,7 +39,7 @@ export function YiExperience() {
       const finishHydration = (hasProfile: boolean) => {
         const nextRoute = resolveYiHydratedRoute(requestedRoute, hasProfile);
         if (formatYiHash(nextRoute) !== formatYiHash(requestedRoute)) replace(nextRoute);
-        setLoading(false);
+        setHydrated(true);
       };
       const storage = getBrowserStorage(window);
       if (!storage) {
@@ -65,16 +65,26 @@ export function YiExperience() {
   }, [replace]);
 
   useEffect(() => {
-    if (loading || route.page !== "calculating") return;
-    const timer = window.setInterval(() => setCalcStep(value => Math.min(value + 1, 5)), 260);
-    return () => window.clearInterval(timer);
-  }, [loading, route.page]);
+    if (!hydrated) return;
+    const guardedRoute = guardYiRoute(route, {
+      hasProfile: profile !== null,
+      hasResult: result !== null,
+      hasBirth: birth !== null,
+    });
+    if (guardedRoute !== route) replace(guardedRoute);
+  }, [birth, hydrated, profile, replace, result, route]);
 
   useEffect(() => {
-    if (loading || route.page !== "calculating" || calcStep < 5) return;
+    if (!hydrated || route.page !== "calculating") return;
+    const timer = window.setInterval(() => setCalcStep(value => Math.min(value + 1, 5)), 260);
+    return () => window.clearInterval(timer);
+  }, [hydrated, route.page]);
+
+  useEffect(() => {
+    if (!hydrated || route.page !== "calculating" || calcStep < 5) return;
     const timer = window.setTimeout(() => replace({ page: "report", section: "portrait" }), 240);
     return () => window.clearTimeout(timer);
-  }, [calcStep, loading, replace, route.page]);
+  }, [calcStep, hydrated, replace, route.page]);
 
   function runBirthSubmission(value: BirthSubmission) {
     setStorageError("");
@@ -119,17 +129,17 @@ export function YiExperience() {
   }
 
   return <main>
-    {!loading && route.page === "home" && profile && <LifeHome profile={profile} onChange={updateProfile} onClear={removeProfile} onViewReport={() => push({ page: "report", section: "portrait" })} />}
-    {(loading || route.page === "intro") && <RitualIntro restoring={loading} onStart={() => push({ page: "birth" })} />}
-    {!loading && route.page === "birth" && <section className="intake">
+    {hydrated && route.page === "home" && profile && <LifeHome profile={profile} onChange={updateProfile} onClear={removeProfile} onViewReport={() => push({ page: "report", section: "portrait" })} />}
+    {(!hydrated || route.page === "intro") && <RitualIntro restoring={!hydrated} onStart={() => push({ page: "birth" })} />}
+    {hydrated && route.page === "birth" && <section className="intake">
       <header><button onClick={() => push({ page: "intro" })}>← 返回</button><span>艺</span><small>生辰排盘</small></header>
       <BirthIntake onSubmit={runBirthSubmission} />
     </section>}
-    {!loading && route.page === "calculating" && <section className="calculating">
+    {hydrated && route.page === "calculating" && <section className="calculating">
       <Mark /><p>正在建立 {name || "访客"} 的命盘</p>
       <div className="calc-list">{["四柱", "五行", "十神", "格局", "喜忌", "大运"].map((item, index) => <div className={index <= calcStep ? "active" : ""} key={item}><span>{index < calcStep ? "✓" : `0${index + 1}`}</span>{item}</div>)}</div>
     </section>}
-    {!loading && route.page === "report" && result && birth && <ResultShell
+    {hydrated && route.page === "report" && result && birth && <ResultShell
       name={name}
       chart={result}
       birth={birth}

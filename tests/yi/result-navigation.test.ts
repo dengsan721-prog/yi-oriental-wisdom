@@ -37,9 +37,12 @@ describe("result navigation", () => {
     const selected: string[] = [];
     expect(positions).toBeInstanceOf(Map);
     selectResultSection(positions, "detail", "mirror", 320, section => selected.push(section));
+    selectResultSection(positions, "mirror", "detail", 85, section => selected.push(section));
     expect(positions.get("detail")).toBe(320);
-    expect(selected).toEqual(["mirror"]);
+    expect(positions.get("mirror")).toBe(85);
+    expect(selected).toEqual(["mirror", "detail"]);
     expect(restoreScrollTop(positions, "detail")).toBe(320);
+    expect(restoreScrollTop(positions, "mirror")).toBe(85);
     expect(restoreScrollTop(positions, "portrait")).toBe(0);
   });
 });

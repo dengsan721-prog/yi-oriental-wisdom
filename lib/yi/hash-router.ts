@@ -6,6 +6,12 @@ export type YiRoute =
   | { page: "intro" | "birth" | "calculating" | "home" }
   | { page: "report"; section: ReportSectionId };
 
+export type YiRouteDataState = {
+  hasProfile: boolean;
+  hasResult: boolean;
+  hasBirth: boolean;
+};
+
 export function parseYiHash(hash: string): YiRoute {
   const path = hash.replace(/^#/, "");
   if (path === "/birth") return { page: "birth" };
@@ -35,4 +41,12 @@ export function resolveYiHydratedRoute(requested: YiRoute, hasProfile: boolean):
   if (requested.page === "report" || requested.page === "calculating") return { page: "birth" };
   if (requested.page === "home") return { page: "intro" };
   return requested;
+}
+
+export function guardYiRoute(route: YiRoute, state: YiRouteDataState): YiRoute {
+  if ((route.page === "report" || route.page === "calculating") && (!state.hasResult || !state.hasBirth)) {
+    return { page: "birth" };
+  }
+  if (route.page === "home" && !state.hasProfile) return { page: "intro" };
+  return route;
 }
