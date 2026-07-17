@@ -32,9 +32,9 @@ export function resultShellReducer(state: ResultShellState, action: ResultShellA
   return { ...state, compatibility: { ...state.compatibility, secondBirth: action.birth } };
 }
 
-export function ResultShell({ name, chart, birth, overview, interpretations, onRestart }: {
+export function ResultShell({ name, chart, birth, overview, interpretations, onRestart, onSaveHome }: {
   name: string; chart: FourPillarsResult; overview: ProfessionalOverview;
-  birth: BirthInput; interpretations: InterpretationItem[]; onRestart: () => void;
+  birth: BirthInput; interpretations: InterpretationItem[]; onRestart: () => void; onSaveHome?: () => void;
 }) {
   const [state, dispatch] = useReducer(resultShellReducer, undefined, createInitialResultShellState);
   const activeSection = state.activeSection;
@@ -46,7 +46,7 @@ export function ResultShell({ name, chart, birth, overview, interpretations, onR
     window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollTop(scrollPositions, next) }));
   }
   return <section className="result-shell">
-    <header className="result-head"><div><span className="mini-mark">艺</span><b>{name || "访客"}的人生报告</b></div><button onClick={onRestart}>重新排盘</button></header>
+    <header className="result-head"><div><span className="mini-mark">艺</span><b>{name || "访客"}的人生报告</b></div><div>{onSaveHome && <button onClick={onSaveHome}>保存并进入人生首页</button>}<button onClick={onRestart}>重新排盘</button></div></header>
     <nav className="result-tabs" aria-label="人生报告章节">
       {getResultSections().filter(([id]) => availableSections.includes(id)).map(([id, label]) => <button key={id} className={activeSection === id ? "active" : ""} aria-current={activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>{label}</button>)}
     </nav>
