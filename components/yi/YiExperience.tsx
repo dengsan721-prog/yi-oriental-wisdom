@@ -24,6 +24,8 @@ function RitualIntro({ restoring, onStart }: { restoring: boolean; onStart: () =
   </section>;
 }
 
+export const getCalculationSteps = () => ["四柱", "五行", "藏干", "十神", "干支", "大运"] as const;
+
 export function YiExperience() {
   const { route, push, replace } = useYiRoute();
   const [hydrated, setHydrated] = useState(false);
@@ -142,7 +144,7 @@ export function YiExperience() {
     </section>}
     {hydrated && route.page === "calculating" && <section className="calculating">
       <Mark /><p>正在建立 {name || "访客"} 的命盘</p>
-      <div className="calc-list">{["四柱", "五行", "十神", "格局", "喜忌", "大运"].map((item, index) => <div className={index <= calcStep ? "active" : ""} key={item}><span>{index < calcStep ? "✓" : `0${index + 1}`}</span>{item}</div>)}</div>
+      <div className="calc-list">{getCalculationSteps().map((item, index) => <div className={index <= calcStep ? "active" : ""} key={item}><span>{index < calcStep ? "✓" : `0${index + 1}`}</span>{item}</div>)}</div>
     </section>}
     {hydrated && route.page === "report" && result && birth && professionalReport && <ResultShell
       name={name}

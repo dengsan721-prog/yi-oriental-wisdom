@@ -46,14 +46,17 @@ function formatBirthFacts(chart: FourPillarsResult, birth: BirthInput): Professi
     : "未校正：未提供出生地址，且当前未接入经纬度与真太阳时换算，不展示校正钟点。";
   const zodiac = zodiacByBranch[chart.pillars.year.branch] ?? "待核";
   const zodiacLabel = chart.ambiguousPillars.includes("year") ? `${zodiac}（年柱待核）` : zodiac;
+  const lunarTime = effectiveTimeConfidence === "unknown"
+    ? "（时辰不详）"
+    : `${chart.pillars.hour?.branch ?? "待核"}时${effectiveTimeConfidence === "approximate" ? "（约略）" : ""}`;
   return {
     solar: timeLabel,
-    lunar: `${lunar.getYear()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`,
+    lunar: `${lunar.getYear()}年${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}日 ${lunarTime}`,
     location: location || "未提供",
     timezone: "中国标准时间（UTC+8，按录入的当地钟表时间）",
     trueSolarTime,
     zodiac: zodiacLabel,
-    starSign: `${solar.getXingZuo()}座`,
+    starSign: `${solar.getXingZuo()}座（现代文化辅助）`,
     timeConfidence: effectiveTimeConfidence === "exact" ? "精确时间" : effectiveTimeConfidence === "approximate" ? "约略时间" : "时辰不详",
   };
 }

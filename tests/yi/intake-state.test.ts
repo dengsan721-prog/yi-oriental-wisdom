@@ -47,7 +47,8 @@ describe("birth intake state", () => {
     expect(html).toContain('<div class="step-head"><h1>建立出生坐标</h1></div>');
     expect(html).toContain("出生地址（选填）");
     expect(html).toContain('placeholder="城市或区县"');
-    expect(html).toContain('class="dual-calendar-line"');
+    expect(html).toContain("出生日期 · 阳历");
+    expect(html).not.toContain('class="dual-calendar-line"');
     expect(html).toContain("不知道时辰");
     expect(html).not.toContain("请确认出生信息");
     expect(html).not.toContain("阳历、农历均可录入");

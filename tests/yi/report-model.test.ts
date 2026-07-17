@@ -16,11 +16,11 @@ describe("professional report model", () => {
     const report = buildProfessionalReport(calculateFourPillars(birth), birth);
 
     expect(report.birthFacts.solar).toContain("1990年6月15日 09:30");
-    expect(report.birthFacts.lunar).toMatch(/年.+月.+/);
+    expect(report.birthFacts.lunar).toMatch(/年.+月.+日.+时/);
     expect(report.birthFacts.location).toBe("浙江省杭州市");
     expect(report.birthFacts.timezone).toContain("UTC+8");
     expect(report.birthFacts.zodiac).toBeTruthy();
-    expect(report.birthFacts.starSign).toBeTruthy();
+    expect(report.birthFacts.starSign).toContain("现代文化辅助");
     expect(report.birthFacts.timeConfidence).toBe("精确时间");
     expect(report.pillarFacts).toHaveLength(4);
     expect(report.pillarFacts.map((pillar) => pillar.key)).toEqual(["year", "month", "day", "hour"]);
@@ -54,6 +54,7 @@ describe("professional report model", () => {
     const report = buildProfessionalReport(calculateFourPillars(unknownBirth), unknownBirth);
 
     expect(report.birthFacts.solar).toContain("时辰不详");
+    expect(report.birthFacts.lunar).toContain("时辰不详");
     expect(report.birthFacts.solar).not.toMatch(/12:00|正午/);
     expect(report.birthFacts.timeConfidence).toBe("时辰不详");
     expect(report.pillarFacts).toHaveLength(3);
