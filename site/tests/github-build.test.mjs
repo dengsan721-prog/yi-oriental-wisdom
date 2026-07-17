@@ -1,6 +1,21 @@
 import assert from "node:assert/strict";
-import { access, readFile, readdir } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { readFile, readdir } from "node:fs/promises";
+import { promisify } from "node:util";
 import test from "node:test";
+
+const execFileAsync = promisify(execFile);
+const repositoryRoot = new URL("../../", import.meta.url);
+const stableDocumentation = [
+  "superpowers/specs/2026-07-17-yi-oriental-life-wisdom-design.md",
+  "superpowers/plans/2026-07-17-yi-github-spa-navigation.md",
+  "superpowers/plans/2026-07-17-yi-life-wisdom-upgrade.md",
+  "superpowers/plans/2026-07-17-yi-professional-paid-report.md",
+];
+
+function normalizeLineEndings(value) {
+  return value.replaceAll("\r\n", "\n");
+}
 
 test("GitHub build is the full bundled React app", async () => {
   const html = await readFile(new URL("../../docs/index.html", import.meta.url), "utf8");
@@ -13,11 +28,31 @@ test("GitHub build is the full bundled React app", async () => {
 });
 
 test("GitHub build preserves deployment metadata and internal planning docs", async () => {
-  await access(new URL("../../docs/.nojekyll", import.meta.url));
-  await access(
-    new URL(
-      "../../docs/superpowers/plans/2026-07-17-yi-github-spa-navigation.md",
-      import.meta.url,
-    ),
+  await readFile(new URL("../../docs/.nojekyll", import.meta.url));
+
+  for (const path of stableDocumentation) {
+    const afterBuild = await readFile(new URL(`../../docs/${path}`, import.meta.url), "utf8");
+    const { stdout: beforeBuild } = await execFileAsync(
+      "git",
+      ["show", `HEAD:docs/${path}`],
+      { cwd: repositoryRoot, encoding: "utf8" },
+    );
+    assert.equal(
+      normalizeLineEndings(afterBuild),
+      normalizeLineEndings(beforeBuild),
+      `${path} changed during the GitHub build`,
+    );
+  }
+});
+
+test("GitHub build publishes the lunar-typescript MIT notice", async () => {
+  const notice = await readFile(
+    new URL("../../docs/THIRD_PARTY_LICENSES.txt", import.meta.url),
+    "utf8",
   );
+
+  assert.match(notice, /lunar-typescript/);
+  assert.match(notice, /Copyright \(c\) 2019 6tail/);
+  assert.match(notice, /Permission is hereby granted, free of charge/);
+  assert.match(notice, /THE SOFTWARE IS PROVIDED "AS IS"/);
 });

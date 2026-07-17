@@ -6,6 +6,7 @@ const siteRoot = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
   root: fileURLToPath(new URL("./github", import.meta.url)),
+  publicDir: fileURLToPath(new URL("./public", import.meta.url)),
   base: "/yi-oriental-wisdom/",
   plugins: [react()],
   build: {
