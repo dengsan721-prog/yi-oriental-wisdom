@@ -30,4 +30,9 @@ describe("date picker helpers", () => {
     expect(options.months).toContainEqual({ value: 2, isLeapMonth: true, label: "闰二月" });
     expect(options.days).toHaveLength(29);
   });
+
+  it.each(["solar", "lunar"] as const)("rejects a non-integer %s year before calendar lookup", (mode) => {
+    expect(() => getWheelOptions({ mode, year: Number.NaN, month: 1, day: 1, isLeapMonth: false }, 2026))
+      .toThrow("年份范围无效");
+  });
 });
