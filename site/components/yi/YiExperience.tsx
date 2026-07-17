@@ -8,6 +8,7 @@ import {
   toEarthlyHour,
 } from "../../lib/yi/date-picker";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
+import { BirthIntake, type BirthSubmission } from "./BirthIntake";
 import type {
   BirthInput,
   ElementName,
@@ -172,13 +173,29 @@ export function YiExperience() {
     setStage("calculating");
   }
 
+  function runBirthSubmission(value: BirthSubmission) {
+    const [nextYear, nextMonth, nextDay] = value.date.split("-").map(Number);
+    const [nextHour, nextMinute] = value.time?.split(":").map(Number) ?? [0, 0];
+    setYear(nextYear);
+    setMonth(nextMonth);
+    setDay(nextDay);
+    setHour(nextHour);
+    setMinute(nextMinute);
+    setUnknownHour(value.time === null);
+    setName(value.name);
+    setLocation(value.location);
+    setResult(calculateFourPillars(value));
+    setCalcStep(0);
+    setStage("calculating");
+  }
+
   return (
     <main>
       {stage === "intro" && (
         <section className="ritual">
           <div className="ritual-bg" />
           <Mark />
-          <h1>看见命局，读懂时运。</h1>
+          <h1 className="ritual-lines"><span>看见命局</span><span>读懂时运</span></h1>
           <button className="primary" onClick={() => setStage("intake")}>
             开始排盘 <span>→</span>
           </button>
@@ -186,6 +203,17 @@ export function YiExperience() {
       )}
 
       {stage === "intake" && (
+        <section className="intake">
+          <header>
+            <button onClick={() => setStage("intro")}>← 返回</button>
+            <span>艺</span>
+            <small>生辰排盘</small>
+          </header>
+          <BirthIntake onSubmit={runBirthSubmission} />
+        </section>
+      )}
+
+      {false && (
         <section className="intake">
           <header>
             <button onClick={() => setStage("intro")}>← 返回</button>
