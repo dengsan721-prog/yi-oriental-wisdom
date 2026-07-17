@@ -221,7 +221,7 @@ describe("professional interpretation", () => {
     const relationSource = YI_RULE_SOURCES["relation.gan-zhi.v1"];
     expect(relationSource).toMatchObject({
       label: "干支关系完整规则表",
-      appliesWhen: "五合、六合、六冲、刑、害、破需相关两柱均已知；三合需至少三支已知",
+      appliesWhen: "两支关系需两处已知坐标；三合与三刑需三支齐全；自刑需同一地支出现在两处已知坐标",
       version: "1.1.0",
     });
     const relationItem = buildInterpretations(knownChart)
