@@ -22,6 +22,14 @@ describe("result navigation", () => {
     expect(switched.compatibility).toBe(withRelationship.compatibility);
   });
 
+  it("preserves the submitted second birth object after section navigation", () => {
+    const birth = { name: "乙", date: "1992-11-03", time: "18:20", location: "上海", gender: "female", timeConfidence: "exact", birthDate: { mode: "solar", year: 1992, month: 11, day: 3, isLeapMonth: false }, timeMode: "exact" } as const;
+    const submitted = resultShellReducer(createInitialResultShellState(), { type: "set-second-birth", birth });
+    const switched = resultShellReducer(submitted, { type: "select-section", section: "mirror" });
+    expect(switched.compatibility.secondBirth).toBe(birth);
+    expect(switched.compatibility).toBe(submitted.compatibility);
+  });
+
   it("opens only implemented sections and keeps reusable scroll positions", () => {
     expect(getAvailableSections()).toEqual(["portrait", "chart", "detail"]);
     const positions = createResultScrollPositions();
