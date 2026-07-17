@@ -58,6 +58,31 @@ describe("traditional self-comparison atlases", () => {
     }
   });
 
+  it("keeps every photographic choice visually distinct on a fixed source coordinate plane", () => {
+    const photographicOptions = getAtlasMethods()
+      .filter((method) => method.id !== "star")
+      .flatMap((method) => getAtlasGroups(method.id))
+      .flatMap((group) => group.options);
+    const visualKeys = photographicOptions.map((option) =>
+      `${option.image}:${JSON.stringify(option.visualFocus ?? option.hotspot)}`,
+    );
+
+    expect(new Set(visualKeys).size).toBe(photographicOptions.length);
+    for (const option of photographicOptions) {
+      expect(option.imageAspect).toBeGreaterThan(1);
+      expect(option.visualFocus ?? option.hotspot).toBeTruthy();
+    }
+
+    const faceFeatures = getAtlasGroups("face")[1].options;
+    expect(new Set(faceFeatures.map((option) => option.image))).toEqual(
+      new Set(["reference/face-feature-reference.webp"]),
+    );
+    const palmShapes = getAtlasGroups("palm")[0].options;
+    expect(new Set(palmShapes.map((option) => option.image))).toEqual(
+      new Set(["reference/palm-shape-reference.webp"]),
+    );
+  });
+
   it("translates a selected option against the real main chart without certainty claims", () => {
     const chart = calculateFourPillars({
       name: "", date: "1990-06-15", time: "09:30", location: "上海",

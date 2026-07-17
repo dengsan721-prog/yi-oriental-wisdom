@@ -49,6 +49,10 @@ test("GitHub build is the full bundled React app", async () => {
   assert.doesNotMatch(js, /getUserMedia|FileReader|type=["']file["']|capture=["']/);
   assert.match(js, /\/yi-oriental-wisdom\//);
   assert.match(js, /reference\/face-reference\.webp/);
+  assert.match(js, /reference\/face-feature-reference\.webp/);
+  assert.match(js, /reference\/palm-shape-reference\.webp/);
+  assert.match(js, /版本说明/);
+  assert.match(js, /明代佚名编纂/);
   assert.match(css, /@keyframes yi-breathe/);
   assert.match(css, /\.birth-fact-band/);
   assert.match(css, /\.professional-pillars/);
@@ -62,7 +66,10 @@ test("GitHub build is the full bundled React app", async () => {
   assert.match(css, /@media\s*\(prefers-reduced-motion:reduce\)/);
   assert.doesNotMatch(html, /href="#birth"/);
   assert.doesNotMatch(html, /function calculateChart/);
-  for (const asset of ["face-reference.webp", "mole-reference.webp", "palm-reference.webp"]) {
+  for (const asset of [
+    "face-reference.webp", "face-feature-reference.webp", "mole-reference.webp",
+    "palm-reference.webp", "palm-shape-reference.webp",
+  ]) {
     const bytes = await readFile(new URL(`../../docs/reference/${asset}`, import.meta.url));
     assert.ok(bytes.length > 50_000, `${asset} is not the verified full reference asset`);
   }
