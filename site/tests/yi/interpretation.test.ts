@@ -22,6 +22,11 @@ const unknownHourChart = calculateFourPillars({
   timeConfidence: "unknown",
 });
 
+const boundaryUnknownChart = calculateFourPillars({
+  name: "立春边界", date: "2024-02-04", time: null, location: "北京",
+  gender: "unspecified", timeConfidence: "unknown",
+});
+
 describe("professional interpretation", () => {
   it("gives every interpretation a traceable seven-layer explanation", () => {
     const overview = buildProfessionalOverview(knownChart);
@@ -33,6 +38,7 @@ describe("professional interpretation", () => {
     );
     expect(items.every(item => item.sourceReferences.length > 0)).toBe(true);
     expect(items.every(item => item.sourceRuleIds.length > 0)).toBe(true);
+    expect(items.every(item => item.pillarDependencies.length > 0)).toBe(true);
     expect(items[0]).toMatchObject({
       professionalTitle: expect.any(String),
       basis: expect.any(String),
@@ -62,8 +68,18 @@ describe("professional interpretation", () => {
     const items = buildInterpretations(unknownHourChart);
     const hourDependent = items.filter(item => item.affectedByUnknownHour);
     expect(hourDependent.length).toBeGreaterThan(0);
+    expect(hourDependent.every(item => item.pillarDependencies.includes("hour"))).toBe(true);
+    expect(items.filter(item => !item.pillarDependencies.includes("hour")).every(item => !item.affectedByUnknownHour)).toBe(true);
     expect(hourDependent.every(item => item.confidence === "limited")).toBe(true);
     expect(hourDependent.every(item => !item.basis.includes("时柱为"))).toBe(true);
+  });
+
+  it("limits every rule derived from ambiguous year or month pillars on a boundary day", () => {
+    const items = buildInterpretations(boundaryUnknownChart);
+    const boundaryDependent = items.filter(item => item.pillarDependencies.some(pillar => pillar === "year" || pillar === "month"));
+    expect(boundaryDependent.length).toBeGreaterThan(0);
+    expect(boundaryDependent.every(item => item.affectedByUnknownHour && item.confidence === "limited")).toBe(true);
+    expect(items.some(item => item.pillarDependencies.every(pillar => pillar === "day") && !item.affectedByUnknownHour)).toBe(true);
   });
 
   it("derives judgments from chart structure instead of the input year", () => {

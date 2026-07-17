@@ -65,6 +65,7 @@ export type FourPillarsResult = {
   pillars: { year: Pillar; month: Pillar; day: Pillar; hour: Pillar | null };
   elementCounts: Record<ElementName, number>;
   professional: ProfessionalChart;
+  ambiguousPillars: PillarKey[];
   confidence: "high" | "medium" | "limited";
   disclaimer: string;
 };
@@ -84,6 +85,7 @@ export type InterpretationItem = {
   sourceTradition: string;
   sourceReferences: string[];
   sourceRuleIds: string[];
+  pillarDependencies: PillarKey[];
   affectedByUnknownHour: boolean;
 };
 

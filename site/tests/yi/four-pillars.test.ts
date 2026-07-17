@@ -58,6 +58,7 @@ describe("calculateFourPillars", () => {
     expect(result.professional.tenGods).toHaveLength(8);
     expect(result.professional.tenGods.every(item => item.pillar !== "hour")).toBe(true);
     expect(result.professional.relations.every(item => !item.pillars.includes("hour"))).toBe(true);
+    expect(result.ambiguousPillars).toEqual(["hour"]);
   });
 
   it("uses the exact Li Chun instant for the standard month pillar boundary", () => {
@@ -67,5 +68,10 @@ describe("calculateFourPillars", () => {
     expect(before.pillars.month).toMatchObject({ stem: "乙", branch: "丑" });
     expect(after.pillars.year).toMatchObject({ stem: "甲", branch: "辰" });
     expect(after.pillars.month).toMatchObject({ stem: "丙", branch: "寅" });
+  });
+
+  it("records year and month ambiguity when unknown time spans a solar-term boundary", () => {
+    const result = calculateFourPillars({ name: "甲", date: "2024-02-04", time: null, location: "北京", gender: "unspecified", timeConfidence: "unknown" });
+    expect(result.ambiguousPillars).toEqual(expect.arrayContaining(["year", "month", "hour"]));
   });
 });
