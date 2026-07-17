@@ -66,6 +66,8 @@ test("GitHub build is the full bundled React app", async () => {
     const bytes = await readFile(new URL(`../../docs/reference/${asset}`, import.meta.url));
     assert.ok(bytes.length > 50_000, `${asset} is not the verified full reference asset`);
   }
+  const referenceAssets = await readdir(new URL("../../docs/reference/", import.meta.url));
+  assert.equal(referenceAssets.filter((name) => name.endsWith(".png")).length, 0, "stale PNG reference assets remain in the deployment");
 });
 
 test("GitHub build preserves deployment metadata and internal planning docs", async () => {
