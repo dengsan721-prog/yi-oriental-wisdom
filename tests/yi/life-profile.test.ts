@@ -6,6 +6,7 @@ import {
   createLifeProfile,
   lifeProfileReducer,
   loadLifeProfile,
+  getBrowserStorage,
   saveLifeProfile,
   type LifeProfile,
   type ProfileStorage,
@@ -146,6 +147,15 @@ describe("life profile", () => {
 
     expect(saveLifeProfile(storage, savedProfile)).toEqual({ ok: false, reason: "quota" });
     expect(clearLifeProfile(storage)).toEqual({ ok: false, reason: "security" });
+  });
+
+  it("returns null when an opaque origin throws while reading localStorage", () => {
+    const opaqueWindow = Object.defineProperty({}, "localStorage", {
+      get() { throw Object.assign(new Error("opaque origin"), { name: "SecurityError" }); },
+    });
+
+    expect(() => getBrowserStorage(opaqueWindow)).not.toThrow();
+    expect(getBrowserStorage(opaqueWindow)).toBeNull();
   });
 
   it("applies event, relation and action CRUD without mutating the profile", () => {

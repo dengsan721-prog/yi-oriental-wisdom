@@ -44,6 +44,11 @@ export type LifeProfileAction =
   | { type: "toggle-action"; id: string };
 
 const pad = (value: number) => String(value).padStart(2, "0");
+
+export function getBrowserStorage(source: object): ProfileStorage | null {
+  try { return (source as { localStorage?: ProfileStorage }).localStorage ?? null; }
+  catch { return null; }
+}
 const monthKey = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
 
 const monthlyThemes = ["整理边界", "积蓄能量", "表达与连接", "稳步推进", "校准方向", "照顾身心", "作出选择", "建立秩序", "完成收束", "尝试新路", "复盘关系", "为来年留白"];
