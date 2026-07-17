@@ -36,7 +36,14 @@ test("GitHub build is the full bundled React app", async () => {
   assert.doesNotMatch(js, /当前版本不做真太阳时校正/);
   assert.doesNotMatch(js, /生辰排盘/);
   assert.match(js, /出生地址/);
+  for (const professionalTerm of ["月令", "透干", "藏干", "根气", "干支关系"]) {
+    assert.match(js, new RegExp(professionalTerm));
+  }
   assert.match(css, /@keyframes yi-breathe/);
+  assert.match(css, /\.birth-fact-band/);
+  assert.match(css, /\.professional-pillars/);
+  assert.match(css, /\.element-diagnostics/);
+  assert.match(css, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(css, /@media\s*\(prefers-reduced-motion:reduce\)/);
   assert.doesNotMatch(html, /href="#birth"/);
   assert.doesNotMatch(html, /function calculateChart/);
