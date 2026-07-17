@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getDualCalendarLabel, toSolarSelection } from "../../lib/yi/calendar";
 import { getWheelOptions } from "../../lib/yi/date-picker";
 import type { BirthDateSelection, BirthInput, TimeMode } from "../../lib/yi/types";
@@ -47,13 +47,30 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
   });
   const [dateOpen, setDateOpen] = useState(false);
   const [pendingDate, setPendingDate] = useState(draft.date);
+  const dateTriggerRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
   const options = useMemo(() => getWheelOptions(pendingDate, currentYear), [pendingDate, currentYear]);
   const labels = getDualCalendarLabel(draft.date);
   const dateSummary = draft.date.mode === "solar" ? labels.solar : labels.lunar;
   const timeSummary = draft.timeMode === "unknown" ? "时柱未定，仍可排盘" : draft.timeMode === "earthly" ? getEarthlyPeriodLabel(draft.earthlyIndex) : `${String(draft.hour).padStart(2, "0")}:${String(draft.minute).padStart(2, "0")}`;
 
+  useEffect(() => {
+    if (dateOpen) cancelRef.current?.focus();
+  }, [dateOpen]);
+
+  const closeDatePicker = () => {
+    setDateOpen(false);
+    requestAnimationFrame(() => dateTriggerRef.current?.focus());
+  };
+
   const updatePending = (patch: Partial<BirthDateSelection>) => {
     const next = { ...pendingDate, ...patch };
+    if (next.mode === "solar") {
+      const clamped = clampWheelDate(pendingDate, next);
+      setPendingDate({ ...next, ...clamped, isLeapMonth: false });
+      return;
+    }
     try {
       const nextOptions = getWheelOptions(next, currentYear);
       if (!nextOptions.months.some((item) => item.value === next.month && item.isLeapMonth === next.isLeapMonth)) {
@@ -74,15 +91,23 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
         <label><span>姓名</span><input required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="请输入姓名" /></label>
         <label><span>出生地点</span><input required value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} /></label>
       </div>
-      <section className="summary-control"><span>出生日期</span><strong>{dateSummary}</strong><button type="button" onClick={() => { setPendingDate(draft.date); setDateOpen(true); }}>选择日期</button></section>
+      <section className="summary-control"><span>出生日期</span><strong>{dateSummary}</strong><button ref={dateTriggerRef} type="button" onClick={() => { setPendingDate(draft.date); setDateOpen(true); }}>选择日期</button></section>
       <TimePicker mode={draft.timeMode} hour={draft.hour} minute={draft.minute} earthlyIndex={draft.earthlyIndex} onChange={(time) => setDraft({ ...draft, timeMode: time.mode, hour: time.hour, minute: time.minute, earthlyIndex: time.earthlyIndex })} />
       <section className="date-confirm dual-confirm"><div><span>阳历</span><b>{labels.solar}</b></div><div><span>农历</span><b>{labels.lunar}</b></div><small>{timeSummary}</small></section>
       <button className="primary submit" type="submit">生成命盘 <span>→</span></button>
       {dateOpen && (
-        <div className="picker-overlay" role="dialog" aria-modal="true" aria-labelledby="date-picker-title">
+        <div className="picker-overlay" role="dialog" aria-modal="true" aria-labelledby="date-picker-title" ref={dialogRef} onKeyDown={(event) => {
+          if (event.key === "Escape") { event.preventDefault(); closeDatePicker(); return; }
+          if (event.key !== "Tab") return;
+          const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]):not([tabindex="-1"]), [tabindex="0"]') ?? []);
+          if (!focusable.length) return;
+          const first = focusable[0]; const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }}>
           <div className="picker-sheet">
-            <header><button type="button" onClick={() => setDateOpen(false)}>取消</button><h2 id="date-picker-title">选择出生日期</h2><button type="button" onClick={() => { setDraft({ ...draft, date: pendingDate }); setDateOpen(false); }}>确认</button></header>
-            <div className="calendar-switch" role="group" aria-label="历法"><button type="button" className={pendingDate.mode === "solar" ? "active" : ""} onClick={() => updatePending({ mode: "solar", isLeapMonth: false })}>阳历</button><button type="button" className={pendingDate.mode === "lunar" ? "active" : ""} onClick={() => updatePending({ mode: "lunar", isLeapMonth: false })}>农历</button></div>
+            <header><button ref={cancelRef} type="button" onClick={closeDatePicker}>取消</button><h2 id="date-picker-title">选择出生日期</h2><button type="button" onClick={() => { setDraft({ ...draft, date: pendingDate }); closeDatePicker(); }}>确认</button></header>
+            <div className="calendar-switch" role="group" aria-label="历法"><button type="button" aria-pressed={pendingDate.mode === "solar"} className={pendingDate.mode === "solar" ? "active" : ""} onClick={() => updatePending({ mode: "solar", isLeapMonth: false })}>阳历</button><button type="button" aria-pressed={pendingDate.mode === "lunar"} className={pendingDate.mode === "lunar" ? "active" : ""} onClick={() => updatePending({ mode: "lunar", isLeapMonth: false })}>农历</button></div>
             <div className="date-wheels">
               <WheelPicker label="年" value={pendingDate.year} options={options.years.map((value) => ({ value, label: `${value} 年` }))} onChange={(year) => updatePending({ year })} />
               <WheelPicker label="月" value={`${pendingDate.month}:${pendingDate.isLeapMonth ? 1 : 0}`} options={options.months.map((item) => ({ value: `${item.value}:${item.isLeapMonth ? 1 : 0}`, label: item.label }))} onChange={(value) => { const [month, leap] = value.split(":"); updatePending({ month: Number(month), isLeapMonth: leap === "1" }); }} />

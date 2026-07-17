@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "react";
 import {
   clampWheelDate,
   normalizeBirthSubmission,
   type BirthSubmissionDraft,
 } from "../../components/yi/BirthIntake";
+import { TimePicker } from "../../components/yi/TimePicker";
+import { WheelPicker } from "../../components/yi/WheelPicker";
 
 const baseInput: BirthSubmissionDraft = {
   name: "小艺",
@@ -29,5 +33,17 @@ describe("birth intake state", () => {
   it("normalizes a twelve-period selection to its representative clock time", () => {
     expect(normalizeBirthSubmission({ ...baseInput, timeMode: "earthly", hour: null, minute: null, earthlyIndex: 0 }))
       .toMatchObject({ time: "00:00", timeConfidence: "approximate" });
+  });
+
+  it("exposes only the selected wheel option in the tab order", () => {
+    const html = renderToStaticMarkup(createElement(WheelPicker<number>, { label: "年", value: 2025, options: [2024, 2025, 2026].map((value) => ({ value, label: String(value) })), onChange: () => {} }));
+    expect(html.match(/tabindex="0"/g)).toHaveLength(1);
+    expect(html.match(/tabindex="-1"/g)).toHaveLength(2);
+  });
+
+  it("announces time mode buttons as pressed", () => {
+    const html = renderToStaticMarkup(createElement(TimePicker, { mode: "unknown", hour: null, minute: null, earthlyIndex: null, onChange: () => {} }));
+    expect(html).toContain('aria-pressed="true"');
+    expect(html.match(/aria-pressed="false"/g)).toHaveLength(2);
   });
 });
