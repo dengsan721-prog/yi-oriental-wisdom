@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { TRADITIONAL_SOURCE_CATALOG } from "../../lib/yi/traditional-sources";
+import { buildAtlasReading, getAtlasGroups, getAtlasMethods, getAtlasOption } from "../../lib/yi/traditional-atlas";
+import { calculateFourPillars } from "../../lib/yi/four-pillars";
 
 describe("traditional source catalog", () => {
   it("contains every confirmed core classic with an explicit role", () => {
@@ -28,5 +30,47 @@ describe("traditional source catalog", () => {
     expect(sources.filter((source) => source.category === "相学").map((source) => source.title)).toEqual(["麻衣神相"]);
     expect(sources.filter((source) => source.category === "象数").map((source) => source.title)).toEqual(["周易", "梅花易数"]);
     expect(sources.every((source) => !source.boundary.includes("科学证明"))).toBe(true);
+  });
+});
+
+describe("traditional self-comparison atlases", () => {
+  it("ships four complete atlases with stable totals", () => {
+    expect(getAtlasMethods().map((item) => item.id)).toEqual(["face", "mole", "palm", "star"]);
+    expect(getAtlasGroups("face").flatMap((group) => group.options)).toHaveLength(10);
+    expect(getAtlasGroups("mole").flatMap((group) => group.options)).toHaveLength(12);
+    expect(getAtlasGroups("palm").flatMap((group) => group.options)).toHaveLength(10);
+    expect(getAtlasGroups("star").flatMap((group) => group.options)).toHaveLength(12);
+  });
+
+  it("gives every option seven substantial layers, a caution and a source", () => {
+    for (const method of getAtlasMethods()) {
+      for (const group of getAtlasGroups(method.id)) {
+        for (const option of group.options) {
+          expect([
+            option.professionalResult, option.traditionalBasis, option.plainLanguage,
+            option.lifeScene, option.strengthAndPitfall, option.action, option.chartComparison,
+          ].every((value) => value.length >= 12)).toBe(true);
+          expect(option.caution.length).toBeGreaterThanOrEqual(12);
+          expect(option.sourceIds.length).toBeGreaterThan(0);
+          expect(getAtlasOption(option.id)?.id).toBe(option.id);
+        }
+      }
+    }
+  });
+
+  it("translates a selected option against the real main chart without certainty claims", () => {
+    const chart = calculateFourPillars({
+      name: "", date: "1990-06-15", time: "09:30", location: "上海",
+      gender: "unspecified", timeConfidence: "exact",
+    });
+    const option = getAtlasOption("face-square")!;
+    const reading = buildAtlasReading(option, chart);
+
+    expect(reading.layers).toHaveLength(7);
+    expect(reading.layers.map((layer) => layer.label)).toEqual([
+      "传统结果", "传统依据", "白话翻译", "生活场景", "优势与误区", "行动建议", "主盘对照",
+    ]);
+    expect(reading.layers[6].text).toContain(`${chart.professional.dayMaster.stem}${chart.professional.dayMaster.element}日主`);
+    expect(JSON.stringify(reading)).not.toMatch(/注定|必然|寿命|疾病诊断/);
   });
 });
