@@ -4,6 +4,7 @@ import {
   buildLifeHome,
   clearLifeProfile,
   createLifeProfile,
+  lifeProfileReducer,
   loadLifeProfile,
   saveLifeProfile,
   type LifeProfile,
@@ -62,6 +63,25 @@ describe("life profile", () => {
     expect(profile.actions[0]?.text).not.toBe("");
   });
 
+  it("updates the complete profile when the same birthday has a changed name and gender", () => {
+    const chart = calculateFourPillars({ ...savedProfile.birth, name: "新名字", gender: "male" });
+    const profile = createLifeProfile({
+      name: "新名字",
+      birth: { ...savedProfile.birth, name: "新名字", gender: "male" },
+      chart,
+      overview: buildProfessionalOverview(chart),
+      interpretations: buildInterpretations(chart),
+      existing: savedProfile,
+      now: new Date("2026-07-17T12:00:00+08:00"),
+    });
+
+    expect(profile.name).toBe("新名字");
+    expect(profile.birth.gender).toBe("male");
+    expect(profile.events).toEqual(savedProfile.events);
+    expect(profile.relations).toEqual(savedProfile.relations);
+    expect(profile.createdAt).toBe(savedProfile.createdAt);
+  });
+
   it("returns a returning user home without exposing private birth data", () => {
     const home = buildLifeHome(savedProfile, new Date("2026-07-17T12:00:00+08:00"));
 
@@ -81,9 +101,9 @@ describe("life profile", () => {
   it("saves, loads and clears a device-only profile", () => {
     const storage = memoryStorage();
 
-    saveLifeProfile(storage, savedProfile);
+    expect(saveLifeProfile(storage, savedProfile)).toEqual({ ok: true });
     expect(loadLifeProfile(storage)).toEqual(savedProfile);
-    clearLifeProfile(storage);
+    expect(clearLifeProfile(storage)).toEqual({ ok: true });
 
     expect(storage.getItem(LIFE_PROFILE_STORAGE_KEY)).toBeNull();
     expect(loadLifeProfile(storage)).toBeNull();
@@ -93,7 +113,51 @@ describe("life profile", () => {
     const storage = memoryStorage();
     storage.setItem(LIFE_PROFILE_STORAGE_KEY, "not-json");
     expect(loadLifeProfile(storage)).toBeNull();
+    expect(storage.getItem(LIFE_PROFILE_STORAGE_KEY)).toBeNull();
     storage.setItem(LIFE_PROFILE_STORAGE_KEY, JSON.stringify({ ...savedProfile, version: 2 }));
     expect(loadLifeProfile(storage)).toBeNull();
+    expect(storage.getItem(LIFE_PROFILE_STORAGE_KEY)).toBeNull();
+  });
+
+  it.each([
+    ["birth gender", { ...savedProfile, birth: { ...savedProfile.birth, gender: "unknown" } }],
+    ["birth date", { ...savedProfile, birth: { ...savedProfile.birth, date: "yesterday" } }],
+    ["timestamp", { ...savedProfile, updatedAt: "2026" }],
+    ["annual item", { ...savedProfile, annualMap: [{ year: "2026", theme: "a", focus: "b" }] }],
+    ["monthly item", { ...savedProfile, monthlyRhythm: [{ month: "July", theme: "a", action: "b" }] }],
+    ["event item", { ...savedProfile, events: [{ id: "x", title: 3, date: "", note: "" }] }],
+    ["relation item", { ...savedProfile, relations: [{ id: "x", name: "甲", relationship: "enemy", note: "" }] }],
+    ["action item", { ...savedProfile, actions: [{ id: "x", text: "做事", done: "no" }] }],
+  ])("rejects a profile with malformed nested %s", (_label, value) => {
+    const storage = memoryStorage();
+    storage.setItem(LIFE_PROFILE_STORAGE_KEY, JSON.stringify(value));
+    expect(loadLifeProfile(storage)).toBeNull();
+    expect(storage.getItem(LIFE_PROFILE_STORAGE_KEY)).toBeNull();
+  });
+
+  it("returns failures instead of throwing when device storage rejects writes or deletes", () => {
+    const writeError = Object.assign(new Error("full"), { name: "QuotaExceededError" });
+    const deleteError = Object.assign(new Error("blocked"), { name: "SecurityError" });
+    const storage: ProfileStorage = {
+      getItem: () => null,
+      setItem: () => { throw writeError; },
+      removeItem: () => { throw deleteError; },
+    };
+
+    expect(saveLifeProfile(storage, savedProfile)).toEqual({ ok: false, reason: "quota" });
+    expect(clearLifeProfile(storage)).toEqual({ ok: false, reason: "security" });
+  });
+
+  it("applies event, relation and action CRUD without mutating the profile", () => {
+    const addedEvent = lifeProfileReducer(savedProfile, { type: "add-event", event: { id: "event-2", title: "搬家", date: "2026-09-01", note: "" } });
+    const removedEvent = lifeProfileReducer(addedEvent, { type: "delete-event", id: "event-1" });
+    const addedRelation = lifeProfileReducer(removedEvent, { type: "add-relation", relation: { id: "relation-2", name: "同事", relationship: "colleague", note: "协作" } });
+    const removedRelation = lifeProfileReducer(addedRelation, { type: "delete-relation", id: "relation-1" });
+    const toggled = lifeProfileReducer(removedRelation, { type: "toggle-action", id: "action-1" });
+
+    expect(savedProfile.events).toHaveLength(1);
+    expect(toggled.events.map(item => item.id)).toEqual(["event-2"]);
+    expect(toggled.relations.map(item => item.id)).toEqual(["relation-2"]);
+    expect(toggled.actions[0].done).toBe(true);
   });
 });

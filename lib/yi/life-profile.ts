@@ -35,6 +35,13 @@ export type LifeHomeModel = {
 };
 
 export type ProfileStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+export type StorageResult = { ok: true } | { ok: false; reason: "quota" | "security" | "unavailable" };
+export type LifeProfileAction =
+  | { type: "add-event"; event: LifeEvent }
+  | { type: "delete-event"; id: string }
+  | { type: "add-relation"; relation: LifeRelation }
+  | { type: "delete-relation"; id: string }
+  | { type: "toggle-action"; id: string };
 
 const pad = (value: number) => String(value).padStart(2, "0");
 const monthKey = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
@@ -47,6 +54,7 @@ export function createLifeProfile(input: {
   chart: FourPillarsResult;
   overview: ProfessionalOverview;
   interpretations: InterpretationItem[];
+  existing?: LifeProfile | null;
   now?: Date;
 }): LifeProfile {
   const now = input.now ?? new Date();
@@ -69,15 +77,23 @@ export function createLifeProfile(input: {
     version: 1,
     name: input.name || "访客",
     birth: input.birth,
-    createdAt: timestamp,
+    createdAt: input.existing?.createdAt ?? timestamp,
     updatedAt: timestamp,
     currentStage: stage,
     annualMap,
     monthlyRhythm,
-    events: [],
-    relations: [],
-    actions: [{ id: `action-${now.getTime()}`, text: action, done: false }],
+    events: input.existing?.events ?? [],
+    relations: input.existing?.relations ?? [],
+    actions: input.existing?.actions.length ? input.existing.actions : [{ id: `action-${now.getTime()}`, text: action, done: false }],
   };
+}
+
+export function lifeProfileReducer(profile: LifeProfile, action: LifeProfileAction): LifeProfile {
+  if (action.type === "add-event") return { ...profile, events: [...profile.events, action.event] };
+  if (action.type === "delete-event") return { ...profile, events: profile.events.filter(item => item.id !== action.id) };
+  if (action.type === "add-relation") return { ...profile, relations: [...profile.relations, action.relation] };
+  if (action.type === "delete-relation") return { ...profile, relations: profile.relations.filter(item => item.id !== action.id) };
+  return { ...profile, actions: profile.actions.map(item => item.id === action.id ? { ...item, done: !item.done } : item) };
 }
 
 export function buildLifeHome(profile: LifeProfile, now = new Date()): LifeHomeModel {
@@ -95,29 +111,70 @@ export function buildLifeHome(profile: LifeProfile, now = new Date()): LifeHomeM
   };
 }
 
-function isLifeProfile(value: unknown): value is LifeProfile {
-  if (!value || typeof value !== "object") return false;
-  const profile = value as Partial<LifeProfile>;
-  return profile.version === 1 && typeof profile.name === "string" && !!profile.birth &&
-    Array.isArray(profile.annualMap) && Array.isArray(profile.monthlyRhythm) &&
-    Array.isArray(profile.events) && Array.isArray(profile.relations) && Array.isArray(profile.actions);
+const isObject = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object";
+const isString = (value: unknown): value is string => typeof value === "string";
+const isTimestamp = (value: unknown) => isString(value) && /^\d{4}-\d{2}-\d{2}T/.test(value) && !Number.isNaN(Date.parse(value));
+function isDate(value: unknown, optional = false) {
+  if (optional && value === "") return true;
+  if (!isString(value) || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+const hasStrings = (value: Record<string, unknown>, keys: string[]) => keys.every(key => isString(value[key]));
+
+function isBirthInput(value: unknown): value is BirthInput {
+  if (!isObject(value) || !hasStrings(value, ["name", "date", "location", "gender", "timeConfidence"])) return false;
+  return isDate(value.date) && (value.time === null || (isString(value.time) && /^([01]\d|2[0-3]):[0-5]\d$/.test(value.time))) &&
+    ["female", "male", "unspecified"].includes(value.gender as string) && ["exact", "approximate", "unknown"].includes(value.timeConfidence as string);
 }
 
-export function saveLifeProfile(storage: ProfileStorage, profile: LifeProfile) {
-  storage.setItem(LIFE_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+function isLifeProfile(value: unknown): value is LifeProfile {
+  if (!isObject(value) || value.version !== 1 || !hasStrings(value, ["name", "createdAt", "updatedAt", "currentStage"]) || !isBirthInput(value.birth)) return false;
+  if (!isTimestamp(value.createdAt) || !isTimestamp(value.updatedAt)) return false;
+  if (!Array.isArray(value.annualMap) || !value.annualMap.every(item => isObject(item) && Number.isInteger(item.year) && hasStrings(item, ["theme", "focus"]))) return false;
+  if (!Array.isArray(value.monthlyRhythm) || !value.monthlyRhythm.every(item => isObject(item) && isString(item.month) && /^\d{4}-(0[1-9]|1[0-2])$/.test(item.month) && hasStrings(item, ["theme", "action"]))) return false;
+  if (!Array.isArray(value.events) || !value.events.every(item => isObject(item) && hasStrings(item, ["id", "title", "date", "note"]) && isDate(item.date, true))) return false;
+  if (!Array.isArray(value.relations) || !value.relations.every(item => isObject(item) && hasStrings(item, ["id", "name", "relationship", "note"]) && ["partner", "family", "friend", "colleague", "other"].includes(item.relationship as string))) return false;
+  return Array.isArray(value.actions) && value.actions.every(item => isObject(item) && hasStrings(item, ["id", "text"]) && typeof item.done === "boolean");
+}
+
+function storageFailure(error: unknown): StorageResult {
+  const name = isObject(error) && isString(error.name) ? error.name : "";
+  if (name === "QuotaExceededError") return { ok: false, reason: "quota" };
+  if (name === "SecurityError") return { ok: false, reason: "security" };
+  return { ok: false, reason: "unavailable" };
+}
+
+export function saveLifeProfile(storage: ProfileStorage, profile: LifeProfile): StorageResult {
+  try {
+    storage.setItem(LIFE_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    return { ok: true };
+  } catch (error) {
+    return storageFailure(error);
+  }
 }
 
 export function loadLifeProfile(storage: ProfileStorage): LifeProfile | null {
+  let raw: string | null = null;
   try {
-    const raw = storage.getItem(LIFE_PROFILE_STORAGE_KEY);
+    raw = storage.getItem(LIFE_PROFILE_STORAGE_KEY);
     if (!raw) return null;
     const profile: unknown = JSON.parse(raw);
-    return isLifeProfile(profile) ? profile : null;
+    if (isLifeProfile(profile)) return profile;
+    clearLifeProfile(storage);
+    return null;
   } catch {
+    if (raw) clearLifeProfile(storage);
     return null;
   }
 }
 
-export function clearLifeProfile(storage: ProfileStorage) {
-  storage.removeItem(LIFE_PROFILE_STORAGE_KEY);
+export function clearLifeProfile(storage: ProfileStorage): StorageResult {
+  try {
+    storage.removeItem(LIFE_PROFILE_STORAGE_KEY);
+    return { ok: true };
+  } catch (error) {
+    return storageFailure(error);
+  }
 }
