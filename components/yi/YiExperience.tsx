@@ -6,19 +6,37 @@ import { buildInterpretations, buildProfessionalOverview } from "../../lib/yi/in
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 import { BirthIntake, type BirthSubmission } from "./BirthIntake";
 import { ResultShell } from "./ResultShell";
+import { LifeHome } from "./LifeHome";
+import { clearLifeProfile, createLifeProfile, loadLifeProfile, saveLifeProfile, type LifeProfile } from "../../lib/yi/life-profile";
 
-type Stage = "intro" | "intake" | "calculating" | "result";
+type Stage = "loading" | "intro" | "intake" | "calculating" | "result" | "home";
 
 function Mark() {
   return <div className="yi-mark" aria-label="艺"><span>艺</span><i /><b /></div>;
 }
 
 export function YiExperience() {
-  const [stage, setStage] = useState<Stage>("intro");
+  const [stage, setStage] = useState<Stage>("loading");
   const [name, setName] = useState("");
   const [calcStep, setCalcStep] = useState(0);
   const [result, setResult] = useState<FourPillarsResult | null>(null);
   const [birth, setBirth] = useState<BirthInput | null>(null);
+  const [profile, setProfile] = useState<LifeProfile | null>(null);
+
+  useEffect(() => {
+    const restoreTimer = window.setTimeout(() => {
+      const saved = loadLifeProfile(window.localStorage);
+      if (saved) {
+        setProfile(saved);
+        setName(saved.name);
+        setBirth(saved.birth);
+        const savedResult = calculateFourPillars(saved.birth);
+        setResult(savedResult);
+        setStage("home");
+      } else setStage("intro");
+    }, 0);
+    return () => window.clearTimeout(restoreTimer);
+  }, []);
 
   useEffect(() => {
     if (stage !== "calculating") return;
@@ -41,7 +59,35 @@ export function YiExperience() {
     setStage("calculating");
   }
 
+  function saveAndOpenHome() {
+    if (!result || !birth) return;
+    if (profile && profile.birth.date === birth.date && profile.birth.time === birth.time && profile.birth.location === birth.location) {
+      setStage("home");
+      return;
+    }
+    const next = createLifeProfile({ name, birth, chart: result, overview: buildProfessionalOverview(result), interpretations: buildInterpretations(result) });
+    saveLifeProfile(window.localStorage, next);
+    setProfile(next);
+    setStage("home");
+  }
+
+  function updateProfile(next: LifeProfile) {
+    saveLifeProfile(window.localStorage, next);
+    setProfile(next);
+  }
+
+  function removeProfile() {
+    clearLifeProfile(window.localStorage);
+    setProfile(null);
+    setName("");
+    setBirth(null);
+    setResult(null);
+    setStage("intro");
+  }
+
   return <main>
+    {stage === "loading" && <section className="calculating"><Mark /><p>正在读取本机档案</p></section>}
+    {stage === "home" && profile && <LifeHome profile={profile} onChange={updateProfile} onClear={removeProfile} onViewReport={() => setStage("result")} />}
     {stage === "intro" && <section className="ritual">
       <div className="ritual-bg" /><Mark />
       <h1 className="ritual-lines"><span>看见命局</span><span>读懂时运</span></h1>
@@ -62,6 +108,7 @@ export function YiExperience() {
       overview={buildProfessionalOverview(result)}
       interpretations={buildInterpretations(result)}
       onRestart={() => setStage("intake")}
+      onSaveHome={saveAndOpenHome}
     />}
   </main>;
 }
