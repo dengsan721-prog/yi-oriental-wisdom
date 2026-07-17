@@ -1,353 +1,76 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta name="theme-color" content="#061019" />
-    <title>艺｜东方人生智慧</title>
-    <meta
-      name="description"
-      content="以出生信息建立专业命盘，把传统理论转化为可理解、可行动的人生观察。"
-    />
-    <style>
-      :root {
-        --ink: #061019;
-        --panel: #0d202b;
-        --gold: #cbb27a;
-        --mist: #d8e7eb;
-        --text: #f4f1e8;
-        --muted: #9cb0b8;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      html {
-        scroll-behavior: smooth;
-        overflow-x: hidden;
-      }
-      body {
-        margin: 0;
-        min-width: 0;
-        overflow-x: hidden;
-        background: radial-gradient(circle at 50% 0, #153748, var(--ink) 38%);
-        color: var(--text);
-        font-family:
-          -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
-          sans-serif;
-      }
-      button,
-      input {
-        font: inherit;
-      }
-      button,
-      a {
-        min-height: 44px;
-      }
-      .hero {
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        padding: 36px 18px;
-        text-align: center;
-      }
-      .hero-inner {
-        width: min(760px, 100%);
-      }
-      .mark {
-        width: 150px;
-        height: 150px;
-        margin: auto;
-        border: 1px solid #cbb27a66;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        color: #eddfbc;
-        font: 88px serif;
-        box-shadow: 0 0 72px #75c5da25;
-      }
-      .hero h1 {
-        font: 400 clamp(38px, 7vw, 64px) serif;
-        letter-spacing: 0.08em;
-      }
-      .hero h1 span {
-        display: block;
-      }
-      .hero p,
-      .muted {
-        color: var(--muted);
-        line-height: 1.75;
-      }
-      .primary {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-top: 18px;
-        padding: 0 25px;
-        border-radius: 999px;
-        background: var(--mist);
-        color: #09202c;
-        font-weight: 700;
-        text-decoration: none;
-      }
-      .shell {
-        width: min(1080px, calc(100% - 36px));
-        margin: auto;
-        padding: 72px 0;
-      }
-      .eyebrow {
-        color: var(--gold);
-        font-size: 12px;
-        letter-spacing: 0.14em;
-      }
-      .shell h2 {
-        font: 400 clamp(32px, 5vw, 52px) serif;
-        margin: 10px 0;
-      }
-      .intake,
-      .sections {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-        margin: 34px 0;
-      }
-      .card {
-        padding: 22px;
-        border: 1px solid #ffffff14;
-        border-radius: 16px;
-        background: var(--panel);
-      }
-      .card h3 {
-        margin-top: 0;
-        font: 400 23px serif;
-      }
-      .calendar {
-        display: flex;
-        gap: 8px;
-      }
-      .calendar button,
-      .unknown {
-        border: 1px solid #ffffff20;
-        border-radius: 10px;
-        padding: 0 16px;
-        background: #ffffff08;
-        color: var(--text);
-      }
-      .calendar button:first-child {
-        background: var(--mist);
-        color: #09202c;
-      }
-      .wheels {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-        margin-top: 18px;
-      }
-      .wheel {
-        height: 132px;
-        overflow: hidden;
-        text-align: center;
-        border-block: 1px solid #ffffff14;
-        color: #748a94;
-      }
-      .wheel b {
-        display: block;
-        margin: 44px 0;
-        padding: 10px;
-        border-radius: 8px;
-        background: #ffffff0a;
-        color: var(--text);
-      }
-      .unknown {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        margin-top: 16px;
-      }
-      .unknown input {
-        width: 20px;
-        height: 20px;
-      }
-      .notice {
-        padding: 18px;
-        border-left: 2px solid var(--gold);
-        background: #ffffff05;
-        color: var(--muted);
-        line-height: 1.7;
-      }
-      .result-preview nav {
-        display: flex;
-        gap: 6px;
-        overflow-x: auto;
-        padding: 10px 0;
-      }
-      .result-preview nav a {
-        display: flex;
-        align-items: center;
-        white-space: nowrap;
-        padding: 0 14px;
-        border-radius: 9px;
-        color: var(--muted);
-        text-decoration: none;
-        background: #ffffff06;
-      }
-      .result-preview nav a:focus-visible,
-      .primary:focus-visible,
-      button:focus-visible,
-      input:focus-visible {
-        outline: 2px solid var(--gold);
-        outline-offset: 3px;
-      }
-      .sections article {
-        min-height: 145px;
-      }
-      .sections small {
-        color: var(--gold);
-      }
-      .sections p {
-        color: var(--muted);
-        line-height: 1.65;
-      }
-      .source {
-        margin-top: 12px;
-        padding-top: 12px;
-        border-top: 1px solid #ffffff12;
-        color: #b9c5c9;
-      }
-      footer {
-        padding: 32px 18px;
-        text-align: center;
-        border-top: 1px solid #ffffff12;
-        color: #78909a;
-        font-size: 12px;
-      }
-      @media (max-width: 760px) {
-        .intake,
-        .sections {
-          grid-template-columns: 1fr;
-        }
-        .hero {
-          min-height: 90vh;
-        }
-        .shell {
-          padding-top: 54px;
-        }
-        .wheels {
-          gap: 5px;
-        }
-        .card {
-          padding: 18px;
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        html {
-          scroll-behavior: auto;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <header class="hero">
-      <div class="hero-inner">
-        <div class="mark" aria-label="艺">艺</div>
-        <h1><span>看见命局</span><span>读懂时运</span></h1>
-        <p>从准确的出生坐标出发，理解自身节律、关系互动与当下可做的事。</p>
-        <a class="primary" href="https://yi-oriental-wisdom.dengsan721.chatgpt.site">开始排盘（进入在线产品）&nbsp; →</a>
-      </div>
-    </header>
-    <main>
-      <section class="shell" id="birth" aria-labelledby="birth-title">
-        <span class="eyebrow">建立出生坐标</span>
-        <h2 id="birth-title">阳历与农历，清楚录入</h2>
-        <p class="muted">
-          正式计算会校验历法并完成阳历、农历转换；年份、月份、日期采用三列滚轮，移动端也能单手操作。
-        </p>
-        <div class="intake">
-          <article class="card">
-            <h3>选择历法</h3>
-            <div class="calendar" role="group" aria-label="历法选择">
-              <button type="button">阳历</button
-              ><button type="button">农历</button>
-            </div>
-            <div class="wheels" aria-label="年月日三列滚轮示意">
-              <div class="wheel"><b>年份</b></div>
-              <div class="wheel"><b>月份</b></div>
-              <div class="wheel"><b>日期</b></div>
-            </div>
-          </article>
-          <article class="card">
-            <h3>出生时辰</h3>
-            <p class="muted">
-              知道具体时间时，可继续选择小时与分钟；不知道时也可以完成基础排盘。
-            </p>
-            <label class="unknown"><input type="checkbox" />不知道时辰</label>
-            <p class="notice">
-              未知时辰不会阻止排盘。涉及时柱等依赖时辰的内容会隐藏确定性表述，并明确影响范围。
-            </p>
-          </article>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#061019" />
+  <title>艺｜东方人生智慧</title>
+  <meta name="description" content="在 GitHub Pages 直接完成出生信息录入、四柱排盘与生活化解读。" />
+  <style>
+    :root{--ink:#061019;--panel:#0d202b;--gold:#cbb27a;--mist:#d8e7eb;--text:#f4f1e8;--muted:#9cb0b8;--line:#ffffff17}*{box-sizing:border-box}html{scroll-behavior:smooth;overflow-x:hidden}body{margin:0;background:radial-gradient(circle at 50% 0,#153748,var(--ink) 38%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}button,input,select{font:inherit}button,a,select,input{min-height:44px}.hero{min-height:100vh;display:grid;place-items:center;padding:36px 18px;text-align:center}.mark{width:145px;height:145px;margin:auto;border:1px solid #cbb27a66;border-radius:50%;display:grid;place-items:center;color:#eddfbc;font:86px serif;box-shadow:0 0 72px #75c5da25}.hero h1{font:400 clamp(38px,7vw,64px) serif;letter-spacing:.08em}.hero h1 span{display:block}.muted,.hero p{color:var(--muted);line-height:1.75}.primary{display:inline-flex;align-items:center;justify-content:center;margin-top:18px;padding:0 25px;border:0;border-radius:999px;background:var(--mist);color:#09202c;font-weight:700;text-decoration:none;cursor:pointer}.shell{width:min(1080px,calc(100% - 32px));margin:auto;padding:64px 0}.eyebrow{color:var(--gold);font-size:12px;letter-spacing:.14em}.shell h2{font:400 clamp(32px,5vw,52px) serif;margin:10px 0}.card{padding:22px;border:1px solid var(--line);border-radius:18px;background:var(--panel)}form{display:grid;gap:18px;margin-top:28px}.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.field span{display:block;margin-bottom:8px;color:var(--muted);font-size:13px}.field input,.field select{width:100%;padding:0 12px;border:1px solid var(--line);border-radius:11px;background:#071821;color:var(--text)}.triple{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:8px}.mode-row{display:flex;gap:8px;flex-wrap:wrap}.mode-row label{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 13px;border:1px solid var(--line);border-radius:10px;background:#ffffff06}.notice{padding:16px;border-left:2px solid var(--gold);background:#ffffff05;color:var(--muted);line-height:1.7}.result{display:none}.result.visible{display:block}.result-head{display:flex;justify-content:space-between;gap:18px;align-items:end}.pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:24px 0}.pillar{text-align:center;padding:18px 8px;border:1px solid var(--line);border-radius:15px;background:linear-gradient(#102531,#091923)}.pillar small{color:var(--muted)}.pillar b{display:block;font:38px serif;color:#ead9b2;margin:10px 0}.tabs{display:flex;gap:7px;overflow-x:auto;padding:10px 0;position:sticky;top:0;background:#061019e8;z-index:5}.tabs button{white-space:nowrap;border:1px solid var(--line);border-radius:99px;padding:0 15px;background:#ffffff06;color:var(--muted)}.tabs button.active{background:var(--mist);color:#09202c}.panel{display:none}.panel.active{display:block}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.reading h3{font:400 23px serif;margin:0 0 10px}.reading b{color:#ead9b2}.reading p{color:var(--muted);line-height:1.7}.source{border-top:1px solid var(--line);padding-top:12px;color:#c4d0d4;font-size:13px}footer{padding:32px 18px;text-align:center;border-top:1px solid var(--line);color:#78909a;font-size:12px}button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:3px}@media(max-width:700px){.form-grid,.grid{grid-template-columns:1fr}.pillars{grid-template-columns:repeat(4,1fr)}.pillar b{font-size:31px}.shell{padding:48px 0}.result-head{display:block}}@media(max-width:420px){.pillar{padding:13px 4px}.pillar b{font-size:27px}.triple{gap:5px}.card{padding:17px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <div class="mark" aria-label="艺">艺</div>
+      <h1><span>看见命局</span><span>读懂时运</span></h1>
+      <p>专业命理保留依据，复杂术语翻译成现实生活中的场景与行动。</p>
+      <a class="primary" href="#birth">开始排盘&nbsp; →</a>
+    </div>
+  </header>
+  <main>
+    <section class="shell" id="birth" aria-labelledby="birth-title">
+      <span class="eyebrow">建立出生坐标</span>
+      <h2 id="birth-title">用最少操作完成录入</h2>
+      <form id="birth-form" class="card">
+        <div class="form-grid">
+          <label class="field"><span>姓名（选填）</span><input id="name" autocomplete="name" placeholder="留空则称为访客" /></label>
+          <label class="field"><span>历法</span><select id="calendar-mode"><option value="solar">阳历</option><option value="lunar">农历</option></select></label>
         </div>
-      </section>
-      <section class="shell result-preview" aria-labelledby="preview-title">
-        <span class="eyebrow">报告结构说明</span>
-        <h2 id="preview-title">每一条判断，都能看见依据</h2>
-        <p class="notice">
-          此静态页面只说明报告结构，不展示预设个人数据，也不把固定样例当作计算结果。完成出生信息校验后，系统才会生成对应内容。
-        </p>
-        <nav aria-label="结果分区">
-          <a href="#portrait">人生画像</a><a href="#chart">专业命盘</a
-          ><a href="#detail">生活详批</a><a href="#fortune">大运流年</a
-          ><a href="#mirror">东方镜像</a><a href="#compatibility">关系合盘</a
-          ><a href="#tradition">传统技法</a>
-        </nav>
-        <div class="sections">
-          <article class="card" id="portrait">
-            <small>01</small>
-            <h3>人生画像</h3>
-            <p>先用白话概括稳定倾向、当下节律与行动重点。</p>
-          </article>
-          <article class="card" id="chart">
-            <small>02</small>
-            <h3>专业命盘</h3>
-            <p>呈现四柱、五行、十神与格局信息，同时标记历法和时间置信度。</p>
-          </article>
-          <article class="card" id="detail">
-            <small>03</small>
-            <h3>生活详批</h3>
-            <p>
-              <b>专业结论</b
-              >之后依次给出命盘依据、白话翻译、生活场景、东方镜像、行动建议与提醒。
-            </p>
-            <div class="source">
-              <b>理论依据</b>：模块底部显示简要出处，完整依据可按需展开。
-            </div>
-          </article>
-          <article class="card" id="fortune">
-            <small>04</small>
-            <h3>大运流年</h3>
-            <p>按阶段观察趋势与选择，不用单一事件替代真实人生。</p>
-          </article>
-          <article class="card" id="mirror">
-            <small>05</small>
-            <h3>东方镜像</h3>
-            <p>
-              人物和动物原型只用于比较具体维度，不宣称命运相同，不使用贬损标签。
-            </p>
-          </article>
-          <article class="card" id="compatibility">
-            <small>06</small>
-            <h3>关系合盘</h3>
-            <p>观察伴侣、亲子、伙伴与朋友之间的互动节奏和可执行沟通建议。</p>
-          </article>
-          <article class="card" id="tradition">
-            <small>07</small>
-            <h3>传统技法</h3>
-            <p>区分主结论与辅助观察，并说明适用边界。</p>
-          </article>
+        <div class="field"><span>出生年月日（上下滑动选择）</span><div class="triple"><select id="birth-year" aria-label="出生年份"></select><select id="birth-month" aria-label="出生月份"></select><select id="birth-day" aria-label="出生日期"></select></div></div>
+        <div class="form-grid">
+          <label class="field"><span>出生小时</span><select id="birth-hour"></select></label>
+          <label class="field"><span>出生分钟</span><select id="birth-minute"></select></label>
         </div>
-      </section>
-    </main>
-    <footer>
-      传统文化体验与自我观察参考，不作为医疗、法律、投资或重大人生决策依据。
-    </footer>
-  </body>
+        <div class="mode-row"><label><input id="unknown-hour" type="checkbox" />不知道时辰</label></div>
+        <p class="notice" id="calendar-note">阳历日期会同步换算农历；选择农历时，系统先换算为阳历再排盘。</p>
+        <button class="primary" type="submit">生成我的命盘</button>
+      </form>
+    </section>
+
+    <section class="shell result" id="calculated-result" aria-live="polite">
+      <div class="result-head"><div><span class="eyebrow">东方人生画像</span><h2 id="result-title">命盘结果</h2></div><p class="muted" id="dual-date"></p></div>
+      <div class="pillars" id="pillars"></div>
+      <nav class="tabs" aria-label="结果分区" id="tabs">
+        <button type="button" data-panel="overview" class="active">命理总览</button><button type="button" data-panel="detail">专业详批</button><button type="button" data-panel="fortune">人生节奏</button><button type="button" data-panel="tradition">传统技法</button>
+      </nav>
+      <section class="panel active" id="overview"></section>
+      <section class="panel" id="detail"></section>
+      <section class="panel" id="fortune"></section>
+      <section class="panel" id="tradition"></section>
+    </section>
+  </main>
+  <footer>传统文化体验与自我观察参考，不作为医疗、法律、投资或重大人生决策依据。</footer>
+
+  <script type="module">
+    import { Solar, Lunar } from "./vendor/lunar/index.mjs";
+    const stems=["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"], branches=["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"];
+    const stemElement={甲:"木",乙:"木",丙:"火",丁:"火",戊:"土",己:"土",庚:"金",辛:"金",壬:"水",癸:"水"};
+    const branchElement={子:"水",丑:"土",寅:"木",卯:"木",辰:"土",巳:"火",午:"火",未:"土",申:"金",酉:"金",戌:"土",亥:"水"};
+    const elementStory={木:["生长型创造者","你倾向先找到空间，再持续生长。","把大目标拆成每周可见的新进展。"],火:["点燃型表达者","你擅长让事情获得温度、速度与关注。","重要决定前给热情增加一晚冷静期。"],土:["稳定型建设者","你重视可落地、可持续和彼此信任。","稳定之外，也为新机会保留小范围试验。"],金:["清晰型判断者","你善于分辨边界、标准和真正重要的部分。","表达判断时先说明共同目标，再提出标准。"],水:["流动型洞察者","你善于观察变化，在复杂环境中寻找路径。","把想法写成下一步行动，避免长期停在观察。"]};
+    const zodiac={子:"鼠",丑:"牛",寅:"虎",卯:"兔",辰:"龙",巳:"蛇",午:"马",未:"羊",申:"猴",酉:"鸡",戌:"狗",亥:"猪"};
+    const $=id=>document.getElementById(id);
+    function fillSelect(select,values,label){select.innerHTML=values.map(v=>`<option value="${v}">${v}${label}</option>`).join("")}
+    const now=new Date(); fillSelect($("birth-year"),Array.from({length:127},(_,i)=>1900+i),"年"); $("birth-year").value="1990"; fillSelect($("birth-month"),Array.from({length:12},(_,i)=>i+1),"月"); $("birth-month").value="6"; fillSelect($("birth-hour"),Array.from({length:24},(_,i)=>i),"时"); $("birth-hour").value="12"; fillSelect($("birth-minute"),Array.from({length:60},(_,i)=>i),"分");
+    function refreshDays(){const y=+$('birth-year').value,m=+$('birth-month').value,mode=$('calendar-mode').value;let count=31;if(mode==='solar')count=new Date(y,m,0).getDate();else{try{count=Lunar.fromYmd(y,m,1).getMonth()===m?30:29}catch{count=30}}const old=+$('birth-day').value||15;fillSelect($('birth-day'),Array.from({length:count},(_,i)=>i+1),"日");$('birth-day').value=String(Math.min(old,count))}
+    refreshDays(); $('birth-year').onchange=refreshDays; $('birth-month').onchange=refreshDays; $('calendar-mode').onchange=refreshDays;
+    $('unknown-hour').onchange=e=>{$('birth-hour').disabled=e.target.checked;$('birth-minute').disabled=e.target.checked};
+    function calculateChart(input){let solar;if(input.mode==='lunar'){solar=Lunar.fromYmd(input.year,input.month,input.day).getSolar()}else{solar=Solar.fromYmd(input.year,input.month,input.day)}const hour=input.unknown?12:input.hour,minute=input.unknown?0:input.minute;const lunar=Solar.fromYmdHms(solar.getYear(),solar.getMonth(),solar.getDay(),hour,minute,0).getLunar();const eight=lunar.getEightChar();return{solar,lunar,eight,pillars:[eight.getYear(),eight.getMonth(),eight.getDay(),input.unknown?null:eight.getTime()]}}
+    function card(title,professional,plain,scenario,action,source){return `<article class="card reading"><h3>${title}</h3><p><b>专业结论：</b>${professional}</p><p><b>白话翻译：</b>${plain}</p><p><b>生活场景：</b>${scenario}</p><p><b>行动建议：</b>${action}</p><div class="source"><b>理论依据：</b>${source}</div></article>`}
+    function renderResult(result,name,unknown){const counts={木:0,火:0,土:0,金:0,水:0};result.pillars.filter(Boolean).forEach(p=>{counts[stemElement[p[0]]]++;counts[branchElement[p[1]]]++});const dominant=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0],story=elementStory[dominant];$('result-title').textContent=`${name||'访客'}的命盘 · ${story[0]}`;$('dual-date').textContent=`阳历 ${result.solar.toYmd()}｜农历 ${result.lunar.getMonthInChinese()}月${result.lunar.getDayInChinese()}${unknown?'｜时柱未定':''}`;$('pillars').innerHTML=result.pillars.map((p,i)=>`<article class="pillar"><small>${['年柱','月柱','日柱','时柱'][i]}</small><b>${p||'未定'}</b><small>${p?stemElement[p[0]]+'·'+branchElement[p[1]]:'不知道时辰'}</small></article>`).join('');$('overview').innerHTML=`<div class="grid">${card('五行结构',`当前可见结构以${dominant}为主，计数 ${counts[dominant]}`,story[1],`面对新任务时，你可能更习惯使用“${dominant}”对应的方式组织资源。`,story[2],'子平法·四柱五行结构观察｜结果为传统文化参考')}${card('生肖镜像',`${zodiac[result.pillars[0][1]]}年，年柱为${result.pillars[0]}`,`生肖提供大众熟悉的关系语言，但不覆盖完整八字。`,`在群体关系中，可观察自己如何建立信任与边界。`,`把生肖作为理解入口，再回到日主、十神与现实经历核对。`,'年支生肖民俗体系｜辅助观察')}</div>`;$('detail').innerHTML=`<div class="grid">${card('表达与行动',`日柱为${result.pillars[2]}，日干属${stemElement[result.pillars[2][0]]}`,story[1],`工作或关系中，你常会以${dominant}的方式回应变化。`,story[2],'子平法·日主与五行关系')}${card('时辰边界',unknown?'时柱未定，不输出依赖时柱的确定判断':`时柱为${result.pillars[3]}`,unknown?'不知道时辰仍可观察年、月、日三柱的稳定信息。':'时柱用于补充晚景、行动落点与内在愿景。',unknown?'涉及子女、晚年、具体起运时点时，需要补充出生时间。':'当计划与现实有落差时，可观察时柱体现的行动方式。',unknown?'保留不确定性，不用正午代替真实时辰。':'将时柱作为补充，不单独决定人生。','子平法·时柱｜未知时辰降置信度')}</div>`;$('fortune').innerHTML=card('人生节奏',unknown?'时辰未知，暂不生成精确起运年份':'当前页面先展示稳定命盘结构，不用单一年份承诺事件。',unknown?'补充时辰后才能进一步计算大运起运时间。':'大运用于观察阶段气候，不代表事件必然发生。','先记录正在经历的事业、关系和生活变化，再与阶段趋势核对。','用季度行动复盘代替吉凶焦虑。','子平法·大运流年｜需结合性别、时辰与节气');$('tradition').innerHTML=`<div class="grid">${card('太阳星座',result.solar.getXingZuo(),`星座是年轻人熟悉的表达入口。`,`可以用来对照自己的表达、关系和压力反应。`,`若与八字结论不同，把它视为不同观察角度。`,'现代星座文化｜辅助参照')}${card('传统技法边界','称骨需要完整出生时辰；生肖与星座只作辅助。','传统技法帮助形成记忆，但不替代四柱主盘。','同一个人可能在不同技法里看到不同侧面。','优先核对真实经历，不把标签当成命运。','民俗辅助体系｜不与八字主结论混算')}</div>`;$('calculated-result').classList.add('visible');$('calculated-result').scrollIntoView({behavior:'smooth'})}
+    $('birth-form').addEventListener('submit',e=>{e.preventDefault();try{const input={mode:$('calendar-mode').value,year:+$('birth-year').value,month:+$('birth-month').value,day:+$('birth-day').value,hour:+$('birth-hour').value,minute:+$('birth-minute').value,unknown:$('unknown-hour').checked};renderResult(calculateChart(input),$('name').value.trim(),input.unknown)}catch(error){$('calendar-note').textContent=`日期无法转换：${error.message}`}});
+    $('tabs').addEventListener('click',e=>{const button=e.target.closest('button[data-panel]');if(!button)return;document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('active',x===button));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===button.dataset.panel))});
+  </script>
+</body>
 </html>
