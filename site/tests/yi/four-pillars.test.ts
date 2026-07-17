@@ -37,9 +37,11 @@ describe("calculateFourPillars", () => {
       expect.objectContaining({ pillar: "year", position: "branch", symbol: "丁", tenGod: "七杀" }),
       expect.objectContaining({ pillar: "year", position: "branch", symbol: "己", tenGod: "偏印" }),
     ]));
-    expect(result.professional.relations.every(item => item.symbols[0] !== item.symbols[1])).toBe(true);
     expect(result.professional.relations).toContainEqual(expect.objectContaining({
-      type: "branch-clash", pillars: ["day", "hour"], symbols: ["亥", "巳"],
+      type: "branch-punishment", pillars: ["year", "month"], symbols: ["午", "午"], label: "午午自刑",
+    }));
+    expect(result.professional.relations).toContainEqual(expect.objectContaining({
+      type: "branch-clash", pillars: ["day", "hour"], symbols: ["巳", "亥"], label: "巳亥相冲",
     }));
   });
 
