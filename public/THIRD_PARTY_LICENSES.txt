@@ -1,5 +1,4 @@
 lunar-typescript (6tail)
-Project attribution: Copyright (c) 2019 6tail
 
 MIT License
 
