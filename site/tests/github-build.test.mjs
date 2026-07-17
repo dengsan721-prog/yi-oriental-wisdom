@@ -47,6 +47,8 @@ test("GitHub build is the full bundled React app", async () => {
   }
   assert.doesNotMatch(js, /称骨/);
   assert.doesNotMatch(js, /getUserMedia|FileReader|type=["']file["']|capture=["']/);
+  assert.match(js, /\/yi-oriental-wisdom\//);
+  assert.match(js, /reference\/face-reference\.webp/);
   assert.match(css, /@keyframes yi-breathe/);
   assert.match(css, /\.birth-fact-band/);
   assert.match(css, /\.professional-pillars/);
@@ -60,6 +62,10 @@ test("GitHub build is the full bundled React app", async () => {
   assert.match(css, /@media\s*\(prefers-reduced-motion:reduce\)/);
   assert.doesNotMatch(html, /href="#birth"/);
   assert.doesNotMatch(html, /function calculateChart/);
+  for (const asset of ["face-reference.webp", "mole-reference.webp", "palm-reference.webp"]) {
+    const bytes = await readFile(new URL(`../../docs/reference/${asset}`, import.meta.url));
+    assert.ok(bytes.length > 50_000, `${asset} is not the verified full reference asset`);
+  }
 });
 
 test("GitHub build preserves deployment metadata and internal planning docs", async () => {
@@ -87,7 +93,8 @@ test("GitHub build publishes the lunar-typescript MIT notice", async () => {
   );
 
   assert.match(notice, /lunar-typescript/);
-  assert.match(notice, /Copyright \(c\) 2019 6tail/);
+  assert.match(notice, /Copyright \(c\) 2020 6tail/);
+  assert.doesNotMatch(notice, /Copyright \(c\) 2019 6tail/);
   assert.match(notice, /Permission is hereby granted, free of charge/);
   assert.match(notice, /THE SOFTWARE IS PROVIDED "AS IS"/);
 });

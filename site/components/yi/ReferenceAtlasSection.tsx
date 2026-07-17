@@ -1,6 +1,7 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- static GitHub Pages assets use the configured Vite base path */
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { YI_REFERENCE_SOURCES } from "../../lib/yi/sources";
 import { buildAtlasReading, getAtlasGroups, getAtlasMethods, type AtlasMethodId } from "../../lib/yi/traditional-atlas";
 import { getTraditionalSource } from "../../lib/yi/traditional-sources";
@@ -24,7 +25,8 @@ export function ReferenceAtlasSection({ chart }: { chart: FourPillarsResult; bir
   const [selectedId, setSelectedId] = useState("face-oval");
   const groups = getAtlasGroups(method);
   const option = groups.flatMap((group) => group.options).find((item) => item.id === selectedId) ?? groups[0].options[0];
-  const reading = useMemo(() => buildAtlasReading(option, chart), [option, chart]);
+  const reading = buildAtlasReading(option, chart);
+  const imageSrc = option.image ? `${import.meta.env.BASE_URL}${option.image}` : "";
   const sources = reading.sourceIds.map(getSource).filter((source): source is NonNullable<typeof source> => Boolean(source));
 
   function selectMethod(nextMethod: AtlasMethodId) {
@@ -41,7 +43,7 @@ export function ReferenceAtlasSection({ chart }: { chart: FourPillarsResult; bir
     <div className="atlas-layout">
       <div className="atlas-reference" aria-label={`${option.title}标准参考图`}>
         {option.image
-          ? <img src={option.image} style={{ objectPosition: option.crop }} alt={`${option.title}标准参考照片`} />
+          ? <img src={imageSrc} style={{ objectPosition: option.crop }} alt={`${option.title}标准参考照片`} />
           : <div className="star-reference" aria-hidden="true"><span>{starSymbols[option.id]}</span><i /><i /><i /><i /><i /></div>}
         {option.hotspot && <i className="atlas-hotspot" style={{ left:`${option.hotspot.x}%`, top:`${option.hotspot.y}%` }} />}
         <span className="atlas-caption">标准示意 · 自行对照</span>
