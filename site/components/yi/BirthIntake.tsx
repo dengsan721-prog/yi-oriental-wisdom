@@ -98,7 +98,7 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
     <form className="intake-card wheel-intake" onSubmit={(event) => { event.preventDefault(); onSubmit(normalizeBirthSubmission(draft)); }}>
       <div className="step-head"><span>建立出生坐标</span><h1>请确认出生信息</h1><p>阳历、农历均可录入；不知道时辰也能继续。</p></div>
       <div className="identity-row">
-        <label><span>姓名</span><input required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="请输入姓名" /></label>
+        <label><span>姓名（选填）</span><input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="姓名（选填）" /></label>
         <label><span>出生地点（可选）</span><input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} placeholder="仅作本次记录" /><small>当前版本不做真太阳时校正，地点不会参与计算，也不会保存到本机档案。</small></label>
       </div>
       <section className="calendar-switch" role="group" aria-label="出生性别（用于大运顺逆）">

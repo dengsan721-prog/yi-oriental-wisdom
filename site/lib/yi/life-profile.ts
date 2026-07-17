@@ -171,7 +171,11 @@ export function loadLifeProfile(storage: ProfileStorage): LifeProfile | null {
     raw = storage.getItem(LIFE_PROFILE_STORAGE_KEY);
     if (!raw) return null;
     const profile: unknown = JSON.parse(raw);
-    if (isLifeProfile(profile)) return profile;
+    if (isLifeProfile(profile)) {
+      const minimized = minimizeProfile(profile);
+      if (profile.birth.location !== "") saveLifeProfile(storage, minimized);
+      return minimized;
+    }
     clearLifeProfile(storage);
     return null;
   } catch {

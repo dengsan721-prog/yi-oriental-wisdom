@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import {
+  BirthIntake,
   clampWheelDate,
   normalizeBirthSubmission,
   type BirthSubmissionDraft,
@@ -21,6 +22,13 @@ const baseInput: BirthSubmissionDraft = {
 };
 
 describe("birth intake state", () => {
+  it("accepts an empty optional name and uses the visitor fallback", () => {
+    const submission = normalizeBirthSubmission({ ...baseInput, name: "" });
+    expect(submission.name).toBe("");
+    const html = renderToStaticMarkup(createElement(BirthIntake, { onSubmit: () => {} }));
+    expect(html).toContain('placeholder="姓名（选填）"');
+    expect(html).not.toMatch(/<input[^>]+required[^>]+placeholder="姓名（选填）"/);
+  });
   it("accepts unknown hour without a clock value", () => {
     expect(normalizeBirthSubmission({ ...baseInput, timeMode: "unknown", hour: null, minute: null }))
       .toMatchObject({ time: null, timeConfidence: "unknown" });
