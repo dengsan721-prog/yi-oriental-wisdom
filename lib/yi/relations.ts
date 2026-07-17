@@ -1,6 +1,13 @@
 import type { ChartRelation, PillarKey } from "./types";
 
-type InputPillar = { key: PillarKey; stem: string; branch: string };
+export type RelationCoordinate<Key extends string = string> = { key: Key; stem: string; branch: string };
+export type DetectedRelation<Key extends string = string> = {
+  type: ChartRelation["type"];
+  coordinates: Key[];
+  symbols: string[];
+  label: string;
+};
+
 type PairRelationType = Exclude<ChartRelation["type"], "stem-combination" | "branch-trine">;
 
 const stemPairs = [
@@ -58,25 +65,25 @@ function canonicalPair(
     (left === first && right === second) || (left === second && right === first));
 }
 
-export function detectChartRelations(pillars: InputPillar[]): ChartRelation[] {
-  const output: ChartRelation[] = [];
+export function detectRelations<Key extends string>(coordinates: RelationCoordinate<Key>[]): DetectedRelation<Key>[] {
+  const output: DetectedRelation<Key>[] = [];
   const emitted = new Set<string>();
-  const add = (relation: ChartRelation) => {
-    const key = `${relation.type}:${relation.pillars.join("-")}:${relation.symbols.join("")}`;
+  const add = (relation: DetectedRelation<Key>) => {
+    const key = `${relation.type}:${relation.coordinates.join("-")}:${relation.symbols.join("")}`;
     if (emitted.has(key)) return;
     emitted.add(key);
     output.push(relation);
   };
 
-  for (let leftIndex = 0; leftIndex < pillars.length; leftIndex += 1) {
-    for (let rightIndex = leftIndex + 1; rightIndex < pillars.length; rightIndex += 1) {
-      const left = pillars[leftIndex];
-      const right = pillars[rightIndex];
+  for (let leftIndex = 0; leftIndex < coordinates.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < coordinates.length; rightIndex += 1) {
+      const left = coordinates[leftIndex];
+      const right = coordinates[rightIndex];
       const stemPair = canonicalPair(stemPairs, left.stem, right.stem);
       if (stemPair) {
         add({
           type: "stem-combination",
-          pillars: [left.key, right.key],
+          coordinates: [left.key, right.key],
           symbols: [...stemPair],
           label: `${stemPair.join("")}相合`,
         });
@@ -87,7 +94,7 @@ export function detectChartRelations(pillars: InputPillar[]): ChartRelation[] {
         if (!branchPair) continue;
         add({
           type: rule.type,
-          pillars: [left.key, right.key],
+          coordinates: [left.key, right.key],
           symbols: [...branchPair],
           label: `${branchPair.join("")}${rule.suffix}`,
         });
@@ -97,37 +104,46 @@ export function detectChartRelations(pillars: InputPillar[]): ChartRelation[] {
 
   for (const [first, second, third, element] of trines) {
     const symbols = [first, second, third];
-    const matchedIndexes = symbols.map((symbol) => pillars.findIndex((pillar) => pillar.branch === symbol));
+    const matchedIndexes = symbols.map((symbol) => coordinates.findIndex((coordinate) => coordinate.branch === symbol));
     if (matchedIndexes.some((index) => index < 0)) continue;
     add({
       type: "branch-trine",
-      pillars: [...matchedIndexes].sort((left, right) => left - right).map((index) => pillars[index].key),
+      coordinates: [...matchedIndexes].sort((left, right) => left - right).map((index) => coordinates[index].key),
       symbols,
       label: `${symbols.join("")}三合${element}局`,
     });
   }
 
   for (const group of punishmentGroups) {
-    const matchedIndexes = group.map((symbol) => pillars.findIndex((pillar) => pillar.branch === symbol));
+    const matchedIndexes = group.map((symbol) => coordinates.findIndex((coordinate) => coordinate.branch === symbol));
     if (matchedIndexes.some((index) => index < 0)) continue;
     add({
       type: "branch-punishment",
-      pillars: [...matchedIndexes].sort((left, right) => left - right).map((index) => pillars[index].key),
+      coordinates: [...matchedIndexes].sort((left, right) => left - right).map((index) => coordinates[index].key),
       symbols: [...group],
       label: `${group.join("")}三刑`,
     });
   }
 
   for (const branch of selfPunishments) {
-    const matched = pillars.filter((pillar) => pillar.branch === branch);
+    const matched = coordinates.filter((coordinate) => coordinate.branch === branch);
     if (matched.length < 2) continue;
     add({
       type: "branch-punishment",
-      pillars: matched.slice(0, 2).map((pillar) => pillar.key),
+      coordinates: matched.slice(0, 2).map((coordinate) => coordinate.key),
       symbols: [branch, branch],
       label: `${branch}${branch}自刑`,
     });
   }
 
   return output;
+}
+
+export function detectChartRelations(pillars: RelationCoordinate<PillarKey>[]): ChartRelation[] {
+  return detectRelations(pillars).map((relation) => ({
+    type: relation.type,
+    pillars: relation.coordinates,
+    symbols: relation.symbols,
+    label: relation.label,
+  }));
 }
