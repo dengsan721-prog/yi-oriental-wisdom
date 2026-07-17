@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { formatYiHash, guardYiRoute, parseYiHash, resolveYiHydratedRoute } from "../../lib/yi/hash-router";
 import { buildInterpretations, buildProfessionalOverview } from "../../lib/yi/interpretation";
+import { buildProfessionalReport } from "../../lib/yi/report-model";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 import { BirthIntake, type BirthSubmission } from "./BirthIntake";
 import { ResultShell } from "./ResultShell";
@@ -32,6 +33,10 @@ export function YiExperience() {
   const [birth, setBirth] = useState<BirthInput | null>(null);
   const [profile, setProfile] = useState<LifeProfile | null>(null);
   const [storageError, setStorageError] = useState("");
+  const professionalReport = useMemo(
+    () => result && birth ? buildProfessionalReport(result, birth) : null,
+    [birth, result],
+  );
 
   useEffect(() => {
     const restoreTimer = window.setTimeout(() => {
@@ -139,10 +144,11 @@ export function YiExperience() {
       <Mark /><p>正在建立 {name || "访客"} 的命盘</p>
       <div className="calc-list">{["四柱", "五行", "十神", "格局", "喜忌", "大运"].map((item, index) => <div className={index <= calcStep ? "active" : ""} key={item}><span>{index < calcStep ? "✓" : `0${index + 1}`}</span>{item}</div>)}</div>
     </section>}
-    {hydrated && route.page === "report" && result && birth && <ResultShell
+    {hydrated && route.page === "report" && result && birth && professionalReport && <ResultShell
       name={name}
       chart={result}
       birth={birth}
+      report={professionalReport}
       overview={buildProfessionalOverview(result)}
       interpretations={buildInterpretations(result)}
       activeSection={route.section}

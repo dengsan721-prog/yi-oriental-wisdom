@@ -4,7 +4,7 @@ import { useEffect, useReducer, useState } from "react";
 import type { RelationshipType } from "../../lib/yi/compatibility";
 import type { ReportSectionId } from "../../lib/yi/hash-router";
 import type { BirthSubmission } from "./BirthIntake";
-import type { BirthInput, FourPillarsResult, InterpretationItem, ProfessionalOverview } from "../../lib/yi/types";
+import type { BirthInput, FourPillarsResult, InterpretationItem, ProfessionalOverview, ProfessionalReport } from "../../lib/yi/types";
 import { PortraitSection } from "./PortraitSection";
 import { ChartSection } from "./ChartSection";
 import { DetailSection } from "./DetailSection";
@@ -35,9 +35,9 @@ export function resultShellReducer(state: ResultShellState, action: ResultShellA
   return { ...state, compatibility: { ...state.compatibility, secondBirth: action.birth } };
 }
 
-export function ResultShell({ name, chart, birth, overview, interpretations, activeSection, onSectionChange, onRestart, onSaveHome, storageError }: {
+export function ResultShell({ name, chart, birth, report, overview, interpretations, activeSection, onSectionChange, onRestart, onSaveHome, storageError }: {
   name: string; chart: FourPillarsResult; overview: ProfessionalOverview;
-  birth: BirthInput; interpretations: InterpretationItem[]; activeSection: ReportSectionId; onSectionChange: (section: ReportSectionId) => void;
+  birth: BirthInput; report: ProfessionalReport; interpretations: InterpretationItem[]; activeSection: ReportSectionId; onSectionChange: (section: ReportSectionId) => void;
   onRestart: () => void; onSaveHome?: () => void; storageError?: string;
 }) {
   const [state, dispatch] = useReducer(resultShellReducer, undefined, createInitialResultShellState);
@@ -63,7 +63,7 @@ export function ResultShell({ name, chart, birth, overview, interpretations, act
     </nav>
     <div className="result-content">
       <div hidden={activeSection !== "portrait"}><PortraitSection overview={overview} items={interpretations} /></div>
-      <div hidden={activeSection !== "chart"}><ChartSection chart={chart} overview={overview} /></div>
+      <div hidden={activeSection !== "chart"}><ChartSection chart={chart} report={report} /></div>
       <div hidden={activeSection !== "detail"}><DetailSection items={interpretations} /></div>
       <div hidden={activeSection !== "fortune"}><FortuneSection chart={chart} birth={birth} /></div>
       <div hidden={activeSection !== "mirror"}><MirrorSection chart={chart} /></div>
