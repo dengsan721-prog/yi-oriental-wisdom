@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectChartRelations } from "../../lib/yi/relations";
+import { detectChartRelations, detectRelations } from "../../lib/yi/relations";
 import type { ChartRelation, PillarKey } from "../../lib/yi/types";
 
 type InputPillar = { key: PillarKey; stem: string; branch: string };
@@ -134,5 +134,47 @@ describe("complete chart relationships", () => {
     const logicalKeys = result.map((relation) => `${relation.type}:${relation.pillars.join("-")}:${relation.symbols.join("")}`);
 
     expect(new Set(logicalKeys).size).toBe(result.length);
+  });
+});
+
+describe("generic cross-layer relationships", () => {
+  it("combines annual, decade and natal coordinates into a complete trine", () => {
+    const result = detectRelations([
+      { key: "annual", stem: "甲", branch: "子" },
+      { key: "period", stem: "丙", branch: "申" },
+      { key: "day", stem: "戊", branch: "辰" },
+    ]);
+
+    expect(result).toContainEqual({
+      type: "branch-trine",
+      coordinates: ["annual", "period", "day"],
+      symbols: ["申", "子", "辰"],
+      label: "申子辰三合水局",
+    });
+  });
+
+  it("combines annual, decade and natal coordinates into a complete three-branch punishment", () => {
+    const result = detectRelations([
+      { key: "annual", stem: "甲", branch: "寅" },
+      { key: "period", stem: "丙", branch: "巳" },
+      { key: "month", stem: "戊", branch: "申" },
+    ]);
+
+    expect(result).toContainEqual({
+      type: "branch-punishment",
+      coordinates: ["annual", "period", "month"],
+      symbols: ["寅", "巳", "申"],
+      label: "寅巳申三刑",
+    });
+  });
+
+  it("does not declare a trine when one required branch is absent", () => {
+    const result = detectRelations([
+      { key: "annual", stem: "甲", branch: "子" },
+      { key: "period", stem: "丙", branch: "申" },
+      { key: "day", stem: "戊", branch: "午" },
+    ]);
+
+    expect(result.some(relation => relation.type === "branch-trine")).toBe(false);
   });
 });

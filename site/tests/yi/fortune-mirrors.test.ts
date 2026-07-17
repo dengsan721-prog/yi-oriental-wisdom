@@ -4,12 +4,33 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { FortuneSection } from "../../components/yi/FortuneSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
-import { buildFortuneTimeline, calculateTenGod } from "../../lib/yi/fortune";
+import { analyzeFortuneRelations, buildFortuneTimeline, buildFortuneYearReading, calculateTenGod } from "../../lib/yi/fortune";
 import { matchAnimalArchetype, matchHistoricalMirror } from "../../lib/yi/mirrors";
-import { stemElements } from "../../lib/yi/stems-branches";
+import { branchElements, stemElements } from "../../lib/yi/stems-branches";
+import type { FourPillarsResult, PillarKey } from "../../lib/yi/types";
 
 const input = { name: "林知远", date: "1990-06-15", time: "09:30", location: "杭州", gender: "male", timeConfidence: "exact" } as const;
 const chart = calculateFourPillars(input);
+
+function chartWithBranches(branches: Record<PillarKey, string>): FourPillarsResult {
+  const stems: Record<PillarKey, string> = { year: "乙", month: "丁", day: "戊", hour: "庚" };
+  return {
+    ...chart,
+    pillars: Object.fromEntries((Object.keys(branches) as PillarKey[]).map(key => [key, {
+      ...chart.pillars[key]!, stem: stems[key], branch: branches[key],
+      element: stemElements[stems[key]], branchElement: branchElements[branches[key]],
+    }])) as FourPillarsResult["pillars"],
+    ambiguousPillars: [],
+  };
+}
+
+function longestCommonPrefix(values: string[]): string {
+  return values.reduce((prefix, value) => {
+    let index = 0;
+    while (index < prefix.length && prefix[index] === value[index]) index += 1;
+    return prefix.slice(0, index);
+  });
+}
 
 describe("fortune timeline", () => {
   it("distinguishes all ten gods by element and polarity", () => {
@@ -25,6 +46,7 @@ describe("fortune timeline", () => {
     expect(timeline[0].years).toHaveLength(10);
     expect(timeline[0].years[0]).toMatchObject({ age: expect.any(Number), year: expect.any(Number), stemBranch: expect.any(String), basis: expect.any(String), action: expect.any(String) });
     expect(timeline[0].method.basis).toContain("lunar-typescript");
+    expect(timeline[0].method.basis).toMatch(/顺排|逆排/);
   });
 
   it("builds nine distinct period readings from the actual decade and natal chart", () => {
@@ -48,6 +70,58 @@ describe("fortune timeline", () => {
         expect(natalCoordinates.some(coordinate => value.includes(coordinate)), `${period.stemBranch} ${key} natal evidence`).toBe(true);
       }
     }
+  });
+
+  it("uses different evidence paths instead of one shared long period prefix", () => {
+    const period = buildFortuneTimeline(chart, input)[0];
+    const values = Object.values(period.reading);
+    expect(longestCommonPrefix(values).length).toBeLessThan(8);
+    expect(period.reading.climate).toMatch(/月令|月柱/);
+    expect(period.reading.originalInteraction).toMatch(/相合|三合|相冲|相刑|相害|相破|未见/);
+    expect(period.reading.opportunity).toMatch(/支持型关系|未见支持型/);
+    expect(period.reading.pressure).toMatch(/张力型关系|未见张力型/);
+    expect(period.reading.career).toMatch(/月柱.*日柱|日柱.*月柱/);
+    expect(period.reading.resources).toContain("财、印、比劫");
+    expect(period.reading.relationship).toContain("日支");
+    expect(period.reading.wellbeing).toContain("月令");
+    expect(period.reading.strategy).toContain("综合");
+  });
+
+  it("detects cross-layer trines and punishments with structured involved coordinates", () => {
+    const trineChart = chartWithBranches({ year: "丑", month: "午", day: "辰", hour: "巳" });
+    const trine = analyzeFortuneRelations("甲子", "丙申", trineChart).find(relation => relation.label === "申子辰三合水局");
+    expect(trine).toMatchObject({ type: "branch-trine", label: "申子辰三合水局" });
+    expect(trine?.coordinates).toEqual(expect.arrayContaining([
+      { key: "annual", label: "流年", stemBranch: "甲子" },
+      { key: "period", label: "大运", stemBranch: "丙申" },
+      { key: "day", label: "日柱", stemBranch: "戊辰" },
+    ]));
+
+    const punishmentChart = chartWithBranches({ year: "丑", month: "申", day: "辰", hour: "午" });
+    const punishment = analyzeFortuneRelations("甲寅", "丙巳", punishmentChart).find(relation => relation.label === "寅巳申三刑");
+    expect(punishment).toMatchObject({ type: "branch-punishment", label: "寅巳申三刑" });
+    expect(punishment?.coordinates.map(coordinate => coordinate.key)).toEqual(expect.arrayContaining(["annual", "period", "month"]));
+
+    const missing = chartWithBranches({ year: "丑", month: "午", day: "卯", hour: "巳" });
+    expect(analyzeFortuneRelations("甲子", "丙申", missing).some(relation => relation.label === "申子辰三合水局")).toBe(false);
+  });
+
+  it("changes annual scenes and actions for the same ten gods when the actual relation changes", () => {
+    const combinedChart = chartWithBranches({ year: "寅", month: "丑", day: "辰", hour: "巳" });
+    const clashedChart = chartWithBranches({ year: "寅", month: "午", day: "辰", hour: "巳" });
+    const combined = buildFortuneYearReading(combinedChart, "丙戌", "甲子");
+    const clashed = buildFortuneYearReading(clashedChart, "丙戌", "甲子");
+
+    expect(combined.scenario).toContain("子丑相合");
+    expect(combined.action).toContain("子丑相合");
+    expect(combined.scenario).toContain("月柱丁丑");
+    expect(combined.scenario).not.toContain("年柱乙寅");
+    expect(clashed.scenario).toContain("子午相冲");
+    expect(clashed.action).toContain("子午相冲");
+    expect(clashed.scenario).toContain("月柱丁午");
+    expect(clashed.scenario).not.toContain("年柱乙寅");
+    expect(combined.scenario).not.toBe(clashed.scenario);
+    expect(combined.action).not.toBe(clashed.action);
   });
 
   it("compares every annual stem-branch with both the natal chart and active decade", () => {
