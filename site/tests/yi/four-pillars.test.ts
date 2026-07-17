@@ -15,6 +15,17 @@ describe("calculateFourPillars", () => {
     expect(Object.values(result.elementCounts).reduce((sum, value) => sum + value, 0)).toBe(8);
     expect(result.confidence).toBe("high");
     expect(result.pillars.year).toMatchObject({ stem: "庚", branch: "午" });
+    expect(result.professional).toMatchObject({
+      dayMaster: { stem: expect.any(String), element: expect.any(String) },
+      strength: expect.stringMatching(/strong|balanced|weak/),
+      pattern: expect.any(String),
+      climate: expect.any(String),
+      favorableElements: expect.any(Array),
+      unfavorableElements: expect.any(Array),
+      tenGods: expect.any(Array),
+      relations: expect.any(Array),
+    });
+    expect(result.professional.tenGods).toHaveLength(7);
   });
 
   it("omits hour pillar and lowers confidence when time is unknown", () => {
@@ -29,5 +40,8 @@ describe("calculateFourPillars", () => {
     expect(result.pillars.hour).toBeNull();
     expect(result.confidence).toBe("limited");
     expect(Object.values(result.elementCounts).reduce((sum, value) => sum + value, 0)).toBe(6);
+    expect(result.professional.tenGods).toHaveLength(5);
+    expect(result.professional.tenGods.every(item => item.pillar !== "hour")).toBe(true);
+    expect(result.professional.relations.every(item => !item.pillars.includes("hour"))).toBe(true);
   });
 });

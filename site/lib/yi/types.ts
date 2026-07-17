@@ -29,9 +29,70 @@ export type Pillar = {
   label: string;
 };
 
+export type PillarKey = "year" | "month" | "day" | "hour";
+
+export type TenGodName = "比肩" | "劫财" | "食神" | "伤官" | "偏财" | "正财" | "七杀" | "正官" | "偏印" | "正印";
+
+export type TenGodEntry = {
+  pillar: PillarKey;
+  position: "stem" | "branch";
+  symbol: string;
+  tenGod: TenGodName;
+};
+
+export type ChartRelation = {
+  type: "stem-combination" | "branch-combination" | "branch-clash";
+  pillars: [PillarKey, PillarKey];
+  symbols: [string, string];
+  label: string;
+};
+
+export type ProfessionalChart = {
+  dayMaster: { stem: string; element: ElementName; polarity: "yang" | "yin" };
+  strength: "strong" | "balanced" | "weak";
+  strengthScore: number;
+  pattern: string;
+  climate: string;
+  favorableElements: ElementName[];
+  unfavorableElements: ElementName[];
+  tenGods: TenGodEntry[];
+  relations: ChartRelation[];
+};
+
 export type FourPillarsResult = {
   pillars: { year: Pillar; month: Pillar; day: Pillar; hour: Pillar | null };
   elementCounts: Record<ElementName, number>;
+  professional: ProfessionalChart;
   confidence: "high" | "medium" | "limited";
   disclaimer: string;
+};
+
+export type InterpretationItem = {
+  id: string;
+  domain: "self" | "talent" | "career" | "wealth" | "relationship" | "family" | "rhythm";
+  professionalTitle: string;
+  innovationTitle: string;
+  basis: string;
+  plainLanguage: string;
+  scenario: string;
+  mirror: string;
+  action: string;
+  caution: string;
+  confidence: "high" | "medium" | "limited";
+  sourceTradition: string;
+  sourceReferences: string[];
+  affectedByUnknownHour: boolean;
+};
+
+export type ProfessionalOverview = {
+  dayMaster: string;
+  dayMasterElement: ElementName;
+  strength: ProfessionalChart["strength"];
+  pattern: string;
+  climate: string;
+  favorableElements: ElementName[];
+  unfavorableElements: ElementName[];
+  tenGodSummary: string;
+  relationSummary: string;
+  confidence: FourPillarsResult["confidence"];
 };
