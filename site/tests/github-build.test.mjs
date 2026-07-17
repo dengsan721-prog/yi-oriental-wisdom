@@ -44,6 +44,11 @@ test("GitHub build is the full bundled React app", async () => {
   assert.match(css, /\.professional-pillars/);
   assert.match(css, /\.element-diagnostics/);
   assert.match(css, /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  const resultTabsRule = css.match(/\.result-tabs\{[^}]*\}/)?.[0];
+  assert.ok(resultTabsRule);
+  assert.match(resultTabsRule, /overflow-x:auto/);
+  assert.match(resultTabsRule, /scrollbar-width:none/);
+  assert.match(css, /\.result-tabs::-webkit-scrollbar\{display:none\}/);
   assert.match(css, /@media\s*\(prefers-reduced-motion:reduce\)/);
   assert.doesNotMatch(html, /href="#birth"/);
   assert.doesNotMatch(html, /function calculateChart/);
