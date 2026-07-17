@@ -217,6 +217,60 @@ describe("professional interpretation", () => {
     expect(buildInterpretations(knownChart).every(item => item.sourceRuleIds.every(id => id in YI_RULE_SOURCES))).toBe(true);
   });
 
+  it("publishes the complete relation rule contract through interpretation source references", () => {
+    const relationSource = YI_RULE_SOURCES["relation.gan-zhi.v1"];
+    expect(relationSource).toMatchObject({
+      label: "干支关系完整规则表",
+      appliesWhen: "五合、六合、六冲、刑、害、破需相关两柱均已知；三合需至少三支已知",
+      version: "1.1.0",
+    });
+    const relationItem = buildInterpretations(knownChart)
+      .find(item => item.sourceRuleIds.includes("relation.gan-zhi.v1"));
+    const references = relationItem?.sourceReferences.join("；") ?? "";
+    for (const ruleName of [
+      "天干五合表", "地支六合表", "地支三合表", "地支六冲表", "子卯相刑",
+      "寅巳申三刑", "丑戌未三刑", "辰午酉亥自刑", "地支六害表", "地支六破表",
+    ]) {
+      expect(references, ruleName).toContain(ruleName);
+    }
+  });
+
+  it.each([
+    ["career-organization", ["year", "month", "day"]],
+    ["family-care", ["year", "month", "day"]],
+    ["talent-future", ["hour", "day"]],
+    ["family-future", ["hour", "day"]],
+  ] as const)("includes the day-master dependency for %s", (id, expectedDependencies) => {
+    const item = buildInterpretations(knownChart).find(reading => reading.id === id);
+    expect(item?.pillarDependencies).toEqual(expect.arrayContaining([...expectedDependencies]));
+  });
+
+  it("lists every distinct relation between the preferred pillar pair", () => {
+    const chartWithConcurrentRelations = {
+      ...knownChart,
+      professional: {
+        ...knownChart.professional,
+        relations: [
+          { type: "stem-combination" as const, pillars: ["year", "month"] as const, symbols: ["甲", "己"], label: "甲己相合" },
+          { type: "branch-clash" as const, pillars: ["year", "month"] as const, symbols: ["子", "午"], label: "子午相冲" },
+          { type: "branch-break" as const, pillars: ["year", "month"] as const, symbols: ["子", "酉"], label: "子酉相破" },
+          { type: "branch-break" as const, pillars: ["year", "month"] as const, symbols: ["子", "酉"], label: "子酉相破" },
+        ],
+      },
+    };
+    const basis = buildInterpretations(chartWithConcurrentRelations)
+      .find(item => item.id === "career-organization")?.basis ?? "";
+    expect(basis).toContain("甲己相合");
+    expect(basis).toContain("子午相冲");
+    expect(basis.match(/子酉相破/g)).toHaveLength(1);
+  });
+
+  it("uses the exact medical-help pause in the recovery action", () => {
+    expect(scenarioLibrary["rhythm-recovery"].action).toBe(
+      "连续两周记录睡眠、专注和情绪波动，找出高耗能时段并提前安排间隔；身体不适，应寻求医疗帮助。",
+    );
+  });
+
   it("does not claim a classical pattern or favorable elements from a product score", () => {
     const overview = buildProfessionalOverview(knownChart);
     const items = buildInterpretations(knownChart);
