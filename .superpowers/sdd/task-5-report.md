@@ -21,3 +21,9 @@
 - 称骨采用通行重量表，异文版本可能产生不同重量，因此始终作为辅助层。
 - 太阳星座仅为公历太阳星座分类，不冒充完整西方本命盘。
 - Windows 构建使用 PowerShell 设置 `WRANGLER_LOG_PATH` 后执行 `pnpm exec vinext build`，等价规避项目脚本的 POSIX 环境变量语法。
+
+## v3 集成测试补强
+
+- `calculateCompatibility()` 集成测试通过构造完整双方命盘的四个地支，分别验证合、冲、害、刑与无直接关系的返回结构、符号对、关系名和观察文本，不再只测试底层分类函数。
+- 对关系表做受控 mutation，临时移除刑害规则后目标测试出现 5 个预期失败；恢复规则后重新转绿，证明新增测试能约束错误实现。
+- `ResultShell` reducer 测试提交真实第二出生对象，再切换章节，验证 `secondBirth` 对象及 compatibility state 引用均保持不变。
