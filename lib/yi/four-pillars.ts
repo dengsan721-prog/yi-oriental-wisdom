@@ -1,12 +1,10 @@
 import { Solar } from "lunar-typescript";
+import { detectChartRelations } from "./relations";
 import { branchElements, stemElements, stems } from "./stems-branches";
-import type { AmbiguousProfessionalField, BirthInput, ChartRelation, ElementName, FourPillarsResult, Pillar, PillarKey, ProfessionalChart, TenGodEntry, TenGodName } from "./types";
+import type { AmbiguousProfessionalField, BirthInput, ElementName, FourPillarsResult, Pillar, PillarKey, ProfessionalChart, TenGodEntry, TenGodName } from "./types";
 
 const labels = { year: "根基｜年柱", month: "环境｜月柱", day: "本我｜日柱", hour: "愿景｜时柱" };
 const elementOrder: ElementName[] = ["木", "火", "土", "金", "水"];
-const stemCombinations = ["甲己", "乙庚", "丙辛", "丁壬", "戊癸"];
-const branchCombinations = ["子丑", "寅亥", "卯戌", "辰酉", "巳申", "午未"];
-const branchClashes = ["子午", "丑未", "寅申", "卯酉", "辰戌", "巳亥"];
 
 function makePillar(stem: string, branch: string, label: string): Pillar {
   return { stem, branch, element: stemElements[stem], branchElement: branchElements[branch], label };
@@ -14,15 +12,6 @@ function makePillar(stem: string, branch: string, label: string): Pillar {
 
 function polarity(stem: string): "yang" | "yin" {
   return stems.indexOf(stem as typeof stems[number]) % 2 === 0 ? "yang" : "yin";
-}
-
-function relationOf(type: ChartRelation["type"], left: [PillarKey, Pillar], right: [PillarKey, Pillar]): ChartRelation | null {
-  const [leftKey, leftPillar] = left;
-  const [rightKey, rightPillar] = right;
-  const symbols: [string, string] = type === "stem-combination" ? [leftPillar.stem, rightPillar.stem] : [leftPillar.branch, rightPillar.branch];
-  const pairs = type === "stem-combination" ? stemCombinations : type === "branch-combination" ? branchCombinations : branchClashes;
-  if (!pairs.some(pair => pair === symbols.join("") || pair === [...symbols].reverse().join(""))) return null;
-  return { type, pillars: [leftKey, rightKey], symbols, label: `${symbols.join("")}${type === "branch-clash" ? "相冲" : "相合"}` };
 }
 
 function buildProfessional(
@@ -49,13 +38,7 @@ function buildProfessional(
     : ["亥", "子", "丑"].includes(pillars.month.branch) ? "调候提示：生于寒月，可观察温养、启动与燥湿平衡"
     : ["巳", "午", "未"].includes(pillars.month.branch) ? "调候提示：生于暑月，可观察润燥、休息与持续性"
       : "调候提示：春秋转换期，可观察升降收放与日常节律";
-  const relations: ChartRelation[] = [];
-  for (let left = 0; left < present.length; left += 1) for (let right = left + 1; right < present.length; right += 1) {
-    for (const type of ["stem-combination", "branch-combination", "branch-clash"] as const) {
-      const relation = relationOf(type, present[left], present[right]);
-      if (relation) relations.push(relation);
-    }
-  }
+  const relations = detectChartRelations(present.map(([key, pillar]) => ({ key, stem: pillar.stem, branch: pillar.branch })));
   return {
     dayMaster: { stem: pillars.day.stem, element: dayElement, polarity: polarity(pillars.day.stem) },
     structureBalance, supportScore, observationConfidence: pillars.hour ? "medium" : "limited",

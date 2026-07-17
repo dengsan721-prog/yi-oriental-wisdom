@@ -42,9 +42,9 @@ export type TenGodEntry = {
 };
 
 export type ChartRelation = {
-  type: "stem-combination" | "branch-combination" | "branch-clash";
-  pillars: [PillarKey, PillarKey];
-  symbols: [string, string];
+  type: "stem-combination" | "branch-combination" | "branch-trine" | "branch-clash" | "branch-punishment" | "branch-harm" | "branch-break";
+  pillars: PillarKey[];
+  symbols: string[];
   label: string;
 };
 
