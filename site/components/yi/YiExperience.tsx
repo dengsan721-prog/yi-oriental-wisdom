@@ -132,7 +132,7 @@ export function YiExperience() {
     {hydrated && route.page === "home" && profile && <LifeHome profile={profile} onChange={updateProfile} onClear={removeProfile} onViewReport={() => push({ page: "report", section: "portrait" })} />}
     {(!hydrated || route.page === "intro") && <RitualIntro restoring={!hydrated} onStart={() => push({ page: "birth" })} />}
     {hydrated && route.page === "birth" && <section className="intake">
-      <header><button onClick={() => push({ page: "intro" })}>← 返回</button><span>艺</span><small>生辰排盘</small></header>
+      <header><button onClick={() => push({ page: "intro" })}>← 返回</button></header>
       <BirthIntake onSubmit={runBirthSubmission} />
     </section>}
     {hydrated && route.page === "calculating" && <section className="calculating">

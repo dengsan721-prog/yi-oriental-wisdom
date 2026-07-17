@@ -14,6 +14,13 @@ export type BirthSubmissionDraft = {
   gender: BirthInput["gender"];
 };
 
+type PendingTime = Pick<BirthSubmissionDraft, "timeMode" | "hour" | "minute" | "earthlyIndex">;
+type FocusTarget = { isConnected: boolean; focus: () => void };
+
+export function getTimeFocusTarget<T extends FocusTarget>(opener: T | null, fallback: T | null) {
+  return opener?.isConnected ? opener : fallback;
+}
+
 export function clampWheelDate(current: Pick<BirthDateSelection, "year" | "month" | "day">, patch: Partial<Pick<BirthDateSelection, "year" | "month" | "day">>) {
   const year = patch.year ?? current.year;
   const month = patch.month ?? current.month;
@@ -48,10 +55,19 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
   });
   const [dateOpen, setDateOpen] = useState(false);
   const [pendingDate, setPendingDate] = useState(draft.date);
+  const [timeOpen, setTimeOpen] = useState(false);
+  const [pendingTime, setPendingTime] = useState<PendingTime>({
+    timeMode: draft.timeMode, hour: draft.hour, minute: draft.minute, earthlyIndex: draft.earthlyIndex,
+  });
   const dateTriggerRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const restoreFocusFrame = useRef<number | null>(null);
+  const timeTriggerRef = useRef<HTMLButtonElement>(null);
+  const timeOpenerRef = useRef<HTMLButtonElement>(null);
+  const timeDialogRef = useRef<HTMLDivElement>(null);
+  const timeCancelRef = useRef<HTMLButtonElement>(null);
+  const restoreTimeFocusFrame = useRef<number | null>(null);
   const options = useMemo(() => getWheelOptions(pendingDate, currentYear), [pendingDate, currentYear]);
   const labels = getDualCalendarLabel(draft.date);
   const dateSummary = draft.date.mode === "solar" ? labels.solar : labels.lunar;
@@ -61,8 +77,13 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
     if (dateOpen) cancelRef.current?.focus();
   }, [dateOpen]);
 
+  useEffect(() => {
+    if (timeOpen) timeCancelRef.current?.focus();
+  }, [timeOpen]);
+
   useEffect(() => () => {
     if (restoreFocusFrame.current !== null) cancelAnimationFrame(restoreFocusFrame.current);
+    if (restoreTimeFocusFrame.current !== null) cancelAnimationFrame(restoreTimeFocusFrame.current);
   }, []);
 
   const closeDatePicker = () => {
@@ -72,6 +93,31 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
       dateTriggerRef.current?.focus();
       restoreFocusFrame.current = null;
     });
+  };
+
+  const closeTimePicker = () => {
+    setTimeOpen(false);
+    if (restoreTimeFocusFrame.current !== null) cancelAnimationFrame(restoreTimeFocusFrame.current);
+    restoreTimeFocusFrame.current = requestAnimationFrame(() => {
+      getTimeFocusTarget(timeOpenerRef.current, timeTriggerRef.current)?.focus();
+      timeOpenerRef.current = null;
+      restoreTimeFocusFrame.current = null;
+    });
+  };
+
+  const chooseTimeMode = (timeMode: TimeMode, opener: HTMLButtonElement) => {
+    if (timeMode === "unknown") {
+      setDraft({ ...draft, timeMode, hour: null, minute: null, earthlyIndex: null });
+      return;
+    }
+    timeOpenerRef.current = opener;
+    setPendingTime({
+      timeMode,
+      hour: timeMode === "exact" ? (draft.hour ?? 9) : null,
+      minute: timeMode === "exact" ? (draft.minute ?? 0) : null,
+      earthlyIndex: timeMode === "earthly" ? (draft.earthlyIndex ?? 0) : null,
+    });
+    setTimeOpen(true);
   };
 
   const updatePending = (patch: Partial<BirthDateSelection>) => {
@@ -96,17 +142,25 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
 
   return (
     <form className="intake-card wheel-intake" onSubmit={(event) => { event.preventDefault(); onSubmit(normalizeBirthSubmission(draft)); }}>
-      <div className="step-head"><span>建立出生坐标</span><h1>请确认出生信息</h1><p>阳历、农历均可录入；不知道时辰也能继续。</p></div>
+      <div className="step-head"><h1>建立出生坐标</h1></div>
       <div className="identity-row">
         <label><span>姓名（选填）</span><input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="姓名（选填）" /></label>
-        <label><span>出生地点（可选）</span><input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} placeholder="仅作本次记录" /><small>当前版本不做真太阳时校正，地点不会参与计算，也不会保存到本机档案。</small></label>
+        <label><span>出生地址（选填）</span><input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} placeholder="城市或区县" /></label>
       </div>
-      <section className="calendar-switch" role="group" aria-label="出生性别（用于大运顺逆）">
+      <section className="calendar-switch gender-switch" role="group" aria-label="出生性别（用于大运顺逆）">
         {(["male", "female", "unspecified"] as const).map(value => <button type="button" key={value} aria-pressed={draft.gender === value} className={draft.gender === value ? "active" : ""} onClick={() => setDraft({ ...draft, gender: value })}>{value === "male" ? "男" : value === "female" ? "女" : "暂不指定"}</button>)}
       </section>
       <section className="summary-control"><span>出生日期</span><strong>{dateSummary}</strong><button ref={dateTriggerRef} type="button" onClick={() => { setPendingDate(draft.date); setDateOpen(true); }}>选择日期</button></section>
-      <TimePicker mode={draft.timeMode} hour={draft.hour} minute={draft.minute} earthlyIndex={draft.earthlyIndex} onChange={(time) => setDraft({ ...draft, timeMode: time.mode, hour: time.hour, minute: time.minute, earthlyIndex: time.earthlyIndex })} />
-      <section className="date-confirm dual-confirm"><div><span>阳历</span><b>{labels.solar}</b></div><div><span>农历</span><b>{labels.lunar}</b></div><small>{timeSummary}</small></section>
+      <section className="time-entry" aria-labelledby="time-summary-heading">
+        <h2 id="time-summary-heading">出生时辰</h2>
+        <div className="time-modes" role="group" aria-label="时辰精度">
+          <button ref={draft.timeMode === "exact" ? timeTriggerRef : undefined} type="button" aria-pressed={draft.timeMode === "exact"} className={draft.timeMode === "exact" ? "active" : ""} onClick={(event) => chooseTimeMode("exact", event.currentTarget)}>精确时间</button>
+          <button ref={draft.timeMode === "earthly" ? timeTriggerRef : undefined} type="button" aria-pressed={draft.timeMode === "earthly"} className={draft.timeMode === "earthly" ? "active" : ""} onClick={(event) => chooseTimeMode("earthly", event.currentTarget)}>十二时辰</button>
+          <button ref={draft.timeMode === "unknown" ? timeTriggerRef : undefined} type="button" aria-pressed={draft.timeMode === "unknown"} className={draft.timeMode === "unknown" ? "active" : ""} onClick={(event) => chooseTimeMode("unknown", event.currentTarget)}>不知道时辰</button>
+        </div>
+        {draft.timeMode !== "unknown" && <section className="summary-control time-summary"><span>{draft.timeMode === "exact" ? "当前时间" : "当前时辰"}</span><strong>{timeSummary}</strong><button type="button" onClick={(event) => chooseTimeMode(draft.timeMode, event.currentTarget)}>修改时辰</button></section>}
+      </section>
+      <p className="dual-calendar-line">阳历 {labels.solar}<span>·</span>农历 {labels.lunar}<span>·</span>{timeSummary}</p>
       <button className="primary submit" type="submit">生成命盘 <span>→</span></button>
       {dateOpen && (
         <div className="picker-overlay" role="dialog" aria-modal="true" aria-labelledby="date-picker-title" ref={dialogRef} onKeyDown={(event) => {
@@ -126,6 +180,22 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
               <WheelPicker label="月" value={`${pendingDate.month}:${pendingDate.isLeapMonth ? 1 : 0}`} options={options.months.map((item) => ({ value: `${item.value}:${item.isLeapMonth ? 1 : 0}`, label: item.label }))} onChange={(value) => { const [month, leap] = value.split(":"); updatePending({ month: Number(month), isLeapMonth: leap === "1" }); }} />
               <WheelPicker label="日" value={pendingDate.day} options={options.days.map((value) => ({ value, label: `${value} 日` }))} onChange={(day) => updatePending({ day })} />
             </div>
+          </div>
+        </div>
+      )}
+      {timeOpen && (
+        <div className="picker-overlay" role="dialog" aria-modal="true" aria-labelledby="time-picker-title" ref={timeDialogRef} onKeyDown={(event) => {
+          if (event.key === "Escape") { event.preventDefault(); closeTimePicker(); return; }
+          if (event.key !== "Tab") return;
+          const focusable = Array.from(timeDialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]):not([tabindex="-1"]), [tabindex="0"]') ?? []);
+          if (!focusable.length) return;
+          const first = focusable[0]; const last = focusable[focusable.length - 1];
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }}>
+          <div className="picker-sheet time-picker-sheet">
+            <header><button ref={timeCancelRef} type="button" onClick={closeTimePicker}>取消</button><h2 id="time-picker-title">选择出生时辰</h2><button type="button" onClick={() => { setDraft({ ...draft, ...pendingTime }); closeTimePicker(); }}>确认</button></header>
+            <TimePicker mode={pendingTime.timeMode} hour={pendingTime.hour} minute={pendingTime.minute} earthlyIndex={pendingTime.earthlyIndex} onChange={(time) => setPendingTime({ timeMode: time.mode, hour: time.hour, minute: time.minute, earthlyIndex: time.earthlyIndex })} />
           </div>
         </div>
       )}
