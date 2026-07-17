@@ -109,10 +109,40 @@ describe("professional report model", () => {
     };
     const report = buildProfessionalReport(calculateFourPillars(boundaryBirth), boundaryBirth);
 
+    expect(report.pillarFacts.find((pillar) => pillar.key === "year")?.ambiguous).toBe(true);
+    expect(report.pillarFacts.find((pillar) => pillar.key === "month")?.ambiguous).toBe(true);
+    expect(report.pillarFacts.find((pillar) => pillar.key === "day")?.ambiguous).toBe(false);
+    expect(report.monthCommand).toMatchObject({
+      branch: "待核",
+      hiddenStem: "待核",
+      tenGod: "待核",
+      ambiguous: true,
+      representative: { branch: expect.any(String), hiddenStem: expect.any(String), tenGod: expect.any(String) },
+    });
+    expect(report.elementDiagnostics.reduce((sum, item) => sum + item.count, 0)).toBe(2);
     expect(report.elementDiagnostics.every((item) => item.inSeason === null)).toBe(true);
+    expect(report.elementDiagnostics.flatMap((item) => [...item.roots, ...item.exposed]).every((clue) => clue.startsWith("日"))).toBe(true);
+    expect(report.exposedStems.every((clue) => clue.startsWith("日干"))).toBe(true);
+    expect(report.roots.every((clue) => clue.startsWith("日支"))).toBe(true);
+    expect(report.relations.every((relation) => relation.pillars.every((pillar) => !["year", "month", "hour"].includes(pillar)))).toBe(true);
     expect(report.elementDiagnostics.map((item) => item.conclusion).join(" ")).toContain("月令可能跨节");
-    expect(report.summary).toContain("月令");
-    expect(report.summary).toMatch(/暂不|不能/);
+    const copy = [report.summary, ...report.keyJudgments, ...report.actions].join(" ");
+    expect(copy).toContain("月令");
+    expect(copy).toMatch(/待核|候选/);
+    expect(copy).not.toMatch(new RegExp(`${report.monthCommand.representative?.branch}月令(?:以|本气为)`));
+  });
+
+  it("normalizes a null clock time to unknown even when the caller claims exact confidence", () => {
+    const contradictoryBirth = { ...birth, time: null, timeConfidence: "exact" as const };
+    const chart = calculateFourPillars(contradictoryBirth);
+    const report = buildProfessionalReport(chart, contradictoryBirth);
+
+    expect(chart.pillars.hour).toBeNull();
+    expect(chart.confidence).toBe("limited");
+    expect(report.confidence).toBe("limited");
+    expect(report.birthFacts.solar).toContain("时辰不详");
+    expect(report.birthFacts.timeConfidence).toBe("时辰不详");
+    expect([report.birthFacts.solar, report.birthFacts.timeConfidence, report.summary].join(" ")).not.toContain("精确时间");
   });
 
   it("derives judgments and actions from actual chart facts", () => {
