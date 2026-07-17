@@ -115,9 +115,9 @@ function makeOption(method: AtlasMethodId, seed: Seed): AtlasOption {
       : method === "palm"
         ? `《麻衣神相》相关手相术语提供图谱索引；左右手均以当下可见形态对照，不采用男左女右的定命规则，观察点为“${seed.signal}”。`
         : `这是太阳星座的现代文化分类，并非中国古典命理计算；天文学星座与占星人格表达必须分开，当前只记录“${seed.signal}”。`;
-  const image = method === "face" ? "/reference/face-reference.webp"
-    : method === "mole" ? "/reference/mole-reference.webp"
-      : method === "palm" ? "/reference/palm-reference.webp" : "";
+  const image = method === "face" ? "/reference/face-reference.png"
+    : method === "mole" ? "/reference/mole-reference.png"
+      : method === "palm" ? "/reference/palm-reference.png" : "";
   const sources = isStar
     ? ["culture.nasa-constellations"]
     : ["classic.ma-yi-shen-xiang"];
