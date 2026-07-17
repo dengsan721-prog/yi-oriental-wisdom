@@ -15,6 +15,14 @@ function Mark() {
   return <div className="yi-mark" aria-label="艺"><span>艺</span><i /><b /></div>;
 }
 
+function RitualIntro({ restoring, onStart }: { restoring: boolean; onStart: () => void }) {
+  return <section className="ritual" aria-busy={restoring}>
+    <div className="ritual-bg" /><Mark />
+    <h1 className="ritual-lines"><span>看见命局</span><span>读懂时运</span></h1>
+    <button className="primary" disabled={restoring} onClick={onStart}>开始排盘 <span>→</span></button>
+  </section>;
+}
+
 export function YiExperience() {
   const [stage, setStage] = useState<Stage>("loading");
   const [name, setName] = useState("");
@@ -102,13 +110,8 @@ export function YiExperience() {
   }
 
   return <main>
-    {stage === "loading" && <section className="calculating"><Mark /><p>正在读取本机档案</p></section>}
     {stage === "home" && profile && <LifeHome profile={profile} onChange={updateProfile} onClear={removeProfile} onViewReport={() => setStage("result")} />}
-    {stage === "intro" && <section className="ritual">
-      <div className="ritual-bg" /><Mark />
-      <h1 className="ritual-lines"><span>看见命局</span><span>读懂时运</span></h1>
-      <button className="primary" onClick={() => setStage("intake")}>开始排盘 <span>→</span></button>
-    </section>}
+    {(stage === "loading" || stage === "intro") && <RitualIntro restoring={stage === "loading"} onStart={() => setStage("intake")} />}
     {stage === "intake" && <section className="intake">
       <header><button onClick={() => setStage("intro")}>← 返回</button><span>艺</span><small>生辰排盘</small></header>
       <BirthIntake onSubmit={runBirthSubmission} />
