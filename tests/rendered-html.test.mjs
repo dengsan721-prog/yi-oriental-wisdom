@@ -50,6 +50,8 @@ test("keeps the GitHub Pages fallback honest, complete and accessible", async ()
   assert.match(html, /传统文化体验与自我观察参考/);
   assert.match(html, /<nav[^>]+aria-label="结果分区"/i);
   assert.match(html, /<main\b/i);
+  assert.match(html, /href="https:\/\/yi-oriental-wisdom\.dengsan721\.chatgpt\.site"[^>]*>\s*开始排盘（进入在线产品）/);
+  assert.match(html, /此静态页面只说明报告结构/);
   assert.doesNotMatch(html, /Demo|演示版|测试版|购买|¥|￥|365元/);
   assert.doesNotMatch(html, /李叔同|曾国藩|南怀瑾|倪海厦|东方命理全景推演/);
   assert.doesNotMatch(html, /您的命局|你的命局|日主为|喜用神为/);

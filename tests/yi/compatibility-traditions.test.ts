@@ -29,6 +29,16 @@ describe("compatibility", () => {
     expect(result.tenGodDynamics[1].theme).toBe(calculateTenGod(second.pillars.day.stem, first.pillars.day.stem));
   });
 
+  it("uses dedicated business governance rules", () => {
+    const result = calculateCompatibility(first, second, "business");
+    expect(result.actionRules.join(" ")).toMatch(/投资|成本审批/);
+    expect(result.actionRules.join(" ")).toMatch(/利润.*亏损/);
+    expect(result.actionRules.join(" ")).toMatch(/权限/);
+    expect(result.actionRules.join(" ")).toMatch(/暂停/);
+    expect(result.actionRules.join(" ")).toMatch(/退出/);
+    expect(result.actionRules.join(" ")).toMatch(/文档交接/);
+  });
+
   it.each([
     ["合", "子", "丑"],
     ["冲", "子", "午"],
@@ -103,6 +113,7 @@ describe("traditional readings", () => {
     ["子", "丑", "合"], ["子", "午", "冲"], ["子", "未", "害"], ["寅", "巳", "刑"], ["子", "寅", undefined],
   ])("classifies %s-%s as %s", (left, right, expected) => {
     const relations = classifyBranchRelation(left, right);
-    expected ? expect(relations).toContain(expected) : expect(relations).toEqual([]);
+    if (expected) expect(relations).toContain(expected);
+    else expect(relations).toEqual([]);
   });
 });

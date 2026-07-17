@@ -47,8 +47,13 @@ function crossRelations(a: FourPillarsResult, b: FourPillarsResult) {
 export function calculateCompatibility(first: FourPillarsResult, second: FourPillarsResult, relationship: RelationshipType): CompatibilityResult {
   const elementDynamics = elements.map(element => ({ element, first: first.elementCounts[element], second: second.elementCounts[element], observation: first.elementCounts[element] === second.elementCounts[element] ? "配置接近，仍需观察实际分工。" : `${first.elementCounts[element] > second.elementCounts[element] ? "A" : "B"}盘该元素更显，适合由经验较多的一方先示范而非包办。` }));
   const aToB = directionalGod(first, second), bToA = directionalGod(second, first);
+  const actionRules = relationship === "business" ? [
+    "投资与成本审批：约定金额阈值、双人审批和留痕方式。", "利润与亏损分配：投入前书面明确比例、时间和追加责任。",
+    "权限边界：列明各自决策权限、否决事项与升级路径。", "暂停条件：触及现金流、安全或合规红线时立即暂停并复核。",
+    "退出流程：预先约定通知期、估值方式、债务处理和客户沟通。", "文档交接：退出或换岗时交接合同、账号、数据、进度与责任清单。",
+  ] : ["先描述事件，再表达感受和需要。", "重要约定写明负责人、时间点与复盘方式。", "高压时先暂停，恢复后只处理一个议题。"];
   return { relationship, elementDynamics, tenGodDynamics: [
     { direction: "A→B", basis: `A日主${first.professional.dayMaster.stem}相对B日主${second.professional.dayMaster.stem}`, theme: aToB, observation: `以${aToB}主题观察A对B的影响，不作价值排序。` },
     { direction: "B→A", basis: `B日主${second.professional.dayMaster.stem}相对A日主${first.professional.dayMaster.stem}`, theme: bToA, observation: `以${bToA}主题观察B对A的影响，不作价值排序。` },
-  ], combinationsAndClashes: crossRelations(first, second), communicationScenario: scenarios[relationship], actionRules: ["先描述事件，再表达感受和需要。", "重要约定写明负责人、时间点与复盘方式。", "高压时先暂停，恢复后只处理一个议题。"], limitations: ["合盘不输出单一分数，也不判断关系成败。", "命盘只提供观察语言，关系质量仍以真实互动、意愿和安全为准。", ...(first.confidence === "limited" || second.confidence === "limited" ? ["至少一方时辰未知，时柱相关互动不作确定结论。"] : [])] };
+  ], combinationsAndClashes: crossRelations(first, second), communicationScenario: scenarios[relationship], actionRules, limitations: ["合盘不输出单一分数，也不判断关系成败。", "命盘只提供观察语言，关系质量仍以真实互动、意愿和安全为准。", ...(first.confidence === "limited" || second.confidence === "limited" ? ["至少一方时辰未知，时柱相关互动不作确定结论。"] : [])] };
 }

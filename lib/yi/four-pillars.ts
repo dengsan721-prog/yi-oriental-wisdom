@@ -112,7 +112,7 @@ function calculateFourPillarsInternal(input: BirthInput, compareUnknownTimeEndpo
   const result: FourPillarsResult = {
     pillars, elementCounts, professional: buildProfessional(pillars, elementCounts, tenGods, ambiguousPillars), ambiguousPillars,
     confidence: input.timeConfidence === "exact" ? "high" : input.timeConfidence === "approximate" ? "medium" : "limited",
-    disclaimer: "传统文化体验与自我观察参考，不作为重大人生决策依据。",
+    disclaimer: "传统文化体验与自我观察参考，不作为医疗、法律、投资或其他重大人生决策依据。",
   };
   if (compareUnknownTimeEndpoints && (!input.time || input.timeConfidence === "unknown")) {
     const endpointInput = { ...input, timeConfidence: "unknown" as const };
