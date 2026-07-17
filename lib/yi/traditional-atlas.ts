@@ -6,7 +6,8 @@ export type AtlasOption = {
   id: string;
   title: string;
   image: string;
-  crop: string;
+  imageAspect: number;
+  visualFocus?: { x: number; y: number; width: number; height: number };
   hotspot?: { x: number; y: number };
   professionalResult: string;
   traditionalBasis: string;
@@ -106,6 +107,51 @@ const starSeeds: Seed[] = [
   { id:"star-pisces", title:"双鱼座", signal:"太阳落在双鱼座的现代占星分类", plain:"常被用来观察想象共情和感受多重可能的倾向", scene:"创作和陪伴时能进入细腻感受，也容易把边界放得太宽", strength:"想象与共情", pitfall:"混淆自己的需要与他人的需要", action:"分别写下事实、感受和责任" },
 ];
 
+const faceVisualFocus: Record<string, NonNullable<AtlasOption["visualFocus"]>> = {
+  "face-oval": { x: 0, y: 0, width: 20, height: 100 },
+  "face-round": { x: 20, y: 0, width: 20, height: 100 },
+  "face-square": { x: 40, y: 0, width: 20, height: 100 },
+  "face-long": { x: 60, y: 0, width: 20, height: 100 },
+  "face-heart": { x: 80, y: 0, width: 20, height: 100 },
+  "face-brow-straight": { x: 2, y: 32, width: 16, height: 11 },
+  "face-brow-arched": { x: 22, y: 32, width: 16, height: 11 },
+  "face-eye-open": { x: 42, y: 36, width: 16, height: 10 },
+  "face-nose-defined": { x: 67, y: 39, width: 6, height: 25 },
+  "face-mouth-balanced": { x: 86, y: 55, width: 8, height: 9 },
+};
+
+const palmShapeVisualFocus: Record<string, NonNullable<AtlasOption["visualFocus"]>> = {
+  "palm-wood": { x: 0, y: 0, width: 20, height: 100 },
+  "palm-fire": { x: 20, y: 0, width: 20, height: 100 },
+  "palm-earth": { x: 40, y: 0, width: 20, height: 100 },
+  "palm-metal": { x: 60, y: 0, width: 20, height: 100 },
+  "palm-water": { x: 80, y: 0, width: 20, height: 100 },
+};
+
+function getVisual(method: AtlasMethodId, seed: Seed) {
+  if (method === "face") {
+    const isFeature = seed.id.startsWith("face-brow") || seed.id === "face-eye-open"
+      || seed.id === "face-nose-defined" || seed.id === "face-mouth-balanced";
+    return {
+      image: isFeature ? "reference/face-feature-reference.webp" : "reference/face-reference.webp",
+      imageAspect: isFeature ? 1717 / 916 : 1619 / 971,
+      visualFocus: faceVisualFocus[seed.id],
+    };
+  }
+  if (method === "mole") {
+    return { image: "reference/mole-reference.webp", imageAspect: 1448 / 1086 };
+  }
+  if (method === "palm") {
+    const isShape = seed.id.startsWith("palm-") && !seed.hotspot;
+    return {
+      image: isShape ? "reference/palm-shape-reference.webp" : "reference/palm-reference.webp",
+      imageAspect: isShape ? 1778 / 885 : 1448 / 1086,
+      visualFocus: isShape ? palmShapeVisualFocus[seed.id] : undefined,
+    };
+  }
+  return { image: "", imageAspect: 16 / 9 };
+}
+
 function makeOption(method: AtlasMethodId, seed: Seed): AtlasOption {
   const isStar = method === "star";
   const basis = method === "face"
@@ -115,9 +161,7 @@ function makeOption(method: AtlasMethodId, seed: Seed): AtlasOption {
       : method === "palm"
         ? `《麻衣神相》相关手相术语提供图谱索引；左右手均以当下可见形态对照，不采用男左女右的定命规则，观察点为“${seed.signal}”。`
         : `这是太阳星座的现代文化分类，并非中国古典命理计算；天文学星座与占星人格表达必须分开，当前只记录“${seed.signal}”。`;
-  const image = method === "face" ? "reference/face-reference.webp"
-    : method === "mole" ? "reference/mole-reference.webp"
-      : method === "palm" ? "reference/palm-reference.webp" : "";
+  const visual = getVisual(method, seed);
   const sources = isStar
     ? ["culture.nasa-constellations"]
     : ["classic.ma-yi-shen-xiang"];
@@ -131,8 +175,9 @@ function makeOption(method: AtlasMethodId, seed: Seed): AtlasOption {
   return {
     id: seed.id,
     title: seed.title,
-    image,
-    crop: seed.crop ?? "50% 50%",
+    image: visual.image,
+    imageAspect: visual.imageAspect,
+    visualFocus: visual.visualFocus,
     hotspot: seed.hotspot,
     professionalResult: `${seed.title}｜传统图谱把“${seed.signal}”作为单项观察线索，不能脱离整体与现实经历独立定论。`,
     traditionalBasis: basis,

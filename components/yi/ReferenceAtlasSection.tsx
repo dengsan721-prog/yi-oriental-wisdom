@@ -15,9 +15,9 @@ const starSymbols: Record<string, string> = {
 
 function getSource(id: string) {
   const classic = getTraditionalSource(id);
-  if (classic) return { title: classic.title, grade: classic.grade, url: classic.url, role: classic.usage, boundary: classic.boundary };
+  if (classic) return { title: classic.title, grade: classic.grade, url: classic.url, role: classic.usage, editionNote: classic.editionNote, boundary: classic.boundary };
   const reference = YI_REFERENCE_SOURCES[id];
-  return reference ? { title: reference.title, grade: reference.grade, url: reference.url, role: reference.role, boundary: reference.boundary } : null;
+  return reference ? { title: reference.title, grade: reference.grade, url: reference.url, role: reference.role, editionNote: "现代边界参考；链接内容与访问状态以来源页面为准。", boundary: reference.boundary } : null;
 }
 
 export function ReferenceAtlasSection({ chart }: { chart: FourPillarsResult; birth: BirthInput }) {
@@ -42,11 +42,14 @@ export function ReferenceAtlasSection({ chart }: { chart: FourPillarsResult; bir
 
     <div className="atlas-layout">
       <div className="atlas-reference" aria-label={`${option.title}标准参考图`}>
-        {option.image
-          ? <img src={imageSrc} style={{ objectPosition: option.crop }} alt={`${option.title}标准参考照片`} />
-          : <div className="star-reference" aria-hidden="true"><span>{starSymbols[option.id]}</span><i /><i /><i /><i /><i /></div>}
-        {option.hotspot && <i className="atlas-hotspot" style={{ left:`${option.hotspot.x}%`, top:`${option.hotspot.y}%` }} />}
-        <span className="atlas-caption">标准示意 · 自行对照</span>
+        <div className="atlas-visual-canvas" style={{ aspectRatio: String(option.imageAspect) }}>
+          {option.image
+            ? <img src={imageSrc} alt={`${option.title}标准参考照片`} />
+            : <div className="star-reference" aria-hidden="true"><span>{starSymbols[option.id]}</span><i /><i /><i /><i /><i /></div>}
+          {option.visualFocus && <i aria-hidden="true" className="atlas-visual-focus" style={{ left:`${option.visualFocus.x}%`, top:`${option.visualFocus.y}%`, width:`${option.visualFocus.width}%`, height:`${option.visualFocus.height}%` }} />}
+          {option.hotspot && <i aria-hidden="true" className="atlas-hotspot" style={{ left:`${option.hotspot.x}%`, top:`${option.hotspot.y}%` }} />}
+          <span className="atlas-caption">选中区域 · 自行对照</span>
+        </div>
       </div>
 
       <div className="atlas-options">
@@ -62,7 +65,7 @@ export function ReferenceAtlasSection({ chart }: { chart: FourPillarsResult; bir
 
     <details className="atlas-sources">
       <summary>理论依据与版本边界（{sources.length}）</summary>
-      {sources.map((source) => <section key={source.title}><b>{source.grade} · {source.title}</b><p>{source.role}</p><small>{source.boundary}</small>{source.url && <a href={source.url} target="_blank" rel="noreferrer">查看可核来源 ↗</a>}</section>)}
+      {sources.map((source) => <section key={source.title}><b>{source.grade} · {source.title}</b><p>{source.role}</p><small><strong>版本说明</strong>{source.editionNote}</small><small><strong>使用边界</strong>{source.boundary}</small>{source.url && <a href={source.url} target="_blank" rel="noreferrer">查看可核来源 ↗</a>}</section>)}
     </details>
   </section>;
 }
