@@ -22,9 +22,11 @@ function godAt(chart: FourPillarsResult, pillar: PillarKey, position?: "stem" | 
 
 function relationEvidence(chart: FourPillarsResult, preferred: PillarKey[]) {
   const positions = preferred.map(pillar => `${pillarNames[pillar]}柱`).join("、");
-  const selected = chart.professional.relations.find(relation => relation.pillars.every(pillar => preferred.includes(pillar)));
-  return selected
-    ? `${positions}实见${selected.label}，涉及${selected.symbols.join("、")}`
+  const selected = chart.professional.relations.filter(relation =>
+    relation.pillars.length === preferred.length && relation.pillars.every(pillar => preferred.includes(pillar)));
+  const distinct = [...new Map(selected.map(relation => [relation.label, relation])).values()];
+  return distinct.length
+    ? `${positions}实见${distinct.map(relation => `${relation.label}（${relation.symbols.join("、")}）`).join("、")}`
     : `${positions}未见五合、六合、三合、冲、刑、害、破`;
 }
 
@@ -95,7 +97,7 @@ const talentSelector: DomainSelector = chart => [
       : "出生时间未提供，不能补造未来能力线索；长期项目先从已知经验设计小试验，再按反馈更新判断。",
     mirror: "像远处航标而不是自动驾驶：它能提示试验方向，却不能替代近处水深、天气变化和每次航行后的修正。",
     caution: "本条高度依赖可靠出生时辰；即使时柱已知，也不据此预言晚年、成就或子女，只用于规划可验证的行动。",
-    pillarDependencies: ["hour"], ruleIds: ["ten-god.hidden-stems.v1", "domain.mapping.v2"],
+    pillarDependencies: ["hour", "day"], ruleIds: ["ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
 ];
 
@@ -114,7 +116,7 @@ const careerSelector: DomainSelector = chart => [
     plainLanguage: "年柱可作早期经验入口，月柱可作当前组织接口。两者的关系提示旧方法进入新规则时，哪些部分顺接、哪些需要更新。",
     mirror: "像旧齿轮装进新机器：保留精度高的齿面，同时测量新的转速与负载，才能判断是坚持优势还是调整接口。",
     caution: "干支关系不评价组织好坏，也不保证升迁或变动；是否适配要以职责、反馈、绩效口径和可持续性验证。",
-    pillarDependencies: ["year", "month"], ruleIds: ["relation.gan-zhi.v1", "ten-god.hidden-stems.v1", "domain.mapping.v2"],
+    pillarDependencies: ["year", "month", "day"], ruleIds: ["relation.gan-zhi.v1", "ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
   {
     id: "career-pace", professionalTitle: "日主支持与输出的职业节奏", innovationTitle: "责任配速",
@@ -195,7 +197,7 @@ const familySelector: DomainSelector = chart => [
     plainLanguage: "家庭照顾常把旧责任与现实任务叠在一起。命盘只提供提问坐标，真正的分工仍要核对时间、能力和对方意愿。",
     mirror: "像一场接力：可靠不是一个人跑完全程，而是知道谁能接棒、何时补位，以及照顾者如何恢复后再出发。",
     caution: "关系结构不等于谁天生应该牺牲，也不给家人贴标签；照顾安排应尊重同意、资源边界与现实支持。",
-    pillarDependencies: ["year", "month"], ruleIds: ["relation.gan-zhi.v1", "ten-god.hidden-stems.v1", "domain.mapping.v2"],
+    pillarDependencies: ["year", "month", "day"], ruleIds: ["relation.gan-zhi.v1", "ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
   {
     id: "family-future", professionalTitle: "时柱相关的传承观察", innovationTitle: "留白传承",
@@ -207,7 +209,7 @@ const familySelector: DomainSelector = chart => [
       : "出生时间不可得，不判断子女、晚年或晚景；家庭未来只从现有责任、可用资源和共同意愿制定计划。",
     mirror: "像递出一盏灯：你能提供光和经验，却不能替下一代选择道路；计划的意义是增加支持，不是复制人生。",
     caution: "本条高度依赖可靠时辰；即使时柱已知，也不预测子女数量、亲子结果或晚年事件，更不作价值标签。",
-    pillarDependencies: ["hour"], ruleIds: ["ten-god.hidden-stems.v1", "domain.mapping.v2"],
+    pillarDependencies: ["hour", "day"], ruleIds: ["ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
 ];
 
