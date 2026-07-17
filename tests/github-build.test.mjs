@@ -42,6 +42,11 @@ test("GitHub build is the full bundled React app", async () => {
   for (const fortuneTerm of ["阶段气候", "原局互动", "机会来源", "压力来源", "岁运关系", "典型场景", "年度动作"]) {
     assert.match(js, new RegExp(fortuneTerm));
   }
+  for (const atlasTerm of ["相面", "面痣", "手纹", "星座", "标准照片与图谱仅供自行对照"]) {
+    assert.match(js, new RegExp(atlasTerm));
+  }
+  assert.doesNotMatch(js, /称骨/);
+  assert.doesNotMatch(js, /getUserMedia|FileReader|type=["']file["']|capture=["']/);
   assert.match(css, /@keyframes yi-breathe/);
   assert.match(css, /\.birth-fact-band/);
   assert.match(css, /\.professional-pillars/);
