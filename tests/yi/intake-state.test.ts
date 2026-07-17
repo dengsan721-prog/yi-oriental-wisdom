@@ -7,7 +7,7 @@ import {
   type BirthSubmissionDraft,
 } from "../../components/yi/BirthIntake";
 import { TimePicker } from "../../components/yi/TimePicker";
-import { WheelPicker } from "../../components/yi/WheelPicker";
+import { getNextWheelIndex, WheelPicker } from "../../components/yi/WheelPicker";
 
 const baseInput: BirthSubmissionDraft = {
   name: "小艺",
@@ -45,5 +45,11 @@ describe("birth intake state", () => {
     const html = renderToStaticMarkup(createElement(TimePicker, { mode: "unknown", hour: null, minute: null, earthlyIndex: null, onChange: () => {} }));
     expect(html).toContain('aria-pressed="true"');
     expect(html.match(/aria-pressed="false"/g)).toHaveLength(2);
+  });
+
+  it("clamps keyboard wheel movement to the available options", () => {
+    expect(getNextWheelIndex(1, "ArrowDown", 3)).toBe(2);
+    expect(getNextWheelIndex(2, "ArrowDown", 3)).toBe(2);
+    expect(getNextWheelIndex(0, "ArrowUp", 3)).toBe(0);
   });
 });

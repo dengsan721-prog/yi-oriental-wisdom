@@ -50,6 +50,7 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
   const dateTriggerRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const restoreFocusFrame = useRef<number | null>(null);
   const options = useMemo(() => getWheelOptions(pendingDate, currentYear), [pendingDate, currentYear]);
   const labels = getDualCalendarLabel(draft.date);
   const dateSummary = draft.date.mode === "solar" ? labels.solar : labels.lunar;
@@ -59,9 +60,17 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
     if (dateOpen) cancelRef.current?.focus();
   }, [dateOpen]);
 
+  useEffect(() => () => {
+    if (restoreFocusFrame.current !== null) cancelAnimationFrame(restoreFocusFrame.current);
+  }, []);
+
   const closeDatePicker = () => {
     setDateOpen(false);
-    requestAnimationFrame(() => dateTriggerRef.current?.focus());
+    if (restoreFocusFrame.current !== null) cancelAnimationFrame(restoreFocusFrame.current);
+    restoreFocusFrame.current = requestAnimationFrame(() => {
+      dateTriggerRef.current?.focus();
+      restoreFocusFrame.current = null;
+    });
   };
 
   const updatePending = (patch: Partial<BirthDateSelection>) => {

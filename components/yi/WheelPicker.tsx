@@ -11,15 +11,24 @@ type Props<T extends string | number> = {
   onChange: (value: T) => void;
 };
 
+export function getNextWheelIndex(current: number, key: "ArrowUp" | "ArrowDown", optionCount: number) {
+  return Math.max(0, Math.min(optionCount - 1, current + (key === "ArrowDown" ? 1 : -1)));
+}
+
 export function WheelPicker<T extends string | number>({ label, value, options, onChange }: Props<T>) {
   const ref = useRef<HTMLDivElement>(null);
   const frame = useRef<number | null>(null);
+  const pendingFocusIndex = useRef<number | null>(null);
 
   useEffect(() => {
     const index = Math.max(0, options.findIndex((option) => option.value === value));
     const list = ref.current;
     const option = list?.children[index] as HTMLElement | undefined;
     if (list && option) list.scrollTo({ top: option.offsetTop - list.clientHeight / 2 + option.offsetHeight / 2 });
+    if (option && pendingFocusIndex.current === index) {
+      option.focus();
+      pendingFocusIndex.current = null;
+    }
   }, [options, value]);
 
   useEffect(() => () => {
@@ -38,7 +47,8 @@ export function WheelPicker<T extends string | number>({ label, value, options, 
           if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
           event.preventDefault();
           const index = options.findIndex((option) => option.value === value);
-          const next = Math.max(0, Math.min(options.length - 1, index + (event.key === "ArrowDown" ? 1 : -1)));
+          const next = getNextWheelIndex(index, event.key, options.length);
+          pendingFocusIndex.current = next;
           onChange(options[next].value);
         }}
         onScroll={() => {
