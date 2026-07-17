@@ -15,6 +15,14 @@ export function getNextWheelIndex(current: number, key: "ArrowUp" | "ArrowDown",
   return Math.max(0, Math.min(optionCount - 1, current + (key === "ArrowDown" ? 1 : -1)));
 }
 
+type VerticalRect = Pick<DOMRect, "top" | "height">;
+
+export function getCenteredScrollTop(currentScrollTop: number, listRect: VerticalRect, optionRect: VerticalRect) {
+  const listCenter = listRect.top + listRect.height / 2;
+  const optionCenter = optionRect.top + optionRect.height / 2;
+  return currentScrollTop + optionCenter - listCenter;
+}
+
 export function WheelPicker<T extends string | number>({ label, value, options, onChange }: Props<T>) {
   const ref = useRef<HTMLDivElement>(null);
   const frame = useRef<number | null>(null);
@@ -24,7 +32,7 @@ export function WheelPicker<T extends string | number>({ label, value, options, 
     const index = Math.max(0, options.findIndex((option) => option.value === value));
     const list = ref.current;
     const option = list?.children[index] as HTMLElement | undefined;
-    if (list && option) list.scrollTo({ top: option.offsetTop - list.clientHeight / 2 + option.offsetHeight / 2 });
+    if (list && option) list.scrollTo({ top: getCenteredScrollTop(list.scrollTop, list.getBoundingClientRect(), option.getBoundingClientRect()) });
     if (option && pendingFocusIndex.current === index) {
       option.focus();
       pendingFocusIndex.current = null;

@@ -9,7 +9,7 @@ import {
   type BirthSubmissionDraft,
 } from "../../components/yi/BirthIntake";
 import { TimePicker } from "../../components/yi/TimePicker";
-import { getNextWheelIndex, WheelPicker } from "../../components/yi/WheelPicker";
+import { getCenteredScrollTop, getNextWheelIndex, WheelPicker } from "../../components/yi/WheelPicker";
 
 const baseInput: BirthSubmissionDraft = {
   gender: "male",
@@ -102,5 +102,12 @@ describe("birth intake state", () => {
     expect(getNextWheelIndex(1, "ArrowDown", 3)).toBe(2);
     expect(getNextWheelIndex(2, "ArrowDown", 3)).toBe(2);
     expect(getNextWheelIndex(0, "ArrowUp", 3)).toBe(0);
+  });
+
+  it("centers a wheel option with its viewport delta instead of its offset-parent position", () => {
+    const listRect = { top: 520, height: 180 };
+
+    expect(getCenteredScrollTop(1760, listRect, { top: 588, height: 44 })).toBe(1760);
+    expect(getCenteredScrollTop(1760, listRect, { top: 544, height: 44 })).toBe(1716);
   });
 });
