@@ -48,6 +48,8 @@ export type ChartRelation = {
   label: string;
 };
 
+export type AmbiguousProfessionalField = "structureBalance" | "sameAndResourceElements" | "lowerCountElements" | "tenGodSummary" | "relationSummary";
+
 export type ProfessionalChart = {
   dayMaster: { stem: string; element: ElementName; polarity: "yang" | "yin" };
   structureBalance: "support-heavy" | "mixed" | "expression-heavy";
@@ -59,6 +61,7 @@ export type ProfessionalChart = {
   lowerCountElements: ElementName[];
   tenGods: TenGodEntry[];
   relations: ChartRelation[];
+  ambiguousFields: AmbiguousProfessionalField[];
 };
 
 export type FourPillarsResult = {
@@ -92,7 +95,7 @@ export type InterpretationItem = {
 export type ProfessionalOverview = {
   dayMaster: string;
   dayMasterElement: ElementName;
-  structureBalance: ProfessionalChart["structureBalance"];
+  structureBalance: ProfessionalChart["structureBalance"] | "ambiguous";
   pattern: string;
   climate: string;
   sameAndResourceElements: ElementName[];
@@ -100,4 +103,5 @@ export type ProfessionalOverview = {
   tenGodSummary: string;
   relationSummary: string;
   confidence: FourPillarsResult["confidence"];
+  ambiguousFields: AmbiguousProfessionalField[];
 };

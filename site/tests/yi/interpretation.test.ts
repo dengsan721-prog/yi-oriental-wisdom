@@ -82,6 +82,19 @@ describe("professional interpretation", () => {
     expect(items.some(item => item.pillarDependencies.every(pillar => pillar === "day") && !item.affectedByUnknownHour)).toBe(true);
   });
 
+  it("does not expose noon-only professional overview fields on an unknown-time boundary day", () => {
+    const overview = buildProfessionalOverview(boundaryUnknownChart);
+    expect(overview.ambiguousFields).toEqual(expect.arrayContaining([
+      "structureBalance", "lowerCountElements", "tenGodSummary", "relationSummary",
+    ]));
+    expect(overview.structureBalance).toBe("ambiguous");
+    expect(overview.ambiguousFields).not.toContain("sameAndResourceElements");
+    expect(overview.sameAndResourceElements.length).toBeGreaterThan(0);
+    expect(overview.lowerCountElements).toEqual([]);
+    expect(overview.tenGodSummary).toMatch(/不作单一判断|时辰不详且处交节日/);
+    expect(overview.relationSummary).toMatch(/不作单一判断|时辰不详且处交节日/);
+  });
+
   it("derives judgments from chart structure instead of the input year", () => {
     const changedStructure = calculateFourPillars({
       name: "林知远",
