@@ -7,7 +7,7 @@ import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 import { BirthIntake, type BirthSubmission } from "./BirthIntake";
 import { ResultShell } from "./ResultShell";
 import { LifeHome } from "./LifeHome";
-import { clearLifeProfile, createLifeProfile, loadLifeProfile, saveLifeProfile, type LifeProfile, type StorageResult } from "../../lib/yi/life-profile";
+import { clearLifeProfile, createLifeProfile, getBrowserStorage, loadLifeProfile, saveLifeProfile, type LifeProfile, type StorageResult } from "../../lib/yi/life-profile";
 
 type Stage = "loading" | "intro" | "intake" | "calculating" | "result" | "home";
 
@@ -26,7 +26,9 @@ export function YiExperience() {
 
   useEffect(() => {
     const restoreTimer = window.setTimeout(() => {
-      const saved = loadLifeProfile(window.localStorage);
+      const storage = getBrowserStorage(window);
+      if (!storage) { setStage("intro"); return; }
+      const saved = loadLifeProfile(storage);
       if (saved) {
         try {
           const savedResult = calculateFourPillars(saved.birth);
@@ -36,7 +38,7 @@ export function YiExperience() {
           setResult(savedResult);
           setStage("home");
         } catch {
-          clearLifeProfile(window.localStorage);
+          clearLifeProfile(storage);
           setStage("intro");
         }
       } else setStage("intro");
@@ -69,7 +71,8 @@ export function YiExperience() {
   function saveAndOpenHome() {
     if (!result || !birth) return;
     const next = createLifeProfile({ name, birth, chart: result, overview: buildProfessionalOverview(result), interpretations: buildInterpretations(result), existing: profile });
-    const saved = saveLifeProfile(window.localStorage, next);
+    const storage = getBrowserStorage(window);
+    const saved = storage ? saveLifeProfile(storage, next) : { ok: false as const, reason: "security" as const };
     if (!saved.ok) {
       setStorageError("本机档案保存失败，请检查浏览器存储权限或空间后重试。");
       return;
@@ -80,13 +83,15 @@ export function YiExperience() {
   }
 
   function updateProfile(next: LifeProfile): StorageResult {
-    const saved = saveLifeProfile(window.localStorage, next);
+    const storage = getBrowserStorage(window);
+    const saved = storage ? saveLifeProfile(storage, next) : { ok: false as const, reason: "security" as const };
     if (saved.ok) setProfile(next);
     return saved;
   }
 
   function removeProfile(): StorageResult {
-    const cleared = clearLifeProfile(window.localStorage);
+    const storage = getBrowserStorage(window);
+    const cleared = storage ? clearLifeProfile(storage) : { ok: false as const, reason: "security" as const };
     if (!cleared.ok) return cleared;
     setProfile(null);
     setName("");
