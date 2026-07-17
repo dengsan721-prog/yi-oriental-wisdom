@@ -2,21 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { domainLabels, relationshipTypes } from "../../lib/content/demo";
-import {
-  getDaysInMonth,
-  getYearGroups,
-  toEarthlyHour,
-} from "../../lib/yi/date-picker";
+import { toEarthlyHour } from "../../lib/yi/date-picker";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { BirthIntake, type BirthSubmission } from "./BirthIntake";
 import type {
-  BirthInput,
   ElementName,
   FourPillarsResult,
 } from "../../lib/yi/types";
 
 type Stage = "intro" | "intake" | "calculating" | "result";
-const months = Array.from({ length: 12 }, (_, index) => index + 1);
 const elements: ElementName[] = ["木", "火", "土", "金", "水"];
 const zodiac: Record<string, string> = {
   子: "鼠",
@@ -84,17 +78,10 @@ export function YiExperience() {
   const [unknownHour, setUnknownHour] = useState(false);
   const [name, setName] = useState("");
   const [location, setLocation] = useState("杭州");
-  const [decade, setDecade] = useState(1990);
   const [calcStep, setCalcStep] = useState(0);
   const [result, setResult] = useState<FourPillarsResult | null>(null);
   const [relation, setRelation] = useState(0);
   const [otherYear, setOtherYear] = useState(1992);
-  const yearGroups = getYearGroups(currentYear);
-  const days = getDaysInMonth(year, month);
-
-  useEffect(() => {
-    if (day > days) setDay(days);
-  }, [day, days]);
   useEffect(() => {
     if (stage !== "calculating") return;
     const timer = window.setInterval(
@@ -153,26 +140,6 @@ export function YiExperience() {
         ? "节奏有别"
         : "张力明显";
 
-  function runChart(event: React.FormEvent) {
-    event.preventDefault();
-    const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const time = unknownHour
-      ? null
-      : `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-    setResult(
-      calculateFourPillars({
-        name,
-        date,
-        time,
-        location,
-        gender: "unspecified",
-        timeConfidence: unknownHour ? "unknown" : "exact",
-      }),
-    );
-    setCalcStep(0);
-    setStage("calculating");
-  }
-
   function runBirthSubmission(value: BirthSubmission) {
     const [nextYear, nextMonth, nextDay] = value.date.split("-").map(Number);
     const [nextHour, nextMinute] = value.time?.split(":").map(Number) ?? [0, 0];
@@ -210,174 +177,6 @@ export function YiExperience() {
             <small>生辰排盘</small>
           </header>
           <BirthIntake onSubmit={runBirthSubmission} />
-        </section>
-      )}
-
-      {false && (
-        <section className="intake">
-          <header>
-            <button onClick={() => setStage("intro")}>← 返回</button>
-            <span>艺</span>
-            <small>生辰排盘</small>
-          </header>
-          <form onSubmit={runChart} className="intake-card">
-            <div className="step-head">
-              <span>建立出生坐标</span>
-              <h1>请选择出生年月日时</h1>
-              <p>年份可直接输入，也可按年代快速跳转。</p>
-            </div>
-            <div className="identity-row">
-              <label>
-                <span>姓名</span>
-                <input
-                  required
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  placeholder="请输入姓名"
-                />
-              </label>
-              <label>
-                <span>出生地点</span>
-                <input
-                  required
-                  value={location}
-                  onChange={(event) => setLocation(event.target.value)}
-                />
-              </label>
-            </div>
-            <div className="picker-block">
-              <div className="picker-title">
-                <b>年份</b>
-                <label>
-                  直接输入{" "}
-                  <input
-                    type="number"
-                    min="1900"
-                    max={currentYear}
-                    value={year}
-                    onChange={(event) => {
-                      const value = Math.min(
-                        currentYear,
-                        Math.max(1900, Number(event.target.value)),
-                      );
-                      setYear(value);
-                      setDecade(Math.floor(value / 10) * 10);
-                    }}
-                  />
-                </label>
-              </div>
-              <div className="decades">
-                {yearGroups.map((item) => (
-                  <button
-                    type="button"
-                    className={decade === item ? "active" : ""}
-                    onClick={() => setDecade(item)}
-                    key={item}
-                  >
-                    {item}年代
-                  </button>
-                ))}
-              </div>
-              <div className="years">
-                {Array.from(
-                  { length: Math.min(10, currentYear - decade + 1) },
-                  (_, index) => decade + index,
-                ).map((item) => (
-                  <button
-                    type="button"
-                    className={year === item ? "active" : ""}
-                    onClick={() => setYear(item)}
-                    key={item}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="picker-block">
-              <b>月份</b>
-              <div className="months">
-                {months.map((item) => (
-                  <button
-                    type="button"
-                    className={month === item ? "active" : ""}
-                    onClick={() => setMonth(item)}
-                    key={item}
-                  >
-                    {item}月
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="picker-block">
-              <b>日期</b>
-              <div className="days">
-                {Array.from({ length: days }, (_, index) => index + 1).map(
-                  (item) => (
-                    <button
-                      type="button"
-                      className={day === item ? "active" : ""}
-                      onClick={() => setDay(item)}
-                      key={item}
-                    >
-                      {item}
-                    </button>
-                  ),
-                )}
-              </div>
-            </div>
-            <div className="time-row">
-              <div>
-                <b>出生时间</b>
-                <div className="clock">
-                  <select
-                    disabled={unknownHour}
-                    value={hour}
-                    onChange={(event) => setHour(Number(event.target.value))}
-                  >
-                    {Array.from({ length: 24 }, (_, item) => (
-                      <option key={item} value={item}>
-                        {String(item).padStart(2, "0")}时 ·{" "}
-                        {toEarthlyHour(item)}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    disabled={unknownHour}
-                    value={minute}
-                    onChange={(event) => setMinute(Number(event.target.value))}
-                  >
-                    {[0, 15, 30, 45].map((item) => (
-                      <option key={item} value={item}>
-                        {String(item).padStart(2, "0")}分
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <label className="unknown">
-                <input
-                  type="checkbox"
-                  checked={unknownHour}
-                  onChange={(event) => setUnknownHour(event.target.checked)}
-                />
-                时辰不详
-              </label>
-            </div>
-            <div className="date-confirm">
-              <span>
-                {year}年 {month}月 {day}日
-              </span>
-              <b>
-                {unknownHour
-                  ? "时辰不详"
-                  : `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")} · ${toEarthlyHour(hour)}`}
-              </b>
-            </div>
-            <button className="primary submit" type="submit">
-              生成命盘 <span>→</span>
-            </button>
-          </form>
         </section>
       )}
 

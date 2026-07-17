@@ -30,9 +30,9 @@ export function TimePicker({ mode, hour, minute, earthlyIndex, onChange }: Props
     <section className="time-picker" aria-labelledby="time-heading">
       <h2 id="time-heading">出生时辰</h2>
       <div className="time-modes" role="group" aria-label="时辰精度">
-        <button type="button" className={mode === "exact" ? "active" : ""} onClick={() => setMode("exact")}>精确时间</button>
-        <button type="button" className={mode === "earthly" ? "active" : ""} onClick={() => setMode("earthly")}>十二时辰</button>
-        <button type="button" className={mode === "unknown" ? "active" : ""} onClick={() => setMode("unknown")}>不知道时辰</button>
+        <button type="button" aria-pressed={mode === "exact"} className={mode === "exact" ? "active" : ""} onClick={() => setMode("exact")}>精确时间</button>
+        <button type="button" aria-pressed={mode === "earthly"} className={mode === "earthly" ? "active" : ""} onClick={() => setMode("earthly")}>十二时辰</button>
+        <button type="button" aria-pressed={mode === "unknown"} className={mode === "unknown" ? "active" : ""} onClick={() => setMode("unknown")}>不知道时辰</button>
       </div>
       {mode === "exact" && (
         <div className="time-wheels">

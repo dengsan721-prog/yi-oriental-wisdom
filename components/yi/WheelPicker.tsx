@@ -17,8 +17,14 @@ export function WheelPicker<T extends string | number>({ label, value, options, 
 
   useEffect(() => {
     const index = Math.max(0, options.findIndex((option) => option.value === value));
-    ref.current?.children[index]?.scrollIntoView({ block: "center" });
+    const list = ref.current;
+    const option = list?.children[index] as HTMLElement | undefined;
+    if (list && option) list.scrollTo({ top: option.offsetTop - list.clientHeight / 2 + option.offsetHeight / 2 });
   }, [options, value]);
+
+  useEffect(() => () => {
+    if (frame.current !== null) cancelAnimationFrame(frame.current);
+  }, []);
 
   return (
     <div className="wheel-column">
@@ -28,7 +34,6 @@ export function WheelPicker<T extends string | number>({ label, value, options, 
         role="listbox"
         aria-label={label}
         ref={ref}
-        tabIndex={0}
         onKeyDown={(event) => {
           if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
           event.preventDefault();
@@ -54,6 +59,7 @@ export function WheelPicker<T extends string | number>({ label, value, options, 
             type="button"
             role="option"
             aria-selected={option.value === value}
+            tabIndex={option.value === value ? 0 : -1}
             className={option.value === value ? "selected" : ""}
             key={String(option.value)}
             onClick={() => onChange(option.value)}
