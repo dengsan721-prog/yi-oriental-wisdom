@@ -17,9 +17,13 @@ export function MirrorSection({ chart }: { chart: FourPillarsResult }) {
     <article className="reading-card zodiac-mirror">
       <span>生肖镜像 · 年支文化镜</span>
       <div className="zodiac-heading">
-        <div><small>{zodiac.branch}支 · {zodiac.element} · {zodiac.yinYang}</small><h2>{zodiac.zodiac} · {zodiac.firstImpression}</h2></div>
+        <div>
+          <small>{zodiac.yearAmbiguous ? `代表候选：${zodiac.branch}${zodiac.zodiac}` : `${zodiac.branch}支 · ${zodiac.element} · ${zodiac.yinYang}`} · {zodiac.confidence}</small>
+          <h2>{zodiac.zodiac} · {zodiac.firstImpression}</h2>
+        </div>
         <p>{zodiac.culturalSource}</p>
       </div>
+      {(zodiac.yearAmbiguous || zodiac.monthAmbiguous) && <p className="zodiac-coordinate-note">{zodiac.yearAmbiguous ? "年柱处于交节边界，生肖仅显示当前代表候选。" : ""}{zodiac.monthAmbiguous ? "月柱处于交节边界，月令互证仅显示代表候选。" : ""}</p>}
       <div className="zodiac-patterns">
         <p><b>建立信任</b>{zodiac.trustStyle}</p>
         <p><b>顺境能力</b>{zodiac.strengthPattern}</p>
@@ -40,10 +44,21 @@ export function MirrorSection({ chart }: { chart: FourPillarsResult }) {
         <p><b>长期练习</b>{zodiac.longTermPractice}</p>
       </div>
       <aside className="zodiac-boundary"><b>使用边界</b><p>{zodiac.caution}</p></aside>
-      <footer className="zodiac-sources"><b>理论与文化来源</b>{zodiac.sources.map(id => {
-        const source = YI_REFERENCE_SOURCES[id];
-        return <a key={id} href={source.url} target="_blank" rel="noreferrer">{source.grade} · {source.title}</a>;
-      })}</footer>
+      <footer className="zodiac-sources">
+        <b>理论与文化来源</b>
+        <p className="zodiac-product-note"><strong>产品观察模型</strong>：生活场景、信任方式与行动建议属于产品观察模型和生活化转译，不是古籍原文。</p>
+        <details>
+          <summary>查看来源用途与边界</summary>
+          <ul>{zodiac.sources.map(id => {
+            const source = YI_REFERENCE_SOURCES[id];
+            return <li key={id}>
+              <a href={source.url} target="_blank" rel="noreferrer">{source.grade} · {source.title}</a>
+              <p>{source.role}</p>
+              <small>{source.boundary}</small>
+            </li>;
+          })}</ul>
+        </details>
+      </footer>
     </article>
 
     <div className="mirror-grid">
