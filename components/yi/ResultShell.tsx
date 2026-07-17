@@ -1,7 +1,8 @@
 "use client";
 
-import { useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import type { RelationshipType } from "../../lib/yi/compatibility";
+import type { ReportSectionId } from "../../lib/yi/hash-router";
 import type { BirthSubmission } from "./BirthIntake";
 import type { BirthInput, FourPillarsResult, InterpretationItem, ProfessionalOverview } from "../../lib/yi/types";
 import { PortraitSection } from "./PortraitSection";
@@ -19,32 +20,39 @@ export const getResultSections = () => [
   ["tradition", "传统"],
 ] as const;
 
-type SectionId = ReturnType<typeof getResultSections>[number][0];
-export const getAvailableSections = (includeExtended = false): SectionId[] => includeExtended ? getResultSections().map(([id]) => id) : ["portrait", "chart", "detail"];
-export const createResultScrollPositions = () => new Map<SectionId, number>();
-export const restoreScrollTop = (positions: Map<SectionId, number>, section: SectionId) => positions.get(section) ?? 0;
-export type ResultShellState = { activeSection: SectionId; compatibility: { relationship: RelationshipType; secondBirth: BirthSubmission | null } };
-export type ResultShellAction = { type: "select-section"; section: SectionId } | { type: "set-relationship"; relationship: RelationshipType } | { type: "set-second-birth"; birth: BirthSubmission };
-export const createInitialResultShellState = (): ResultShellState => ({ activeSection: "portrait", compatibility: { relationship: "partner", secondBirth: null } });
+export const getAvailableSections = (includeExtended = false): ReportSectionId[] => includeExtended ? getResultSections().map(([id]) => id) : ["portrait", "chart", "detail"];
+export const createResultScrollPositions = () => new Map<ReportSectionId, number>();
+export const restoreScrollTop = (positions: Map<ReportSectionId, number>, section: ReportSectionId) => positions.get(section) ?? 0;
+export const selectResultSection = (positions: Map<ReportSectionId, number>, activeSection: ReportSectionId, next: ReportSectionId, scrollTop: number, onSectionChange: (section: ReportSectionId) => void) => {
+  positions.set(activeSection, scrollTop);
+  onSectionChange(next);
+};
+export type ResultShellState = { compatibility: { relationship: RelationshipType; secondBirth: BirthSubmission | null } };
+export type ResultShellAction = { type: "set-relationship"; relationship: RelationshipType } | { type: "set-second-birth"; birth: BirthSubmission };
+export const createInitialResultShellState = (): ResultShellState => ({ compatibility: { relationship: "partner", secondBirth: null } });
 export function resultShellReducer(state: ResultShellState, action: ResultShellAction): ResultShellState {
-  if (action.type === "select-section") return { ...state, activeSection: action.section };
   if (action.type === "set-relationship") return { ...state, compatibility: { ...state.compatibility, relationship: action.relationship } };
   return { ...state, compatibility: { ...state.compatibility, secondBirth: action.birth } };
 }
 
-export function ResultShell({ name, chart, birth, overview, interpretations, onRestart, onSaveHome, storageError }: {
+export function ResultShell({ name, chart, birth, overview, interpretations, activeSection, onSectionChange, onRestart, onSaveHome, storageError }: {
   name: string; chart: FourPillarsResult; overview: ProfessionalOverview;
-  birth: BirthInput; interpretations: InterpretationItem[]; onRestart: () => void; onSaveHome?: () => void; storageError?: string;
+  birth: BirthInput; interpretations: InterpretationItem[]; activeSection: ReportSectionId; onSectionChange: (section: ReportSectionId) => void;
+  onRestart: () => void; onSaveHome?: () => void; storageError?: string;
 }) {
   const [state, dispatch] = useReducer(resultShellReducer, undefined, createInitialResultShellState);
-  const activeSection = state.activeSection;
   const [scrollPositions] = useState(createResultScrollPositions);
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
   const availableSections = getAvailableSections(true);
-  function selectSection(next: SectionId) {
-    scrollPositions.set(activeSection, window.scrollY);
-    dispatch({ type: "select-section", section: next });
-    window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollTop(scrollPositions, next) }));
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollTop(scrollPositions, activeSection) }));
+    return () => {
+      window.cancelAnimationFrame(frame);
+      scrollPositions.set(activeSection, window.scrollY);
+    };
+  }, [activeSection, scrollPositions]);
+  function selectSection(next: ReportSectionId) {
+    selectResultSection(scrollPositions, activeSection, next, window.scrollY, onSectionChange);
   }
   return <section className="result-shell">
     <header className="result-head"><div><span className="mini-mark">艺</span><b>{name || "访客"}的人生报告</b></div><div>{onSaveHome && <button onClick={() => setSaveConfirmOpen(true)}>保存到本机</button>}<button onClick={onRestart}>重新排盘</button></div></header>

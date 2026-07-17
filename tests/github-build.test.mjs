@@ -23,6 +23,10 @@ test("GitHub build is the full bundled React app", async () => {
   assert.match(html, /<div id="root"><\/div>/);
   assert.match(html, /\/yi-oriental-wisdom\/assets\/index-[^\"]+\.js/);
   assert.ok(assets.some((name) => /^index-.+\.js$/.test(name)));
+  const jsName = assets.find((name) => /^index-.+\.js$/.test(name));
+  const js = await readFile(new URL(`../../docs/assets/${jsName}`, import.meta.url), "utf8");
+  assert.match(js, /建立出生坐标/);
+  assert.match(js, /开始排盘/);
   assert.doesNotMatch(html, /href="#birth"/);
   assert.doesNotMatch(html, /function calculateChart/);
 });

@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
+import { formatYiHash, parseYiHash, resolveYiHydratedRoute } from "../../lib/yi/hash-router";
 import { buildInterpretations, buildProfessionalOverview } from "../../lib/yi/interpretation";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 import { BirthIntake, type BirthSubmission } from "./BirthIntake";
 import { ResultShell } from "./ResultShell";
 import { LifeHome } from "./LifeHome";
 import { clearLifeProfile, createLifeProfile, getBrowserStorage, loadLifeProfile, saveLifeProfile, type LifeProfile, type StorageResult } from "../../lib/yi/life-profile";
-
-type Stage = "loading" | "intro" | "intake" | "calculating" | "result" | "home";
+import { useYiRoute } from "./useYiRoute";
 
 function Mark() {
   return <div className="yi-mark" aria-label="艺"><span>艺</span><i /><b /></div>;
@@ -24,7 +24,8 @@ function RitualIntro({ restoring, onStart }: { restoring: boolean; onStart: () =
 }
 
 export function YiExperience() {
-  const [stage, setStage] = useState<Stage>("loading");
+  const { route, push, replace } = useYiRoute();
+  const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [calcStep, setCalcStep] = useState(0);
   const [result, setResult] = useState<FourPillarsResult | null>(null);
@@ -34,8 +35,17 @@ export function YiExperience() {
 
   useEffect(() => {
     const restoreTimer = window.setTimeout(() => {
+      const requestedRoute = parseYiHash(window.location.hash);
+      const finishHydration = (hasProfile: boolean) => {
+        const nextRoute = resolveYiHydratedRoute(requestedRoute, hasProfile);
+        if (formatYiHash(nextRoute) !== formatYiHash(requestedRoute)) replace(nextRoute);
+        setLoading(false);
+      };
       const storage = getBrowserStorage(window);
-      if (!storage) { setStage("intro"); return; }
+      if (!storage) {
+        finishHydration(false);
+        return;
+      }
       const saved = loadLifeProfile(storage);
       if (saved) {
         try {
@@ -44,28 +54,27 @@ export function YiExperience() {
           setName(saved.name);
           setBirth(saved.birth);
           setResult(savedResult);
-          setStage("home");
+          finishHydration(true);
         } catch {
           clearLifeProfile(storage);
-          setStage("intro");
+          finishHydration(false);
         }
-      } else setStage("intro");
+      } else finishHydration(false);
     }, 0);
     return () => window.clearTimeout(restoreTimer);
-  }, []);
+  }, [replace]);
 
   useEffect(() => {
-    if (stage !== "calculating") return;
-    const timer = window.setInterval(() => setCalcStep(value => {
-      if (value >= 5) {
-        window.clearInterval(timer);
-        window.setTimeout(() => setStage("result"), 240);
-        return value;
-      }
-      return value + 1;
-    }), 260);
+    if (loading || route.page !== "calculating") return;
+    const timer = window.setInterval(() => setCalcStep(value => Math.min(value + 1, 5)), 260);
     return () => window.clearInterval(timer);
-  }, [stage]);
+  }, [loading, route.page]);
+
+  useEffect(() => {
+    if (loading || route.page !== "calculating" || calcStep < 5) return;
+    const timer = window.setTimeout(() => replace({ page: "report", section: "portrait" }), 240);
+    return () => window.clearTimeout(timer);
+  }, [calcStep, loading, replace, route.page]);
 
   function runBirthSubmission(value: BirthSubmission) {
     setStorageError("");
@@ -73,7 +82,7 @@ export function YiExperience() {
     setBirth(value);
     setResult(calculateFourPillars(value));
     setCalcStep(0);
-    setStage("calculating");
+    replace({ page: "calculating" });
   }
 
   function saveAndOpenHome() {
@@ -87,7 +96,7 @@ export function YiExperience() {
     }
     setStorageError("");
     setProfile(next);
-    setStage("home");
+    push({ page: "home" });
   }
 
   function updateProfile(next: LifeProfile): StorageResult {
@@ -105,28 +114,30 @@ export function YiExperience() {
     setName("");
     setBirth(null);
     setResult(null);
-    setStage("intro");
+    replace({ page: "intro" });
     return cleared;
   }
 
   return <main>
-    {stage === "home" && profile && <LifeHome profile={profile} onChange={updateProfile} onClear={removeProfile} onViewReport={() => setStage("result")} />}
-    {(stage === "loading" || stage === "intro") && <RitualIntro restoring={stage === "loading"} onStart={() => setStage("intake")} />}
-    {stage === "intake" && <section className="intake">
-      <header><button onClick={() => setStage("intro")}>← 返回</button><span>艺</span><small>生辰排盘</small></header>
+    {!loading && route.page === "home" && profile && <LifeHome profile={profile} onChange={updateProfile} onClear={removeProfile} onViewReport={() => push({ page: "report", section: "portrait" })} />}
+    {(loading || route.page === "intro") && <RitualIntro restoring={loading} onStart={() => push({ page: "birth" })} />}
+    {!loading && route.page === "birth" && <section className="intake">
+      <header><button onClick={() => push({ page: "intro" })}>← 返回</button><span>艺</span><small>生辰排盘</small></header>
       <BirthIntake onSubmit={runBirthSubmission} />
     </section>}
-    {stage === "calculating" && <section className="calculating">
+    {!loading && route.page === "calculating" && <section className="calculating">
       <Mark /><p>正在建立 {name || "访客"} 的命盘</p>
       <div className="calc-list">{["四柱", "五行", "十神", "格局", "喜忌", "大运"].map((item, index) => <div className={index <= calcStep ? "active" : ""} key={item}><span>{index < calcStep ? "✓" : `0${index + 1}`}</span>{item}</div>)}</div>
     </section>}
-    {stage === "result" && result && birth && <ResultShell
+    {!loading && route.page === "report" && result && birth && <ResultShell
       name={name}
       chart={result}
       birth={birth}
       overview={buildProfessionalOverview(result)}
       interpretations={buildInterpretations(result)}
-      onRestart={() => setStage("intake")}
+      activeSection={route.section}
+      onSectionChange={section => push({ page: "report", section })}
+      onRestart={() => push({ page: "birth" })}
       onSaveHome={saveAndOpenHome}
       storageError={storageError}
     />}
