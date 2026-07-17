@@ -21,6 +21,7 @@ export const getResultSections = () => [
 ] as const;
 
 export const getAvailableSections = (includeExtended = false): ReportSectionId[] => includeExtended ? getResultSections().map(([id]) => id) : ["portrait", "chart", "detail"];
+export const shouldRenderSourceNote = (section: ReportSectionId) => section === "detail";
 export const createResultScrollPositions = () => new Map<ReportSectionId, number>();
 export const restoreScrollTop = (positions: Map<ReportSectionId, number>, section: ReportSectionId) => positions.get(section) ?? 0;
 export const selectResultSection = (positions: Map<ReportSectionId, number>, activeSection: ReportSectionId, next: ReportSectionId, scrollTop: number, onSectionChange: (section: ReportSectionId) => void) => {
@@ -62,14 +63,14 @@ export function ResultShell({ name, chart, birth, report, overview, interpretati
       {getResultSections().filter(([id]) => availableSections.includes(id)).map(([id, label]) => <button key={id} className={activeSection === id ? "active" : ""} aria-current={activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>{label}</button>)}
     </nav>
     <div className="result-content">
-      <div hidden={activeSection !== "portrait"}><PortraitSection overview={overview} items={interpretations} /></div>
+      <div hidden={activeSection !== "portrait"}><PortraitSection chart={chart} overview={overview} items={interpretations} /></div>
       <div hidden={activeSection !== "chart"}><ChartSection chart={chart} report={report} /></div>
       <div hidden={activeSection !== "detail"}><DetailSection items={interpretations} /></div>
       <div hidden={activeSection !== "fortune"}><FortuneSection chart={chart} birth={birth} /></div>
       <div hidden={activeSection !== "mirror"}><MirrorSection chart={chart} /></div>
       <div hidden={activeSection !== "compatibility"}><CompatibilitySection chart={chart} relationship={state.compatibility.relationship} secondBirth={state.compatibility.secondBirth} onRelationshipChange={relationship => dispatch({ type: "set-relationship", relationship })} onSecondBirthChange={birth => dispatch({ type: "set-second-birth", birth })} /></div>
       <div hidden={activeSection !== "tradition"}><TraditionSection chart={chart} birth={birth} /></div>
-      <SourceNote chart={chart} items={interpretations} />
+      {shouldRenderSourceNote(activeSection) && <SourceNote chart={chart} items={interpretations} />}
     </div>
   </section>;
 }

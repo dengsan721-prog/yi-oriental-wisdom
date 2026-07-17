@@ -150,7 +150,7 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
       <section className="calendar-switch gender-switch" role="group" aria-label="出生性别（用于大运顺逆）">
         {(["male", "female", "unspecified"] as const).map(value => <button type="button" key={value} aria-pressed={draft.gender === value} className={draft.gender === value ? "active" : ""} onClick={() => setDraft({ ...draft, gender: value })}>{value === "male" ? "男" : value === "female" ? "女" : "暂不指定"}</button>)}
       </section>
-      <section className="summary-control"><span>出生日期</span><strong>{dateSummary}</strong><button ref={dateTriggerRef} type="button" onClick={() => { setPendingDate(draft.date); setDateOpen(true); }}>选择日期</button></section>
+      <section className="summary-control"><span>出生日期 · {draft.date.mode === "solar" ? "阳历" : "农历"}</span><strong>{dateSummary}</strong><button ref={dateTriggerRef} type="button" onClick={() => { setPendingDate(draft.date); setDateOpen(true); }}>选择日期</button></section>
       <section className="time-entry" aria-labelledby="time-summary-heading">
         <h2 id="time-summary-heading">出生时辰</h2>
         <div className="time-modes" role="group" aria-label="时辰精度">
@@ -160,7 +160,6 @@ export function BirthIntake({ onSubmit }: { onSubmit: (value: BirthSubmission) =
         </div>
         {draft.timeMode !== "unknown" && <section className="summary-control time-summary"><span>{draft.timeMode === "exact" ? "当前时间" : "当前时辰"}</span><strong>{timeSummary}</strong><button type="button" onClick={(event) => chooseTimeMode(draft.timeMode, event.currentTarget)}>修改时辰</button></section>}
       </section>
-      <p className="dual-calendar-line">阳历 {labels.solar}<span>·</span>农历 {labels.lunar}<span>·</span>{timeSummary}</p>
       <button className="primary submit" type="submit">生成命盘 <span>→</span></button>
       {dateOpen && (
         <div className="picker-overlay" role="dialog" aria-modal="true" aria-labelledby="date-picker-title" ref={dialogRef} onKeyDown={(event) => {
