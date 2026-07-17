@@ -7,7 +7,7 @@ import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 import { BirthIntake, type BirthSubmission } from "./BirthIntake";
 import { ResultShell } from "./ResultShell";
 import { LifeHome } from "./LifeHome";
-import { clearLifeProfile, createLifeProfile, loadLifeProfile, saveLifeProfile, type LifeProfile } from "../../lib/yi/life-profile";
+import { clearLifeProfile, createLifeProfile, loadLifeProfile, saveLifeProfile, type LifeProfile, type StorageResult } from "../../lib/yi/life-profile";
 
 type Stage = "loading" | "intro" | "intake" | "calculating" | "result" | "home";
 
@@ -22,17 +22,23 @@ export function YiExperience() {
   const [result, setResult] = useState<FourPillarsResult | null>(null);
   const [birth, setBirth] = useState<BirthInput | null>(null);
   const [profile, setProfile] = useState<LifeProfile | null>(null);
+  const [storageError, setStorageError] = useState("");
 
   useEffect(() => {
     const restoreTimer = window.setTimeout(() => {
       const saved = loadLifeProfile(window.localStorage);
       if (saved) {
-        setProfile(saved);
-        setName(saved.name);
-        setBirth(saved.birth);
-        const savedResult = calculateFourPillars(saved.birth);
-        setResult(savedResult);
-        setStage("home");
+        try {
+          const savedResult = calculateFourPillars(saved.birth);
+          setProfile(saved);
+          setName(saved.name);
+          setBirth(saved.birth);
+          setResult(savedResult);
+          setStage("home");
+        } catch {
+          clearLifeProfile(window.localStorage);
+          setStage("intro");
+        }
       } else setStage("intro");
     }, 0);
     return () => window.clearTimeout(restoreTimer);
@@ -52,6 +58,7 @@ export function YiExperience() {
   }, [stage]);
 
   function runBirthSubmission(value: BirthSubmission) {
+    setStorageError("");
     setName(value.name);
     setBirth(value);
     setResult(calculateFourPillars(value));
@@ -61,28 +68,32 @@ export function YiExperience() {
 
   function saveAndOpenHome() {
     if (!result || !birth) return;
-    if (profile && profile.birth.date === birth.date && profile.birth.time === birth.time && profile.birth.location === birth.location) {
-      setStage("home");
+    const next = createLifeProfile({ name, birth, chart: result, overview: buildProfessionalOverview(result), interpretations: buildInterpretations(result), existing: profile });
+    const saved = saveLifeProfile(window.localStorage, next);
+    if (!saved.ok) {
+      setStorageError("本机档案保存失败，请检查浏览器存储权限或空间后重试。");
       return;
     }
-    const next = createLifeProfile({ name, birth, chart: result, overview: buildProfessionalOverview(result), interpretations: buildInterpretations(result) });
-    saveLifeProfile(window.localStorage, next);
+    setStorageError("");
     setProfile(next);
     setStage("home");
   }
 
-  function updateProfile(next: LifeProfile) {
-    saveLifeProfile(window.localStorage, next);
-    setProfile(next);
+  function updateProfile(next: LifeProfile): StorageResult {
+    const saved = saveLifeProfile(window.localStorage, next);
+    if (saved.ok) setProfile(next);
+    return saved;
   }
 
-  function removeProfile() {
-    clearLifeProfile(window.localStorage);
+  function removeProfile(): StorageResult {
+    const cleared = clearLifeProfile(window.localStorage);
+    if (!cleared.ok) return cleared;
     setProfile(null);
     setName("");
     setBirth(null);
     setResult(null);
     setStage("intro");
+    return cleared;
   }
 
   return <main>
@@ -109,6 +120,7 @@ export function YiExperience() {
       interpretations={buildInterpretations(result)}
       onRestart={() => setStage("intake")}
       onSaveHome={saveAndOpenHome}
+      storageError={storageError}
     />}
   </main>;
 }

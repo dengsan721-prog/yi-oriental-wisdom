@@ -1,33 +1,41 @@
 "use client";
 
 import { useState } from "react";
-import { buildLifeHome, type LifeProfile } from "../../lib/yi/life-profile";
+import { buildLifeHome, lifeProfileReducer, type LifeProfile, type StorageResult } from "../../lib/yi/life-profile";
 
 type HomeSection = "overview" | "annual" | "monthly" | "events" | "relations";
 
 export function LifeHome({ profile, onChange, onViewReport, onClear }: {
   profile: LifeProfile;
-  onChange: (profile: LifeProfile) => void;
+  onChange: (profile: LifeProfile) => StorageResult;
   onViewReport: () => void;
-  onClear: () => void;
+  onClear: () => StorageResult;
 }) {
   const [section, setSection] = useState<HomeSection>("overview");
+  const [storageError, setStorageError] = useState("");
   const home = buildLifeHome(profile);
 
-  function update(changes: Partial<LifeProfile>) {
-    onChange({ ...profile, ...changes, updatedAt: new Date().toISOString() });
+  function update(next: LifeProfile) {
+    const result = onChange({ ...next, updatedAt: new Date().toISOString() });
+    setStorageError(result.ok ? "" : "本机档案保存失败，请检查浏览器存储权限或空间。你的修改尚未保存。");
   }
 
   function addEvent(form: FormData) {
     const title = String(form.get("title") ?? "").trim();
     if (!title) return;
-    update({ events: [...profile.events, { id: crypto.randomUUID(), title, date: String(form.get("date") ?? ""), note: String(form.get("note") ?? "").trim() }] });
+    update(lifeProfileReducer(profile, { type: "add-event", event: { id: crypto.randomUUID(), title, date: String(form.get("date") ?? ""), note: String(form.get("note") ?? "").trim() } }));
   }
 
   function addRelation(form: FormData) {
     const name = String(form.get("name") ?? "").trim();
     if (!name) return;
-    update({ relations: [...profile.relations, { id: crypto.randomUUID(), name, relationship: "other", note: String(form.get("note") ?? "").trim() }] });
+    update(lifeProfileReducer(profile, { type: "add-relation", relation: { id: crypto.randomUUID(), name, relationship: "other", note: String(form.get("note") ?? "").trim() } }));
+  }
+
+  function removeLocalProfile() {
+    if (!window.confirm("确定清除当前设备上的人生档案吗？此操作无法恢复。")) return;
+    const result = onClear();
+    if (!result.ok) setStorageError("本机档案清除失败，请检查浏览器存储权限后重试。");
   }
 
   return <section className="life-home">
@@ -44,13 +52,14 @@ export function LifeHome({ profile, onChange, onViewReport, onClear }: {
           <button onClick={() => setSection("events")}><small>{home.events.length} 个记录</small><b>重要事件</b><span>事件入口 →</span></button>
           <button onClick={() => setSection("relations")}><small>{home.relations.length} 个记录</small><b>关系观察</b><span>关系入口 →</span></button>
         </div>
-        <section className="life-actions"><h2>行动清单</h2>{home.actions.map(action => <label key={action.id}><input type="checkbox" checked={action.done} onChange={() => update({ actions: profile.actions.map(item => item.id === action.id ? { ...item, done: !item.done } : item) })} />{action.text}</label>)}</section>
+        <section className="life-actions"><h2>行动清单</h2>{home.actions.map(action => <label key={action.id}><input type="checkbox" checked={action.done} onChange={() => update(lifeProfileReducer(profile, { type: "toggle-action", id: action.id }))} />{action.text}</label>)}</section>
       </>}
       {section === "annual" && <section className="life-panel"><header><small>年度地图</small><h1>看清阶段，不替你决定</h1></header>{profile.annualMap.map(entry => <article key={entry.year}><b>{entry.year} · {entry.theme}</b><p>{entry.focus}</p></article>)}</section>}
       {section === "monthly" && <section className="life-panel"><header><small>月度节律</small><h1>把观察落到一个月</h1></header>{profile.monthlyRhythm.map(entry => <article key={entry.month}><b>{entry.month} · {entry.theme}</b><p>{entry.action}</p></article>)}</section>}
-      {section === "events" && <section className="life-panel"><header><small>事件记录</small><h1>给重要变化留一条线索</h1></header><form action={addEvent} className="life-form"><input name="title" required placeholder="事件名称" aria-label="事件名称" /><input name="date" type="date" aria-label="事件日期" /><input name="note" placeholder="一条备注（可选）" aria-label="事件备注" /><button>添加事件</button></form>{profile.events.map(event => <article key={event.id}><b>{event.title}</b><p>{event.date || "未设日期"} · {event.note || "暂无备注"}</p></article>)}</section>}
-      {section === "relations" && <section className="life-panel"><header><small>关系观察</small><h1>记录事实，也保留理解空间</h1></header><form action={addRelation} className="life-form"><input name="name" required placeholder="对方称呼" aria-label="关系称呼" /><input name="note" placeholder="你的观察（可选）" aria-label="关系观察" /><button>添加关系</button></form>{profile.relations.map(relation => <article key={relation.id}><b>{relation.name}</b><p>{relation.note || "暂无观察"}</p></article>)}</section>}
-      <footer className="life-privacy"><p>档案只保存在当前设备的浏览器中。清除后无法恢复。</p><button onClick={() => window.confirm("确定清除当前设备上的人生档案吗？此操作无法恢复。") && onClear()}>清除本机档案</button></footer>
+      {section === "events" && <section className="life-panel"><header><small>可添加、可删除的本机事件记录</small><h1>给重要变化留一条线索</h1></header><form action={addEvent} className="life-form"><input name="title" required placeholder="事件名称" aria-label="事件名称" /><input name="date" type="date" aria-label="事件日期" /><input name="note" placeholder="一条备注（可选）" aria-label="事件备注" /><button>添加事件</button></form>{profile.events.map(event => <article key={event.id}><b>{event.title}</b><button className="record-delete" onClick={() => update(lifeProfileReducer(profile, { type: "delete-event", id: event.id }))}>删除</button><p>{event.date || "未设日期"} · {event.note || "暂无备注"}</p></article>)}</section>}
+      {section === "relations" && <section className="life-panel"><header><small>可添加、可删除的本机关系记录</small><h1>记录事实，也保留理解空间</h1></header><form action={addRelation} className="life-form"><input name="name" required placeholder="对方称呼" aria-label="关系称呼" /><input name="note" placeholder="你的观察（可选）" aria-label="关系观察" /><button>添加关系</button></form>{profile.relations.map(relation => <article key={relation.id}><b>{relation.name}</b><button className="record-delete" onClick={() => update(lifeProfileReducer(profile, { type: "delete-relation", id: relation.id }))}>删除</button><p>{relation.note || "暂无观察"}</p></article>)}</section>}
+      {storageError && <p className="storage-error" role="alert">{storageError}</p>}
+      <footer className="life-privacy"><p>档案只保存在当前设备的浏览器中。清除后无法恢复。</p><button onClick={removeLocalProfile}>清除本机档案</button></footer>
     </div>
   </section>;
 }
