@@ -1,6 +1,6 @@
 import { Solar } from "lunar-typescript";
 import { branchElements, stemElements, stems } from "./stems-branches";
-import type { BirthInput, ChartRelation, ElementName, FourPillarsResult, Pillar, PillarKey, ProfessionalChart, TenGodEntry, TenGodName } from "./types";
+import type { AmbiguousProfessionalField, BirthInput, ChartRelation, ElementName, FourPillarsResult, Pillar, PillarKey, ProfessionalChart, TenGodEntry, TenGodName } from "./types";
 
 const labels = { year: "根基｜年柱", month: "环境｜月柱", day: "本我｜日柱", hour: "愿景｜时柱" };
 const elementOrder: ElementName[] = ["木", "火", "土", "金", "水"];
@@ -60,11 +60,11 @@ function buildProfessional(
     dayMaster: { stem: pillars.day.stem, element: dayElement, polarity: polarity(pillars.day.stem) },
     structureBalance, supportScore, observationConfidence: pillars.hour ? "medium" : "limited",
     pattern: ambiguousPillars.includes("month") ? "结构观察：出生当日月柱跨节，月支十神暂不作单一判断" : `结构观察：月支本气呈${monthGod}，仅作为十神侧重，不判定古法格局`,
-    climate, sameAndResourceElements, lowerCountElements, tenGods, relations,
+    climate, sameAndResourceElements, lowerCountElements, tenGods, relations, ambiguousFields: [],
   };
 }
 
-export function calculateFourPillars(input: BirthInput): FourPillarsResult {
+function calculateFourPillarsInternal(input: BirthInput, compareUnknownTimeEndpoints: boolean): FourPillarsResult {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input.date);
   if (!match) throw new Error("请输入有效的公历日期");
   const [, yearText, monthText, dayText] = match;
@@ -109,9 +109,27 @@ export function calculateFourPillars(input: BirthInput): FourPillarsResult {
     const entries: TenGodEntry[] = pillar === "day" ? [] : [{ pillar, position: "stem", symbol: gan, tenGod: ganGod as TenGodName }];
     return entries.concat(hidden.map((symbol, hiddenStemIndex) => ({ pillar, position: "branch", symbol, tenGod: hiddenGods[hiddenStemIndex] as TenGodName, hiddenStemIndex })));
   });
-  return {
+  const result: FourPillarsResult = {
     pillars, elementCounts, professional: buildProfessional(pillars, elementCounts, tenGods, ambiguousPillars), ambiguousPillars,
     confidence: input.timeConfidence === "exact" ? "high" : input.timeConfidence === "approximate" ? "medium" : "limited",
     disclaimer: "传统文化体验与自我观察参考，不作为重大人生决策依据。",
   };
+  if (compareUnknownTimeEndpoints && (!input.time || input.timeConfidence === "unknown")) {
+    const endpointInput = { ...input, timeConfidence: "unknown" as const };
+    const start = calculateFourPillarsInternal({ ...endpointInput, time: "00:00" }, false);
+    const end = calculateFourPillarsInternal({ ...endpointInput, time: "23:59" }, false);
+    const fields: AmbiguousProfessionalField[] = [];
+    if (start.professional.structureBalance !== end.professional.structureBalance || start.professional.supportScore !== end.professional.supportScore) fields.push("structureBalance");
+    if (JSON.stringify(start.professional.sameAndResourceElements) !== JSON.stringify(end.professional.sameAndResourceElements)) fields.push("sameAndResourceElements");
+    if (JSON.stringify(start.elementCounts) !== JSON.stringify(end.elementCounts)
+      || JSON.stringify(start.professional.lowerCountElements) !== JSON.stringify(end.professional.lowerCountElements)) fields.push("lowerCountElements");
+    if (JSON.stringify(start.professional.tenGods) !== JSON.stringify(end.professional.tenGods)) fields.push("tenGodSummary");
+    if (JSON.stringify(start.professional.relations) !== JSON.stringify(end.professional.relations)) fields.push("relationSummary");
+    result.professional.ambiguousFields = fields;
+  }
+  return result;
+}
+
+export function calculateFourPillars(input: BirthInput): FourPillarsResult {
+  return calculateFourPillarsInternal(input, true);
 }
