@@ -55,6 +55,13 @@ describe("life profile", () => {
     expect(exportLifeProfile(savedProfile)).not.toContain("浙江省杭州市某医院");
   });
 
+  it("migrates an old v1 profile with a stored location on load", () => {
+    const storage = memoryStorage();
+    storage.setItem(LIFE_PROFILE_STORAGE_KEY, JSON.stringify(savedProfile));
+    expect(loadLifeProfile(storage)?.birth.location).toBe("");
+    expect(JSON.parse(storage.getItem(LIFE_PROFILE_STORAGE_KEY)!).birth.location).toBe("");
+  });
+
   it("labels generated yearly and monthly entries as review planning templates, not fortune inference", () => {
     const chart = calculateFourPillars(savedProfile.birth);
     const profile = createLifeProfile({ name: savedProfile.name, birth: savedProfile.birth, chart, overview: buildProfessionalOverview(chart), interpretations: buildInterpretations(chart), now: new Date("2026-07-17T12:00:00+08:00") });
@@ -78,6 +85,13 @@ describe("life profile", () => {
     expect(profile.annualMap).toHaveLength(3);
     expect(profile.monthlyRhythm).toHaveLength(12);
     expect(profile.actions[0]?.text).not.toBe("");
+  });
+
+  it("uses visitor as the profile fallback when name is empty", () => {
+    const birth = { ...savedProfile.birth, name: "" };
+    const chart = calculateFourPillars(birth);
+    const profile = createLifeProfile({ name: "", birth, chart, overview: buildProfessionalOverview(chart), interpretations: buildInterpretations(chart) });
+    expect(profile.name).toBe("访客");
   });
 
   it("updates the complete profile when the same birthday has a changed name and gender", () => {
