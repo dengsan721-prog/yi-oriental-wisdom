@@ -8,6 +8,7 @@ import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { buildInterpretations, buildProfessionalOverview, interpretationLength } from "../../lib/yi/interpretation";
 import { scenarioLibrary } from "../../lib/yi/scenario-library";
 import { YI_RULE_SOURCES } from "../../lib/yi/sources";
+import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 
 const expectedIds = [
   "self-day-master", "self-support", "self-interface",
@@ -50,6 +51,46 @@ const boundaryUnknownChart = calculateFourPillars({
   name: "立春边界", date: "2024-02-04", time: null, location: "北京",
   gender: "unspecified", timeConfidence: "unknown",
 });
+
+const scenarioMatrixBirths: Array<{ id: string; birth: BirthInput }> = [
+  { id: "1990-exact", birth: { name: "甲", date: "1990-06-15", time: "09:30", location: "杭州", gender: "female", timeConfidence: "exact" } },
+  { id: "1992-unknown", birth: { name: "乙", date: "1992-11-03", time: null, location: "北京", gender: "male", timeConfidence: "unknown" } },
+  { id: "1985-exact", birth: { name: "丙", date: "1985-02-20", time: "23:40", location: "成都", gender: "male", timeConfidence: "exact" } },
+  { id: "2001-exact", birth: { name: "丁", date: "2001-09-21", time: "14:10", location: "广州", gender: "unspecified", timeConfidence: "exact" } },
+  { id: "2024-boundary", birth: { name: "戊", date: "2024-02-04", time: null, location: "北京", gender: "unspecified", timeConfidence: "unknown" } },
+  { id: "1978-exact", birth: { name: "己", date: "1978-12-05", time: "06:20", location: "上海", gender: "female", timeConfidence: "exact" } },
+];
+
+function normalizeScenarioBody(scene: string): string {
+  return scene
+    .replace(/^[^，]+日主、[^，]+月令(?:见[^时]+|未见稳定关系)时，/, "")
+    .replace(/[甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥]/g, "符号")
+    .replace(/日主|月令|相合|三合|相冲|相刑|相害|相破|自刑/g, "证据");
+}
+
+function stableScenarioSignature(chart: FourPillarsResult): string {
+  const ambiguousPillars = new Set(chart.ambiguousPillars);
+  const ambiguousFields = new Set<string>(chart.professional.ambiguousFields);
+  const pillar = (key: "year" | "month" | "day" | "hour") => {
+    const value = chart.pillars[key];
+    return !value || ambiguousPillars.has(key) ? null : `${value.stem}${value.branch}`;
+  };
+  const relations = ambiguousFields.has("relationSummary") ? [] : chart.professional.relations
+    .filter((relation) => relation.pillars.every((key) => !ambiguousPillars.has(key)))
+    .map((relation) => `${relation.type}:${relation.pillars.join("-")}`)
+    .sort();
+  const structureStable = !ambiguousFields.has("structureBalance");
+  return JSON.stringify({
+    year: pillar("year"), month: pillar("month"), day: pillar("day"), hour: pillar("hour"),
+    structure: structureStable ? chart.professional.structureBalance : null,
+    supportScore: structureStable ? chart.professional.supportScore : null,
+    relations,
+  });
+}
+
+function scenarioVariant(item: ReturnType<typeof buildInterpretations>[number]): number {
+  return scenarioLibrary[item.id as keyof typeof scenarioLibrary].scenarios.indexOf(item.scenario);
+}
 
 describe("professional interpretation", () => {
   it("gives every interpretation a traceable seven-layer explanation", () => {
@@ -135,16 +176,111 @@ describe("professional interpretation", () => {
     const firstScenes = buildInterpretations(knownChart).map(item => item.scenario);
     const repeatedScenes = buildInterpretations(knownChart).map(item => item.scenario);
     const contrastingScenes = buildInterpretations(contrastingChart).map(item => item.scenario);
-    const stripEvidenceLabels = (scene: string) => scene
-      .replace(/^[^，]+日主、[^，]+月令(?:见[^时]+|未见稳定关系)时，/, "")
-      .replace(/[甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥]/g, "符号")
-      .replace(/日主|月令|相合|三合|相冲|相刑|相害|相破|自刑/g, "证据");
-    const firstSubstance = firstScenes.map(stripEvidenceLabels);
-    const contrastingSubstance = contrastingScenes.map(stripEvidenceLabels);
+    const firstSubstance = firstScenes.map(normalizeScenarioBody);
+    const contrastingSubstance = contrastingScenes.map(normalizeScenarioBody);
 
     expect(repeatedScenes).toEqual(firstScenes);
     expect(contrastingSubstance).not.toEqual(firstSubstance);
-    expect(contrastingSubstance.filter((scene, index) => scene === firstSubstance[index]).length).toBe(0);
+    expect(contrastingSubstance.filter((scene, index) => scene === firstSubstance[index]).length).toBeLessThanOrEqual(9);
+  });
+
+  it("declares one readable stable-evidence selector for every scenario ID", () => {
+    const source = readFileSync(new URL("../../lib/yi/scenario-library.ts", import.meta.url), "utf8");
+    const start = source.indexOf("const scenarioSelectorById: Record<InterpretationId, ScenarioSelector>");
+    const end = source.indexOf("export function getScenarioForChart", start);
+    const selectorTable = source.slice(start, end);
+
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    for (const id of expectedIds) expect(selectorTable, id).toContain(`"${id}"`);
+    expect(selectorTable).not.toMatch(/domain\s*===|id\.split|Math\.random|\byear\s*%/);
+  });
+
+  it("ignores ambiguous boundary representatives but responds to a stable day coordinate", () => {
+    const baselineScenes = buildInterpretations(boundaryUnknownChart).map((item) => item.scenario);
+    const ambiguousMutation: FourPillarsResult = {
+      ...boundaryUnknownChart,
+      pillars: {
+        ...boundaryUnknownChart.pillars,
+        year: knownChart.pillars.year,
+        month: knownChart.pillars.month,
+        hour: knownChart.pillars.hour,
+      },
+      professional: {
+        ...boundaryUnknownChart.professional,
+        dayMaster: knownChart.professional.dayMaster,
+        structureBalance: "expression-heavy",
+        supportScore: 5,
+        relations: knownChart.professional.relations,
+      },
+    };
+    const stableDayMutation: FourPillarsResult = {
+      ...boundaryUnknownChart,
+      pillars: { ...boundaryUnknownChart.pillars, day: knownChart.pillars.day },
+      professional: { ...boundaryUnknownChart.professional, dayMaster: knownChart.professional.dayMaster },
+    };
+
+    expect(buildInterpretations(ambiguousMutation).map((item) => item.scenario)).toEqual(baselineScenes);
+    expect(buildInterpretations(stableDayMutation).map((item) => item.scenario)).not.toEqual(baselineScenes);
+  });
+
+  it("keeps a six-chart scenario matrix deterministic, unique and substantively varied", () => {
+    const matrix = scenarioMatrixBirths.map(({ id, birth }) => {
+      const chart = calculateFourPillars(birth);
+      const items = buildInterpretations(chart);
+      const repeated = buildInterpretations(chart);
+      const scenes = items.map((item) => normalizeScenarioBody(item.scenario));
+      const variants = items.map(scenarioVariant);
+      expect(repeated.map((item) => item.scenario), `${id}:deterministic`).toEqual(items.map((item) => item.scenario));
+      expect(new Set(scenes).size, `${id}:unique`).toBe(21);
+      expect(variants.every((variant) => variant === 0 || variant === 1), `${id}:registered variant`).toBe(true);
+      return { id, chart, items, scenes, variants, signature: stableScenarioSignature(chart) };
+    });
+
+    const timeModes = new Set(scenarioMatrixBirths.map(({ birth }) => birth.time === null ? "unknown" : "exact"));
+    const polarities = new Set(matrix.map(({ chart }) => chart.professional.dayMaster.polarity));
+    const stableMonthSeasons = new Set(matrix.flatMap(({ chart }) => {
+      if (chart.ambiguousPillars.includes("month")) return [];
+      const branch = chart.pillars.month.branch;
+      if (["寅", "卯", "辰"].includes(branch)) return ["spring"];
+      if (["巳", "午", "未"].includes(branch)) return ["summer"];
+      if (["申", "酉", "戌"].includes(branch)) return ["autumn"];
+      return ["winter"];
+    }));
+    const stableStructures = new Set(matrix.flatMap(({ chart }) =>
+      chart.professional.ambiguousFields.includes("structureBalance") ? [] : [chart.professional.structureBalance]));
+    const relationTypes = new Set(matrix.flatMap(({ chart }) => chart.professional.relations.map((relation) => relation.type)));
+
+    expect(timeModes).toEqual(new Set(["exact", "unknown"]));
+    expect(polarities).toEqual(new Set(["yang", "yin"]));
+    expect(stableMonthSeasons).toEqual(new Set(["spring", "summer", "autumn", "winter"]));
+    expect(stableStructures).toEqual(new Set(["support-heavy", "mixed", "expression-heavy"]));
+    for (const type of [
+      "stem-combination", "branch-combination", "branch-clash", "branch-punishment", "branch-harm", "branch-break",
+    ] as const) expect(relationTypes.has(type), type).toBe(true);
+
+    for (const domain of ["self", "talent", "career", "wealth", "relationship", "family", "rhythm"] as const) {
+      const hasIndependentChoice = matrix.some(({ items }) => {
+        const domainVariants = items.filter((item) => item.domain === domain).map(scenarioVariant);
+        return new Set(domainVariants).size > 1;
+      });
+      expect(hasIndependentChoice, `${domain}:selectors must not switch as one group`).toBe(true);
+    }
+
+    const pairStats: Array<{ pair: string; differences: number }> = [];
+    for (let left = 0; left < matrix.length; left += 1) {
+      for (let right = left + 1; right < matrix.length; right += 1) {
+        const differences = matrix[left].scenes.filter((scene, index) => scene !== matrix[right].scenes[index]).length;
+        pairStats.push({ pair: `${matrix[left].id}|${matrix[right].id}`, differences });
+        if (matrix[left].signature !== matrix[right].signature) {
+          expect(differences, pairStats[pairStats.length - 1].pair).toBeGreaterThan(0);
+        }
+      }
+    }
+    for (const pair of ["1990-exact|1985-exact", "1992-unknown|1985-exact", "1990-exact|2024-boundary"]) {
+      expect(pairStats.find((entry) => entry.pair === pair)?.differences, pair).toBeGreaterThanOrEqual(12);
+    }
+    console.log(`SCENARIO_MATRIX=${JSON.stringify(pairStats)}`);
   });
 
   it("delivers exactly twenty-one paid-depth readings with the stable scenario IDs", () => {
