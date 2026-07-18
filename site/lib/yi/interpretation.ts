@@ -1,5 +1,5 @@
 import { getInterpretationEnrichment, type InterpretationId } from "./interpretation-enrichment";
-import { scenarioLibrary } from "./scenario-library";
+import { getScenarioForChart } from "./scenario-library";
 import { YI_RULE_SOURCES } from "./sources";
 import type { FourPillarsResult, InterpretationItem, PillarKey, ProfessionalOverview } from "./types";
 
@@ -279,7 +279,7 @@ export function buildInterpretations(chart: FourPillarsResult): InterpretationIt
   return (Object.entries(domainSelectors) as [Domain, DomainSelector][]).flatMap(([domain, selector]) => selector(chart).map(draft => {
     const sources = draft.ruleIds.map(id => YI_RULE_SOURCES[id]);
     const enrichment = getInterpretationEnrichment(draft.id);
-    const scene = scenarioLibrary[draft.id];
+    const scene = getScenarioForChart(draft.id, chart);
     const dependencies = [...draft.pillarDependencies];
     const affected = dependencies.some(pillar => chart.ambiguousPillars.includes(pillar));
     const heuristic = sources.some(source => source.sourceType === "product-heuristic");
