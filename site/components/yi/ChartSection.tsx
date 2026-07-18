@@ -62,7 +62,6 @@ export function ChartSection({ chart, report }: { chart: FourPillarsResult; repo
         <h1>{report.dayMaster}日主 · 命局骨架</h1>
       </div>
       <span className={`confidence-badge confidence-${report.confidence}`}>观察置信度 · {confidenceLabel[report.confidence]}</span>
-      <p>{report.summary}</p>
     </header>
 
     <section className="birth-fact-band" aria-label="出生事实">
@@ -87,21 +86,28 @@ export function ChartSection({ chart, report }: { chart: FourPillarsResult; repo
         <h2 id="life-overview-title">先看懂贯穿全局的那条线</h2>
         <p>{report.lifeTheme}</p>
       </article>
-      <section className="core-talents" aria-labelledby="core-talents-title">
-        <h2 id="core-talents-title">核心天赋</h2>
-        <ol>{report.coreTalents.map((talent, index) => <li key={talent}><span>0{index + 1}</span><p>{talent}</p></li>)}</ol>
-      </section>
-      <section className="central-tensions" aria-labelledby="central-tensions-title">
-        <h2 id="central-tensions-title">核心张力</h2>
-        <ol>{report.centralTensions.map((tension, index) => <li key={tension}><span>0{index + 1}</span><p>{tension}</p></li>)}</ol>
-      </section>
-      <article className="current-lesson">
-        <small>当下课题</small>
-        <p>{report.currentLesson}</p>
-      </article>
+      <details className="overview-depth"><summary>展开30秒人生概览</summary>
+        <div className="overview-grid">
+          <section className="core-talents" aria-labelledby="core-talents-title">
+            <h2 id="core-talents-title">核心天赋</h2>
+            <ol>{report.coreTalents.map((talent, index) => <li key={talent}><span>0{index + 1}</span><p>{talent}</p></li>)}</ol>
+          </section>
+          <section className="central-tensions" aria-labelledby="central-tensions-title">
+            <h2 id="central-tensions-title">核心张力</h2>
+            <ol>{report.centralTensions.map((tension, index) => <li key={tension}><span>0{index + 1}</span><p>{tension}</p></li>)}</ol>
+          </section>
+          <article className="current-lesson">
+            <small>当下课题</small>
+            <p>{report.currentLesson}</p>
+          </article>
+        </div>
+      </details>
     </section>
 
-    <section className="report-lead-grid" aria-label="命局结论与行动">
+    <details className="professional-depth"><summary>查看专业命盘骨架与依据</summary>
+      <div className="professional-depth-content">
+      <p className="professional-summary">{report.summary}</p>
+      <section className="report-lead-grid" aria-label="命局结论与行动">
       <div className="key-judgments">
         <h2>关键判断</h2>
         <ol>{report.keyJudgments.map((judgment) => <li key={judgment}>{judgment}</li>)}</ol>
@@ -110,7 +116,7 @@ export function ChartSection({ chart, report }: { chart: FourPillarsResult; repo
         <h2>三项行动</h2>
         <ol>{report.actions.map((action, index) => <li className="report-action" key={action}><span>0{index + 1}</span>{action}</li>)}</ol>
       </aside>
-    </section>
+      </section>
 
     <section className="professional-skeleton" aria-labelledby="professional-skeleton-title">
       <header>
@@ -161,7 +167,9 @@ export function ChartSection({ chart, report }: { chart: FourPillarsResult; repo
           </details>)}
         </div>
       </section>
-    </section>
+      </section>
+      </div>
+    </details>
 
     <aside className="ambiguity-note"><b>计算边界</b><p>{chart.disclaimer}</p></aside>
   </section>;

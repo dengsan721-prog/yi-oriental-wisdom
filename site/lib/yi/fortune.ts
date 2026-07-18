@@ -1,4 +1,5 @@
 import { Solar } from "lunar-typescript";
+import { relationDynamics } from "./report-copy";
 import { detectRelations, type DetectedRelation, type RelationCoordinate } from "./relations";
 import { branchElements, stemElements } from "./stems-branches";
 import type { BirthInput, ChartRelation, FourPillarsResult, PillarKey, TenGodName } from "./types";
@@ -192,16 +193,6 @@ function buildFortuneReading(stemBranch: string, tenGod: TenGodName, chart: Four
   };
 }
 
-function relationDynamics(type: ChartRelation["type"]): { scene: string; action: string } {
-  if (type === "stem-combination") return { scene: "意图或表达出现对接窗口，但口头一致仍需转成明确分工", action: "把共同意图写成负责人、期限和验收方式，再确认双方理解一致" };
-  if (type === "branch-combination") return { scene: "现实安排出现衔接机会，合作感增强的同时也容易省略边界确认", action: "先确认共同目标，再把资源归属、退出条件和下一次核对时间写清" };
-  if (type === "branch-trine") return { scene: "三层坐标形成同向联动，多个角色或任务可能在同一主题上互相放大", action: "只选一个共同目标汇总资源，并设置阶段检查点，避免同向投入失去边界" };
-  if (type === "branch-clash") return { scene: "时间表、立场或行动节奏发生正面对撞，需要先处理切换成本", action: "暂停即时结论，分列双方事实与不可让渡项，再安排一次带期限的协调" };
-  if (type === "branch-punishment") return { scene: "规则、压力或重复反应彼此牵动，容易在同一问题上反复加码", action: "记录触发顺序并设停止条件，必要时引入第三方协助拆开责任与情绪" };
-  if (type === "branch-harm") return { scene: "信息与期待出现错位，表面平静之下可能积累未说清的顾虑", action: "用复述确认对方原意，补问遗漏条件，不根据暗示替任何人下结论" };
-  return { scene: "原有接口或约定出现松动，需要辨认哪些仍有效、哪些应重新协商", action: "逐条核对旧约定的适用范围，保留可用部分并为变更留下书面记录" };
-}
-
 const annualGodGuidance: Record<TenGodName, { scene: string; action: string }> = {
   比肩: { scene: "自主选择与同辈分工成为当年的触发主题，个人主张更需要和共同任务对齐", action: "先写下自己的责任边界，再与同伴逐项确认谁决定、谁执行、谁复核" },
   劫财: { scene: "共享资源、竞争顺序或临时协作成为当年的触发主题，容易因分配不清增加摩擦", action: "先盘点共同资源和优先级，再设置额度、使用记录与退出条件" },
@@ -331,7 +322,6 @@ function buildFortuneStageCopy(
   stemBranch: string,
   tenGod: TenGodName,
   chart: FourPillarsResult,
-  reading: FortuneReading,
   range: { startAge: number; endAge: number; startYear: number; endYear: number },
 ): Pick<FortunePeriod, "stageStory" | "lifeAreas" | "alignedState" | "strainedState" | "actions"> {
   const pillars = knownPillars(chart);
@@ -345,21 +335,22 @@ function buildFortuneStageCopy(
     : `${stemBranch}大运与${stableCoordinatesText(chart)}逐项核对后未见相合、三合、相冲、相刑、相害或相破`;
   const frame = stageFrame(tenGod);
   const godGuidance = periodGodGuidance[tenGod];
+  const dynamics = relationDynamics(focal?.type ?? null);
   const confidence = confidenceText(chart.confidence);
 
   return {
-    stageStory: `阶段故事：${range.startYear}至${range.endYear}（${range.startAge}至${range.endAge}岁）的${stemBranch}${tenGod}大运，像${frame.image}。例如在一次${frame.scene}里，你可能先依靠“${godGuidance.scene}”处理眼前任务；协作方若没有听见边界，可能只感到“${frame.strained}”。原局的${month.label}${month.stemBranch}与${day.label}${day.stemBranch}提供环境和执行坐标，${relationEvidence}，事情因此更需要分阶段核对而不是抢下结论。更成熟的走法是${godGuidance.action}，再依据现实反馈调整；本段按${confidence}作阶段观察，不把它写成必然事件。`,
+    stageStory: `阶段故事：${range.startYear}至${range.endYear}（${range.startAge}至${range.endAge}岁）的${stemBranch}${tenGod}大运，像${frame.image}。例如在一次${frame.scene}里，你可能先依靠“${godGuidance.scene}”处理眼前任务；关系动力呈现为${dynamics.scene}，协作方可能因此感到${dynamics.friction}。原局的${month.label}${month.stemBranch}与${day.label}${day.stemBranch}提供环境和执行坐标，${relationEvidence}，事情因此更需要分阶段核对而不是抢下结论。成熟走法是${dynamics.action}，再用${godGuidance.action}承接；本段按${confidence}观察，不把它写成必然事件。`,
     lifeAreas: {
-      career: `事业：${stemBranch}${tenGod}阶段，${frame.career}；计算坐标落在${month.label}${month.stemBranch}与${day.label}${day.stemBranch}，因此${reading.career}`,
-      wealth: `财富：${stemBranch}${tenGod}阶段，${frame.wealth}；以${day.label}${day.stemBranch}为现实执行点，${reading.resources}`,
+      career: `事业：${stemBranch}${tenGod}阶段，${frame.career}；${month.label}${month.stemBranch}与${day.label}${day.stemBranch}是计算坐标，先用一次真实交付检验节奏，不由十神直接指定职业。`,
+      wealth: `财富：${stemBranch}${tenGod}阶段，${frame.wealth}；以${day.label}${day.stemBranch}核对预算、时间和承诺，不把命理结构写成收益保证。`,
       relationship: `关系：${stemBranch}${tenGod}阶段，${frame.relationship}；${relationEvidence}，并以日支${day.branch}（${day.label}${day.stemBranch}）核对互动，不把结构标签贴到具体的人身上。`,
       family: `家庭：${stemBranch}${tenGod}阶段，${frame.family}；家庭坐标先参照${family.label}${family.stemBranch}，再结合${relationEvidence}，只讨论分工与沟通倾向，不归罪任何成员。`,
-      rhythm: `身心节奏：${stemBranch}${tenGod}阶段，${frame.rhythm}；${month.label}${month.stemBranch}仍是季节背景，${reading.wellbeing}`,
+      rhythm: `身心节奏：${stemBranch}${tenGod}阶段，${frame.rhythm}；${month.label}${month.stemBranch}仍是季节背景，只记录负荷与恢复变化，不据此作健康预测。`,
     },
-    alignedState: `顺势状态：${stemBranch}${tenGod}大运中，${frame.aligned}；当${relationEvidence}能够被清楚识别并写进边界、期限或分工时，这种状态更容易通过现实反馈得到确认。`,
-    strainedState: `吃力状态：${stemBranch}${tenGod}大运中，${frame.strained}；若忽略${relationEvidence}和${day.label}${day.stemBranch}的现实容量，压力可能反复出现，但这不等于必然发生某个事件。`,
+    alignedState: `顺势状态：${stemBranch}${tenGod}大运中，${frame.aligned}；${dynamics.advantage}。当${relationEvidence}能够被识别并写进边界、期限或分工时，再用现实反馈确认。`,
+    strainedState: `吃力状态：${stemBranch}${tenGod}大运中，${frame.strained}；${dynamics.friction}。若忽略${relationEvidence}和${day.label}${day.stemBranch}的现实容量，压力可能反复，但不等于必然事件。`,
     actions: [
-      `行动一：针对${stemBranch}${tenGod}的阶段主题，先${frame.actions[0]}；执行时把${relationEvidence}写进观察记录，两周后按事实复盘。`,
+      `行动一：针对${stemBranch}${tenGod}的阶段主题，先${frame.actions[0]}；关系策略是${dynamics.action}。执行时把${relationEvidence}写进观察记录，两周后复盘。`,
       `行动二：在${stemBranch}${tenGod}大运内${frame.actions[1]}；同时采用“${godGuidance.action}”，让${month.label}${month.stemBranch}的环境条件可以被核对。`,
       `行动三：围绕${stemBranch}${tenGod}完成“${frame.actions[2]}”；以${day.label}${day.stemBranch}为现实坐标，只保留能被反馈验证的部分，${confidence}之外的推断继续留白。`,
     ],
@@ -373,13 +364,13 @@ export function buildFortuneGuidance(
 ): { scene: string; action: string } {
   const annual = annualGodGuidance[annualGod];
   const period = periodGodGuidance[periodGod];
+  const relation = relationDynamics(relationType);
   if (!relationType) {
     return {
-      scene: `关系规则未命中时，流年${annualGod}仍由“${annual.scene}”形成当年观察点；大运${periodGod}则以“${period.scene}”提供阶段承接背景。`,
-      action: `关系规则未命中不制造事件结论；先按流年${annualGod}执行“${annual.action}”，再按大运${periodGod}采用“${period.action}”。`,
+      scene: `关系规则未命中时，${relation.scene}；流年${annualGod}仍由“${annual.scene}”形成观察点，大运${periodGod}以“${period.scene}”承接。`,
+      action: `关系规则未命中不制造事件结论；先${relation.action}，再按流年${annualGod}执行“${annual.action}”，并用大运${periodGod}的“${period.action}”承接。`,
     };
   }
-  const relation = relationDynamics(relationType);
   return {
     scene: `${relation.scene}；流年${annualGod}进一步把“${annual.scene}”带到当年，大运${periodGod}则通过“${period.scene}”决定承接方式。`,
     action: `${relation.action}；先按流年${annualGod}完成“${annual.action}”，再用大运${periodGod}的“${period.action}”承接后续。`,
@@ -399,14 +390,9 @@ function annualWeatherTexture(tenGod: TenGodName): string {
 }
 
 function relationWeather(relation: FortuneRelation | undefined): string {
-  if (!relation) return "关系规则未命中，像远处云层变化但尚未见明确锋面，不据此制造事件";
-  const kind = relationKind(relation.type);
-  if (relation.type === "branch-clash") return `${kind}${relation.label}像冷暖锋面正面相遇，节奏切换需要留出缓冲`;
-  if (relation.type === "branch-punishment") return `${kind}${relation.label}像低压在同一区域盘旋，重复反应需要停止条件`;
-  if (relation.type === "branch-harm") return `${kind}${relation.label}像雾气压低能见度，信息与期待需要复述确认`;
-  if (relation.type === "branch-break") return `${kind}${relation.label}像阵风吹松旧接口，原有约定需要重新核对`;
-  if (relation.type === "branch-trine") return `${kind}${relation.label}像三股气流汇成同向风带，集中资源时也要守住边界`;
-  return `${kind}${relation.label}像云层逐渐接拢，对接机会仍要经过职责和期限确认`;
+  const dynamics = relationDynamics(relation?.type ?? null);
+  if (!relation) return `关系规则未命中，像${dynamics.weather}；${dynamics.action}`;
+  return `${relationKind(relation.type)}${relation.label}像${dynamics.weather}；${dynamics.action}`;
 }
 
 function buildWeatherMetaphor(
@@ -493,7 +479,7 @@ export function buildFortuneTimeline(chart: FourPillarsResult, input: BirthInput
       tenGod,
       theme,
       reading,
-      ...buildFortuneStageCopy(stemBranch, tenGod, chart, reading, {
+      ...buildFortuneStageCopy(stemBranch, tenGod, chart, {
         startAge: period.getStartAge(),
         endAge: period.getEndAge(),
         startYear: period.getStartYear(),

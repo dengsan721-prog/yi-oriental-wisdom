@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ChartSection } from "../../components/yi/ChartSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
+import { buildLifeOverview, type ReportCopyContext } from "../../lib/yi/report-copy";
 import { buildProfessionalReport } from "../../lib/yi/report-model";
-import type { ProfessionalReport } from "../../lib/yi/types";
+import type { ChartRelation, ProfessionalReport } from "../../lib/yi/types";
 
 const birth = {
   name: "林",
@@ -45,14 +47,57 @@ function stripCalculatedNames(value: string): string {
     .replace(/[木火土金水]/g, "五行");
 }
 
+const relationTypes: Array<ChartRelation["type"] | null> = [
+  null,
+  "stem-combination",
+  "branch-combination",
+  "branch-trine",
+  "branch-clash",
+  "branch-punishment",
+  "branch-harm",
+  "branch-break",
+];
+
+function controlledOverview(type: ChartRelation["type"] | null) {
+  const chart = calculateFourPillars(birth);
+  const report = buildProfessionalReport(chart, birth);
+  const relation: ChartRelation = {
+    type: type ?? "stem-combination",
+    pillars: ["year", "month"],
+    symbols: ["甲", "子"],
+    label: "固定关系证据",
+  };
+  const context: ReportCopyContext = {
+    dayMaster: report.dayMaster,
+    dayMasterElement: chart.professional.dayMaster.element,
+    monthCommand: report.monthCommand,
+    exposedStems: report.exposedStems,
+    roots: report.roots,
+    elementDiagnostics: report.elementDiagnostics,
+    relations: type === null ? [] : [relation],
+    pillarCount: report.pillarFacts.length,
+    stablePillarCount: report.pillarFacts.filter((pillar) => !pillar.ambiguous).length,
+    confidence: report.confidence,
+  };
+  return buildLifeOverview(context);
+}
+
+function stripControlledRelationEvidence(value: string): string {
+  return stripCalculatedNames(value)
+    .replace(/固定关系证据|已知柱间未见明确合冲刑害破关系|已知柱间未检出所支持的合冲刑害破或三合关系/g, "关系证据")
+    .replace(/相合|三合|相冲|相刑|相害|相破|合冲刑害破/g, "关系类型")
+    .replace(/\d+/g, "数字");
+}
+
 describe("professional report model", () => {
-  it("builds a computed four-part life overview with fixed tuple depth", () => {
+  it("builds a computed four-part life overview with fixed runtime array depth", () => {
     const report = buildProfessionalReport(calculateFourPillars(birth), birth);
-    const talents: [string, string, string] = report.coreTalents;
-    const tensions: [string, string] = report.centralTensions;
+    const talents = report.coreTalents;
+    const tensions = report.centralTensions;
     const evidence = calculatedOverviewEvidence(report);
 
     expect(report.lifeTheme.length).toBeGreaterThanOrEqual(60);
+    expect(report.lifeTheme.length).toBeLessThanOrEqual(90);
     expect(talents).toHaveLength(3);
     expect(tensions).toHaveLength(2);
     expect(report.currentLesson.length).toBeGreaterThanOrEqual(40);
@@ -67,6 +112,17 @@ describe("professional report model", () => {
     expect(overviewParagraphs(report).join(" ")).not.toMatch(/一定|注定|必然发财|必然结婚|灾祸|寿命/);
   });
 
+  it("changes overview meaning when only the computed relation type changes", () => {
+    const semanticCopies = relationTypes.map((type) => {
+      const overview = controlledOverview(type);
+      return [overview.coreTalents[2], overview.centralTensions[1], overview.currentLesson]
+        .map(stripControlledRelationEvidence)
+        .join("|");
+    });
+
+    expect(new Set(semanticCopies).size).toBe(relationTypes.length);
+  });
+
   it("changes overview substance for a different chart but not for a renamed identical chart", () => {
     const report = buildProfessionalReport(calculateFourPillars(birth), birth);
     const renamed = buildProfessionalReport(calculateFourPillars({ ...birth, name: "另一名字" }), { ...birth, name: "另一名字" });
@@ -74,6 +130,8 @@ describe("professional report model", () => {
 
     expect(overviewParagraphs(renamed)).toEqual(overviewParagraphs(report));
     expect(contrasting.lifeTheme).not.toBe(report.lifeTheme);
+    expect(contrasting.lifeTheme.length).toBeGreaterThanOrEqual(60);
+    expect(contrasting.lifeTheme.length).toBeLessThanOrEqual(90);
     expect(contrasting.coreTalents).not.toEqual(report.coreTalents);
     expect(stripCalculatedNames(contrasting.coreTalents[0])).not.toBe(stripCalculatedNames(report.coreTalents[0]));
     expect(contrasting.centralTensions).not.toEqual(report.centralTensions);
@@ -83,16 +141,27 @@ describe("professional report model", () => {
     }
   });
 
-  it("renders life theme, talents, tensions and lesson in order before the professional skeleton", () => {
+  it("renders a visible life theme followed by two default-closed reading depths", () => {
     const chart = calculateFourPillars(birth);
     const report = buildProfessionalReport(chart, birth);
     const html = renderToStaticMarkup(createElement(ChartSection, { chart, report }));
-    const orderedValues = [report.lifeTheme, ...report.coreTalents, ...report.centralTensions, report.currentLesson, "完整命盘骨架"];
+    const orderedValues = [report.lifeTheme, "展开30秒人生概览", ...report.coreTalents, ...report.centralTensions, report.currentLesson, "查看专业命盘骨架与依据", report.summary, "完整命盘骨架"];
     const positions = orderedValues.map((value) => html.indexOf(value));
 
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((left, right) => left - right));
+    expect(html.indexOf(report.lifeTheme)).toBeLessThan(html.indexOf(report.summary));
+    expect(html).toContain('<details class="overview-depth"><summary>展开30秒人生概览</summary>');
+    expect(html).toContain('<details class="professional-depth"><summary>查看专业命盘骨架与依据</summary>');
+    expect(html).not.toMatch(/<details class="(?:overview-depth|professional-depth)" open/);
     for (const label of ["人生主调", "核心天赋", "核心张力", "当下课题"]) expect(html).toContain(label);
+  });
+
+  it("styles overview disclosures for touch and single-column mobile reading", () => {
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+    expect(css).toMatch(/\.overview-depth>summary[^}]*min-height:44px[^}]*display:flex[^}]*align-items:center/);
+    expect(css).toMatch(/\.life-overview[^}]*min-width:0[^}]*overflow-wrap:anywhere/);
+    expect(css).toMatch(/@media\(max-width:700px\)\{[^}]*\.overview-grid[^}]*grid-template-columns:1fr/);
   });
 
   it("contains dual-calendar facts and a complete exact-time chart skeleton", () => {
@@ -144,7 +213,12 @@ describe("professional report model", () => {
     expect(report.pillarFacts.every((pillar) => pillar.key !== "hour")).toBe(true);
     expect(report.exposedStems.every((clue) => !clue.includes("时干"))).toBe(true);
     expect(report.confidence).toBe("limited");
-    expect([report.summary, ...report.keyJudgments].join(" ")).toMatch(/时辰|三柱|有限/);
+    expect(report.lifeTheme.length).toBeGreaterThanOrEqual(60);
+    expect(report.lifeTheme.length).toBeLessThanOrEqual(90);
+    const boundedCopy = [report.summary, ...report.keyJudgments, report.lifeTheme, ...report.coreTalents, ...report.centralTensions, report.currentLesson].join(" ");
+    expect(boundedCopy).toMatch(/时辰|三柱|有限/);
+    expect(overviewParagraphs(report).join(" ")).toMatch(/时辰|三柱|有限|待核/);
+    expect(overviewParagraphs(report).join(" ")).not.toContain("时柱");
   });
 
   it("marks true solar time as uncorrected without inventing a corrected clock time", () => {

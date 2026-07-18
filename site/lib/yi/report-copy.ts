@@ -27,6 +27,78 @@ function relationSummary(relations: ChartRelation[]): string {
   return relations.length ? relations.map((relation) => relation.label).join("、") : "已知柱间未检出所支持的合冲刑害破或三合关系";
 }
 
+export type RelationDynamics = {
+  scene: string;
+  advantage: string;
+  friction: string;
+  action: string;
+  weather: string;
+};
+
+const relationDynamicsByType: Record<ChartRelation["type"], RelationDynamics> = {
+  "stem-combination": {
+    scene: "意图、表达或职责口径出现对接窗口",
+    advantage: "能把分散意图翻译成共同语言，并形成可协商的合作起点",
+    friction: "口头一致容易掩盖负责人、期限和验收方式仍未说清",
+    action: "把共同意图写成负责人、期限与验收方式，再复述确认理解一致",
+    weather: "云层逐渐接拢，气流开始对接",
+  },
+  "branch-combination": {
+    scene: "日常安排、资源使用或行动节奏出现衔接机会",
+    advantage: "能把零散配合沉淀为稳定协作，让现实安排彼此接住",
+    friction: "默契增强时容易省略资源归属、边界与退出条件",
+    action: "先确认共同目标，再写清资源归属、退出条件和复核时间",
+    weather: "暖湿气流缓慢汇合，地面安排更易衔接",
+  },
+  "branch-trine": {
+    scene: "多个角色、任务或资源在同一主题上形成同向联动",
+    advantage: "能集中分散力量形成协同，把一个主题推到更完整的规模",
+    friction: "同向投入容易彼此放大，热度上升后反而忽略容量与边界",
+    action: "只选一个共同目标汇总资源，并设置阶段检查点与停止条件",
+    weather: "三股气流汇成持续风带，推动力明显增强",
+  },
+  "branch-clash": {
+    scene: "时间表、立场或行动方向发生正面对撞",
+    advantage: "能快速暴露彼此真正不能兼容的条件，为重新选择打开空间",
+    friction: "即时反应会放大切换成本，让分歧在事实核对前升级",
+    action: "暂停即时结论，分列双方事实与不可让渡项，再安排限时协调",
+    weather: "冷暖锋面正面相遇，节奏出现明显切换",
+  },
+  "branch-punishment": {
+    scene: "规则、压力或旧反应彼此牵动，同一问题反复加码",
+    advantage: "能从重复循环中找到真正的触发顺序，并识别需要停止的位置",
+    friction: "责任和情绪纠缠时，容易用更大力度重复原本无效的办法",
+    action: "记录触发顺序并设置停止条件，必要时引入第三方拆开责任与情绪",
+    weather: "低压在同一区域盘旋，旧路径容易重复出现",
+  },
+  "branch-harm": {
+    scene: "信息与期待出现错位，未说清的顾虑在表面平静下累积",
+    advantage: "能看见被省略的条件和隐性需要，为关系补上必要信息",
+    friction: "根据暗示替对方下结论，会让误解在没有核对时持续增加",
+    action: "先复述所听见的意思，再补问遗漏条件，不根据暗示代替对方决定",
+    weather: "雾气压低能见度，近处信息需要再次确认",
+  },
+  "branch-break": {
+    scene: "旧接口、原有约定或惯用安排开始松动",
+    advantage: "能辨认哪些旧规则已经失效，并为更新留下现实入口",
+    friction: "只拆旧安排却没有过渡方案，容易让责任和资源暂时失去承接",
+    action: "逐条核对旧约定的适用范围，保留可用部分并写下过渡安排",
+    weather: "阵风吹松旧连接，局部结构需要重新固定",
+  },
+};
+
+const noRelationDynamics: RelationDynamics = {
+  scene: "关系规则尚未命中，现实变化需要从日常反馈重新辨认",
+  advantage: "能保留观察空间，不急着把普通变化套进单一关系结论",
+  friction: "把未命中误解成毫无变化，可能错过真实但尚未成形的信号",
+  action: "记录事实、触发与结果，等出现可重复证据后再调整判断",
+  weather: "远处云层变化，但尚未形成明确锋面",
+};
+
+export function relationDynamics(type: ChartRelation["type"] | null): RelationDynamics {
+  return type === null ? noRelationDynamics : relationDynamicsByType[type];
+}
+
 const tenGodOverview: Record<TenGodName, { gift: string; scene: string; friction: string; practice: string }> = {
   比肩: { gift: "独立判断和并肩推进", scene: "多人任务需要各自扛起一段责任", friction: "主见彼此顶住，协作容易变成各做各的", practice: "先划责任区，再约共同验收点" },
   劫财: { gift: "快速组队和调动共享资源", scene: "临时项目需要迅速找人、找渠道、找办法", friction: "资源归属和先后顺序若不清楚，热心会变成拉扯", practice: "把额度、权限和退出条件写明" },
@@ -77,13 +149,13 @@ export function buildLifeOverview(
 ): Pick<ProfessionalReport, "lifeTheme" | "coreTalents" | "centralTensions" | "currentLesson"> {
   const month = overviewMonth(context);
   const theme = month.tenGod ? tenGodOverview[month.tenGod] : null;
-  const relation = relationSummary(context.relations);
   const firstRelation = context.relations[0]?.label ?? "已知柱间未见明确合冲刑害破关系";
+  const primaryDynamics = relationDynamics(context.relations[0]?.type ?? null);
   const exposed = context.exposedStems[0] ?? `${context.dayMaster}${context.dayMasterElement}日主天干坐标`;
   const root = context.roots[0] ?? `${context.dayMaster}${context.dayMasterElement}日主在稳定柱未见同类藏干根气`;
   const leastVisible = [...context.elementDiagnostics].sort((left, right) => left.count - right.count)[0];
-  const monthGift = theme?.gift ?? "先保留月令候选、等待资料核对后再判断的审慎能力";
-  const monthScene = theme?.scene ?? "出生时刻与交节坐标尚待核对，重要选择需要先把事实补齐";
+  const monthGift = theme?.gift ?? "核对事实后再判断";
+  const monthScene = theme?.scene ?? "资料尚待核对";
   const monthFriction = theme?.friction ?? "把代表坐标误当成唯一结论，会让行动建立在未核事实上";
   const monthPractice = theme?.practice ?? "先核出生时刻与交节候选，再决定哪些判断可以进入行动";
   const dayStyle = dayMasterOverview[context.dayMaster] ?? {
@@ -94,17 +166,17 @@ export function buildLifeOverview(
   const confidence = overviewConfidence(context.confidence);
 
   return {
-    lifeTheme: `人生主调：${context.dayMaster}日主从${month.evidence}进入现实，主轴是把“${monthGift}”用在${monthScene}的场景里；${exposed}与${relation}提供了第二层计算线索。更成熟的版本不是追求命理标签，而是让优势经过真实反馈再扩大；本段按${confidence}阅读，不承诺确定结果。`,
+    lifeTheme: `人生主调：${context.dayMaster}日主行于${month.evidence}，以${monthGift}立足；先把优势做成一个可验证行动，再根据反馈扩大。结论按${confidence}阅读，不把结构当作确定结果。`,
     coreTalents: [
       `核心天赋一：${context.dayMaster}日主以${context.dayMasterElement}为参照轴，观察主题是“${dayStyle.gift}”；当${dayStyle.scene}时，可以先做一个两周内可交付的小版本。${exposed}是稳定柱可见的表达坐标，最终仍用结果和反例确认这份能力是否成立。`,
       `核心天赋二：${month.evidence}把重点放在“${monthGift}”；当${monthScene}时，这份能力更容易被看见。它来自月令本气与十神换算的组合观察，不等同于某个职业、财富或关系结果。`,
-      `核心天赋三：围绕${context.dayMaster}日主，结构证据为${firstRelation}，根气证据为${root}；这让你有机会在互动变化中辨认条件，而不是只凭第一反应。先记录触发、对方需求与实际结果，才能知道这份天赋何时真正有效。`,
+      `核心天赋三：围绕${context.dayMaster}日主，${firstRelation}对应“${primaryDynamics.scene}”；成熟优势是${primaryDynamics.advantage}。根气证据为${root}，因此仍要记录触发、对方需求与实际结果，才能知道这份能力何时真正有效。`,
     ],
     centralTensions: [
       `核心张力一：${context.dayMaster}日主倾向“${dayStyle.gift}”，其代价可能是${dayStyle.friction}；${month.evidence}又把人推向“${monthGift}”，两层吃力时常表现为${monthFriction}。这是一组需要调度的结构张力，不是性格缺陷，更不意味着某件事必然发生。`,
-      `核心张力二：${firstRelation}提示互动方式需要被看见，而稳定分布中${leastVisible.element}${leastVisible.count}处只说明可见数量相对少；若把数量直接当喜忌，容易忽略${root}所代表的根气条件。更稳妥的做法是把关系证据、资源容量与反例一起核对。`,
+      `核心张力二：${firstRelation}的失控摩擦是${primaryDynamics.friction}；稳定分布中${leastVisible.element}${leastVisible.count}处只说明可见数量相对少，若把数量直接当喜忌，还会忽略${root}所代表的根气条件。`,
     ],
-    currentLesson: `当下课题：以${context.dayMaster}日主和${month.evidence}为双重坐标，先练习“${monthPractice}”；遇到${firstRelation}对应的相似互动时，写下事实、请求、边界和一条反证。由于当前结论为${confidence}，资料未覆盖或现实反馈不支持的部分应保留，不把阶段观察升级成确定性断语。`,
+    currentLesson: `当下课题：以${context.dayMaster}日主和${month.evidence}为双重坐标，先练习“${monthPractice}”；遇到${firstRelation}对应的互动时，${primaryDynamics.action}。当前结论为${confidence}，现实反馈不支持的部分继续留白。`,
   };
 }
 
