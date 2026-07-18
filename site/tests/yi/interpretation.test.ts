@@ -69,9 +69,9 @@ describe("professional interpretation", () => {
 
   it("builds every interpretation with the complete unified content contract", () => {
     const items = buildInterpretations(knownChart);
-    expect(() => items.forEach(item => validateInterpretation(item))).not.toThrow();
 
     for (const item of items) {
+      expect.soft(validateInterpretation(item), item.id).toEqual([]);
       expect(item.traditionalJudgment, item.id).toBe(item.basis);
       expect(item.advantageVersion, item.id).toBe(item.plainLanguage);
       expect(item.shadowVersion, item.id).toBe(item.caution);

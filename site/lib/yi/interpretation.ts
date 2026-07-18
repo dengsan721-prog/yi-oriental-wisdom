@@ -75,7 +75,7 @@ const talentSelector: DomainSelector = chart => [
   {
     id: "talent-public", professionalTitle: "月干十神的公开表达线索", innovationTitle: "能力出口",
     basis: `月干为${chart.pillars.month.stem}，相对${chart.professional.dayMaster.stem}日主所示十神为${godAt(chart, "month", "stem")}；月令为${chart.pillars.month.branch}`,
-    plainLanguage: "月干像较容易被外界看见的功能入口，可用来观察你在汇报、协作与交付中常先调用哪类能力。它需要通过真实反馈验证。",
+    plainLanguage: "月干像你在公开场合最先拿出来用的那样本领，可用来观察你在汇报、协作与交付中常先调用哪类能力。它需要通过真实反馈验证。",
     mirror: "像工具箱最上层的常用工具：拿取方便不代表只会这一种，也不代表所有任务都适合用同一把工具完成。",
     caution: "十神是相对日主建立的关系名称，不直接等于天赋、学历或职业资格；单看月干不能指定行业与岗位。",
     pillarDependencies: ["month", "day"], ruleIds: ["ten-god.hidden-stems.v1", "domain.mapping.v2"],
@@ -131,7 +131,7 @@ const careerSelector: DomainSelector = chart => [
 
 const wealthSelector: DomainSelector = chart => [
   {
-    id: "wealth-interface", professionalTitle: "财星的资源互动观察", innovationTitle: "资源接口",
+    id: "wealth-interface", professionalTitle: "财星的资源互动观察", innovationTitle: "来往有数",
     basis: `以${chart.professional.dayMaster.stem}日主为坐标，已知干支十神中财星出现${chart.professional.tenGods.filter(item => item.tenGod.includes("财")).length}次，月令为${chart.pillars.month.branch}`,
     plainLanguage: "财星在这里用于观察资源交换，不等于收入数字。更有用的问题是资金、时间、承诺和回报之间是否有清楚边界。",
     mirror: "像一条水系：流量只是表面，源头是否稳定、渠道是否渗漏、蓄水是否足够，都会影响真实可用资源。",
