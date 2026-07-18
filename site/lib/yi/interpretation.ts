@@ -5,7 +5,8 @@ import type { FourPillarsResult, InterpretationItem, PillarKey, ProfessionalOver
 type Domain = InterpretationItem["domain"];
 type Draft = Omit<InterpretationItem,
   "domain" | "confidence" | "sourceTradition" | "sourceReferences" | "sourceRuleIds" |
-  "affectedByUnknownHour" | "scenario" | "action"
+  "affectedByUnknownHour" | "scenario" | "action" | "traditionalJudgment" |
+  "advantageVersion" | "shadowVersion" | "actionNow" | "actionLongTerm" | "priority"
 > & { id: ScenarioId; ruleIds: string[] };
 type DomainSelector = (chart: FourPillarsResult) => Draft[];
 
@@ -276,6 +277,7 @@ export function buildProfessionalOverview(chart: FourPillarsResult): Professiona
 export function buildInterpretations(chart: FourPillarsResult): InterpretationItem[] {
   return (Object.entries(domainSelectors) as [Domain, DomainSelector][]).flatMap(([domain, selector]) => selector(chart).map(draft => {
     const sources = draft.ruleIds.map(id => YI_RULE_SOURCES[id]);
+    const scenario = scenarioLibrary[draft.id];
     const dependencies = [...draft.pillarDependencies];
     const affected = dependencies.some(pillar => chart.ambiguousPillars.includes(pillar));
     const heuristic = sources.some(source => source.sourceType === "product-heuristic");
@@ -284,8 +286,14 @@ export function buildInterpretations(chart: FourPillarsResult): InterpretationIt
       : draft.basis;
     return {
       ...draft,
-      ...scenarioLibrary[draft.id],
+      ...scenario,
       basis,
+      traditionalJudgment: basis,
+      advantageVersion: draft.plainLanguage,
+      shadowVersion: draft.caution,
+      actionNow: scenario.action,
+      actionLongTerm: `以四周为周期持续执行并复盘以下行动，每周记录结果、阻力和调整点，再据此调整下一阶段：${scenario.action}`,
+      priority: "supporting",
       domain,
       confidence: affected ? "limited" : heuristic ? "medium" : chart.confidence,
       sourceTradition: sources.map(source => source.label).join("；"),

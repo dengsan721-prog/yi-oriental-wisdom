@@ -10,12 +10,13 @@ const repeatedFields = ["scenario", "actionNow", "actionLongTerm"] as const;
 export function validateInterpretation(item: InterpretationItem): string[] {
   const errors: string[] = [];
   for (const field of required) {
-    const value = item[field].trim();
+    const raw = item[field];
+    const value = typeof raw === "string" ? raw.trim() : "";
     if (!value) errors.push(field + ":缺失");
     for (const word of forbidden) if (value.includes(word)) errors.push(field + ":禁用词:" + word);
   }
-  if (item.sourceReferences.length === 0) errors.push("sourceReferences:缺失");
-  if (item.sourceRuleIds.length === 0) errors.push("sourceRuleIds:缺失");
+  if (!Array.isArray(item.sourceReferences) || item.sourceReferences.length === 0) errors.push("sourceReferences:缺失");
+  if (!Array.isArray(item.sourceRuleIds) || item.sourceRuleIds.length === 0) errors.push("sourceRuleIds:缺失");
   if (item.priority === "core" && item.confidence === "limited") errors.push("priority:有限置信度不能成为核心判断");
   return errors;
 }

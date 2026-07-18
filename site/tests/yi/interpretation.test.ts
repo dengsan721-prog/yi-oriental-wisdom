@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DetailSection } from "../../components/yi/DetailSection";
+import { validateInterpretation } from "../../lib/yi/content-quality";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { buildInterpretations, buildProfessionalOverview, interpretationLength } from "../../lib/yi/interpretation";
 import { scenarioLibrary } from "../../lib/yi/scenario-library";
@@ -64,6 +65,21 @@ describe("professional interpretation", () => {
       confidence: expect.stringMatching(/high|medium|limited/),
       sourceTradition: expect.any(String),
     });
+  });
+
+  it("builds every interpretation with the complete unified content contract", () => {
+    const items = buildInterpretations(knownChart);
+    expect(() => items.forEach(item => validateInterpretation(item))).not.toThrow();
+
+    for (const item of items) {
+      expect(item.traditionalJudgment, item.id).toBe(item.basis);
+      expect(item.advantageVersion, item.id).toBe(item.plainLanguage);
+      expect(item.shadowVersion, item.id).toBe(item.caution);
+      expect(item.actionNow, item.id).toBe(item.action);
+      expect(item.actionLongTerm, item.id).toContain(item.action);
+      expect(item.actionLongTerm, item.id).not.toBe(item.actionNow);
+      expect(item.priority, item.id).toBe("supporting");
+    }
   });
 
   it("uses independent domain rules with three substantively different readings", () => {

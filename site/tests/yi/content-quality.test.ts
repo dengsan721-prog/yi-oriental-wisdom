@@ -37,6 +37,23 @@ describe("content quality gate", () => {
       .toEqual(expect.arrayContaining(["innovationTitle:禁用词:资源接口", "scenario:缺失"]));
   });
 
+  it("reports malformed runtime fields as missing instead of throwing", () => {
+    const malformed = {
+      ...item,
+      traditionalJudgment: undefined,
+      actionNow: undefined,
+      sourceReferences: undefined,
+      sourceRuleIds: undefined,
+    } as unknown as InterpretationItem;
+
+    expect(validateInterpretation(malformed)).toEqual(expect.arrayContaining([
+      "traditionalJudgment:缺失",
+      "actionNow:缺失",
+      "sourceReferences:缺失",
+      "sourceRuleIds:缺失",
+    ]));
+  });
+
   it("detects repeated scenario and action copy", () => {
     expect(findRepeatedSections([item, { ...item, id: "self-support" }]))
       .toEqual(expect.arrayContaining(["scenario:重复", "actionNow:重复", "actionLongTerm:重复"]));
