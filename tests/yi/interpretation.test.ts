@@ -199,6 +199,19 @@ describe("professional interpretation", () => {
     expect(JSON.stringify(hourDependent)).not.toMatch(/子女会|晚年会|晚景会|必有子女|无子女|健康结果/);
   });
 
+  it("keeps content priority independent from unknown-hour and boundary confidence", () => {
+    for (const [label, chart] of [["unknown-hour", unknownHourChart], ["boundary", boundaryUnknownChart]] as const) {
+      const items = buildInterpretations(chart);
+      expect(items, label).toHaveLength(21);
+      for (const item of items) {
+        expect(validateInterpretation(item), `${label}:${item.id}`).toEqual([]);
+        expect(item.priority, `${label}:${item.id}`).toBe(
+          coreIds.has(item.id) ? "core" : importantIds.has(item.id) ? "important" : "supporting",
+        );
+      }
+    }
+  });
+
   it("keeps wealth, rhythm, relationship and family readings inside public-safe boundaries", () => {
     const items = buildInterpretations(knownChart);
     const wealth = items.filter(item => item.domain === "wealth").map(item => `${item.plainLanguage}${item.action}${item.caution}`).join("\n");
@@ -278,6 +291,14 @@ describe("professional interpretation", () => {
     ]) {
       expect(references, ruleName).toContain(ruleName);
     }
+  });
+
+  it("traces enrichment judgments to every professional rule they invoke", () => {
+    const items = buildInterpretations(knownChart);
+    expect(items.find(item => item.id === "wealth-boundary")?.sourceRuleIds)
+      .toContain("ten-god.hidden-stems.v1");
+    expect(items.find(item => item.id === "rhythm-recovery")?.sourceRuleIds)
+      .toContain("climate.season-prompt.v1");
   });
 
   it.each([
