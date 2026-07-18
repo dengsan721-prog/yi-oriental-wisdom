@@ -134,17 +134,25 @@ export type ProfessionalReport = {
   confidence: FourPillarsResult["confidence"];
 };
 
+export type ContentPriority = "core" | "important" | "supporting";
+
 export type InterpretationItem = {
   id: string;
   domain: "self" | "talent" | "career" | "wealth" | "relationship" | "family" | "rhythm";
   professionalTitle: string;
   innovationTitle: string;
   basis: string;
+  traditionalJudgment: string;
   plainLanguage: string;
   scenario: string;
+  advantageVersion: string;
+  shadowVersion: string;
   mirror: string;
   action: string;
+  actionNow: string;
+  actionLongTerm: string;
   caution: string;
+  priority: ContentPriority;
   confidence: "high" | "medium" | "limited";
   sourceTradition: string;
   sourceReferences: string[];
