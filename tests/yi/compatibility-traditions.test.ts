@@ -5,6 +5,21 @@ import { calculateTenGod } from "../../lib/yi/fortune";
 
 const first = calculateFourPillars({ name: "甲", date: "1990-06-15", time: "09:30", location: "杭州", gender: "unspecified", timeConfidence: "exact" });
 const second = calculateFourPillars({ name: "乙", date: "1992-11-03", time: "18:20", location: "上海", gender: "unspecified", timeConfidence: "exact" });
+const contrasting = calculateFourPillars({ name: "丙", date: "1985-02-20", time: "23:40", location: "成都", gender: "unspecified", timeConfidence: "exact" });
+const relationships = ["partner", "parent-child", "business", "friend"] as const;
+const axisIds = [
+  "attraction", "communication", "trigger", "trust", "conflict",
+  "resources", "decisions", "stability", "repair",
+] as const;
+
+function withoutLiteralEvidence(value: string) {
+  return value
+    .replace(/[甲乙丙丁戊己庚辛壬癸]/g, "干")
+    .replace(/[子丑寅卯辰巳午未申酉戌亥]/g, "支")
+    .replace(/比肩|劫财|食神|伤官|偏财|正财|七杀|正官|偏印|正印/g, "十神")
+    .replace(/[木火土金水]/g, "五行")
+    .replace(/high|medium|limited|\d+/g, "量");
+}
 
 describe("compatibility", () => {
   function withBranches(source: typeof first, branches: [string, string, string, string]) {
@@ -19,6 +34,132 @@ describe("compatibility", () => {
     const result = calculateCompatibility(first, second, relationship);
     expect(result).not.toHaveProperty("score");
     expect(result).toMatchObject({ relationship, elementDynamics: expect.any(Array), tenGodDynamics: expect.any(Array), combinationsAndClashes: expect.any(Array), communicationScenario: expect.any(String), actionRules: expect.any(Array), limitations: expect.any(Array) });
+  });
+
+  it.each(relationships)("builds a complete nine-axis %s relationship manual", (relationship) => {
+    const result = calculateCompatibility(first, second, relationship);
+    expect(result.summary.length).toBeGreaterThanOrEqual(80);
+    expect(result.axes.map((axis) => axis.id)).toEqual(axisIds);
+    for (const axis of result.axes) {
+      expect(axis.label.length).toBeGreaterThanOrEqual(6);
+      expect(axis.professionalBasis.length).toBeGreaterThanOrEqual(20);
+      expect(axis.plainLanguage.length).toBeGreaterThanOrEqual(40);
+      expect(axis.scene.length).toBeGreaterThanOrEqual(60);
+      expect(axis.action.length).toBeGreaterThanOrEqual(30);
+      expect(axis.caution.length).toBeGreaterThanOrEqual(20);
+    }
+    expect(result.roleSpecificGuidance.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("grounds every axis in chart evidence and exposes the complete evidence set", () => {
+    const result = calculateCompatibility(first, second, "partner");
+    const axisBasis = result.axes.map((axis) => axis.professionalBasis);
+    const corpus = axisBasis.join(" ");
+    const directionalTokens = result.tenGodDynamics.flatMap((item) => [item.theme, item.basis]);
+    const dayTokens = [
+      `日干${first.pillars.day.stem}`, `日支${first.pillars.day.branch}`,
+      `日干${second.pillars.day.stem}`, `日支${second.pillars.day.branch}`,
+    ];
+    const crossTokens = result.combinationsAndClashes.map((item) => `${item.symbols.join("")}${item.relation}`);
+    const elementTokens = result.elementDynamics.map((item) => `${item.element}${item.first}/${item.second}`);
+    const confidenceTokens = [`A:${first.confidence}`, `B:${second.confidence}`];
+    const actualEvidenceTokens = [...directionalTokens, ...dayTokens, ...crossTokens, ...elementTokens, ...confidenceTokens];
+
+    for (const basis of axisBasis) {
+      expect(actualEvidenceTokens.some((token) => basis.includes(token))).toBe(true);
+    }
+    for (const token of [...directionalTokens, ...dayTokens, ...crossTokens, ...elementTokens, ...confidenceTokens]) {
+      expect(corpus).toContain(token);
+    }
+  });
+
+  it("uses unique role scenes and substantively changes plain language, scenes and actions", () => {
+    const manuals = relationships.map((relationship) => calculateCompatibility(first, second, relationship));
+    expect(new Set(manuals.flatMap((manual) => manual.axes.map((axis) => axis.scene))).size).toBe(relationships.length * axisIds.length);
+
+    for (const [index] of axisIds.entries()) {
+      for (const field of ["plainLanguage", "scene", "action"] as const) {
+        expect(new Set(manuals.map((manual) => withoutLiteralEvidence(manual.axes[index][field]))).size).toBe(relationships.length);
+      }
+    }
+  });
+
+  it("changes relationship advice from evidence semantics rather than symbol substitution", () => {
+    const baseline = calculateCompatibility(first, second, "partner");
+    const changed = calculateCompatibility(first, contrasting, "partner");
+    for (const field of ["plainLanguage", "scene", "action"] as const) {
+      const substantivelyChanged = baseline.axes.filter((axis, index) => (
+        withoutLiteralEvidence(axis[field]) !== withoutLiteralEvidence(changed.axes[index][field])
+      ));
+      expect(substantivelyChanged.length).toBeGreaterThanOrEqual(6);
+    }
+  });
+
+  it.each([
+    ["partner", [/亲密需要/, /承诺方式/, /家庭节奏/, /修复语言/]],
+    ["parent-child", [/规则解释/, /选择范围/, /天赋支持/, /期待边界/]],
+    ["business", [/权限/, /投资门槛/, /现金流/, /风险止损/, /退出.*交接/]],
+    ["friend", [/陪伴方式/, /请求明确/, /边界/, /人生阶段/]],
+  ] as const)("covers every required %s guidance topic", (relationship, topics) => {
+    const guidance = calculateCompatibility(first, second, relationship).roleSpecificGuidance.join(" ");
+    for (const topic of topics) expect(guidance).toMatch(topic);
+  });
+
+  it("is deterministic for identical charts and relationship type", () => {
+    expect(calculateCompatibility(first, second, "friend")).toEqual(calculateCompatibility(first, second, "friend"));
+  });
+
+  it("changes relationship semantics without changing the professional evidence", () => {
+    const manuals = relationships.map((relationship) => calculateCompatibility(first, second, relationship));
+    expect(manuals.map((manual) => manual.elementDynamics)).toEqual(manuals.map(() => manuals[0].elementDynamics));
+    expect(manuals.map((manual) => manual.tenGodDynamics)).toEqual(manuals.map(() => manuals[0].tenGodDynamics));
+    expect(manuals.map((manual) => manual.combinationsAndClashes)).toEqual(manuals.map(() => manuals[0].combinationsAndClashes));
+    expect(new Set(manuals.map((manual) => withoutLiteralEvidence(manual.summary))).size).toBe(relationships.length);
+    expect(new Set(manuals.map((manual) => manual.roleSpecificGuidance.join(" "))).size).toBe(relationships.length);
+  });
+
+  it("keeps public relationship language non-predictive and non-coercive", () => {
+    const publicText = JSON.stringify(relationships.map((relationship) => calculateCompatibility(first, second, relationship)));
+    expect(publicText).not.toMatch(/缘分(?:评分|分数|高低)|匹配分数|忠诚度|保证忠诚|控制对方|操控对方/);
+    expect(publicText).not.toMatch(/注定.*(?:相守|分开|分手|复合|分合)|必然.*(?:相守|分开|分手|复合|分合)/);
+    expect(publicText).not.toMatch(/(?:保证|必然|一定).*(?:收益|盈利|回报)|稳赚|投资结果/);
+
+    const business = calculateCompatibility(first, second, "business");
+    expect(business.actionRules.join(" ")).toMatch(/权限/);
+    expect(business.actionRules.join(" ")).toMatch(/现金流/);
+    expect(business.actionRules.join(" ")).toMatch(/止损/);
+    expect(business.actionRules.join(" ")).toMatch(/退出/);
+    expect(business.limitations.join(" ")).toMatch(/不构成(?:投资|金融)建议/);
+  });
+
+  it("uses only stable evidence for an unknown-time solar-term boundary candidate", () => {
+    const boundary = calculateFourPillars({
+      name: "交节候选", date: "2024-02-04", time: null, location: "北京", gender: "unspecified", timeConfidence: "unknown",
+    });
+    expect(boundary.ambiguousPillars).toEqual(expect.arrayContaining(["year", "month", "hour"]));
+    const replacements = {
+      year: { stem: "辛", branch: "酉", element: "金", branchElement: "金" },
+      month: { stem: "壬", branch: "子", element: "水", branchElement: "水" },
+      day: { stem: "癸", branch: "亥", element: "水", branchElement: "水" },
+      hour: { stem: "甲", branch: "寅", element: "木", branchElement: "木" },
+    } as const;
+    const pillars = { ...boundary.pillars };
+    for (const key of boundary.ambiguousPillars) {
+      const pillar = pillars[key];
+      if (pillar) pillars[key] = { ...pillar, ...replacements[key] };
+    }
+    const alteredCandidate = {
+      ...boundary,
+      pillars,
+      elementCounts: { 木: 99, 火: 99, 土: 99, 金: 99, 水: 99 },
+    };
+
+    const original = calculateCompatibility(boundary, second, "parent-child");
+    const altered = calculateCompatibility(alteredCandidate, second, "parent-child");
+    expect(altered).toEqual(original);
+    expect(original.axes.every((axis) => /置信|未知时辰|交节/.test(axis.caution))).toBe(true);
+    expect(original.limitations.join(" ")).toMatch(/未知时辰/);
+    expect(original.limitations.join(" ")).toMatch(/交节.*候选|候选.*交节/);
   });
 
   it("reports directional evidence for both people", () => {
