@@ -47,19 +47,23 @@ export function FortuneSection({ chart, birth }: { chart: FourPillarsResult; bir
 
     <article className="fortune-period-card">
       <header><div><span>{period.stemBranch}大运 · {period.tenGod}</span><h2>{period.theme}</h2></div><small>{period.startAge}–{period.endAge} 岁 · {period.startYear}–{period.endYear} · {confidenceLabels[period.confidence]}</small></header>
-      <section className="fortune-stage-story"><b>阶段故事</b><p>{period.stageStory}</p></section>
-      <dl className="fortune-life-areas">
-        {(Object.keys(lifeAreaLabels) as Array<keyof typeof lifeAreaLabels>).map(key => <div key={key}><dt>{lifeAreaLabels[key]}</dt><dd>{period.lifeAreas[key]}</dd></div>)}
-      </dl>
-      <div className="fortune-stage-states">
-        <section><b>顺势状态</b><p>{period.alignedState}</p></section>
-        <section><b>吃力状态</b><p>{period.strainedState}</p></section>
-      </div>
-      <section className="fortune-stage-actions"><b>三项阶段行动</b><ol>{period.actions.map((action, index) => <li key={action}><span>0{index + 1}</span>{action}</li>)}</ol></section>
-      <dl className="fortune-reading">
-        {readingLabels.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{period.reading[key]}</dd></div>)}
-      </dl>
-      <details className="fortune-method"><summary>查看排运方法与起运依据</summary><p>{period.method.basis}</p><small>规则版本：{period.method.ruleVersion}</small></details>
+      <details className="fortune-stage-depth"><summary>展开阶段故事与行动</summary>
+        <section className="fortune-stage-story"><b>阶段故事</b><p>{period.stageStory}</p></section>
+        <dl className="fortune-life-areas">
+          {(Object.keys(lifeAreaLabels) as Array<keyof typeof lifeAreaLabels>).map(key => <div key={key}><dt>{lifeAreaLabels[key]}</dt><dd>{period.lifeAreas[key]}</dd></div>)}
+        </dl>
+        <div className="fortune-stage-states">
+          <section><b>顺势状态</b><p>{period.alignedState}</p></section>
+          <section><b>吃力状态</b><p>{period.strainedState}</p></section>
+        </div>
+        <section className="fortune-stage-actions"><b>三项阶段行动</b><ol>{period.actions.map((action, index) => <li key={action}><span>0{index + 1}</span>{action}</li>)}</ol></section>
+      </details>
+      <details className="fortune-professional-depth"><summary>查看九项专业依据</summary>
+        <dl className="fortune-reading">
+          {readingLabels.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{period.reading[key]}</dd></div>)}
+        </dl>
+        <details className="fortune-method"><summary>查看排运方法与起运依据</summary><p>{period.method.basis}</p><small>规则版本：{period.method.ruleVersion}</small></details>
+      </details>
     </article>
 
     <div className="choice-row year-row" role="group" aria-label="选择流年">
@@ -71,12 +75,14 @@ export function FortuneSection({ chart, birth }: { chart: FourPillarsResult; bir
     <article className="fortune-year-card">
       <header><span>{year.year} · {year.stemBranch}</span><h2>{year.theme}</h2></header>
       <section className="fortune-weather"><b>年度天气</b><p>{year.weatherMetaphor}</p></section>
-      <p className="fortune-year-basis">{year.basis}</p>
-      <div className="fortune-year-layers">
-        <section><b>岁运关系</b><p>{year.interaction}</p></section>
-        <section><b>典型场景</b><p>{year.scenario}</p></section>
-        <section><b>年度动作</b><p>{year.action}</p></section>
-      </div>
+      <details className="fortune-year-evidence"><summary>查看年度依据、场景与行动</summary>
+        <p className="fortune-year-basis">{year.basis}</p>
+        <div className="fortune-year-layers">
+          <section><b>岁运关系</b><p>{year.interaction}</p></section>
+          <section><b>典型场景</b><p>{year.scenario}</p></section>
+          <section><b>年度动作</b><p>{year.action}</p></section>
+        </div>
+      </details>
     </article>
   </section>;
 }

@@ -7,7 +7,7 @@ import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { analyzeFortuneRelations, buildFortuneGuidance, buildFortuneTimeline, buildFortuneYearReading, calculateTenGod } from "../../lib/yi/fortune";
 import { matchAnimalArchetype, matchHistoricalMirror } from "../../lib/yi/mirrors";
 import { branchElements, stemElements } from "../../lib/yi/stems-branches";
-import type { FourPillarsResult, PillarKey } from "../../lib/yi/types";
+import type { ChartRelation, FourPillarsResult, PillarKey } from "../../lib/yi/types";
 
 const input = { name: "林知远", date: "1990-06-15", time: "09:30", location: "杭州", gender: "male", timeConfidence: "exact" } as const;
 const chart = calculateFourPillars(input);
@@ -22,6 +22,45 @@ function chartWithBranches(branches: Record<PillarKey, string>): FourPillarsResu
     }])) as FourPillarsResult["pillars"],
     ambiguousPillars: [],
   };
+}
+
+function chartForControlledPeriodRelation(type: ChartRelation["type"] | null): FourPillarsResult {
+  const branches: Record<PillarKey, string> = { year: "寅", month: "午", day: "申", hour: "丑" };
+  const stems: Record<PillarKey, string> = { year: "甲", month: "丙", day: "戊", hour: "壬" };
+  if (type === "stem-combination") stems.year = "庚";
+  if (type === "branch-combination") branches.year = "辰";
+  if (type === "branch-trine") branches.year = "巳";
+  if (type === "branch-clash") branches.year = "卯";
+  if (type === "branch-punishment") branches.year = "酉";
+  if (type === "branch-harm") branches.year = "戌";
+  if (type === "branch-break") branches.year = "子";
+  return {
+    ...chart,
+    pillars: Object.fromEntries((Object.keys(branches) as PillarKey[]).map(key => [key, {
+      ...chart.pillars[key]!, stem: stems[key], branch: branches[key],
+      element: stemElements[stems[key]], branchElement: branchElements[branches[key]],
+    }])) as FourPillarsResult["pillars"],
+    ambiguousPillars: [],
+  };
+}
+
+function controlledPeriod(type: ChartRelation["type"] | null) {
+  const period = buildFortuneTimeline(chartForControlledPeriodRelation(type), input).find(item => item.stemBranch === "乙酉");
+  if (!period) throw new Error("测试需要乙酉大运");
+  return period;
+}
+
+function stripControlledStageEvidence(period: ReturnType<typeof controlledPeriod>): string {
+  const stageStory = period.stageStory.replace(/提供环境和执行坐标，.*?，事情因此/, "提供环境和执行坐标，关系证据，事情因此");
+  const aligned = period.alignedState.replace(/。当.*?能够/, "。当关系证据能够");
+  const strained = period.strainedState.replace(/。若忽略.*?和日柱/, "。若忽略关系证据和日柱");
+  const action = period.actions[0].replace(/。执行时把.*?写进观察记录/, "。执行时把关系证据写进观察记录");
+  return [stageStory, aligned, strained, action].join("|")
+    .replace(/\d{1,4}/g, "数字")
+    .replace(/[甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥]/g, "符号")
+    .replace(/比肩|劫财|食神|伤官|偏财|正财|七杀|正官|偏印|正印/g, "十神")
+    .replace(/年柱|月柱|日柱|时柱/g, "原局坐标")
+    .replace(/相合|三合|相冲|相刑|相害|相破|自刑|未见|未命中/g, "关系类型");
 }
 
 function longestCommonPrefix(values: string[]): string {
@@ -56,7 +95,7 @@ describe("fortune timeline", () => {
   it("turns every fortune period into a complete computed stage story", () => {
     const timeline = buildFortuneTimeline(chart, input);
     for (const period of timeline) {
-      const actions: [string, string, string] = period.actions;
+      const actions = period.actions;
       const paragraphs = [
         period.stageStory,
         ...Object.values(period.lifeAreas),
@@ -71,6 +110,9 @@ describe("fortune timeline", () => {
       expect(period.alignedState.length).toBeGreaterThanOrEqual(40);
       expect(period.strainedState.length).toBeGreaterThanOrEqual(40);
       expect(actions).toHaveLength(3);
+      expect(period.lifeAreas.career).not.toContain(period.reading.career);
+      expect(period.lifeAreas.wealth).not.toContain(period.reading.resources);
+      expect(period.lifeAreas.rhythm).not.toContain(period.reading.wellbeing);
       for (const paragraph of paragraphs) {
         expect(paragraph, `${period.stemBranch} computed symbol`).toContain(period.stemBranch);
         expect(paragraph, `${period.stemBranch} ten god`).toContain(period.tenGod);
@@ -91,6 +133,24 @@ describe("fortune timeline", () => {
     expect(new Set(timeline.map((period) => period.stageStory)).size).toBe(timeline.length);
     expect(new Set(timeline.map((period) => JSON.stringify(period.lifeAreas))).size).toBe(timeline.length);
     expect(new Set(timeline.map((period) => JSON.stringify(period.actions))).size).toBe(timeline.length);
+  });
+
+  it("changes stage meaning when only the active relation type changes", () => {
+    const types: Array<ChartRelation["type"] | null> = [
+      null,
+      "stem-combination",
+      "branch-combination",
+      "branch-trine",
+      "branch-clash",
+      "branch-punishment",
+      "branch-harm",
+      "branch-break",
+    ];
+    const periods = types.map(controlledPeriod);
+
+    expect(periods.every((period) => period.stemBranch === "乙酉")).toBe(true);
+    expect(periods.every((period) => period.tenGod === periods[0].tenGod)).toBe(true);
+    expect(new Set(periods.map(stripControlledStageEvidence)).size).toBe(types.length);
   });
 
   it("changes stage and weather substance for different charts and fortune periods", () => {
@@ -238,7 +298,7 @@ describe("fortune timeline", () => {
     expect(JSON.stringify(timeline)).not.toMatch(/保证收益|必然发财|注定离婚|克夫|克妻|克子|必有疾病|灾难|寿命/);
   });
 
-  it("renders compact nine-field and annual three-layer reading labels", () => {
+  it("renders default-closed stage, professional and annual evidence layers", () => {
     const html = renderToStaticMarkup(createElement(FortuneSection, { chart, birth: input }));
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
     for (const label of [
@@ -248,13 +308,24 @@ describe("fortune timeline", () => {
       "岁运关系", "典型场景", "年度动作",
     ]) expect(html).toContain(label);
     const renderedPeriod = buildFortuneTimeline(chart, input)[0];
-    expect(html.indexOf(renderedPeriod.stageStory)).toBeLessThan(html.indexOf("阶段气候"));
+    expect(html).toContain('<details class="fortune-stage-depth"><summary>展开阶段故事与行动</summary>');
+    expect(html).toContain('<details class="fortune-professional-depth"><summary>查看九项专业依据</summary>');
+    expect(html).toContain('<details class="fortune-year-evidence"><summary>查看年度依据、场景与行动</summary>');
+    expect(html).not.toMatch(/<details class="(?:fortune-stage-depth|fortune-professional-depth|fortune-year-evidence)" open/);
+    expect(html.indexOf(renderedPeriod.theme)).toBeLessThan(html.indexOf("展开阶段故事与行动"));
+    expect(html.indexOf("展开阶段故事与行动")).toBeLessThan(html.indexOf(renderedPeriod.stageStory));
+    expect(html.indexOf(renderedPeriod.stageStory)).toBeLessThan(html.indexOf("查看九项专业依据"));
+    expect(html.indexOf("查看九项专业依据")).toBeLessThan(html.indexOf("阶段气候"));
     expect(html.indexOf(renderedPeriod.years[0].weatherMetaphor)).toBeLessThan(html.indexOf(renderedPeriod.years[0].basis));
     expect(html.indexOf(renderedPeriod.years[0].weatherMetaphor)).toBeLessThan(html.indexOf(renderedPeriod.years[0].interaction));
     expect(html).toContain("<dl");
     expect(css).toMatch(/\.choice-row\{[^}]*overflow-x:auto[^}]*scrollbar-width:none/);
     expect(css).toMatch(/\.choice-row::?-webkit-scrollbar\{[^}]*display:none/);
     expect(css).toMatch(/\.choice-row button\{[^}]*min-height:(?:44|5[2-9])px/);
+    expect(css).toMatch(/\.fortune-stage-depth>summary[^}]*min-height:44px[^}]*display:flex[^}]*align-items:center/);
+    expect(css).toMatch(/\.fortune-stage-depth[^}]*min-width:0[^}]*overflow-wrap:anywhere/);
+    expect(css).toMatch(/\.fortune-life-areas\{[^}]*display:grid[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+    expect(css).toMatch(/@media\(max-width:700px\)\{[^}]*\.fortune-life-areas,\.fortune-stage-states[^}]*grid-template-columns:1fr/);
   });
 
   it("does not manufacture an exact fortune timeline when time is unknown", () => {
