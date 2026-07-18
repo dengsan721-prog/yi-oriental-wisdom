@@ -1,5 +1,5 @@
 import { getInterpretationEnrichment, type InterpretationId } from "./interpretation-enrichment";
-import type { FourPillarsResult } from "./types";
+import type { ChartRelation, FourPillarsResult, Pillar, PillarKey, ProfessionalChart } from "./types";
 
 function scene(id: InterpretationId, scenarios: readonly [string, string]) {
   return { scenario: scenarios[0], scenarios, action: getInterpretationEnrichment(id).actionNow };
@@ -92,22 +92,105 @@ export const scenarioLibrary = {
   ]),
 } satisfies Record<InterpretationId, { scenario: string; action: string }>;
 
+type StableScenarioFacts = {
+  pillars: Record<PillarKey, Pillar | null>;
+  structureBalance: ProfessionalChart["structureBalance"] | null;
+  supportScore: number | null;
+  relations: ChartRelation[];
+};
+
+type ScenarioSelector = (facts: StableScenarioFacts) => boolean;
+
+const yangStems = new Set(["甲", "丙", "戊", "庚", "壬"]);
+const yangBranches = new Set(["子", "寅", "辰", "午", "申", "戌"]);
+const warmSeasonBranches = new Set(["巳", "午", "未"]);
+const pressureRelationTypes = new Set<ChartRelation["type"]>([
+  "branch-clash", "branch-punishment", "branch-harm", "branch-break",
+]);
+
+function stableScenarioFacts(chart: FourPillarsResult): StableScenarioFacts {
+  const ambiguousPillars = new Set(chart.ambiguousPillars);
+  const ambiguousFields = new Set<string>(chart.professional.ambiguousFields);
+  const fieldCanHidePillar: Record<PillarKey, string[]> = {
+    year: ["yearPillar"],
+    month: ["monthCommand", "monthPillar"],
+    day: ["dayMaster", "dayPillar"],
+    hour: ["hourPillar"],
+  };
+  const stablePillar = (key: PillarKey) => {
+    if (ambiguousPillars.has(key) || fieldCanHidePillar[key].some((field) => ambiguousFields.has(field))) return null;
+    return chart.pillars[key];
+  };
+  const pillars: StableScenarioFacts["pillars"] = {
+    year: stablePillar("year"),
+    month: stablePillar("month"),
+    day: stablePillar("day"),
+    hour: stablePillar("hour"),
+  };
+  const structureStable = !ambiguousFields.has("structureBalance") &&
+    pillars.year !== null && pillars.month !== null && pillars.day !== null;
+  const relations = ambiguousFields.has("relationSummary") ? [] : chart.professional.relations
+    .filter((relation) => relation.pillars.every((pillar) => pillars[pillar] !== null));
+  return {
+    pillars,
+    structureBalance: structureStable ? chart.professional.structureBalance : null,
+    supportScore: structureStable ? chart.professional.supportScore : null,
+    relations,
+  };
+}
+
+function isYangStem(pillar: Pillar | null) {
+  return pillar !== null && yangStems.has(pillar.stem);
+}
+
+function isYangBranch(pillar: Pillar | null) {
+  return pillar !== null && yangBranches.has(pillar.branch);
+}
+
+function isWarmSeason(pillar: Pillar | null) {
+  return pillar !== null && warmSeasonBranches.has(pillar.branch);
+}
+
+function hasPairRelation(facts: StableScenarioFacts, left: PillarKey, right: PillarKey) {
+  return facts.relations.some((relation) => relation.pillars.includes(left) && relation.pillars.includes(right));
+}
+
+function hasPressurePairRelation(facts: StableScenarioFacts, left: PillarKey, right: PillarKey) {
+  return facts.relations.some((relation) => pressureRelationTypes.has(relation.type) &&
+    relation.pillars.includes(left) && relation.pillars.includes(right));
+}
+
+function hasPressureRelation(facts: StableScenarioFacts) {
+  return facts.relations.some((relation) => pressureRelationTypes.has(relation.type));
+}
+
+const scenarioSelectorById: Record<InterpretationId, ScenarioSelector> = {
+  "self-day-master": (facts) => isYangStem(facts.pillars.day),
+  "self-support": (facts) => facts.structureBalance === "expression-heavy",
+  "self-interface": (facts) => hasPairRelation(facts, "day", "month"),
+  "talent-public": (facts) => isYangStem(facts.pillars.month),
+  "talent-hidden": (facts) => isYangBranch(facts.pillars.day),
+  "talent-output": (facts) => isYangStem(facts.pillars.hour),
+  "career-role": (facts) => isWarmSeason(facts.pillars.month),
+  "career-pressure": (facts) => hasPressurePairRelation(facts, "year", "month"),
+  "career-environment": (facts) => facts.structureBalance === "mixed",
+  "wealth-structure": (facts) => facts.supportScore !== null && facts.supportScore < 50,
+  "wealth-risk": (facts) => hasPressurePairRelation(facts, "day", "month"),
+  "wealth-boundary": (facts) => isYangStem(facts.pillars.year),
+  "relationship-day-branch": (facts) => isYangBranch(facts.pillars.day),
+  "relationship-trigger": (facts) => hasPressurePairRelation(facts, "day", "month"),
+  "relationship-repair": (facts) => hasPairRelation(facts, "year", "day"),
+  "family-year": (facts) => isYangBranch(facts.pillars.year),
+  "family-resource": (facts) => hasPairRelation(facts, "year", "month"),
+  "family-boundary": (facts) => isYangBranch(facts.pillars.hour),
+  "rhythm-climate": (facts) => isWarmSeason(facts.pillars.month),
+  "rhythm-recovery": (facts) => hasPressureRelation(facts),
+  "rhythm-decision": (facts) => facts.structureBalance === "support-heavy",
+};
+
 export function getScenarioForChart(id: InterpretationId, chart: FourPillarsResult) {
-  const domain = id.split("-")[0];
-  const stableRelations = chart.professional.relations.filter((relation) =>
-    relation.pillars.every((pillar) => !chart.ambiguousPillars.includes(pillar)));
-  const relationNeedsNegotiation = stableRelations.some((relation) =>
-    ["branch-clash", "branch-punishment", "branch-harm"].includes(relation.type));
-  const monthUsesAlternateRhythm = !chart.ambiguousPillars.includes("month") &&
-    ["巳", "午", "未", "申", "酉"].includes(chart.pillars.month.branch);
-  const useAlternate = domain === "self" || domain === "talent"
-    ? chart.professional.structureBalance === "expression-heavy"
-    : domain === "career" || domain === "wealth"
-      ? chart.professional.dayMaster.polarity === "yang"
-      : domain === "relationship" || domain === "family"
-        ? relationNeedsNegotiation
-        : monthUsesAlternateRhythm;
   const entry = scenarioLibrary[id];
+  const useAlternate = scenarioSelectorById[id](stableScenarioFacts(chart));
   return { scenario: entry.scenarios[useAlternate ? 1 : 0], action: entry.action };
 }
 
