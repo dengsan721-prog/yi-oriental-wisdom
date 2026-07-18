@@ -123,11 +123,40 @@ describe("professional interpretation", () => {
     }
   });
 
+  it("varies the stable scenario set from computed chart evidence", () => {
+    const contrastingChart = calculateFourPillars({
+      name: "顾临川",
+      date: "1985-02-20",
+      time: "23:40",
+      location: "成都",
+      gender: "male",
+      timeConfidence: "exact",
+    });
+    const firstScenes = buildInterpretations(knownChart).map(item => item.scenario);
+    const repeatedScenes = buildInterpretations(knownChart).map(item => item.scenario);
+    const contrastingScenes = buildInterpretations(contrastingChart).map(item => item.scenario);
+    const stripEvidenceLabels = (scene: string) => scene
+      .replace(/^[^，]+日主、[^，]+月令(?:见[^时]+|未见稳定关系)时，/, "")
+      .replace(/[甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥]/g, "符号")
+      .replace(/日主|月令|相合|三合|相冲|相刑|相害|相破|自刑/g, "证据");
+    const firstSubstance = firstScenes.map(stripEvidenceLabels);
+    const contrastingSubstance = contrastingScenes.map(stripEvidenceLabels);
+
+    expect(repeatedScenes).toEqual(firstScenes);
+    expect(contrastingSubstance).not.toEqual(firstSubstance);
+    expect(contrastingSubstance.filter((scene, index) => scene === firstSubstance[index]).length).toBe(0);
+  });
+
   it("delivers exactly twenty-one paid-depth readings with the stable scenario IDs", () => {
     const items = buildInterpretations(knownChart);
     expect(items.map(item => item.id)).toEqual(expectedIds);
     expect(Object.keys(scenarioLibrary)).toEqual(expectedIds);
     expect(items).toHaveLength(21);
+
+    for (const id of expectedIds) {
+      expect(scenarioLibrary[id].scenarios).toHaveLength(2);
+      expect(new Set(scenarioLibrary[id].scenarios).size, id).toBe(2);
+    }
 
     for (const domain of ["self", "talent", "career", "wealth", "relationship", "family", "rhythm"] as const) {
       expect(items.filter(item => item.domain === domain)).toHaveLength(3);
@@ -348,7 +377,7 @@ describe("professional interpretation", () => {
   });
 
   it("contains no random or input-year-modulo professional rule", () => {
-    const sources = ["../../lib/yi/four-pillars.ts", "../../lib/yi/interpretation.ts"]
+    const sources = ["../../lib/yi/four-pillars.ts", "../../lib/yi/interpretation.ts", "../../lib/yi/scenario-library.ts"]
       .map(path => readFileSync(new URL(path, import.meta.url), "utf8")).join("\n");
     expect(sources).not.toMatch(/Math\.random/);
     expect(sources).not.toMatch(/\byear\s*%/);
