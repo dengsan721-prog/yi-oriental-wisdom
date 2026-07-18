@@ -81,6 +81,26 @@ export function ChartSection({ chart, report }: { chart: FourPillarsResult; repo
       </details>
     </section>
 
+    <section className="life-overview" aria-labelledby="life-overview-title">
+      <article className="life-theme">
+        <small>人生主调</small>
+        <h2 id="life-overview-title">先看懂贯穿全局的那条线</h2>
+        <p>{report.lifeTheme}</p>
+      </article>
+      <section className="core-talents" aria-labelledby="core-talents-title">
+        <h2 id="core-talents-title">核心天赋</h2>
+        <ol>{report.coreTalents.map((talent, index) => <li key={talent}><span>0{index + 1}</span><p>{talent}</p></li>)}</ol>
+      </section>
+      <section className="central-tensions" aria-labelledby="central-tensions-title">
+        <h2 id="central-tensions-title">核心张力</h2>
+        <ol>{report.centralTensions.map((tension, index) => <li key={tension}><span>0{index + 1}</span><p>{tension}</p></li>)}</ol>
+      </section>
+      <article className="current-lesson">
+        <small>当下课题</small>
+        <p>{report.currentLesson}</p>
+      </article>
+    </section>
+
     <section className="report-lead-grid" aria-label="命局结论与行动">
       <div className="key-judgments">
         <h2>关键判断</h2>

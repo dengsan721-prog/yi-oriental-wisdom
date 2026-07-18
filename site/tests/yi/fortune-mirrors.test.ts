@@ -53,6 +53,60 @@ describe("fortune timeline", () => {
     expect(timeline[0].method.basis).toMatch(/顺排|逆排/);
   });
 
+  it("turns every fortune period into a complete computed stage story", () => {
+    const timeline = buildFortuneTimeline(chart, input);
+    for (const period of timeline) {
+      const actions: [string, string, string] = period.actions;
+      const paragraphs = [
+        period.stageStory,
+        ...Object.values(period.lifeAreas),
+        period.alignedState,
+        period.strainedState,
+        ...actions,
+      ];
+
+      expect(period.stageStory.length, period.stemBranch).toBeGreaterThanOrEqual(120);
+      expect(Object.keys(period.lifeAreas)).toEqual(["career", "wealth", "relationship", "family", "rhythm"]);
+      expect(Object.values(period.lifeAreas).every((paragraph) => paragraph.length >= 50), period.stemBranch).toBe(true);
+      expect(period.alignedState.length).toBeGreaterThanOrEqual(40);
+      expect(period.strainedState.length).toBeGreaterThanOrEqual(40);
+      expect(actions).toHaveLength(3);
+      for (const paragraph of paragraphs) {
+        expect(paragraph, `${period.stemBranch} computed symbol`).toContain(period.stemBranch);
+        expect(paragraph, `${period.stemBranch} ten god`).toContain(period.tenGod);
+      }
+      expect(period.stageStory).toMatch(/年柱|月柱|日柱|时柱/);
+      expect(period.stageStory).toMatch(/相合|三合|相冲|相刑|相害|相破|未见/);
+      expect(period.stageStory).toMatch(/高置信|中等置信|有限置信/);
+
+      for (const year of period.years) {
+        const annualGod = calculateTenGod(chart.pillars.day.stem, year.stemBranch[0]);
+        expect(year.weatherMetaphor.length, `${year.year} weather`).toBeGreaterThanOrEqual(30);
+        expect(year.weatherMetaphor).toContain(year.stemBranch);
+        expect(year.weatherMetaphor).toContain(annualGod);
+        expect(year.weatherMetaphor).toContain(period.stemBranch);
+        expect(year.weatherMetaphor).toMatch(/相合|三合|相冲|相刑|相害|相破|未命中|未见/);
+      }
+    }
+    expect(new Set(timeline.map((period) => period.stageStory)).size).toBe(timeline.length);
+    expect(new Set(timeline.map((period) => JSON.stringify(period.lifeAreas))).size).toBe(timeline.length);
+    expect(new Set(timeline.map((period) => JSON.stringify(period.actions))).size).toBe(timeline.length);
+  });
+
+  it("changes stage and weather substance for different charts and fortune periods", () => {
+    const alternateInput = { ...input, name: "顾临川", date: "1992-11-03", time: "18:20", location: "北京" } as const;
+    const alternateChart = calculateFourPillars(alternateInput);
+    const timeline = buildFortuneTimeline(chart, input);
+    const alternate = buildFortuneTimeline(alternateChart, alternateInput);
+
+    expect(timeline[0].stageStory).not.toBe(timeline[1].stageStory);
+    expect(timeline[0].actions).not.toEqual(timeline[1].actions);
+    expect(timeline[0].years[0].weatherMetaphor).not.toBe(timeline[0].years[1].weatherMetaphor);
+    expect(alternate[0].stageStory).not.toBe(timeline[0].stageStory);
+    expect(alternate[0].stageStory).toContain(alternate[0].stemBranch);
+    expect(alternate[0].stageStory).toMatch(/年柱|月柱|日柱|时柱/);
+  });
+
   it("builds nine distinct period readings from the actual decade and natal chart", () => {
     const timeline = buildFortuneTimeline(chart, input);
     const expectedKeys = [
@@ -188,10 +242,15 @@ describe("fortune timeline", () => {
     const html = renderToStaticMarkup(createElement(FortuneSection, { chart, birth: input }));
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
     for (const label of [
+      "阶段故事", "事业", "财富", "关系", "家庭", "身心节奏", "顺势状态", "吃力状态", "三项阶段行动",
       "阶段气候", "原局互动", "机会来源", "压力来源", "工作推进",
       "资源配置", "关系沟通", "身心边界", "阶段策略",
       "岁运关系", "典型场景", "年度动作",
     ]) expect(html).toContain(label);
+    const renderedPeriod = buildFortuneTimeline(chart, input)[0];
+    expect(html.indexOf(renderedPeriod.stageStory)).toBeLessThan(html.indexOf("阶段气候"));
+    expect(html.indexOf(renderedPeriod.years[0].weatherMetaphor)).toBeLessThan(html.indexOf(renderedPeriod.years[0].basis));
+    expect(html.indexOf(renderedPeriod.years[0].weatherMetaphor)).toBeLessThan(html.indexOf(renderedPeriod.years[0].interaction));
     expect(html).toContain("<dl");
     expect(css).toMatch(/\.choice-row\{[^}]*overflow-x:auto[^}]*scrollbar-width:none/);
     expect(css).toMatch(/\.choice-row::?-webkit-scrollbar\{[^}]*display:none/);

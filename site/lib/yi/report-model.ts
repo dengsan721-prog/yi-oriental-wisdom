@@ -1,5 +1,5 @@
 import { Solar } from "lunar-typescript";
-import { buildKeyJudgments, buildReportActions, buildReportSummary, type ReportCopyContext } from "./report-copy";
+import { buildKeyJudgments, buildLifeOverview, buildReportActions, buildReportSummary, type ReportCopyContext } from "./report-copy";
 import { stemElements } from "./stems-branches";
 import type {
   BirthInput,
@@ -175,6 +175,7 @@ export function buildProfessionalReport(chart: FourPillarsResult, birth: BirthIn
     summary: buildReportSummary(copyContext),
     keyJudgments: buildKeyJudgments(copyContext),
     actions: buildReportActions(copyContext),
+    ...buildLifeOverview(copyContext),
     confidence,
   };
 }
