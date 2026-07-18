@@ -1,4 +1,5 @@
-import { scenarioLibrary, type ScenarioId } from "./scenario-library";
+import { getInterpretationEnrichment, type InterpretationId } from "./interpretation-enrichment";
+import { scenarioLibrary } from "./scenario-library";
 import { YI_RULE_SOURCES } from "./sources";
 import type { FourPillarsResult, InterpretationItem, PillarKey, ProfessionalOverview } from "./types";
 
@@ -7,7 +8,7 @@ type Draft = Omit<InterpretationItem,
   "domain" | "confidence" | "sourceTradition" | "sourceReferences" | "sourceRuleIds" |
   "affectedByUnknownHour" | "scenario" | "action" | "traditionalJudgment" |
   "advantageVersion" | "shadowVersion" | "actionNow" | "actionLongTerm" | "priority"
-> & { id: ScenarioId; ruleIds: string[] };
+> & { id: InterpretationId; ruleIds: string[] };
 type DomainSelector = (chart: FourPillarsResult) => Draft[];
 
 const pillarNames: Record<PillarKey, string> = { year: "年", month: "月", day: "日", hour: "时" };
@@ -89,7 +90,7 @@ const talentSelector: DomainSelector = chart => [
     pillarDependencies: ["day"], ruleIds: ["ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
   {
-    id: "talent-future", professionalTitle: "时柱所示的后续表达线索", innovationTitle: "未来试验场",
+    id: "talent-output", professionalTitle: "时柱所示的后续表达线索", innovationTitle: "未来试验场",
     basis: chart.pillars.hour
       ? `时干为${chart.pillars.hour.stem}，相对${chart.professional.dayMaster.stem}日主所示十神为${godAt(chart, "hour", "stem")}；时支为${chart.pillars.hour.branch}`
       : `时辰未知，时柱与其十神不可得，只保留${chart.professional.dayMaster.stem}日主及已知三柱作为有限观察`,
@@ -104,7 +105,7 @@ const talentSelector: DomainSelector = chart => [
 
 const careerSelector: DomainSelector = chart => [
   {
-    id: "career-environment", professionalTitle: "月柱作为工作环境线索", innovationTitle: "职场接口",
+    id: "career-role", professionalTitle: "月柱作为工作环境线索", innovationTitle: "职场接口",
     basis: `月干${chart.pillars.month.stem}为${godAt(chart, "month", "stem")}，月令${chart.pillars.month.branch}的本气十神为${godAt(chart, "month", "branch")}`,
     plainLanguage: "月柱可帮助拆解你与制度、任务和协作环境的接口：月干偏向公开呈现，月支更像持续运行的底层条件。",
     mirror: "像设备接入新的工作台：能力本身没有消失，但权限、协议和验收标准不同，输出方式就需要重新配置。",
@@ -112,7 +113,7 @@ const careerSelector: DomainSelector = chart => [
     pillarDependencies: ["month", "day"], ruleIds: ["ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
   {
-    id: "career-organization", professionalTitle: "年月关系的组织适配线索", innovationTitle: "组织齿轮",
+    id: "career-pressure", professionalTitle: "年月关系的组织适配线索", innovationTitle: "组织齿轮",
     basis: `${relationEvidence(chart, ["year", "month"])}；月干十神为${godAt(chart, "month", "stem")}`,
     plainLanguage: "年柱可作早期经验入口，月柱可作当前组织接口。两者的关系提示旧方法进入新规则时，哪些部分顺接、哪些需要更新。",
     mirror: "像旧齿轮装进新机器：保留精度高的齿面，同时测量新的转速与负载，才能判断是坚持优势还是调整接口。",
@@ -120,7 +121,7 @@ const careerSelector: DomainSelector = chart => [
     pillarDependencies: ["year", "month", "day"], ruleIds: ["relation.gan-zhi.v1", "ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
   {
-    id: "career-pace", professionalTitle: "日主支持与输出的职业节奏", innovationTitle: "责任配速",
+    id: "career-environment", professionalTitle: "日主支持与输出的职业节奏", innovationTitle: "责任配速",
     basis: baseRules(chart).structure,
     plainLanguage: "这项结构观察把职业节奏拆成补给、判断和交付三段。任务密集时，先区分核心判断与可交接的重复工作。",
     mirror: "像长跑配速：起步快不是唯一优势，补给点、同伴分工与何时保留冲刺能力，同样决定能否稳定抵达。",
@@ -131,7 +132,7 @@ const careerSelector: DomainSelector = chart => [
 
 const wealthSelector: DomainSelector = chart => [
   {
-    id: "wealth-interface", professionalTitle: "财星的资源互动观察", innovationTitle: "来往有数",
+    id: "wealth-structure", professionalTitle: "财星的资源互动观察", innovationTitle: "来往有数",
     basis: `以${chart.professional.dayMaster.stem}日主为坐标，已知干支十神中财星出现${chart.professional.tenGods.filter(item => item.tenGod.includes("财")).length}次，月令为${chart.pillars.month.branch}`,
     plainLanguage: "财星在这里用于观察资源交换，不等于收入数字。更有用的问题是资金、时间、承诺和回报之间是否有清楚边界。",
     mirror: "像一条水系：流量只是表面，源头是否稳定、渠道是否渗漏、蓄水是否足够，都会影响真实可用资源。",
@@ -139,7 +140,7 @@ const wealthSelector: DomainSelector = chart => [
     pillarDependencies: ["year", "month", "day"], ruleIds: ["ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
   {
-    id: "wealth-loop", professionalTitle: "日月关系的价值交换线索", innovationTitle: "价值回路",
+    id: "wealth-risk", professionalTitle: "日月关系的价值交换线索", innovationTitle: "价值回路",
     basis: `${relationEvidence(chart, ["day", "month"])}；月令本气十神为${godAt(chart, "month", "branch")}`,
     plainLanguage: "日柱与月柱可作为个人投入和环境回报的两端。无论关系明显与否，都要把成果、责任和停止条件写成可验证约定。",
     mirror: "像检查电路：投入再大，若连接点、计量表或回路不清，努力也难以转成可确认的成果与合理回报。",
@@ -147,7 +148,7 @@ const wealthSelector: DomainSelector = chart => [
     pillarDependencies: ["day", "month"], ruleIds: ["relation.gan-zhi.v1", "ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
   {
-    id: "wealth-basket", professionalTitle: "五行分布的资源配置提示", innovationTitle: "配置篮子",
+    id: "wealth-boundary", professionalTitle: "五行分布的资源配置提示", innovationTitle: "配置篮子",
     basis: `已知柱主五行计数为${Object.entries(chart.elementCounts).map(([element, count]) => `${element}${count}`).join("、")}；日主为${chart.professional.dayMaster.stem}${chart.professional.dayMaster.element}`,
     plainLanguage: "五行计数只提示行动方式是否集中，不说明哪类资产更好。资源安排应同时保留生活安全、稳定投入和有限试验空间。",
     mirror: "像检查篮子里的重量分布：集中可以提高短期力度，但若没有备用空间，环境变化时就缺少调整余地。",
@@ -158,7 +159,7 @@ const wealthSelector: DomainSelector = chart => [
 
 const relationshipSelector: DomainSelector = chart => [
   {
-    id: "relationship-expression", professionalTitle: "日支十神的亲密回应线索", innovationTitle: "关系座席",
+    id: "relationship-day-branch", professionalTitle: "日支十神的亲密回应线索", innovationTitle: "关系座席",
     basis: `日支为${chart.pillars.day.branch}，首个藏干相对${chart.professional.dayMaster.stem}日主所示十神为${godAt(chart, "day", "branch")}`,
     plainLanguage: "日支可以帮助观察熟悉关系中的第一反应。真正需要核对的是，你当下提供的信息、情绪承接或行动是否匹配对方需要。",
     mirror: "像坐在同一张桌子的不同座席：视角会影响先看见什么，但换位、提问和复述能让双方重新获得完整画面。",
@@ -166,7 +167,7 @@ const relationshipSelector: DomainSelector = chart => [
     pillarDependencies: ["day"], ruleIds: ["ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
   {
-    id: "relationship-boundary", professionalTitle: "日月合冲的关系边界", innovationTitle: "边界潮汐",
+    id: "relationship-trigger", professionalTitle: "日月合冲的关系边界", innovationTitle: "边界潮汐",
     basis: `${relationEvidence(chart, ["day", "month"])}；日主为${chart.professional.dayMaster.stem}${chart.professional.dayMaster.element}`,
     plainLanguage: "日月互动可用来提问个人需求与现实安排如何协商。关系越有拉扯，越要把靠近速度、暂停信号和责任边界说清。",
     mirror: "像潮汐与堤岸：靠近和退让都有节奏，稳定并不来自永远一致，而来自双方知道何时停、如何再连接。",
@@ -185,7 +186,7 @@ const relationshipSelector: DomainSelector = chart => [
 
 const familySelector: DomainSelector = chart => [
   {
-    id: "family-root", professionalTitle: "年月柱的家庭经验线索", innovationTitle: "家族底色",
+    id: "family-year", professionalTitle: "年月柱的家庭经验线索", innovationTitle: "家族底色",
     basis: `年干${chart.pillars.year.stem}所示十神为${godAt(chart, "year", "stem")}，月令${chart.pillars.month.branch}本气为${godAt(chart, "month", "branch")}`,
     plainLanguage: "年月柱可作为早期规则与后来社会角色的观察入口。重点是分辨哪些资源值得继承，哪些习惯需要停止复制。",
     mirror: "像画面的底色：它会影响明暗和第一印象，却不决定整幅画；新的笔触、留白和共同规则仍能改变作品。",
@@ -193,7 +194,7 @@ const familySelector: DomainSelector = chart => [
     pillarDependencies: ["year", "month", "day"], ruleIds: ["ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
   {
-    id: "family-care", professionalTitle: "年月关系的照顾责任结构", innovationTitle: "照顾接力",
+    id: "family-resource", professionalTitle: "年月关系的照顾责任结构", innovationTitle: "照顾接力",
     basis: `${relationEvidence(chart, ["year", "month"])}；月干十神为${godAt(chart, "month", "stem")}`,
     plainLanguage: "家庭照顾常把旧责任与现实任务叠在一起。命盘只提供提问坐标，真正的分工仍要核对时间、能力和对方意愿。",
     mirror: "像一场接力：可靠不是一个人跑完全程，而是知道谁能接棒、何时补位，以及照顾者如何恢复后再出发。",
@@ -201,7 +202,7 @@ const familySelector: DomainSelector = chart => [
     pillarDependencies: ["year", "month", "day"], ruleIds: ["relation.gan-zhi.v1", "ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
   {
-    id: "family-future", professionalTitle: "时柱相关的传承观察", innovationTitle: "留白传承",
+    id: "family-boundary", professionalTitle: "时柱相关的传承观察", innovationTitle: "留白传承",
     basis: chart.pillars.hour
       ? `时支为${chart.pillars.hour.branch}，首个藏干相对${chart.professional.dayMaster.stem}日主所示十神为${godAt(chart, "hour", "branch")}`
       : `时辰未知，时柱、时支藏干与相关十神不可得，只使用年、月、日三柱作有限观察`,
@@ -216,7 +217,7 @@ const familySelector: DomainSelector = chart => [
 
 const rhythmSelector: DomainSelector = chart => [
   {
-    id: "rhythm-recovery", professionalTitle: "月令寒暖燥湿的恢复提示", innovationTitle: "四时节拍",
+    id: "rhythm-climate", professionalTitle: "月令寒暖燥湿的恢复提示", innovationTitle: "四时节拍",
     basis: baseRules(chart).climate,
     plainLanguage: "月令可用来提醒季节环境与恢复安排的关系，但不能解释具体不适。最可靠的校验来自连续的睡眠、专注与情绪记录。",
     mirror: "像随四季调整灌溉：观察温度与土壤只是起点，植物的真实反应才决定何时加水、遮阴或暂停施力。",
@@ -224,7 +225,7 @@ const rhythmSelector: DomainSelector = chart => [
     pillarDependencies: ["month"], ruleIds: ["calendar.eight-char.v1", "climate.season-prompt.v1"],
   },
   {
-    id: "rhythm-transition", professionalTitle: "日月关系的阶段转换配速", innovationTitle: "节奏换挡",
+    id: "rhythm-recovery", professionalTitle: "日月关系的阶段转换配速", innovationTitle: "节奏换挡",
     basis: `${relationEvidence(chart, ["day", "month"])}；月令为${chart.pillars.month.branch}，日主为${chart.professional.dayMaster.stem}${chart.professional.dayMaster.element}`,
     plainLanguage: "角色或环境变化时，日月关系可提醒内在惯性与外部周期是否同速。先减少并行任务，再用周复盘重新校准。",
     mirror: "像车辆换挡：上一段路的转速不一定适合新坡度，平稳过渡依靠减载、观察和逐级加速，而不是硬踩油门。",
@@ -232,7 +233,7 @@ const rhythmSelector: DomainSelector = chart => [
     pillarDependencies: ["day", "month"], ruleIds: ["relation.gan-zhi.v1", "domain.mapping.v2"],
   },
   {
-    id: "rhythm-long-term", professionalTitle: "年月日结构的长期节奏", innovationTitle: "长线刻度",
+    id: "rhythm-decision", professionalTitle: "年月日结构的长期节奏", innovationTitle: "长线刻度",
     basis: `${baseRules(chart).structure}；${relationEvidence(chart, ["year", "month"])}`,
     plainLanguage: "长期节奏不由单一年份决定。已知三柱只提供结构起点，真正结果取决于持续投入、环境变化和按证据修正。",
     mirror: "像远足地图：等高线帮助预估坡度，但天气、体力与补给会持续变化，因此每个里程碑都要重新确认路线。",
@@ -277,7 +278,8 @@ export function buildProfessionalOverview(chart: FourPillarsResult): Professiona
 export function buildInterpretations(chart: FourPillarsResult): InterpretationItem[] {
   return (Object.entries(domainSelectors) as [Domain, DomainSelector][]).flatMap(([domain, selector]) => selector(chart).map(draft => {
     const sources = draft.ruleIds.map(id => YI_RULE_SOURCES[id]);
-    const scenario = scenarioLibrary[draft.id];
+    const enrichment = getInterpretationEnrichment(draft.id);
+    const scene = scenarioLibrary[draft.id];
     const dependencies = [...draft.pillarDependencies];
     const affected = dependencies.some(pillar => chart.ambiguousPillars.includes(pillar));
     const heuristic = sources.some(source => source.sourceType === "product-heuristic");
@@ -286,15 +288,11 @@ export function buildInterpretations(chart: FourPillarsResult): InterpretationIt
       : draft.basis;
     return {
       ...draft,
-      ...scenario,
+      ...enrichment,
       basis,
-      traditionalJudgment: basis,
-      advantageVersion: draft.plainLanguage,
-      shadowVersion: draft.caution,
-      actionNow: scenario.action,
-      actionLongTerm: `以四周为周期持续执行并复盘以下行动，每周记录结果、阻力和调整点，再据此调整下一阶段：${scenario.action}`,
-      priority: "supporting",
       domain,
+      scenario: scene.scenario,
+      action: enrichment.actionNow,
       confidence: affected ? "limited" : heuristic ? "medium" : chart.confidence,
       sourceTradition: sources.map(source => source.label).join("；"),
       sourceReferences: sources.flatMap(source => [...source.references]),

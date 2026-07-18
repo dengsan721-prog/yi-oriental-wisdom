@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DetailSection } from "../../components/yi/DetailSection";
-import { validateInterpretation } from "../../lib/yi/content-quality";
+import { findRepeatedSections, validateInterpretation } from "../../lib/yi/content-quality";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { buildInterpretations, buildProfessionalOverview, interpretationLength } from "../../lib/yi/interpretation";
 import { scenarioLibrary } from "../../lib/yi/scenario-library";
@@ -11,13 +11,22 @@ import { YI_RULE_SOURCES } from "../../lib/yi/sources";
 
 const expectedIds = [
   "self-day-master", "self-support", "self-interface",
-  "talent-public", "talent-hidden", "talent-future",
-  "career-environment", "career-organization", "career-pace",
-  "wealth-interface", "wealth-loop", "wealth-basket",
-  "relationship-expression", "relationship-boundary", "relationship-repair",
-  "family-root", "family-care", "family-future",
-  "rhythm-recovery", "rhythm-transition", "rhythm-long-term",
+  "talent-public", "talent-hidden", "talent-output",
+  "career-role", "career-pressure", "career-environment",
+  "wealth-structure", "wealth-risk", "wealth-boundary",
+  "relationship-day-branch", "relationship-trigger", "relationship-repair",
+  "family-year", "family-resource", "family-boundary",
+  "rhythm-climate", "rhythm-recovery", "rhythm-decision",
 ] as const;
+
+const coreIds = new Set([
+  "self-day-master", "self-support", "career-role", "wealth-structure",
+  "relationship-day-branch", "rhythm-climate",
+]);
+const importantIds = new Set([
+  "self-interface", "talent-public", "talent-hidden", "career-pressure", "career-environment",
+  "wealth-risk", "relationship-trigger", "relationship-repair", "family-resource", "rhythm-recovery",
+]);
 
 const knownChart = calculateFourPillars({
   name: "林知远",
@@ -72,14 +81,34 @@ describe("professional interpretation", () => {
 
     for (const item of items) {
       expect.soft(validateInterpretation(item), item.id).toEqual([]);
-      expect(item.traditionalJudgment, item.id).toBe(item.basis);
-      expect(item.advantageVersion, item.id).toBe(item.plainLanguage);
-      expect(item.shadowVersion, item.id).toBe(item.caution);
+      expect(item.traditionalJudgment, item.id).not.toBe(item.basis);
+      expect(item.advantageVersion, item.id).not.toBe(item.plainLanguage);
+      expect(item.shadowVersion, item.id).not.toBe(item.caution);
       expect(item.actionNow, item.id).toBe(item.action);
-      expect(item.actionLongTerm, item.id).toContain(item.action);
       expect(item.actionLongTerm, item.id).not.toBe(item.actionNow);
-      expect(item.priority, item.id).toBe("supporting");
+      expect(item.priority, item.id).toBe(
+        coreIds.has(item.id) ? "core" : importantIds.has(item.id) ? "important" : "supporting",
+      );
     }
+  });
+
+  it("delivers twenty-one enriched and distinct interpretations", () => {
+    const items = buildInterpretations(knownChart);
+    expect(items).toHaveLength(21);
+    expect(Object.fromEntries(["self", "talent", "career", "wealth", "relationship", "family", "rhythm"]
+      .map(domain => [domain, items.filter(item => item.domain === domain).length])))
+      .toEqual({ self: 3, talent: 3, career: 3, wealth: 3, relationship: 3, family: 3, rhythm: 3 });
+    for (const item of items) {
+      expect(validateInterpretation(item)).toEqual([]);
+      const text = [
+        item.basis, item.traditionalJudgment, item.plainLanguage, item.scenario,
+        item.advantageVersion, item.shadowVersion, item.mirror,
+        item.actionNow, item.actionLongTerm, item.caution,
+      ].join("");
+      const minimum = item.priority === "core" ? 300 : item.priority === "important" ? 180 : 80;
+      expect(text.length).toBeGreaterThanOrEqual(minimum);
+    }
+    expect(findRepeatedSections(items)).toEqual([]);
   });
 
   it("uses independent domain rules with three substantively different readings", () => {
@@ -252,10 +281,10 @@ describe("professional interpretation", () => {
   });
 
   it.each([
-    ["career-organization", ["year", "month", "day"]],
-    ["family-care", ["year", "month", "day"]],
-    ["talent-future", ["hour", "day"]],
-    ["family-future", ["hour", "day"]],
+    ["career-pressure", ["year", "month", "day"]],
+    ["family-resource", ["year", "month", "day"]],
+    ["talent-output", ["hour", "day"]],
+    ["family-boundary", ["hour", "day"]],
   ] as const)("includes the day-master dependency for %s", (id, expectedDependencies) => {
     const item = buildInterpretations(knownChart).find(reading => reading.id === id);
     expect(item?.pillarDependencies).toEqual(expect.arrayContaining([...expectedDependencies]));
@@ -275,7 +304,7 @@ describe("professional interpretation", () => {
       },
     };
     const basis = buildInterpretations(chartWithConcurrentRelations)
-      .find(item => item.id === "career-organization")?.basis ?? "";
+      .find(item => item.id === "career-pressure")?.basis ?? "";
     expect(basis).toContain("甲己相合");
     expect(basis).toContain("子午相冲");
     expect(basis.match(/子酉相破/g)).toHaveLength(1);
