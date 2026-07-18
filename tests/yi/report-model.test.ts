@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { ChartSection } from "../../components/yi/ChartSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { buildProfessionalReport } from "../../lib/yi/report-model";
+import type { ProfessionalReport } from "../../lib/yi/types";
 
 const birth = {
   name: "林",
@@ -11,7 +15,86 @@ const birth = {
   timeConfidence: "exact" as const,
 };
 
+const contrastingBirth = {
+  name: "周",
+  date: "1992-11-03",
+  time: "18:20",
+  location: "北京市",
+  gender: "male" as const,
+  timeConfidence: "exact" as const,
+};
+
+function overviewParagraphs(report: ProfessionalReport): string[] {
+  return [report.lifeTheme, ...report.coreTalents, ...report.centralTensions, report.currentLesson];
+}
+
+function calculatedOverviewEvidence(report: ProfessionalReport): string[] {
+  const month = report.monthCommand.ambiguous ? report.monthCommand.representative.branch : report.monthCommand.branch;
+  return [
+    `${report.dayMaster}日主`,
+    `${month}月令`,
+    ...report.pillarFacts.map((pillar) => `${pillar.stem}${pillar.branch}`),
+    ...report.relations.map((relation) => relation.label),
+  ];
+}
+
+function stripCalculatedNames(value: string): string {
+  return value
+    .replace(/[甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥]/g, "符号")
+    .replace(/比肩|劫财|食神|伤官|偏财|正财|七杀|正官|偏印|正印/g, "十神")
+    .replace(/[木火土金水]/g, "五行");
+}
+
 describe("professional report model", () => {
+  it("builds a computed four-part life overview with fixed tuple depth", () => {
+    const report = buildProfessionalReport(calculateFourPillars(birth), birth);
+    const talents: [string, string, string] = report.coreTalents;
+    const tensions: [string, string] = report.centralTensions;
+    const evidence = calculatedOverviewEvidence(report);
+
+    expect(report.lifeTheme.length).toBeGreaterThanOrEqual(60);
+    expect(talents).toHaveLength(3);
+    expect(tensions).toHaveLength(2);
+    expect(report.currentLesson.length).toBeGreaterThanOrEqual(40);
+    for (const paragraph of overviewParagraphs(report)) {
+      expect(paragraph.length).toBeGreaterThanOrEqual(40);
+      expect(evidence.some((symbol) => paragraph.includes(symbol)), paragraph).toBe(true);
+    }
+    expect(overviewParagraphs(report).join(" ")).toContain(report.monthCommand.ambiguous ? "待核" : report.monthCommand.tenGod);
+    if (report.relations.length) {
+      expect(overviewParagraphs(report).some((paragraph) => report.relations.some((relation) => paragraph.includes(relation.label)))).toBe(true);
+    }
+    expect(overviewParagraphs(report).join(" ")).not.toMatch(/一定|注定|必然发财|必然结婚|灾祸|寿命/);
+  });
+
+  it("changes overview substance for a different chart but not for a renamed identical chart", () => {
+    const report = buildProfessionalReport(calculateFourPillars(birth), birth);
+    const renamed = buildProfessionalReport(calculateFourPillars({ ...birth, name: "另一名字" }), { ...birth, name: "另一名字" });
+    const contrasting = buildProfessionalReport(calculateFourPillars(contrastingBirth), contrastingBirth);
+
+    expect(overviewParagraphs(renamed)).toEqual(overviewParagraphs(report));
+    expect(contrasting.lifeTheme).not.toBe(report.lifeTheme);
+    expect(contrasting.coreTalents).not.toEqual(report.coreTalents);
+    expect(stripCalculatedNames(contrasting.coreTalents[0])).not.toBe(stripCalculatedNames(report.coreTalents[0]));
+    expect(contrasting.centralTensions).not.toEqual(report.centralTensions);
+    expect(contrasting.currentLesson).not.toBe(report.currentLesson);
+    for (const paragraph of overviewParagraphs(contrasting)) {
+      expect(calculatedOverviewEvidence(contrasting).some((symbol) => paragraph.includes(symbol)), paragraph).toBe(true);
+    }
+  });
+
+  it("renders life theme, talents, tensions and lesson in order before the professional skeleton", () => {
+    const chart = calculateFourPillars(birth);
+    const report = buildProfessionalReport(chart, birth);
+    const html = renderToStaticMarkup(createElement(ChartSection, { chart, report }));
+    const orderedValues = [report.lifeTheme, ...report.coreTalents, ...report.centralTensions, report.currentLesson, "完整命盘骨架"];
+    const positions = orderedValues.map((value) => html.indexOf(value));
+
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect(positions).toEqual([...positions].sort((left, right) => left - right));
+    for (const label of ["人生主调", "核心天赋", "核心张力", "当下课题"]) expect(html).toContain(label);
+  });
+
   it("contains dual-calendar facts and a complete exact-time chart skeleton", () => {
     const report = buildProfessionalReport(calculateFourPillars(birth), birth);
 

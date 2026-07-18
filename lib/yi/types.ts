@@ -131,6 +131,10 @@ export type ProfessionalReport = {
   summary: string;
   keyJudgments: string[];
   actions: string[];
+  lifeTheme: string;
+  coreTalents: [string, string, string];
+  centralTensions: [string, string];
+  currentLesson: string;
   confidence: FourPillarsResult["confidence"];
 };
 
