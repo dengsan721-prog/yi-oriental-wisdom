@@ -54,7 +54,7 @@ const selfSelector: DomainSelector = chart => {
       pillarDependencies: ["day"], ruleIds: ["calendar.eight-char.v1", "ten-god.hidden-stems.v1", "domain.mapping.v2"],
     },
     {
-      id: "self-support", professionalTitle: "日主得令得地与支持结构观察", innovationTitle: "能量底座",
+      id: "self-support", professionalTitle: "日主得令得地与支持结构观察", innovationTitle: "支持结构",
       basis: b.structure,
       plainLanguage: "支持度提示的是已知干支中补给与输出的相对配比。分数偏低时先看资源是否跟得上，偏高时则观察能否把积累转成具体交付。",
       mirror: "像查看土壤的保水与排水：水多不等于作物一定好，水少也不等于必须灌溉，还要结合季节、根系和实际状态。",
@@ -62,7 +62,7 @@ const selfSelector: DomainSelector = chart => {
       pillarDependencies: ["year", "month", "day"], ruleIds: ["structure.support-score.v2", "domain.mapping.v2"],
     },
     {
-      id: "self-interface", professionalTitle: "日月两柱的内外协调", innovationTitle: "内外接口",
+      id: "self-interface", professionalTitle: "日月两柱的内外协调", innovationTitle: "规则协商",
       basis: `${relationEvidence(chart, ["day", "month"])}；同时以${b.month}作为现实环境坐标`,
       plainLanguage: "日柱代表自我立场的观察点，月柱更接近规则与工作环境。两者有关系时看互动方式，无明显关系时则更需要主动说清需求与条件。",
       mirror: "像两组齿轮：有咬合不等于顺利，无咬合也不等于冲突；齿距、转速和润滑方式才决定合作是否可持续。",
@@ -105,9 +105,9 @@ const talentSelector: DomainSelector = chart => [
 
 const careerSelector: DomainSelector = chart => [
   {
-    id: "career-role", professionalTitle: "月柱作为工作环境线索", innovationTitle: "职场接口",
+    id: "career-role", professionalTitle: "月柱作为工作环境线索", innovationTitle: "职分坐标",
     basis: `月干${chart.pillars.month.stem}为${godAt(chart, "month", "stem")}，月令${chart.pillars.month.branch}的本气十神为${godAt(chart, "month", "branch")}`,
-    plainLanguage: "月柱可帮助拆解你与制度、任务和协作环境的接口：月干偏向公开呈现，月支更像持续运行的底层条件。",
+    plainLanguage: "月柱可帮助观察你与制度、任务和协作环境的关系：月干偏向公开呈现，月支更接近日常运行条件。",
     mirror: "像设备接入新的工作台：能力本身没有消失，但权限、协议和验收标准不同，输出方式就需要重新配置。",
     caution: "月柱不能直接断定事业高低、单位性质或职位名称；职业选择仍应结合能力证据、机会成本与现实责任。",
     pillarDependencies: ["month", "day"], ruleIds: ["ten-god.hidden-stems.v1", "domain.mapping.v2"],
@@ -115,8 +115,8 @@ const careerSelector: DomainSelector = chart => [
   {
     id: "career-pressure", professionalTitle: "年月关系的组织适配线索", innovationTitle: "组织齿轮",
     basis: `${relationEvidence(chart, ["year", "month"])}；月干十神为${godAt(chart, "month", "stem")}`,
-    plainLanguage: "年柱可作早期经验入口，月柱可作当前组织接口。两者的关系提示旧方法进入新规则时，哪些部分顺接、哪些需要更新。",
-    mirror: "像旧齿轮装进新机器：保留精度高的齿面，同时测量新的转速与负载，才能判断是坚持优势还是调整接口。",
+    plainLanguage: "年柱可作早期经验入口，月柱可作当前组织位置。两者的关系提示旧方法进入新规则时，哪些部分顺接、哪些需要更新。",
+    mirror: "像旧齿轮装进新机器：保留精度高的齿面，同时测量新的转速与负载，才能判断是坚持优势还是调整配合方式。",
     caution: "干支关系不评价组织好坏，也不保证升迁或变动；是否适配要以职责、反馈、绩效口径和可持续性验证。",
     pillarDependencies: ["year", "month", "day"], ruleIds: ["relation.gan-zhi.v1", "ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
@@ -153,7 +153,7 @@ const wealthSelector: DomainSelector = chart => [
     plainLanguage: "五行计数只提示行动方式是否集中，不说明哪类资产更好。资源安排应同时保留生活安全、稳定投入和有限试验空间。",
     mirror: "像检查篮子里的重量分布：集中可以提高短期力度，但若没有备用空间，环境变化时就缺少调整余地。",
     caution: "五行数量为零不等于喜用，更不是买卖信号；任何重大投资仍应评估风险并咨询持牌专业人士。",
-    pillarDependencies: ["year", "month", "day"], ruleIds: ["structure.support-score.v2", "domain.mapping.v2"],
+    pillarDependencies: ["year", "month", "day"], ruleIds: ["structure.support-score.v2", "ten-god.hidden-stems.v1", "domain.mapping.v2"],
   },
 ];
 
@@ -230,7 +230,7 @@ const rhythmSelector: DomainSelector = chart => [
     plainLanguage: "角色或环境变化时，日月关系可提醒内在惯性与外部周期是否同速。先减少并行任务，再用周复盘重新校准。",
     mirror: "像车辆换挡：上一段路的转速不一定适合新坡度，平稳过渡依靠减载、观察和逐级加速，而不是硬踩油门。",
     caution: "合冲刑害破只作节奏提问，不对应健康事件或吉凶日期；身心状态仍以真实记录和专业评估为准。",
-    pillarDependencies: ["day", "month"], ruleIds: ["relation.gan-zhi.v1", "domain.mapping.v2"],
+    pillarDependencies: ["day", "month"], ruleIds: ["relation.gan-zhi.v1", "climate.season-prompt.v1", "domain.mapping.v2"],
   },
   {
     id: "rhythm-decision", professionalTitle: "年月日结构的长期节奏", innovationTitle: "长线刻度",

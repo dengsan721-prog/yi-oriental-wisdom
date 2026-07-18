@@ -59,7 +59,7 @@ const enrichment: Record<InterpretationId, InterpretationEnrichment> = {
     advantageVersion: "安静准备、独立摸索或暂时没有指令时，你较能调动不必公开展示的熟练步骤，把零散材料整理成稳定底稿。这样的能力常在充分准备后显出质量。",
     shadowVersion: "隐性熟练也可能成为封闭惯性：因为自己做起来顺手，就跳过说明、求证和交接，使成果难以复用；或者准备持续延长，却迟迟不让真实使用者检验。",
     actionNow: "挑一项近期独立完成的任务，写出自己实际使用的五个步骤，并请一位同事照着执行后标出断点。",
-    actionLongTerm: "用两个月把三项隐性熟练转成模板或清单，每项都经过他人试用、反馈和一次修订；同时保留一项新方法对照质量、速度与耗能。",
+    actionLongTerm: "用两个月把三项隐性熟练转成模板或清单，每项都经过他人试用、反馈和一次修订；同时保留一项新方法对照质量、速度与耗能，并记录可交接程度。",
     priority: "important",
   },
   "talent-output": {
@@ -83,7 +83,7 @@ const enrichment: Record<InterpretationId, InterpretationEnrichment> = {
     advantageVersion: "截止期限逼近时，你能借助熟悉方法快速稳定局面；若同时把任务拆成关键路径、风险点和可交接部分，压力会转成清楚的优先级，而不是盲目加速。",
     shadowVersion: "期限压力可能让旧习惯自动接管：一边不断加任务，一边减少沟通，直到最后才暴露依赖和质量问题。此时速度看似提高，返工与协作成本却同步上升。",
     actionNow: "为最近的紧急交付标出关键路径、最晚确认点和两个主要风险，当天向协作者说明需要的输入与截止时间。",
-    actionLongTerm: "连续三个项目保存原定计划、实际延期点和返工原因；每个项目结束后只改进一个压力环节，例如需求确认、依赖提醒或中途验收。",
+    actionLongTerm: "连续三个项目保存原定计划、实际延期点和返工原因；每个项目结束后只改进一个压力环节，例如需求确认、依赖提醒或中途验收，再写入下次计划。",
     priority: "important",
   },
   "career-environment": {
@@ -115,7 +115,7 @@ const enrichment: Record<InterpretationId, InterpretationEnrichment> = {
     advantageVersion: "面对借款或共同支出时，你若能把情感支持与财务责任分开说明，既能保留善意，也能让金额、用途、归还方式和风险承担都有清楚边界。",
     shadowVersion: "为了维持关系而含糊金额和期限，可能让一次帮助变成长久压力；反过来只谈规则、不承认情感期待，也会让对方感到关系被突然计价。",
     actionNow: "下一次借款或共同支出前，书面确认金额、用途、付款人、归还日期和无法履约时的处理方式。",
-    actionLongTerm: "为家庭与合作关系建立共同费用规则，区分赠与、借款和共同承担；每季度核对余额与未完成承诺，超过个人上限时先暂停新增支出。",
+    actionLongTerm: "为家庭与合作关系建立共同费用规则，区分赠与、借款和共同承担；每季度核对余额与未完成承诺，超过个人上限时先暂停新增支出，并保留书面记录。",
     priority: "supporting",
   },
   "relationship-day-branch": {
@@ -123,7 +123,7 @@ const enrichment: Record<InterpretationId, InterpretationEnrichment> = {
     advantageVersion: "亲密关系谈期待时，你若能先分清自己需要的是理解、陪伴还是具体行动，就更容易提出可回应的请求，也能为对方保留表达不同需要的空间。",
     shadowVersion: "熟悉关系里，人容易把自己的第一反应当成共同常识，认为对方应该自然明白。期待未被说出时，失望会被解释成不在乎，进而用试探或退缩替代直接沟通。",
     actionNow: "选一个尚未说清的亲密期待，用事实、感受、需要和具体请求四句话表达，再请对方复述其理解。",
-    actionLongTerm: "每周安排一次二十分钟关系对话，双方各说一项被支持之处和一项新期待，只讨论可观察行为；连续八周后共同调整频率与约定。",
+    actionLongTerm: "每周安排一次二十分钟关系对话，双方各说一项被支持之处和一项新期待，只讨论可观察行为；连续八周后共同调整频率与约定，并核对是否落实。",
     priority: "core",
   },
   "relationship-trigger": {
@@ -131,7 +131,7 @@ const enrichment: Record<InterpretationId, InterpretationEnrichment> = {
     advantageVersion: "冲突升温前，你若能识别具体触发点、身体信号和自动解释，就有机会及时暂停，把争论从谁对谁错转回发生了什么、各自需要什么。",
     shadowVersion: "触发出现时，旧反应可能把一次事件扩大成对人格和关系的总判断；追问、沉默或翻旧账都会让双方失去安全感，使原本可协商的问题变成防御循环。",
     actionNow: "回看最近一次冲突，分别写下触发事实、身体信号、自动解释和真正需要，并与对方约定一个暂停信号。",
-    actionLongTerm: "连续六周记录高频触发及修复结果，找出最常见的两个循环；为每个循环预先约定暂停时长、恢复对话时间和禁止使用的攻击方式。",
+    actionLongTerm: "连续六周记录高频触发及修复结果，找出最常见的两个循环；为每个循环预先约定暂停时长、恢复对话时间和禁止使用的攻击方式，并复盘是否减少升级。",
     priority: "important",
   },
   "relationship-repair": {
@@ -155,7 +155,7 @@ const enrichment: Record<InterpretationId, InterpretationEnrichment> = {
     advantageVersion: "收到家人帮助时，你若能明确说出需要、范围和感谢方式，就能让支持真正减轻负担，也保留双方的自主感和后续协商空间。",
     shadowVersion: "不习惯接受支持时，可能在已经超载后仍说没事；另一面则是把一次帮助默认为长期义务。需求、边界和结束条件没有说清，善意容易积成压力。",
     actionNow: "选择一项确实需要的家庭支持，明确提出任务范围、所需时间和结束条件，并询问对方是否自愿且有余力。",
-    actionLongTerm: "建立家庭支持清单，记录谁能提供什么、何时不能承担以及如何表达感谢；每月核对一次，确保求助、接受和拒绝都可以被清楚说出。",
+    actionLongTerm: "建立家庭支持清单，记录谁能提供什么、何时不能承担以及如何表达感谢；每月核对一次，确保求助、接受和拒绝都可以被清楚说出，避免善意变成默认义务。",
     priority: "important",
   },
   "family-boundary": {
@@ -163,7 +163,7 @@ const enrichment: Record<InterpretationId, InterpretationEnrichment> = {
     advantageVersion: "当家人把责任交给你时，你能先分辨这是共同义务、临时求助还是对方本可承担的事项，再决定协助到什么程度，使支持不替代对方的主体性。",
     shadowVersion: "替家人收尾虽然短期减少冲突，却可能让责任长期回到同一个人身上；若积累不满后突然退出，也会让其他成员没有准备，边界变成惩罚。",
     actionNow: "面对一项被推来的家庭责任，说明自己可以协助的范围、不能承担的部分和归还时间，并请原负责人确认。",
-    actionLongTerm: "用六周逐步归还一项长期代办责任：先共同完成、再由对方主做、最后只在约定节点检查；每一步提前说明，不以沉默撤离代替边界。",
+    actionLongTerm: "用六周逐步归还一项长期代办责任：先共同完成、再由对方主做、最后只在约定节点检查；每一步提前说明，不以沉默撤离代替边界，并确认责任稳定归位。",
     priority: "supporting",
   },
   "rhythm-climate": {
@@ -187,7 +187,7 @@ const enrichment: Record<InterpretationId, InterpretationEnrichment> = {
     advantageVersion: "信息逐渐增加时，你能通过预设门槛判断何时已经足够行动：高风险事项继续求证，可逆事项先小步试验，避免把谨慎和拖延混为一谈。",
     shadowVersion: "没有停止规则时，收集信息会不断延长，新增资料却不再改变结论；另一面是为了摆脱焦虑过早决定，没有记录关键未知和撤回条件。",
     actionNow: "为一个待定事项写下必须知道、可以后补和无法消除的信息，达到三项核心证据后做一次可逆的小决定。",
-    actionLongTerm: "连续记录十次决策的证据门槛、剩余未知、可逆性和结果，月底比较哪些信息真正改变选择，逐步形成按风险分级的停止收集规则。",
+    actionLongTerm: "连续记录十次决策的证据门槛、剩余未知、可逆性和结果，月底比较哪些信息真正改变选择，逐步形成按风险分级的停止收集规则，并保留撤回与复核条件。",
     priority: "supporting",
   },
 };
