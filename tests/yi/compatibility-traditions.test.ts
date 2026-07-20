@@ -154,6 +154,20 @@ describe("compatibility", () => {
     for (const topic of topics) expect(guidance).toMatch(topic);
   });
 
+  it("gives friend guidance a concrete low-pressure rupture-repair process", () => {
+    const guidance = calculateCompatibility(first, second, "friend").roleSpecificGuidance;
+    const text = guidance.join(" ");
+
+    expect(guidance).toHaveLength(4);
+    expect(text).toMatch(/联系节奏/);
+    expect(text).toMatch(/边界/);
+    expect(text).toMatch(/误会|关系中断|失联/);
+    expect(text).toMatch(/先核对具体事件和影响，再各自说明需要，最后商量补救或下一次联系/);
+    expect(text).toMatch(/不用频率证明关系/);
+    expect(text).toMatch(/可以拒绝/);
+    expect(text).toMatch(/不催促关系立刻恢复原状/);
+  });
+
   it("is deterministic for identical charts and relationship type", () => {
     expect(calculateCompatibility(first, second, "friend")).toEqual(calculateCompatibility(first, second, "friend"));
   });
