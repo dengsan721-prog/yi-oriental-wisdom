@@ -1,11 +1,11 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { createElement } from "react";
+import { Children, createElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
 import { CompatibilitySection } from "../../components/yi/CompatibilitySection";
 import { DetailSection } from "../../components/yi/DetailSection";
-import { MirrorSection } from "../../components/yi/MirrorSection";
+import { MirrorSection, MirrorSectionView } from "../../components/yi/MirrorSection";
 import { getCalculationSteps } from "../../components/yi/YiExperience";
 import { calculateCompatibility } from "../../lib/yi/compatibility";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
@@ -16,6 +16,9 @@ import type { BirthSubmission } from "../../components/yi/BirthIntake";
 import type { InterpretationItem } from "../../lib/yi/types";
 
 const priorities: InterpretationItem["priority"][] = ["core", "important", "supporting"];
+
+type MirrorView = "zodiac" | "animals" | "historical" | "movies";
+type HostElementProps = { children?: ReactNode; [key: string]: unknown };
 
 function makeReading(priority: InterpretationItem["priority"]): InterpretationItem {
   return {
@@ -86,6 +89,17 @@ function occurrences(markup: string, marker: string) {
 
 function isMovieCandidate(candidate: MirrorCandidate): candidate is MovieCharacterRecord {
   return candidate.kind === "movie" && "characterName" in candidate;
+}
+
+function findHostElements(root: ReactNode, type: string): ReactElement<HostElementProps>[] {
+  const elements: ReactElement<HostElementProps>[] = [];
+  const visit = (node: ReactNode) => Children.forEach(node, child => {
+    if (!isValidElement<HostElementProps>(child)) return;
+    if (child.type === type) elements.push(child);
+    visit(child.props.children);
+  });
+  visit(root);
+  return elements;
 }
 
 it("shows only calculations the product actually performs", () => {
@@ -262,16 +276,46 @@ it("renders three semantically owned candidate cards in every non-zodiac mirror 
   }
 });
 
-it("wires mirror selection accessibly and applies responsive black-gold layouts", () => {
-  const source = readFileSync(resolve("components/yi/MirrorSection.tsx"), "utf8");
-  const css = readFileSync(resolve("app/globals.css"), "utf8");
+it("executes every mirror tab transition and reveals only the matching panel", () => {
+  const chart = calculateFourPillars({ name: "甲", date: "1990-06-15", time: "09:30", location: "杭州", gender: "unspecified", timeConfidence: "exact" });
+  let activeView: MirrorView = "zodiac";
+  const render = () => MirrorSectionView({ chart, activeView, onSelectView: view => { activeView = view; } });
+  const expectedViews: [label: string, view: MirrorView][] = [
+    ["生肖镜像", "zodiac"],
+    ["动物镜像", "animals"],
+    ["历史人物", "historical"],
+    ["电影角色", "movies"],
+  ];
 
-  expect(occurrences(source, "matchLifeMirrors(chart)")).toBe(1);
-  expect(source).toContain('useState<MirrorView>("zodiac")');
-  expect(source).toContain('onClick={() => setActiveView(tab.id)}');
-  expect(source).toContain('aria-pressed={activeView === tab.id}');
-  expect(source).toContain('hidden={activeView !== "zodiac"}');
-  expect(source).toContain("hidden={activeView !== view.id}");
+  for (const [label, view] of expectedViews) {
+    const button = findHostElements(render(), "button").find(element => element.props.children === label);
+    expect(button, `${label} button`).toBeDefined();
+    if (!button) continue;
+    const onClick = button.props.onClick;
+    expect(onClick, `${label} onClick`).toBeTypeOf("function");
+    if (typeof onClick !== "function") continue;
+    onClick();
+    expect(activeView, `${label} selected view`).toBe(view);
+
+    const updated = render();
+    const buttons = findHostElements(updated, "button");
+    expect(buttons).toHaveLength(4);
+    for (const [candidateLabel, candidateView] of expectedViews) {
+      const candidateButton = buttons.find(element => element.props.children === candidateLabel);
+      expect(candidateButton?.props["aria-pressed"], `${candidateLabel} aria-pressed`).toBe(candidateView === view);
+    }
+
+    const panels = findHostElements(updated, "div").filter(element => typeof element.props["data-mirror-view"] === "string");
+    expect(panels).toHaveLength(4);
+    for (const panel of panels) {
+      const panelView = panel.props["data-mirror-view"] as MirrorView;
+      expect(panel.props.hidden, `${panelView} visibility after ${label}`).toBe(panelView !== view);
+    }
+  }
+});
+
+it("applies responsive black-gold mirror layouts", () => {
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
 
   expect(css).toMatch(/\.mirror-tabs\{display:grid;grid-template-columns:repeat\(4,1fr\);gap:7px\}/);
   expect(css).toMatch(/\.mirror-tabs button\{[^}]*min-height:44px/);
