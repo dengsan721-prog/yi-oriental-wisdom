@@ -158,9 +158,10 @@ test("GitHub build publishes every public reference file byte for byte", async (
   const deployedDirectory = new URL("../../docs/reference/", import.meta.url);
   const sourceEntries = await readdir(sourceDirectory, { withFileTypes: true });
   const sourceFiles = sourceEntries.filter((entry) => entry.isFile());
-  const deployedNames = new Set(await readdir(deployedDirectory));
-  const missing = sourceFiles.map((entry) => entry.name).filter((name) => !deployedNames.has(name));
-  assert.deepEqual(missing, [], `docs/reference is missing: ${missing.join(", ")}`);
+  const sourceNames = sourceFiles.map((entry) => entry.name).sort();
+  const deployedEntries = await readdir(deployedDirectory, { withFileTypes: true });
+  const deployedNames = deployedEntries.filter((entry) => entry.isFile()).map((entry) => entry.name).sort();
+  assert.deepEqual(deployedNames, sourceNames, "docs/reference filenames differ from site/public/reference");
 
   for (const entry of sourceFiles) {
     const [source, deployed] = await Promise.all([
