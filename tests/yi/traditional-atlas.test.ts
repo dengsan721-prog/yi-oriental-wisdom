@@ -11,6 +11,24 @@ import {
 } from "../../lib/yi/traditional-atlas";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 
+const FACE_IDS = [
+  "face-oval", "face-round", "face-square", "face-long", "face-heart",
+  "face-brow-straight", "face-brow-arched", "face-eye-open", "face-nose-defined", "face-mouth-balanced",
+] as const;
+const MOLE_IDS = [
+  "mole-forehead-center", "mole-temple-left", "mole-temple-right", "mole-brow", "mole-eye-lower", "mole-nose",
+  "mole-cheek-left", "mole-cheek-right", "mole-philtrum", "mole-mouth-corner", "mole-chin", "mole-jaw",
+] as const;
+const PALM_IDS = [
+  "palm-wood", "palm-fire", "palm-earth", "palm-metal", "palm-water",
+  "palm-life", "palm-head", "palm-heart", "palm-fate", "palm-sun",
+] as const;
+const TRADITIONAL_IDS = [...FACE_IDS, ...MOLE_IDS, ...PALM_IDS] as const;
+
+function expectTextToContainEvery(text: string, fragments: string[]) {
+  for (const fragment of fragments) expect.soft(text).toContain(fragment);
+}
+
 const GENDERED_ATLAS_ASSETS = [
   "face-shapes-male.webp", "face-shapes-female.webp",
   "face-features-male.webp", "face-features-female.webp",
@@ -232,5 +250,180 @@ describe("traditional self-comparison atlases", () => {
     ]);
     expect(reading.layers[6].text).toContain(`${chart.professional.dayMaster.stem}${chart.professional.dayMaster.element}日主`);
     expect(JSON.stringify(reading)).not.toMatch(/注定|必然|寿命|疾病诊断/);
+  });
+});
+
+describe("mature face, mole and palm content", () => {
+  it("defines exactly thirty-two governed records and fails closed for unknown ids", async () => {
+    const { TRADITIONAL_CONTENT, getTraditionalContent } = await import("../../lib/yi/traditional-content");
+
+    expect(Object.keys(TRADITIONAL_CONTENT)).toEqual(TRADITIONAL_IDS);
+    expect(Object.entries(TRADITIONAL_CONTENT).every(([id, record]) => record.id === id)).toBe(true);
+    expect(() => getTraditionalContent("star-aries")).toThrow("传统内容不存在：star-aries");
+    expect(() => getTraditionalContent("missing-atlas-option")).toThrow("传统内容不存在：missing-atlas-option");
+  });
+
+  it("gives every governed record mature, distinct and source-valid writing", async () => {
+    const { TRADITIONAL_CONTENT } = await import("../../lib/yi/traditional-content");
+    const records = Object.values(TRADITIONAL_CONTENT);
+    const minimums = {
+      professionalResult: 60,
+      traditionalBasis: 80,
+      recognitionGuide: 60,
+      plainLanguage: 70,
+      lifeScene: 90,
+      strengthAndPitfall: 80,
+      action: 60,
+      chartComparison: 60,
+      caution: 40,
+    } as const;
+
+    expect(records).toHaveLength(32);
+    for (const record of records) {
+      for (const [field, minimum] of Object.entries(minimums)) {
+        expect.soft(record[field as keyof typeof minimums].length, `${record.id}:${field}`).toBeGreaterThanOrEqual(minimum);
+      }
+      expect(record.sourceIds.length, record.id).toBeGreaterThan(0);
+      expect(record.sourceIds.every((id) => Boolean(TRADITIONAL_SOURCE_CATALOG[id])), record.id).toBe(true);
+      expect(record.sourceIds, record.id).toEqual(["classic.ma-yi-shen-xiang"]);
+    }
+
+    for (const field of [
+      "professionalResult", "recognitionGuide", "plainLanguage", "lifeScene",
+      "strengthAndPitfall", "action", "chartComparison",
+    ] as const) {
+      expect(new Set(records.map((record) => record[field])).size, field).toBe(32);
+    }
+    expect(JSON.stringify(records)).not.toMatch(
+      /功能入口|资源接口|社会接口|注定|必然如此|寿命已定|疾病诊断|发财保证|人格优劣|犯罪倾向|克夫|旺夫|例如：|可用真实发生的细节|可能优势是|现在可做：|提供不同观察角度/,
+    );
+  });
+
+  it("keeps every face reading visual, behavioral, scene-based and falsifiable", async () => {
+    const { getTraditionalContent } = await import("../../lib/yi/traditional-content");
+
+    for (const id of FACE_IDS) {
+      const record = getTraditionalContent(id);
+      expect.soft(record.recognitionGuide, id).toMatch(/比例|轮廓|眉|眼|鼻|唇|口角/);
+      expectTextToContainEvery(`${record.recognitionGuide}${record.caution}`, ["角度", "年龄", "表情", "遗传"]);
+      expect.soft(record.traditionalBasis, id).toMatch(/版本|流派|刻本|传本|增补/);
+      expect.soft(record.plainLanguage, id).toContain("？");
+      expect.soft(record.lifeScene, id).toMatch(/工作|团队|会议|项目|同事|客户|合作|课堂|社群/);
+      expect.soft(record.lifeScene, id).toMatch(/家人|伴侣|朋友|家庭|父母|孩子|亲近|关系/);
+      expect.soft(record.strengthAndPitfall, id).toMatch(/有用|成熟|发挥|适量|恰当/);
+      expect.soft(record.strengthAndPitfall, id).toMatch(/过度|误读|失控|用力过头|代价/);
+      expectTextToContainEvery(record.action, ["两周", "支持证据", "反例"]);
+    }
+  });
+
+  it("describes every mole from the user's exact side and rejects medical or moral inference", async () => {
+    const { getTraditionalContent } = await import("../../lib/yi/traditional-content");
+    const expectedLocation: Record<(typeof MOLE_IDS)[number], [string, string]> = {
+      "mole-forehead-center": ["正面中线", "额部正中"],
+      "mole-temple-left": ["你的左脸", "左侧眉尾"],
+      "mole-temple-right": ["你的右脸", "右侧眉尾"],
+      "mole-brow": ["正面中线", "两眉之间"],
+      "mole-eye-lower": ["你的右脸", "右眼下睑"],
+      "mole-nose": ["正面中线", "鼻梁"],
+      "mole-cheek-left": ["你的左脸", "左眼外下方"],
+      "mole-cheek-right": ["你的右脸", "右眼外下方"],
+      "mole-philtrum": ["正面中线", "鼻底"],
+      "mole-mouth-corner": ["你的右脸", "右侧口角"],
+      "mole-chin": ["正面中线", "下唇下方"],
+      "mole-jaw": ["你的右脸", "右侧下颌"],
+    };
+
+    for (const id of MOLE_IDS) {
+      const record = getTraditionalContent(id);
+      expectTextToContainEvery(record.recognitionGuide, expectedLocation[id]);
+      expect(record.recognitionGuide, id).toMatch(/相邻|分界|不要|而不是|区别/);
+      expectTextToContainEvery(record.traditionalBasis, ["传统", "版本"]);
+      expect(record.strengthAndPitfall, id).toMatch(/问题|问自己|自问/);
+      expect(record.action, id).toMatch(/记录|观察|核对|复盘|追踪/);
+      expectTextToContainEvery(record.caution, ["健康", "良恶性", "道德", "寿命"]);
+      expect(record.caution, id).toMatch(/皮肤科|医生|临床/);
+    }
+
+    for (const [leftId, rightId] of [
+      ["mole-temple-left", "mole-temple-right"],
+      ["mole-cheek-left", "mole-cheek-right"],
+    ] as const) {
+      const normalizeSide = (text: string) => text.replace(/你的|用户|左脸|右脸|左侧|右侧|左|右/g, "");
+      expect(normalizeSide(getTraditionalContent(leftId).recognitionGuide)).not.toBe(
+        normalizeSide(getTraditionalContent(rightId).recognitionGuide),
+      );
+      expect(normalizeSide(getTraditionalContent(leftId).lifeScene)).not.toBe(
+        normalizeSide(getTraditionalContent(rightId).lifeScene),
+      );
+    }
+  });
+
+  it("uses a two-hand, combined-observation convention for every palm record", async () => {
+    const { getTraditionalContent } = await import("../../lib/yi/traditional-content");
+
+    for (const id of PALM_IDS) {
+      const record = getTraditionalContent(id);
+      expectTextToContainEvery(record.recognitionGuide, ["形态", "长度", "清晰", "比例"]);
+      expectTextToContainEvery(`${record.recognitionGuide}${record.chartComparison}`, ["双手", "常用手", "另一只手"]);
+      expect(`${record.professionalResult}${record.caution}`, id).toMatch(/单一|单凭/);
+      expectTextToContainEvery(`${record.recognitionGuide}${record.caution}`, ["手部使用", "皮肤状态", "年龄"]);
+      expect(record.plainLanguage, id).toContain("？");
+      expect(record.action, id).toMatch(/掌形|掌纹|线条|可见|照片/);
+      expect(record.action, id).toMatch(/工作|学习|沟通|休息|行动|作品|练习|安排|行为/);
+    }
+
+    for (const id of PALM_IDS.slice(5)) {
+      expectTextToContainEvery(getTraditionalContent(id).caution, ["线长或断续", "寿命", "智力", "关系结果", "事业成败"]);
+    }
+  });
+
+  it("integrates content field-for-field without changing ids, order or visual contracts", async () => {
+    const { TRADITIONAL_CONTENT } = await import("../../lib/yi/traditional-content");
+    const fields = [
+      "professionalResult", "traditionalBasis", "plainLanguage", "lifeScene",
+      "strengthAndPitfall", "action", "chartComparison", "caution", "sourceIds",
+    ] as const;
+
+    expect(getAtlasGroups("face").map((group) => [group.title, group.options.map((option) => option.id)])).toEqual([
+      ["面型", FACE_IDS.slice(0, 5)], ["五官", FACE_IDS.slice(5)],
+    ]);
+    expect(getAtlasGroups("mole").map((group) => [group.title, group.options.map((option) => option.id)])).toEqual([
+      ["正面痣位", MOLE_IDS],
+    ]);
+    expect(getAtlasGroups("palm").map((group) => [group.title, group.options.map((option) => option.id)])).toEqual([
+      ["手型", PALM_IDS.slice(0, 5)], ["主线", PALM_IDS.slice(5)],
+    ]);
+
+    for (const id of TRADITIONAL_IDS) {
+      const option = getAtlasOption(id)!;
+      const content = TRADITIONAL_CONTENT[id];
+      for (const field of fields) expect(option[field], `${id}:${field}`).toEqual(content[field]);
+    }
+
+    for (const id of FACE_IDS) {
+      const option = getAtlasOption(id)!;
+      expect(resolveAtlasVisual(option, "male").image).toMatch(/^reference\/face-(shapes|features)-male\.webp$/);
+      expect(resolveAtlasVisual(option, "female").image).toMatch(/^reference\/face-(shapes|features)-female\.webp$/);
+      expect(resolveAtlasVisual(option, "female")).toMatchObject({ imageAspect: 5 / 2, view: "front", mirrored: true });
+    }
+    for (const id of MOLE_IDS) {
+      const option = getAtlasOption(id)!;
+      expect(resolveAtlasVisual(option, "female")).toMatchObject({ imageAspect: 1448 / 1086, mirrored: true });
+      expect(resolveAtlasVisual(option, "female").hotspot).toBeTruthy();
+      expect(option.userSide).toBeTruthy();
+      expect(option.landmark).toBeTruthy();
+    }
+    for (const id of PALM_IDS) {
+      expect(resolveAtlasVisual(getAtlasOption(id)!, "female")).toMatchObject({ view: "front", mirrored: false });
+    }
+
+    const starOptions = getAtlasGroups("star").flatMap((group) => group.options);
+    expect(starOptions.map((option) => option.id)).toEqual([
+      "star-aries", "star-taurus", "star-gemini", "star-cancer", "star-leo", "star-virgo",
+      "star-libra", "star-scorpio", "star-sagittarius", "star-capricorn", "star-aquarius", "star-pisces",
+    ]);
+    expect(starOptions.every((option) => !TRADITIONAL_CONTENT[option.id])).toBe(true);
+    expect(starOptions.every((option) => option.sourceIds[0] === "culture.nasa-constellations")).toBe(true);
+    expect(starOptions.every((option) => option.caution.includes("不是完整星盘"))).toBe(true);
   });
 });
