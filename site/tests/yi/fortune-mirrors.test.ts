@@ -377,4 +377,41 @@ describe("auditable mirrors", () => {
       caution: "仅比较具体维度，不表示命运相同。",
     });
   });
+
+  it("keeps legacy adapter shapes stable without leaking candidate hour or day-master evidence", () => {
+    const animalKeys = ["name", "basis", "mappedFeatures", "strengthPattern", "pressurePattern", "action", "caution"].sort();
+    const historicalKeys = ["person", "dimension", "basis", "source", "reliability", "observation", "action", "caution"].sort();
+    const expectLegacyShapes = (candidate: FourPillarsResult) => {
+      expect(Object.keys(matchAnimalArchetype(candidate)).sort()).toEqual(animalKeys);
+      expect(Object.keys(matchHistoricalMirror(candidate)).sort()).toEqual(historicalKeys);
+    };
+
+    const unknownInput = { ...input, time: null, timeConfidence: "unknown" } as const;
+    const unknown = calculateFourPillars(unknownInput);
+    const withCandidateHour = structuredClone(unknown);
+    withCandidateHour.pillars.hour = {
+      ...chart.pillars.hour!,
+      stem: "甲",
+      branch: "寅",
+      element: "木",
+      branchElement: "木",
+      label: "秘密候选时柱",
+    };
+    expect(matchAnimalArchetype(withCandidateHour)).toEqual(matchAnimalArchetype(unknown));
+    expect(matchHistoricalMirror(withCandidateHour)).toEqual(matchHistoricalMirror(unknown));
+    expect(JSON.stringify(matchAnimalArchetype(withCandidateHour))).not.toContain("秘密候选时柱");
+
+    const dayPending = structuredClone(chart);
+    dayPending.professional.ambiguousFields = ["dayMaster"];
+    const changedCandidate = structuredClone(dayPending);
+    changedCandidate.professional.dayMaster = { stem: "甲", element: "木", polarity: "yang" };
+    expect(matchAnimalArchetype(changedCandidate)).toEqual(matchAnimalArchetype(dayPending));
+    expect(matchHistoricalMirror(changedCandidate)).toEqual(matchHistoricalMirror(dayPending));
+    expect(JSON.stringify(matchHistoricalMirror(changedCandidate))).not.toContain("甲木");
+
+    const approximateInput = { ...input, timeConfidence: "approximate" } as const;
+    expectLegacyShapes(unknown);
+    expectLegacyShapes(calculateFourPillars(approximateInput));
+    expectLegacyShapes(dayPending);
+  });
 });
