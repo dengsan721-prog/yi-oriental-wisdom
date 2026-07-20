@@ -101,7 +101,7 @@ export function extractMirrorFeatures(chart: FourPillarsResult): {
     vector,
     stressStyle,
     evidence: [
-      `五维来源：已确认柱五行${elements.map((element) => `${element}${counts[element]}`).join("、")}；木→成长、火→表达、土→稳定、金→辨识、水→适应`,
+      `五维来源：仅统计稳定柱天干与地支主五行，未展开藏干权重；每维基准2，每出现一处+1.5；已确认日主对应维度再+2。已确认计数：${elements.map((element) => `${element}${counts[element]}`).join("、")}；木→成长、火→表达、土→稳定、金→辨识、水→适应`,
       dayMasterEvidence,
       structureEvidence,
       relationEvidence,

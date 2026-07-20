@@ -15,22 +15,34 @@ const exactChart = calculateFourPillars({
   timeConfidence: "exact",
 });
 
+const boundaryChart = calculateFourPillars({
+  name: "沈观澜",
+  date: "1980-01-01",
+  time: "00:00",
+  location: "杭州",
+  gender: "unspecified",
+  timeConfidence: "exact",
+});
+
 describe("explainable mirror features", () => {
   it("derives five bounded features, evidence and a stress style", () => {
     const result = extractMirrorFeatures(exactChart);
 
-    expect(Object.keys(result.vector)).toEqual([
-      "growth",
-      "expression",
-      "stability",
-      "discernment",
-      "adaptability",
-    ]);
+    expect(result.vector).toEqual({
+      growth: 2,
+      expression: 6.5,
+      stability: 2,
+      discernment: 7,
+      adaptability: 6.5,
+    });
     for (const value of Object.values(result.vector)) {
       expect(value).toBeGreaterThanOrEqual(0);
       expect(value).toBeLessThanOrEqual(10);
     }
     expect(result.evidence).toHaveLength(4);
+    expect(result.evidence[0]).toContain("仅统计稳定柱天干与地支主五行，未展开藏干权重");
+    expect(result.evidence[0]).toContain("每维基准2，每出现一处+1.5");
+    expect(result.evidence[0]).toContain("已确认日主对应维度再+2");
     expect(result.evidence.join("")).toContain(exactChart.professional.dayMaster.stem);
     expect(result.stressStyle).toBe(exactChart.professional.structureBalance);
   });
@@ -39,33 +51,101 @@ describe("explainable mirror features", () => {
     expect(extractMirrorFeatures(exactChart)).toEqual(extractMirrorFeatures(exactChart));
   });
 
-  it("changes the vector and evidence when confirmed pillar evidence changes", () => {
-    const changed = structuredClone(exactChart);
-    changed.pillars.year.element = "木";
+  it("changes specific dimensions when a second calculated chart changes confirmed evidence", () => {
+    const first = extractMirrorFeatures(exactChart);
+    const second = extractMirrorFeatures(boundaryChart);
 
-    expect(extractMirrorFeatures(changed).vector).not.toEqual(extractMirrorFeatures(exactChart).vector);
-    expect(extractMirrorFeatures(changed).evidence).not.toEqual(extractMirrorFeatures(exactChart).evidence);
+    expect(boundaryChart.pillars).toMatchObject({
+      year: { stem: "己", branch: "未" },
+      month: { stem: "丙", branch: "子" },
+      day: { stem: "癸", branch: "酉" },
+      hour: { stem: "壬", branch: "子" },
+    });
+    expect(second.vector).toEqual({
+      growth: 2,
+      expression: 3.5,
+      stability: 5,
+      discernment: 3.5,
+      adaptability: 10,
+    });
+    expect(second.vector.stability).toBeGreaterThan(first.vector.stability);
+    expect(second.vector.adaptability).toBeGreaterThan(first.vector.adaptability);
+    expect(first.evidence[0]).toContain("土0");
+    expect(second.evidence[0]).toContain("土2");
+    expect(second.evidence[0]).toContain("水4");
   });
 
-  it("ignores candidate pillars and professional fields while marking them pending verification", () => {
+  it("ignores a candidate day master when only dayMaster is pending verification", () => {
     const ambiguous = structuredClone(exactChart);
-    ambiguous.ambiguousPillars = ["month", "day", "hour"];
-    ambiguous.professional.ambiguousFields = ["dayMaster", "dayPillar", "structureBalance"];
+    ambiguous.ambiguousPillars = [];
+    ambiguous.professional.ambiguousFields = ["dayMaster"];
     const baseline = extractMirrorFeatures(ambiguous);
 
     const mutated = structuredClone(ambiguous);
-    mutated.pillars.month = { stem: "甲", branch: "寅", element: "木", branchElement: "木", label: "候选月柱" };
-    mutated.pillars.day = { stem: "丙", branch: "午", element: "火", branchElement: "火", label: "候选日柱" };
-    mutated.pillars.hour = { stem: "戊", branch: "辰", element: "土", branchElement: "土", label: "候选时柱" };
-    mutated.professional.dayMaster = { stem: "丙", element: "火", polarity: "yang" };
-    mutated.professional.structureBalance = "support-heavy";
-    mutated.professional.supportScore = 100;
-    mutated.elementCounts = { 木: 10, 火: 10, 土: 10, 金: 10, 水: 10 };
+    mutated.professional.dayMaster = { stem: "甲", element: "木", polarity: "yang" };
 
-    expect(extractMirrorFeatures(mutated)).toEqual(baseline);
-    expect(baseline.stressStyle).toBe("待核");
-    expect(baseline.evidence.join("")).toContain("待核");
-    expect(baseline.evidence.join("")).not.toContain(ambiguous.professional.dayMaster.stem);
+    const result = extractMirrorFeatures(mutated);
+    expect(ambiguous.ambiguousPillars).not.toContain("day");
+    expect(result.vector).toEqual(baseline.vector);
+    expect(result.stressStyle).toBe(baseline.stressStyle);
+    expect(result.evidence).toEqual(baseline.evidence);
+    expect(result.evidence.join("")).toContain("待核");
+    expect(result.evidence.join("")).not.toContain("甲木");
+    expect(result.evidence.join("")).not.toContain(exactChart.professional.dayMaster.stem);
+  });
+
+  it("ignores a candidate day pillar when only dayPillar is pending verification", () => {
+    const ambiguous = structuredClone(exactChart);
+    ambiguous.professional.ambiguousFields = ["dayPillar"];
+    const baseline = extractMirrorFeatures(ambiguous);
+
+    const mutated = structuredClone(ambiguous);
+    mutated.pillars.day = { stem: "甲", branch: "寅", element: "木", branchElement: "木", label: "秘密候选标签" };
+
+    const result = extractMirrorFeatures(mutated);
+    expect(result.vector).toEqual(baseline.vector);
+    expect(result.stressStyle).toBe(baseline.stressStyle);
+    expect(result.evidence).toEqual(baseline.evidence);
+    expect(result.evidence.join("")).toContain("待核");
+    expect(result.evidence.join("")).not.toContain("甲寅");
+    expect(result.evidence.join("")).not.toContain("秘密候选标签");
+  });
+
+  it("ignores a candidate structure when only structureBalance is pending verification", () => {
+    const ambiguous = structuredClone(exactChart);
+    ambiguous.professional.ambiguousFields = ["structureBalance"];
+    const baseline = extractMirrorFeatures(ambiguous);
+
+    const mutated = structuredClone(ambiguous);
+    mutated.professional.structureBalance = "support-heavy";
+
+    const result = extractMirrorFeatures(mutated);
+    expect(result.vector).toEqual(baseline.vector);
+    expect(result.stressStyle).toBe(baseline.stressStyle);
+    expect(result.evidence).toEqual(baseline.evidence);
+    expect(result.evidence.join("")).toContain("待核");
+  });
+
+  it("ignores candidate relations when only relationSummary is pending verification", () => {
+    const ambiguous = structuredClone(exactChart);
+    ambiguous.professional.ambiguousFields = ["relationSummary"];
+    const baseline = extractMirrorFeatures(ambiguous);
+
+    const mutated = structuredClone(ambiguous);
+    mutated.professional.relations = [{
+      type: "branch-clash",
+      pillars: ["year", "month"],
+      symbols: ["卯", "酉"],
+      label: "候选卯酉关系",
+    }];
+
+    const result = extractMirrorFeatures(mutated);
+    expect(result.vector).toEqual(baseline.vector);
+    expect(result.stressStyle).toBe(baseline.stressStyle);
+    expect(result.evidence).toEqual(baseline.evidence);
+    expect(result.evidence.join("")).toContain("待核");
+    expect(result.evidence.join("")).not.toContain("候选卯酉关系");
+    expect(result.evidence.join("")).not.toContain("卯酉");
   });
 
   it("does not read a representative hour when birth time is unknown", () => {
