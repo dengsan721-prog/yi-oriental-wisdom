@@ -76,6 +76,76 @@ const characterPassages: (keyof Pick<MovieCharacterRecord,
   "matureArc",
   "shadowArc",
 ];
+const moviePassages = [...sharedPassages, ...characterPassages];
+type PassageField = (typeof moviePassages)[number];
+type PassageCandidate = MirrorCandidate
+  & Partial<Pick<MovieCharacterRecord, "filmTitle" | "characterName">>
+  & Partial<Record<PassageField, string>>;
+
+const namedInstitutions = [
+  "American Foundation for the Blind",
+  "BirdLife International",
+  "Center for Whale Research",
+  "Cornell Lab of Ornithology",
+  "Encyclopaedia Britannica",
+  "Gandhi Heritage Portal",
+  "International Crane Foundation",
+  "IUCN Red List",
+  "Monterey Bay Aquarium",
+  "NASA",
+  "Nelson Mandela Foundation",
+  "NOAA Fisheries",
+  "Nobel Prize",
+  "San Diego Zoo Wildlife Alliance",
+  "Smithsonian Institution",
+  "Smithsonian Ocean",
+  "Smithsonian's National Zoo",
+  "Snow Leopard Trust",
+  "The National Archives (UK)",
+  "U.S. Fish & Wildlife Service",
+];
+const primaryAuthors = [
+  "Florence Nightingale",
+  "Helen Keller",
+  "Li Qingzhao",
+  "Marie Curie",
+  "Nelson Mandela",
+  "孔子弟子及再传弟子编",
+  "李清照",
+  "钱谦益",
+  "司马光",
+  "司马迁",
+  "苏轼",
+  "陶渊明",
+  "王守仁",
+  "徐弘祖",
+  "玄奘、辩机",
+  "慧立、彦悰",
+];
+const authoritativeHosts = ["filmarchive.gov.hk"];
+
+function isRecognizableSource(source: string): boolean {
+  if (/^电影《[^》]{2,}》（(?:19|20)\d{2}）$/.test(source)) return true;
+  if (/^《(?:史记|汉书|晋书|宋史|明史)·[^》]+》/.test(source)) return true;
+  if (primaryAuthors.some(author => source.startsWith(`${author}《`))) return true;
+  if (namedInstitutions.some(institution => source.startsWith(`${institution}《`))) return true;
+  if (source.endsWith("，印度政府出版档案")) return true;
+  try {
+    const url = new URL(source);
+    return url.protocol === "https:"
+      && authoritativeHosts.some(host => url.hostname === host || url.hostname.endsWith(`.${host}`));
+  } catch {
+    return false;
+  }
+}
+
+function containsExcludedCopyrightArtifact(value: string): boolean {
+  return /["'“”‘’「」『』]/.test(value)
+    || /经典台词|对白(?:摘录|原文)?|台词(?:摘录|原文)?|字幕(?:摘录|文本)?|剧情(?:简介|梗概)|故事梗概|官方简介|宣传语|营销文案|文案摘录|剧照|海报|片花|预告片截图|截图/.test(value)
+    || /https?:\/\/\S+\.(?:jpe?g|png|webp|gif|svg)(?:[?#]\S*)?/i.test(value)
+    || /https?:\/\/\S*\/(?:images?|img|stills?|posters?|thumbnails?)(?:\/|[?&#])/i.test(value)
+    || /(?:image|poster|still|thumbnail)(?:_?url)?=/i.test(value);
+}
 
 function expectValidVector(vector: MirrorFeatureVector) {
   expect(Object.keys(vector).sort()).toEqual([...vectorKeys].sort());
@@ -94,18 +164,59 @@ function expectSubstantiveCandidate(candidate: MirrorCandidate) {
   }
   expect(candidate.sourceReferences.length).toBeGreaterThan(0);
   for (const source of candidate.sourceReferences) {
-    expect(source.length).toBeGreaterThanOrEqual(6);
-    expect(source).not.toMatch(/网络资料|百科资料|相关资料|媒体报道|电影资料|动物资料/);
+    expect(isRecognizableSource(source), `${candidate.id}: ${source}`).toBe(true);
   }
 }
 
-function expectVariedPassages(candidates: MirrorCandidate[]) {
-  for (const field of sharedPassages) {
-    const normalized = candidates.map((candidate) => candidate[field]
-      .replaceAll(candidate.name, "")
-      .replace(/[《》]/g, ""));
-    expect(new Set(normalized).size, `${field} passages`).toBe(candidates.length);
+function normalizedPassage(candidate: PassageCandidate, value: string): string {
+  const identityTokens = [
+    candidate.name,
+    candidate.filmTitle,
+    candidate.characterName,
+  ].filter((token): token is string => Boolean(token)).sort((left, right) => right.length - left.length);
+  return [...new Set(identityTokens)]
+    .reduce((normalized, token) => normalized.replaceAll(token, "{identity}"), value)
+    .replace(/[《》]/g, "");
+}
+
+function duplicatePassageFields(
+  candidates: PassageCandidate[],
+  fields: PassageField[],
+): string[] {
+  return fields.filter((field) => {
+    const values = candidates.map((candidate) => {
+      const value = candidate[field];
+      if (typeof value !== "string") throw new Error(`${candidate.id}.${field} is missing`);
+      return normalizedPassage(candidate, value);
+    });
+    return new Set(values).size < values.length;
+  });
+}
+
+function expectVariedPassages(
+  candidates: PassageCandidate[],
+  fields: PassageField[] = sharedPassages,
+) {
+  expect(duplicatePassageFields(candidates, fields)).toEqual([]);
+}
+
+function substitutionCandidate(
+  base: MovieCharacterRecord,
+  id: string,
+  filmTitle: string,
+  characterName: string,
+): MovieCharacterRecord {
+  const candidate = {
+    ...base,
+    id,
+    name: `${filmTitle}·${characterName}`,
+    filmTitle,
+    characterName,
+  };
+  for (const field of moviePassages) {
+    Object.assign(candidate, { [field]: `${characterName}在${filmTitle}中的${field}分析模板保持不变` });
   }
+  return candidate;
 }
 
 function rankedIds(candidates: MirrorCandidate[], requireDistinctStages = false): string[] {
@@ -127,6 +238,45 @@ function rankedIds(candidates: MirrorCandidate[], requireDistinctStages = false)
 }
 
 describe("four-layer mirror corpora", () => {
+  it("recognizes only primary, institutional or authoritative source references", () => {
+    expect(isRecognizableSource("电影《岁月神偷》（2010）")).toBe(true);
+    expect(isRecognizableSource("NOAA Fisheries《Green Turtle》物种档案")).toBe(true);
+    expect(isRecognizableSource("https://www.filmarchive.gov.hk/sc/web/hkfa/example.html")).toBe(true);
+    expect(isRecognizableSource("凭空编造的权威材料")).toBe(false);
+    expect(isRecognizableSource("伪造NASA《不存在的研究》")).toBe(false);
+    expect(isRecognizableSource("https://example.com/unknown-source")).toBe(false);
+  });
+
+  it("detects dialogue, synopsis, marketing and image artifacts in stored text", () => {
+    const excluded = [
+      "“不要放弃”",
+      "‘不要放弃’",
+      "「不要放弃」",
+      "『不要放弃』",
+      "\"do not give up\"",
+      "'do not give up'",
+      "官方故事梗概：角色重新出发",
+      "宣传语：每个人都能改变命运",
+      "https://cdn.example.com/stills/scene.webp?size=large",
+      "https://cdn.example.com/images/poster?id=123",
+    ];
+    expect(excluded.filter(containsExcludedCopyrightArtifact)).toEqual(excluded);
+  });
+
+  it("detects identity-only templates across every shared and movie-specific passage", () => {
+    const left = substitutionCandidate(MOVIE_CHARACTERS[0], "synthetic-left", "影片甲", "角色甲");
+    const right = substitutionCandidate(MOVIE_CHARACTERS[1], "synthetic-right", "影片乙", "角色乙");
+    expect(duplicatePassageFields([left, right], moviePassages)).toEqual(moviePassages);
+  });
+
+  it("keeps the corrected Years character identity consistent in its analysis", () => {
+    const record = MOVIE_CHARACTERS.find(item => item.id === "movie-hk-luo-jiner");
+    expect(record).toBeDefined();
+    expect(record?.characterName).toBe("罗进二");
+    expect(record?.similar).toContain(record?.characterName);
+    expect(record?.similar).not.toContain("罗进一");
+  });
+
   it("ships exactly fifteen substantive animal candidates with broad behavioural coverage", () => {
     expect(ANIMAL_MIRRORS).toHaveLength(15);
     expect(new Set(ANIMAL_MIRRORS.map(item => item.id)).size).toBe(15);
@@ -156,7 +306,7 @@ describe("four-layer mirror corpora", () => {
     expectVariedPassages(HISTORICAL_MIRRORS);
   });
 
-  it("ships a balanced, original-analysis movie-character corpus", () => {
+  it("ships a balanced movie-character corpus without stored copyright artifacts", () => {
     expect(MOVIE_CHARACTERS.length).toBeGreaterThanOrEqual(36);
     expect(new Set(MOVIE_CHARACTERS.map(item => item.id)).size).toBe(MOVIE_CHARACTERS.length);
     expect(new Set(MOVIE_CHARACTERS.map(item => item.characterName)).size).toBe(MOVIE_CHARACTERS.length);
@@ -181,11 +331,15 @@ describe("four-layer mirror corpora", () => {
         expect(item[field].length, `${item.id}.${field}`).toBeGreaterThanOrEqual(20);
       }
     }
-    const serialized = JSON.stringify(MOVIE_CHARACTERS);
-    expect(serialized).not.toMatch(/经典台词|对白摘录|台词摘录|剧情简介|剧情梗概|剧照|海报|营销文案/);
-    expect(serialized).not.toMatch(/https?:[^"\s]+\.(?:jpe?g|png|webp|gif)/i);
-    expect(serialized).not.toMatch(/[“”]/);
-    expectVariedPassages(MOVIE_CHARACTERS);
+    const storedText = MOVIE_CHARACTERS.flatMap(item => [
+      item.filmTitle,
+      item.characterName,
+      ...sharedPassages.map(field => item[field]),
+      ...characterPassages.map(field => item[field]),
+      ...item.sourceReferences,
+    ]);
+    expect(storedText.filter(containsExcludedCopyrightArtifact)).toEqual([]);
+    expectVariedPassages(MOVIE_CHARACTERS, moviePassages);
   });
 });
 
@@ -208,6 +362,17 @@ describe("deterministic life-mirror ranking", () => {
       expect(new Set(scores).size).toBeLessThan(scores.length);
       for (const item of selected) expectSubstantiveCandidate(item);
     }
+  });
+
+  it("breaks a selected animal tie by ascending id instead of reversed corpus order", () => {
+    const tiedIds = ["animal-giant-pacific-octopus", "animal-peregrine-falcon"];
+    const corpusOrder = ANIMAL_MIRRORS.filter(item => tiedIds.includes(item.id)).map(item => item.id);
+    const ranked = matchLifeMirrors(exactChart).animals;
+    const vector = extractMirrorFeatures(exactChart).vector;
+
+    expect(corpusOrder).toEqual([...tiedIds].reverse());
+    expect(scoreMirror(vector, ranked[0].vector)).toBe(scoreMirror(vector, ranked[1].vector));
+    expect(ranked.slice(0, 2).map(item => item.id)).toEqual(tiedIds);
   });
 
   it("returns identical rankings for repeated calls and ignores an unconfirmed hour candidate", () => {
