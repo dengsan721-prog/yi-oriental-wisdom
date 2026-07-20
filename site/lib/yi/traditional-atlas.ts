@@ -1,5 +1,6 @@
 import type { BirthInput, FourPillarsResult } from "./types";
 import type { UserFaceSide } from "./atlas-orientation";
+import { getTraditionalContent } from "./traditional-content";
 
 export type AtlasMethodId = "face" | "mole" | "palm" | "star";
 
@@ -204,38 +205,40 @@ function getVisual(method: AtlasMethodId, seed: Seed): Pick<AtlasOption, "visual
 
 function makeOption(method: AtlasMethodId, seed: Seed): AtlasOption {
   const isStar = method === "star";
-  const basis = method === "face"
-    ? `《麻衣神相》相关面型、五官术语提供传统名称；本项只取“${seed.signal}”这一可见形态作文化观察。`
-    : method === "mole"
-      ? `《麻衣神相》相关区域术语提供位置索引；不同版本的痣位体系并不完全一致，本项记录“${seed.signal}”。`
-      : method === "palm"
-        ? `《麻衣神相》相关手相术语提供图谱索引；左右手均以当下可见形态对照，不采用男左女右的定命规则，观察点为“${seed.signal}”。`
-        : `这是太阳星座的现代文化分类，并非中国古典命理计算；天文学星座与占星人格表达必须分开，当前只记录“${seed.signal}”。`;
   const visual = getVisual(method, seed);
-  const sources = isStar
-    ? ["culture.nasa-constellations"]
-    : ["classic.ma-yi-shen-xiang"];
-  const caution = method === "mole"
-    ? "痣位会受角度、大小和版本差异影响；这里只做位置文化对照，不评价吉凶、健康或命运。"
-    : method === "palm"
-      ? "手纹会随使用和皮肤状态变化；不从线长、断续或手型推断寿命、疾病、智力或事业成败。"
-      : method === "face"
-        ? "面部形态受遗传、年龄、表情和拍摄角度影响；不据此推断人格优劣、身份、健康或命运。"
-        : "太阳星座只按出生月日做通俗分类，不是完整星盘，也没有科学证据证明其人格或预测效力。";
+
+  if (!isStar) {
+    const content = getTraditionalContent(seed.id);
+    return {
+      id: seed.id,
+      title: seed.title,
+      ...visual,
+      ...(method === "mole" ? { userSide: seed.userSide, landmark: seed.landmark } : {}),
+      professionalResult: content.professionalResult,
+      traditionalBasis: content.traditionalBasis,
+      plainLanguage: content.plainLanguage,
+      lifeScene: content.lifeScene,
+      strengthAndPitfall: content.strengthAndPitfall,
+      action: content.action,
+      chartComparison: content.chartComparison,
+      caution: content.caution,
+      sourceIds: content.sourceIds,
+    };
+  }
+
   return {
     id: seed.id,
     title: seed.title,
     ...visual,
-    ...(method === "mole" ? { userSide: seed.userSide, landmark: seed.landmark } : {}),
     professionalResult: `${seed.title}｜传统图谱把“${seed.signal}”作为单项观察线索，不能脱离整体与现实经历独立定论。`,
-    traditionalBasis: basis,
+    traditionalBasis: `这是太阳星座的现代文化分类，并非中国古典命理计算；天文学星座与占星人格表达必须分开，当前只记录“${seed.signal}”。`,
     plainLanguage: `${seed.plain}。这是一道自我提问，不是固定性格标签。`,
     lifeScene: `例如：${seed.scene}。可用真实发生的细节判断这项描述是否适合你。`,
     strengthAndPitfall: `可能优势是${seed.strength}；常见误区是${seed.pitfall}。两者需要同时核对，避免只挑好听的一面。`,
     action: `现在可做：${seed.action}，连续实践两周并记录一次有效证据和一次反证。`,
     chartComparison: `提供不同观察角度：图谱只描述${seed.title}这一外在线索；若与主盘冲突，以四柱主盘和现实经历为先。`,
-    caution,
-    sourceIds: sources,
+    caution: "太阳星座只按出生月日做通俗分类，不是完整星盘，也没有科学证据证明其人格或预测效力。",
+    sourceIds: ["culture.nasa-constellations"],
   };
 }
 
