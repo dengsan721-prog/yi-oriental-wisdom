@@ -24,6 +24,43 @@ function countElements(markup: string, tag: string): number {
   return markup.match(new RegExp(`<${tag}(?:\\s|>)`, "g"))?.length ?? 0;
 }
 
+function topologyProfile(sign: ZodiacSign) {
+  const map = CONSTELLATIONS[sign];
+  const degrees = Array.from({ length: map.nodes.length }, () => 0);
+  const neighbours = Array.from({ length: map.nodes.length }, () => new Set<number>());
+  for (const [from, to] of map.edges) {
+    degrees[from] += 1;
+    degrees[to] += 1;
+    neighbours[from].add(to);
+    neighbours[to].add(from);
+  }
+
+  const visited = new Set<number>();
+  let components = 0;
+  for (let start = 0; start < map.nodes.length; start += 1) {
+    if (visited.has(start)) continue;
+    components += 1;
+    visited.add(start);
+    const pending = [start];
+    while (pending.length) {
+      const current = pending.shift()!;
+      for (const next of neighbours[current]) {
+        if (visited.has(next)) continue;
+        visited.add(next);
+        pending.push(next);
+      }
+    }
+  }
+
+  return {
+    nodeCount: map.nodes.length,
+    edgeCount: map.edges.length,
+    degreeSequence: [...degrees].sort((left, right) => left - right),
+    cycleRank: map.edges.length - map.nodes.length + components,
+    leafCount: degrees.filter((degree) => degree === 1).length,
+  };
+}
+
 describe("black-gold constellations", () => {
   it("ships the exact twelve signs and independent names and glyphs", () => {
     const expectedOrder = expectedSigns.map(([sign]) => sign);
@@ -116,6 +153,15 @@ describe("black-gold constellations", () => {
 
     expect(new Set(signatures).size).toBe(12);
     expect(new Set(labels).size).toBe(12);
+  });
+
+  it("distinguishes the ram tree from the bull's closed face topology", () => {
+    const aries = topologyProfile("aries");
+    const taurus = topologyProfile("taurus");
+
+    expect(aries.cycleRank).toBe(0);
+    expect(taurus.cycleRank).toBeGreaterThanOrEqual(1);
+    expect(taurus).not.toEqual(aries);
   });
 
   it.each(expectedSigns)("renders %s deterministically with exact SVG geometry", (sign) => {
