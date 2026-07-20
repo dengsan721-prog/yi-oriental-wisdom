@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { formatYiHash, guardYiRoute, parseYiHash, resolveYiHydratedRoute } from "../../lib/yi/hash-router";
 import { buildInterpretations, buildProfessionalOverview } from "../../lib/yi/interpretation";
@@ -13,7 +13,10 @@ import { clearLifeProfile, createLifeProfile, getBrowserStorage, loadLifeProfile
 import { useYiRoute } from "./useYiRoute";
 
 function Mark() {
-  return <div className="yi-mark" aria-label="艺"><span className="yi-brand-glyph">艺</span><i /><b /></div>;
+  return <div className="yi-brand-orbit yi-mark" role="img" aria-label="艺">
+    <span className="yi-brand-glyph" aria-hidden="true">艺</span>
+    {Array.from({ length: 5 }, (_, index) => <i className="yi-breath-ring" aria-hidden="true" style={{ "--ring-index": index } as CSSProperties} key={index} />)}
+  </div>;
 }
 
 function RitualIntro({ restoring, onStart }: { restoring: boolean; onStart: () => void }) {
