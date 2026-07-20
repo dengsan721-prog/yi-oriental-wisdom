@@ -171,39 +171,63 @@ it("renders the complete relationship manual in progressive disclosure order", (
   const manualStart = html.indexOf('<div class="compatibility-manual">');
   expect(manualStart, "relationship manual").toBeGreaterThan(-1);
   const manual = extractBalancedElement(html, "div", manualStart);
-  expect(occurrences(manual, result.summary)).toBe(1);
 
-  const cardStarts = [...manual.matchAll(/<article class="compatibility-axis-card">/g)].map((match) => match.index);
-  expect(cardStarts).toHaveLength(9);
+  const summaryStart = manual.indexOf('<header class="compatibility-summary">');
+  const summary = extractBalancedElement(manual, "header", summaryStart);
+  const axesStart = manual.indexOf('<div class="compatibility-axes">');
+  const axes = extractBalancedElement(manual, "div", axesStart);
+  const guidanceStart = manual.indexOf('<section class="role-guidance">');
+  const guidance = extractBalancedElement(manual, "section", guidanceStart);
+  const legacyEvidenceStart = manual.indexOf('<details class="compatibility-evidence">');
+  const legacyEvidence = extractBalancedElement(manual, "details", legacyEvidenceStart);
+
+  expectStrictOrder(manual, [
+    '<header class="compatibility-summary">',
+    '<div class="compatibility-axes">',
+    '<section class="role-guidance">',
+    '<details class="compatibility-evidence">',
+  ]);
+  expect(manual).toBe(`<div class="compatibility-manual">${summary}${axes}${guidance}${legacyEvidence}</div>`);
+  expect(occurrences(summary, result.summary)).toBe(1);
+  expect(manual.slice(0, summaryStart) + manual.slice(summaryStart + summary.length)).not.toContain(result.summary);
+
+  const cardStarts = [...axes.matchAll(/<article class="compatibility-axis-card">/g)].map((match) => match.index);
+  const articles = cardStarts.map((start) => extractBalancedElement(axes, "article", start));
+  expect(articles).toHaveLength(9);
+  expect(axes).toBe(`<div class="compatibility-axes">${articles.join("")}</div>`);
   expectStrictOrder(manual, result.axes.map((axis) => axis.label));
 
   result.axes.forEach((axis, index) => {
-    const article = extractBalancedElement(manual, "article", cardStarts[index]);
+    const article = articles[index];
     const evidenceStart = article.indexOf('<details class="compatibility-axis-evidence">');
     expect(evidenceStart, `${axis.id} evidence`).toBeGreaterThan(-1);
     const evidence = extractBalancedElement(article, "details", evidenceStart);
     expect(evidence.slice(0, evidence.indexOf(">") + 1)).toBe('<details class="compatibility-axis-evidence">');
     const visible = article.slice(0, evidenceStart) + article.slice(evidenceStart + evidence.length);
 
+    expect(article).toContain(`<h2>${axis.label}</h2>`);
     expectStrictOrder(visible, [axis.label, axis.plainLanguage, axis.scene, "可以这样做", axis.action]);
     expectStrictOrder(evidence, ["专业依据与边界", axis.professionalBasis, axis.caution]);
-    for (const field of [axis.label, axis.plainLanguage, axis.scene, axis.action, axis.professionalBasis, axis.caution]) {
-      expect(occurrences(article, field), `${axis.id}: ${field}`).toBe(1);
+    for (const field of ["label", "plainLanguage", "scene", "action", "professionalBasis", "caution"] as const) {
+      const value = axis[field];
+      const owners = result.axes.filter((candidate) => candidate[field] === value).length;
+      expect(occurrences(manual, value), `${axis.id}.${field} manual ownership`).toBe(owners);
+      articles.forEach((candidate, candidateIndex) => {
+        const expected = result.axes[candidateIndex][field] === value ? 1 : 0;
+        expect(occurrences(candidate, value), `${axis.id}.${field} in card ${candidateIndex}`).toBe(expected);
+      });
+      expect(summary, `${axis.id}.${field} summary`).not.toContain(value);
+      expect(guidance, `${axis.id}.${field} guidance`).not.toContain(value);
+      expect(legacyEvidence, `${axis.id}.${field} legacy evidence`).not.toContain(value);
     }
     expect(visible).not.toContain(axis.professionalBasis);
     expect(visible).not.toContain(axis.caution);
   });
 
-  const guidanceStart = manual.indexOf('<section class="role-guidance">');
-  expect(guidanceStart, "role guidance").toBeGreaterThan(-1);
-  const guidance = extractBalancedElement(manual, "section", guidanceStart);
   expect(guidance).toContain("伴侣关系说明书");
   expectStrictOrder(guidance, result.roleSpecificGuidance);
   for (const item of result.roleSpecificGuidance) expect(occurrences(guidance, item), item).toBe(1);
 
-  const legacyEvidenceStart = manual.indexOf('<details class="compatibility-evidence">');
-  expect(legacyEvidenceStart).toBeGreaterThan(guidanceStart + guidance.length - 1);
-  const legacyEvidence = extractBalancedElement(manual, "details", legacyEvidenceStart);
   expect(legacyEvidence.slice(0, legacyEvidence.indexOf(">") + 1)).toBe('<details class="compatibility-evidence">');
   expectStrictOrder(legacyEvidence, ["<h2>沟通场景</h2>", "<h2>五行互动</h2>", "<h2>双向十神</h2>", "<h2>合、冲、刑、害观察</h2>", "<h2>行动规则</h2>"]);
 
@@ -226,6 +250,7 @@ it("keeps relationship disclosures touch-safe and axes single-column without hor
   const css = readFileSync(resolve("app/globals.css"), "utf8");
   expect(css).toMatch(/\.compatibility-manual\{min-width:0;overflow-wrap:anywhere\}/);
   expect(css).toMatch(/\.compatibility-axes\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\);/);
+  expect(css).toMatch(/\.compatibility-axis-card>h2,\.compatibility-axis-card>b\{color:var\(--gold\)\}/);
   expect(css).toMatch(/\.compatibility-axis-evidence>summary,\.compatibility-evidence>summary\{min-height:44px;display:flex;align-items:center;/);
   expect(css).toMatch(/@media\(max-width:720px\)\{\.compatibility-axes\{grid-template-columns:1fr\}/);
 });
