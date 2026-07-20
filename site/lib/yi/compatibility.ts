@@ -366,7 +366,7 @@ function professionalBasis(id: CompatibilityAxisId, profile: EvidenceProfile) {
     case "trigger": return `A日支${first.pillars.day.branch}与B日支${second.pillars.day.branch}呈${dayRelation}；只采用稳定日柱观察触发节奏。`;
     case "trust": return `跨盘稳定关系：${cross}；全部关系并读，不用单一合、冲、刑或害替代信任事实。`;
     case "conflict": return `A日支${first.pillars.day.branch}、B日支${second.pillars.day.branch}的日支关系为${dayRelation}；跨盘稳定关系另见${cross}。`;
-    case "resources": return `稳定柱五行差异：${five}；以计数落差观察资源接口，不据此评价贡献高低。`;
+    case "resources": return `稳定柱五行差异：${five}；以计数落差观察资源分配方式，不据此评价贡献高低。`;
     case "decisions": return `${aBasis}的${profile.aToB}与${bBasis}的${profile.bToA}并读，观察主张、规则与承担方式。`;
     case "stability": return `输入置信 A:${confidenceLabels[first.confidence]}，B:${confidenceLabels[second.confidence]}；稳定柱五行证据为${five}，候选柱不进入结论。`;
     case "repair": return `A日支${first.pillars.day.branch}与B日支${second.pillars.day.branch}呈${dayRelation}，并参照${profile.aToB}与${profile.bToA}的修复入口。`;
