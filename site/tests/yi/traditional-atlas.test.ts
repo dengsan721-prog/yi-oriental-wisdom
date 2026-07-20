@@ -26,6 +26,9 @@ function readWebpDimensions(buffer: Buffer) {
     const chunkType = buffer.subarray(offset, offset + 4).toString("ascii");
     const chunkSize = buffer.readUInt32LE(offset + 4);
     const payload = offset + 8;
+    if (payload + chunkSize > buffer.length) {
+      throw new Error(`WebP 文件包含截断的数据区块：${chunkType}`);
+    }
 
     if (chunkType === "VP8X" && chunkSize >= 10) {
       return {
@@ -54,6 +57,70 @@ function readWebpDimensions(buffer: Buffer) {
 
   throw new Error("WebP 文件缺少 VP8、VP8L 或 VP8X 图像区块");
 }
+
+function makeWebpChunk(type: string, payload: Buffer, declaredSize = payload.length) {
+  const header = Buffer.alloc(8);
+  header.write(type, 0, 4, "ascii");
+  header.writeUInt32LE(declaredSize, 4);
+  const padding = declaredSize % 2 === 1 ? Buffer.from([0]) : Buffer.alloc(0);
+  return Buffer.concat([header, payload, padding]);
+}
+
+function makeWebp(...chunks: Buffer[]) {
+  const body = Buffer.concat(chunks);
+  const header = Buffer.alloc(12);
+  header.write("RIFF", 0, 4, "ascii");
+  header.writeUInt32LE(body.length + 4, 4);
+  header.write("WEBP", 8, 4, "ascii");
+  return Buffer.concat([header, body]);
+}
+
+function makeVp8Payload(width: number, height: number) {
+  const payload = Buffer.alloc(10);
+  payload.set([0x9d, 0x01, 0x2a], 3);
+  payload.writeUInt16LE(width, 6);
+  payload.writeUInt16LE(height, 8);
+  return payload;
+}
+
+function makeVp8lPayload(width: number, height: number) {
+  const payload = Buffer.alloc(5);
+  payload[0] = 0x2f;
+  payload.writeUInt32LE((width - 1) | ((height - 1) << 14), 1);
+  return payload;
+}
+
+function makeVp8xPayload(width: number, height: number) {
+  const payload = Buffer.alloc(10);
+  payload.writeUIntLE(width - 1, 4, 3);
+  payload.writeUIntLE(height - 1, 7, 3);
+  return payload;
+}
+
+describe("WebP dimension parser", () => {
+  it("reads a synthetic VP8 fixture", () => {
+    const fixture = makeWebp(makeWebpChunk("VP8 ", makeVp8Payload(641, 359)));
+    expect(readWebpDimensions(fixture)).toEqual({ width: 641, height: 359 });
+  });
+
+  it("reads a synthetic VP8L fixture", () => {
+    const fixture = makeWebp(makeWebpChunk("VP8L", makeVp8lPayload(777, 555)));
+    expect(readWebpDimensions(fixture)).toEqual({ width: 777, height: 555 });
+  });
+
+  it("skips odd-sized chunk padding before reading a synthetic VP8X fixture", () => {
+    const fixture = makeWebp(
+      makeWebpChunk("EXIF", Buffer.from([1, 2, 3])),
+      makeWebpChunk("VP8X", makeVp8xPayload(1500, 600)),
+    );
+    expect(readWebpDimensions(fixture)).toEqual({ width: 1500, height: 600 });
+  });
+
+  it("rejects a truncated chunk with a controlled UTF-8 error", () => {
+    const fixture = makeWebp(makeWebpChunk("VP8X", Buffer.alloc(4), 10));
+    expect(() => readWebpDimensions(fixture)).toThrow("WebP 文件包含截断的数据区块：VP8X");
+  });
+});
 
 describe("traditional source catalog", () => {
   it("contains every confirmed core classic with an explicit role", () => {

@@ -47,6 +47,8 @@ Delivery format: the generated PNG originals were visually inspected, then conve
 
 The following ten synthetic assets were generated specifically for the gender-matched self-comparison flow with the built-in OpenAI image generation tool on 2026-07-20. The selected PNG sources and the final WebP files were each inspected at original resolution. Pillow then performed only deterministic panel mirroring, whole-image mirroring, resize and WebP quality-84 conversion. No labels, hotspots or diagnostic marks are baked into these files.
 
+Two task-agent female-side built-in edit calls stalled and returned no image output, after which the root agent took over those edits. Both accepted female own-left and own-right calls used `.superpowers/sdd/imagegen/mole-female-front-source.png` as the actual `referenced_image_paths` input. The own-right prompt's phrase “opposite side from a left-profile image” describes the required target-pose contrast only; it does not describe the actual input image.
+
 ### `face-shapes-male.webp`
 
 - Asset: `face-shapes-male.webp`.
@@ -261,6 +263,7 @@ Avoid: glamour or fashion editorial styling, makeup emphasis, dramatic expressio
 - Dimensions: 1440 × 1080 px; WebP quality 84.
 - Mirrored display plane: yes; generated and stored directly in final mirror orientation, with no blind post-generation flip.
 - Generation tool and date: built-in OpenAI image generation tool, identity-preserving edit, 2026-07-20.
+- Actual referenced input: `.superpowers/sdd/imagegen/mole-female-front-source.png` via `referenced_image_paths`.
 - Exact final prompt:
 
 ```text
@@ -288,6 +291,7 @@ Avoid: changing identity, hairstyle, age, makeup, background, camera style, skin
 - Dimensions: 1440 × 1080 px; WebP quality 84.
 - Mirrored display plane: yes; generated and stored directly in final mirror orientation, with no blind post-generation flip.
 - Generation tool and date: built-in OpenAI image generation tool, identity-preserving edit correction, 2026-07-20.
+- Actual referenced input: `.superpowers/sdd/imagegen/mole-female-front-source.png` via `referenced_image_paths`. The prompt's “opposite side from a left-profile image” wording is a target-pose contrast instruction, not an input-source claim.
 - Exact final prompt:
 
 ```text
