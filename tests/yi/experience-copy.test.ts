@@ -486,6 +486,7 @@ it("integrates constellation maps and mole user-side copy without a second mirro
   expect(source).toContain("getZodiacProfile(starSign)");
   expect(source).not.toContain("starSymbols");
   expect(source).not.toContain("star-reference");
+  expect(css).not.toContain(".star-reference");
   expect(source).toContain("buildMoleDetailTitle(option)");
   expect(source).toMatch(/查看\$\{getUserSideLabel\(item\.userSide\)\}/);
   expect(source).toContain("查看你的左脸");
