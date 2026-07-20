@@ -45,6 +45,20 @@ test("GitHub build is the full bundled React app", async () => {
   for (const atlasTerm of ["相面", "面痣", "手纹", "星座", "标准照片与图谱仅供自行对照"]) {
     assert.match(js, new RegExp(atlasTerm));
   }
+  for (const mirrorTerm of [
+    "镜面参考｜像照镜子一样对照",
+    "画面右侧是你的右脸",
+    "画面左侧是你的左脸",
+    "你的左脸",
+    "你的右脸",
+    "查看你的左脸",
+    "查看你的右脸",
+    "男相参考",
+    "女相参考",
+  ]) assert.match(js, new RegExp(mirrorTerm));
+  for (const constellationTerm of ["Aries", "元素：", "模式：", "金色星座连线图"]) {
+    assert.match(js, new RegExp(constellationTerm));
+  }
   assert.doesNotMatch(js, /称骨/);
   assert.doesNotMatch(js, /getUserMedia|FileReader|type=["']file["']|capture=["']/);
   assert.match(js, /\/yi-oriental-wisdom\//);
@@ -67,6 +81,11 @@ test("GitHub build is the full bundled React app", async () => {
   assert.match(resultTabsRule, /scrollbar-width:none/);
   assert.match(css, /\.result-tabs::-webkit-scrollbar\{display:none\}/);
   assert.match(css, /@media\s*\(prefers-reduced-motion:reduce\)/);
+  assert.match(css, /\.atlas-gender-switch/);
+  assert.match(css, /\.mirror-guide/);
+  assert.match(css, /\.mirror-side-labels/);
+  assert.match(css, /\.constellation-meta/);
+  assert.doesNotMatch(css, /scaleX\(\s*-1\s*\)|rotateY\(\s*180deg\s*\)/i);
   assert.doesNotMatch(html, /href="#birth"/);
   assert.doesNotMatch(html, /function calculateChart/);
   for (const asset of [
