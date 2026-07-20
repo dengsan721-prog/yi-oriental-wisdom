@@ -46,7 +46,7 @@ export function ConstellationMap({
           />
         ))}
       </g>
-      <text x={map.label.x} y={map.label.y}>{map.glyph}</text>
+      <text x={map.label.x} y={map.label.y}>{`${map.glyph}\uFE0E`}</text>
     </svg>
   );
 }

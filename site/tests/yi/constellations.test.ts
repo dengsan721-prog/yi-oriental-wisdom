@@ -177,7 +177,7 @@ describe("black-gold constellations", () => {
     expect(first.match(/class="primary"/g)?.length ?? 0).toBe(
       map.nodes.filter((node) => node.primary).length,
     );
-    expect(first).toContain(`>${map.glyph}</text>`);
+    expect(first).toContain(`>${map.glyph}\uFE0E</text>`);
   });
 
   it("exposes informative maps and hides decorative maps from assistive technology", () => {
@@ -204,6 +204,9 @@ describe("black-gold constellations", () => {
     expect(css).toMatch(/\.constellation-stars circle\s*\{[^}]*fill:#e4c56e/);
     expect(css).toMatch(/\.constellation-stars circle\.primary\s*\{[^}]*fill:#fff0b1/);
     expect(css).toMatch(/\.constellation-dust circle\s*\{[^}]*fill:#d8c58c/);
+    expect(css).toMatch(
+      /\.constellation-map text\s*\{[^}]*fill:#d8b65f[^}]*font-family:"Segoe UI Symbol","Noto Sans Symbols 2",serif/,
+    );
     expect(css).toMatch(/@keyframes constellation-draw\s*\{/);
     expect(css).toMatch(
       /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{[^}]*\.constellation-lines line\s*\{[^}]*animation:none[^}]*stroke-dasharray:none/,

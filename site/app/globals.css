@@ -49,6 +49,6 @@ html,body{min-width:0;overflow-x:hidden}
 .constellation-stars circle{fill:#e4c56e;filter:drop-shadow(0 0 2px #e8c76688)}
 .constellation-stars circle.primary{fill:#fff0b1;filter:drop-shadow(0 0 5px #e7bd57)}
 .constellation-dust circle{fill:#d8c58c;opacity:.28}
-.constellation-map text{fill:#d8b65f;font-size:10px;opacity:.42}
+.constellation-map text{fill:#d8b65f;font-family:"Segoe UI Symbol","Noto Sans Symbols 2",serif;font-size:10px;opacity:.42}
 @keyframes constellation-draw{from{stroke-dashoffset:120;opacity:0}to{stroke-dashoffset:0;opacity:.75}}
 @media (prefers-reduced-motion: reduce){.constellation-lines line{animation:none;stroke-dasharray:none}}
