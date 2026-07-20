@@ -65,7 +65,7 @@ export function MirrorSectionView({ chart, activeView, onSelectView }: {
           </div>
           <p>{zodiac.culturalSource}</p>
         </div>
-        {(zodiac.yearAmbiguous || zodiac.monthAmbiguous) && <p className="zodiac-coordinate-note">{zodiac.yearAmbiguous ? "年柱处于交节边界，生肖仅显示当前代表候选。" : ""}{zodiac.monthAmbiguous ? "月柱处于交节边界，月令互证仅显示代表候选。" : ""}</p>}
+        {(zodiac.yearAmbiguous || zodiac.monthAmbiguous || zodiac.dayAmbiguous) && <p className="zodiac-coordinate-note">{zodiac.yearAmbiguous ? "年柱处于交节边界，生肖仅显示当前代表候选。" : ""}{zodiac.monthAmbiguous ? "月柱处于交节边界，月令互证仅显示代表候选。" : ""}{zodiac.dayAmbiguous ? "日主待核，候选日柱与日主未用于互证。" : ""}</p>}
         <div className="zodiac-patterns">
           <p><b>建立信任</b>{zodiac.trustStyle}</p>
           <p><b>顺境能力</b>{zodiac.strengthPattern}</p>

@@ -117,6 +117,52 @@ describe("complete zodiac mirror", () => {
     expect(withoutTenGodNames(resourceTheme.chartDifference)).not.toBe(withoutTenGodNames(pressureTheme.chartDifference));
   });
 
+  it.each(["dayMaster", "dayPillar"] as const)("does not use a candidate day master or day pillar when %s is pending", (pendingField) => {
+    const pending: FourPillarsResult = {
+      ...chart,
+      professional: {
+        ...chart.professional,
+        ambiguousFields: [...new Set([...chart.professional.ambiguousFields, pendingField])],
+      },
+    };
+    const candidateDayMaster: FourPillarsResult["professional"]["dayMaster"] = chart.professional.dayMaster.element === "木"
+      ? { stem: "丙", element: "火", polarity: "yang" }
+      : { stem: "甲", element: "木", polarity: "yang" };
+    const candidateDayPillar: FourPillarsResult["pillars"]["day"] = chart.pillars.day.branch === "亥"
+      ? { ...chart.pillars.day, stem: "丁", branch: "巳", element: "火", branchElement: "火" }
+      : { ...chart.pillars.day, stem: "乙", branch: "亥", element: "木", branchElement: "水" };
+    const withCandidateDayMaster: FourPillarsResult = {
+      ...pending,
+      professional: { ...pending.professional, dayMaster: candidateDayMaster },
+    };
+    const withCandidateDayPillar: FourPillarsResult = {
+      ...pending,
+      pillars: { ...pending.pillars, day: candidateDayPillar },
+    };
+    const currentMonthTenGod = chart.professional.tenGods.find(item => item.pillar === "month" && item.position === "branch")?.tenGod;
+    const candidateMonthTenGod: TenGodName = currentMonthTenGod === "正印" ? "七杀" : "正印";
+    const withCandidateMonthTenGod = withMonthCommand(pending, candidateMonthTenGod);
+
+    const baseline = buildZodiacMirror(pending);
+    const baselineHtml = renderToStaticMarkup(createElement(MirrorSection, { chart: pending }));
+    for (const candidate of [withCandidateDayMaster, withCandidateDayPillar, withCandidateMonthTenGod]) {
+      expect(buildZodiacMirror(candidate)).toEqual(baseline);
+      expect(renderToStaticMarkup(createElement(MirrorSection, { chart: candidate }))).toBe(baselineHtml);
+    }
+
+    const comparison = `${baseline.chartAgreement}${baseline.chartDifference}`;
+    expect(baseline).toMatchObject({ confidence: "limited", dayAmbiguous: true });
+    expect(comparison).toContain("日主待核");
+    expect(comparison).toContain("候选日柱与日主未用于互证");
+    expect(comparison).toContain(`月支${chart.pillars.month.branch}`);
+    expect(comparison).not.toContain(`日主${chart.professional.dayMaster.stem}${chart.professional.dayMaster.element}`);
+    expect(comparison).not.toContain(`${chart.pillars.day.stem}${chart.pillars.day.branch}`);
+    expect(comparison).not.toContain(`日主${candidateDayMaster.stem}${candidateDayMaster.element}`);
+    expect(comparison).not.toContain(`${candidateDayPillar.stem}${candidateDayPillar.branch}`);
+    for (const tenGod of tenGodNames) expect(comparison).not.toContain(tenGod);
+    expect(baselineHtml).toContain("日主待核，候选日柱与日主未用于互证");
+  });
+
   it("marks the year and month as representative limited candidates at the 2024-02-04 unknown-time boundary", () => {
     const boundaryChart = calculateFourPillars({
       name: "边界样本",

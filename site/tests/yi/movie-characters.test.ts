@@ -31,6 +31,7 @@ const movieKeys = [
   "filmTitle",
   "characterName",
   "region",
+  "era",
   "stage",
   "coreDrive",
   "actionStyle",
@@ -77,6 +78,15 @@ const characterPassages: (keyof Pick<MovieCharacterRecord,
   "shadowArc",
 ];
 const moviePassages = [...sharedPassages, ...characterPassages];
+const releaseDecades = [
+  "1950年代作品",
+  "1970年代作品",
+  "1980年代作品",
+  "1990年代作品",
+  "2000年代作品",
+  "2010年代作品",
+  "2020年代作品",
+] as const;
 type PassageField = (typeof moviePassages)[number];
 type PassageCandidate = MirrorCandidate
   & Partial<Pick<MovieCharacterRecord, "filmTitle" | "characterName">>
@@ -369,6 +379,13 @@ describe("four-layer mirror corpora", () => {
       expect(item.name).toBe(`${item.filmTitle}·${item.characterName}`);
       expect(item.filmTitle.length).toBeGreaterThan(0);
       expect(item.characterName.length).toBeGreaterThan(0);
+      expect(releaseDecades).toContain(item.era);
+      const primaryCitation = /^电影《([^》]+)》（((?:19|20)\d{2})）$/.exec(item.sourceReferences[0]);
+      expect(primaryCitation, `${item.id} primary film citation`).not.toBeNull();
+      if (primaryCitation) {
+        const releaseYear = Number(primaryCitation[2]);
+        expect(item.era).toBe(`${Math.floor(releaseYear / 10) * 10}年代作品`);
+      }
       expectSubstantiveCandidate(item);
       for (const field of characterPassages) {
         expect(item[field].length, `${item.id}.${field}`).toBeGreaterThanOrEqual(20);

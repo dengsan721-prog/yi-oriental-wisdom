@@ -162,7 +162,11 @@ describe("compatibility", () => {
     expect(text).toMatch(/联系节奏/);
     expect(text).toMatch(/边界/);
     expect(text).toMatch(/误会|关系中断|失联/);
-    expect(text).toMatch(/先核对具体事件和影响，再各自说明需要，最后商量补救或下一次联系/);
+    const repairSteps = ["先核对具体事件和影响", "再各自说明需要", "最后商量补救或下一次联系"];
+    const repairStepIndexes = repairSteps.map((step) => text.indexOf(step));
+    for (const [index, step] of repairSteps.entries()) expect(repairStepIndexes[index], step).toBeGreaterThan(-1);
+    expect(repairStepIndexes[0]).toBeLessThan(repairStepIndexes[1]);
+    expect(repairStepIndexes[1]).toBeLessThan(repairStepIndexes[2]);
     expect(text).toMatch(/不用频率证明关系/);
     expect(text).toMatch(/可以拒绝/);
     expect(text).toMatch(/不催促关系立刻恢复原状/);
