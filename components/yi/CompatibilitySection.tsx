@@ -17,7 +17,7 @@ export function CompatibilitySection({ chart, relationship, secondBirth, onRelat
       <header className="compatibility-summary"><small>两个人的关系主旋律</small><p>{result.summary}</p></header>
       <div className="compatibility-axes">
         {result.axes.map(axis => <article className="compatibility-axis-card" key={axis.id}>
-          <span>{axis.label}</span>
+          <h2>{axis.label}</h2>
           <p>{axis.plainLanguage}</p>
           <blockquote>{axis.scene}</blockquote>
           <b>可以这样做</b><p>{axis.action}</p>
