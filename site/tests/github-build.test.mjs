@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import { promisify } from "node:util";
 import test from "node:test";
@@ -15,6 +16,10 @@ const stableDocumentation = [
 
 function normalizeLineEndings(value) {
   return value.replaceAll("\r\n", "\n");
+}
+
+function sha256(bytes) {
+  return createHash("sha256").update(bytes).digest("hex");
 }
 
 test("GitHub build is the full bundled React app", async () => {
@@ -127,4 +132,41 @@ test("GitHub build publishes the lunar-typescript MIT notice", async () => {
   assert.doesNotMatch(notice, /Copyright \(c\) 2019 6tail/);
   assert.match(notice, /Permission is hereby granted, free of charge/);
   assert.match(notice, /THE SOFTWARE IS PROVIDED "AS IS"/);
+});
+
+test("GitHub build publishes the local Zhongshan font and license", async () => {
+  const [sourceFont, deployedFont, sourceLicense, deployedLicense] = await Promise.all([
+    readFile(new URL("../public/fonts/JFZSKSealScript_V3.5.ttf", import.meta.url)),
+    readFile(new URL("../../docs/fonts/JFZSKSealScript_V3.5.ttf", import.meta.url)),
+    readFile(new URL("../public/fonts/OFL.txt", import.meta.url)),
+    readFile(new URL("../../docs/fonts/OFL.txt", import.meta.url)),
+  ]);
+  const assets = await readdir(new URL("../../docs/assets/", import.meta.url));
+  const cssName = assets.find((name) => /^index-.+\.css$/.test(name));
+  assert.ok(cssName);
+  const css = await readFile(new URL(`../../docs/assets/${cssName}`, import.meta.url), "utf8");
+
+  assert.equal(deployedFont.length, sourceFont.length);
+  assert.equal(sha256(deployedFont), sha256(sourceFont));
+  assert.deepEqual(deployedLicense, sourceLicense);
+  assert.match(deployedLicense.toString("utf8"), /SIL OPEN FONT LICENSE Version 1\.1/);
+  assert.match(css, /url\(\/yi-oriental-wisdom\/fonts\/JFZSKSealScript_V3\.5\.ttf\)/);
+});
+
+test("GitHub build publishes every public reference file byte for byte", async () => {
+  const sourceDirectory = new URL("../public/reference/", import.meta.url);
+  const deployedDirectory = new URL("../../docs/reference/", import.meta.url);
+  const sourceEntries = await readdir(sourceDirectory, { withFileTypes: true });
+  const sourceFiles = sourceEntries.filter((entry) => entry.isFile());
+  const deployedNames = new Set(await readdir(deployedDirectory));
+  const missing = sourceFiles.map((entry) => entry.name).filter((name) => !deployedNames.has(name));
+  assert.deepEqual(missing, [], `docs/reference is missing: ${missing.join(", ")}`);
+
+  for (const entry of sourceFiles) {
+    const [source, deployed] = await Promise.all([
+      readFile(new URL(entry.name, sourceDirectory)),
+      readFile(new URL(entry.name, deployedDirectory)),
+    ]);
+    assert.deepEqual(deployed, source, `${entry.name} differs from site/public/reference`);
+  }
 });

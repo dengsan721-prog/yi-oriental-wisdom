@@ -6,6 +6,28 @@ import { YiExperience } from "../../components/yi/YiExperience";
 
 const siteRoot = new URL("../../", import.meta.url);
 
+function getCmapRecords(font: Uint8Array) {
+  const view = new DataView(font.buffer, font.byteOffset, font.byteLength);
+  const tableCount = view.getUint16(4);
+  let cmapOffset = -1;
+  for (let index = 0; index < tableCount; index += 1) {
+    const offset = 12 + index * 16;
+    if (view.getUint32(offset) === 0x636d6170) cmapOffset = view.getUint32(offset + 8);
+  }
+  if (cmapOffset < 0) return [];
+
+  const encodingCount = view.getUint16(cmapOffset + 2);
+  return Array.from({ length: encodingCount }, (_, index) => {
+    const recordOffset = cmapOffset + 4 + index * 8;
+    const subtableOffset = cmapOffset + view.getUint32(recordOffset + 4);
+    return {
+      platformId: view.getUint16(recordOffset),
+      encodingId: view.getUint16(recordOffset + 2),
+      format: view.getUint16(subtableOffset),
+    };
+  });
+}
+
 function cmapHasCodePoint(font: Uint8Array, codePoint: number) {
   const view = new DataView(font.buffer, font.byteOffset, font.byteLength);
   const tableCount = view.getUint16(4);
@@ -68,20 +90,30 @@ describe("public intro first frame", () => {
   it("locally hosts the licensed Zhongshan seal glyph used by the first frame", async () => {
     const fontUrl = new URL("public/fonts/JFZSKSealScript_V3.5.ttf", siteRoot);
     const licenseUrl = new URL("public/fonts/OFL.txt", siteRoot);
+    const readmeUrl = new URL("public/fonts/README.md", siteRoot);
     const cssUrl = new URL("app/globals.css", siteRoot);
-    const [fontInfo, font, license, css] = await Promise.all([
+    const [fontInfo, font, license, readme, css] = await Promise.all([
       stat(fontUrl),
       readFile(fontUrl),
       readFile(licenseUrl, "utf8"),
+      readFile(readmeUrl, "utf8"),
       readFile(cssUrl, "utf8"),
     ]);
     const html = renderToStaticMarkup(createElement(YiExperience));
 
     expect(fontInfo.size).toBeGreaterThan(10_000);
     expect(license).toContain("SIL OPEN FONT LICENSE Version 1.1");
-    expect(css).toMatch(/@font-face\s*\{[^}]*font-family\s*:\s*["']Yi Zhongshan Seal["'][^}]*JFZSKSealScript_V3\.5\.ttf[^}]*font-display\s*:\s*swap[^}]*\}/s);
-    expect(css).toMatch(/\.yi-brand-glyph\s*\{[^}]*font-family\s*:\s*["']Yi Zhongshan Seal["'][^}]*serif[^}]*\}/s);
+    expect(css).toMatch(/@font-face\s*\{[^}]*font-family\s*:\s*["']Yi Zhongshan Seal["'][^}]*JFZSKSealScript_V3\.5\.ttf[^}]*font-display\s*:\s*swap[^}]*\}/);
+    expect(css).toMatch(/\.yi-brand-glyph\s*\{[^}]*font-family\s*:\s*["']Yi Zhongshan Seal["'][^}]*serif[^}]*\}/);
     expect(html.match(/<span class="yi-brand-glyph">艺<\/span>/g)).toHaveLength(1);
+    expect(getCmapRecords(font)).toEqual([
+      { platformId: 0, encodingId: 3, format: 4 },
+      { platformId: 1, encodingId: 0, format: 0 },
+      { platformId: 3, encodingId: 1, format: 4 },
+    ]);
+    expect(readme).toContain("Cmap record formats: `4` and `0`");
+    expect(readme).toContain("U+827A resolves through format `4`");
+    expect(readme).not.toMatch(/formats?\s+4\s+and\s+12/i);
     expect(cmapHasCodePoint(font, 0x827a)).toBe(true);
   });
 });
