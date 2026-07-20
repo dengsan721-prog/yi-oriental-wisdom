@@ -6,6 +6,7 @@ import { expect, it } from "vitest";
 import { CompatibilitySection } from "../../components/yi/CompatibilitySection";
 import { DetailSection } from "../../components/yi/DetailSection";
 import { MirrorSection, MirrorSectionView } from "../../components/yi/MirrorSection";
+import { ReferenceAtlasSection } from "../../components/yi/ReferenceAtlasSection";
 import { getCalculationSteps } from "../../components/yi/YiExperience";
 import { calculateCompatibility } from "../../lib/yi/compatibility";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
@@ -428,4 +429,79 @@ it("keeps relationship disclosures touch-safe and axes single-column without hor
   expect(css).toMatch(/\.compatibility-axis-card>h2,\.compatibility-axis-card>b\{color:var\(--gold\)\}/);
   expect(css).toMatch(/\.compatibility-axis-evidence>summary,\.compatibility-evidence>summary\{min-height:44px;display:flex;align-items:center;/);
   expect(css).toMatch(/@media\(max-width:720px\)\{\.compatibility-axes\{grid-template-columns:1fr\}/);
+});
+
+it("renders birth-owned atlas gender and a local unspecified-only reference switch", () => {
+  const baseBirth = {
+    name: "甲", date: "1990-06-15", time: "09:30", location: "杭州", timeConfidence: "exact",
+  } as const;
+  const chart = calculateFourPillars({ ...baseBirth, gender: "unspecified" });
+
+  for (const [gender, expectedAsset] of [
+    ["male", "reference/face-shapes-male.webp"],
+    ["female", "reference/face-shapes-female.webp"],
+  ] as const) {
+    const html = renderToStaticMarkup(createElement(ReferenceAtlasSection, {
+      chart,
+      birth: { ...baseBirth, gender },
+    }));
+    expect(html, gender).toContain('src="/' + expectedAsset + '"');
+    expect(html, gender).not.toContain("atlas-gender-switch");
+    expect(html, gender).not.toContain("男相参考");
+    expect(html, gender).not.toContain("女相参考");
+  }
+
+  const unspecified = renderToStaticMarkup(createElement(ReferenceAtlasSection, {
+    chart,
+    birth: { ...baseBirth, gender: "unspecified" },
+  }));
+  expect(unspecified).toContain('src="/reference/face-shapes-female.webp"');
+  expect(unspecified).toContain('<div class="atlas-gender-switch" aria-label="参考人物性别">');
+  expect(unspecified).toContain('aria-pressed="false">男相参考</button>');
+  expect(unspecified).toContain('aria-pressed="true">女相参考</button>');
+});
+
+it("keeps mirror guidance and user-owned side labels visible in the initial face atlas", () => {
+  const birth = {
+    name: "甲", date: "1990-06-15", time: "09:30", location: "杭州",
+    gender: "unspecified", timeConfidence: "exact",
+  } as const;
+  const chart = calculateFourPillars(birth);
+  const html = renderToStaticMarkup(createElement(ReferenceAtlasSection, { chart, birth }));
+
+  expect(html).toContain('<aside class="mirror-guide">');
+  expect(html).toContain("<b>镜面参考｜像照镜子一样对照</b>");
+  expect(html).toContain("画面右侧是你的右脸");
+  expect(html).toContain("画面左侧是你的左脸");
+  expect(html).toContain('<div class="mirror-side-labels"><span>你的左脸</span><span>你的右脸</span></div>');
+});
+
+it("integrates constellation maps and mole user-side copy without a second mirror transform", () => {
+  const source = readFileSync(resolve("components/yi/ReferenceAtlasSection.tsx"), "utf8");
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+
+  expect(source).toContain('import { ConstellationMap } from "./ConstellationMap"');
+  expect(source).toContain("<ConstellationMap sign={starSign}");
+  expect(source).toContain("CONSTELLATIONS[starSign]");
+  expect(source).toContain("getZodiacProfile(starSign)");
+  expect(source).not.toContain("starSymbols");
+  expect(source).not.toContain("star-reference");
+  expect(source).toContain("buildMoleDetailTitle(option)");
+  expect(source).toMatch(/查看\$\{getUserSideLabel\(item\.userSide\)\}/);
+  expect(source).toContain("查看你的左脸");
+  expect(source).toContain("查看你的右脸");
+  expect(source + "\n" + css).not.toMatch(/scaleX\(\s*-1\s*\)|rotateY\(\s*180deg\s*\)/i);
+});
+
+it("styles atlas controls, mirror guidance and constellation metadata for touch and mobile", () => {
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+
+  expect(css).toMatch(/\.atlas-gender-switch\{[^}]*display:inline-grid[^}]*grid-template-columns:1fr 1fr/);
+  expect(css).toMatch(/\.atlas-gender-switch button\{[^}]*min-height:44px/);
+  expect(css).toMatch(/\.atlas-gender-switch button\[aria-pressed=true\]\{[^}]*color:#e2c77e/);
+  expect(css).toMatch(/\.mirror-guide\{[^}]*border:1px solid #caa76055/);
+  expect(css).toMatch(/\.mirror-side-labels\{[^}]*display:flex[^}]*justify-content:space-between/);
+  expect(css).toMatch(/\.constellation-meta\{[^}]*display:grid/);
+  expect(css).toMatch(/\.constellation-meta h3\{[^}]*color:#e2c77e/);
+  expect(css).toMatch(/@media\(max-width:760px\)\{\.atlas-gender-switch\{width:100%\}\.constellation-meta\{grid-template-columns:1fr\}/);
 });
