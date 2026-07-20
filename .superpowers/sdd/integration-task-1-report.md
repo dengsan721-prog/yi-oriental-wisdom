@@ -72,3 +72,38 @@ All commands were run from `site/` with the bundled Node runtime available on `P
 - Confirmed every current historical and film mirror candidate has a deterministic identity source, plus the separate element/modality model record.
 - Confirmed `SourceNote` has no new initial-screen block and retains its confidence notice and calculation-rule explanation.
 - Confirmed no runtime network request is introduced; all metadata is static local data.
+
+## Review-fix wave — candidate-specific provenance
+
+This section supersedes the earlier film-search and generic-person URL strategy. The registry remains at 71 unique records, but every identity link and every local-method boundary is now explicit and candidate-specific.
+
+### Additional RED/GREEN evidence
+
+1. **RED — audit module contract:** Tests imported `getAllSources` and `UnifiedSource` from `source-audit.ts`; the focused run failed because `getAllSources` was not exported. `source-audit.ts` now re-exports both members.
+2. **RED — reviewer defects:** After that minimal export fix, focused tests failed for the person-generic/search URL policy, NASA-backed taxonomy URL, and a source title appearing before `<details>`. The registry adapters and rule titles were then corrected; 8 focused audit/note tests passed.
+3. **RED — authority-record correctness:** A fixed 15-person source oracle caught `historical-sima-qian` pointing at unrelated Wikidata item Q221584. The record was corrected to the verified Sima Qian authority item Q9372; the focused run returned GREEN.
+
+### Stable URL strategy
+
+- All **36 film candidates** now use direct `https://www.imdb.com/title/tt.../` records. No `/find`, `/search`, query endpoint, or generic IMDb homepage remains.
+- The full 36-ID set was independently submitted in one Wikidata SPARQL `VALUES` query against property P345. The query returned **36/36** items, with each returned label matching the intended film (including `tt17097088` for 《隐入尘烟》 and `tt2278392` for 《中国合伙人》).
+- Each film registry title explicitly names both the film and candidate character, and its role is limited to that identity mapping. Personality comparison prose remains product-original.
+- All **15 historical candidates** have an exact URL oracle in the audit test. Institutional records are retained where available (UNESCO, UK National Archives, AFB, Nobel Prize, Nelson Mandela Foundation, Palace Museum, and Qingpu Museum); Wikidata person items are used as structured authority records for Gandhi and several historical Chinese figures. Generic CText home URLs are gone.
+- Source-quality caveat: Wikidata is a structured authority record rather than a critical biography. It is intentionally used only to support identity for Gandhi, Li Qingzhao, Sima Guang, Sima Qian, Tao Yuanming, Xuanzang, and Zhang Qian. No biographical inference or prose is drawn from it. No candidate remains unresolved.
+
+### Corrected method and copyright boundaries
+
+- The three product heuristics now have empty URLs and an explicit `产品自有方法版本` edition note; `lunar-typescript` is no longer presented as their source.
+- The gan-zhi framework now has an empty URL and an explicit `对应古典文献来源待核` note instead of a generic Book of Changes link.
+- The zodiac element/modality model now has an empty URL and is labelled a `产品分类约定`. NASA remains only in its separate astronomy/astrology boundary record.
+- `SourceNote` governance metadata is asserted inside the `<details>` substring and absent before it. Rule source titles are distinct from the concise first-layer theory labels so the collapsed layer remains compact.
+
+### Review-fix verification
+
+| Command | Result |
+| --- | --- |
+| `pnpm exec vitest run tests/yi/source-audit.test.ts tests/yi/source-note.test.ts tests/yi/traditional-atlas.test.ts` | Passed — 3 files, 35 tests |
+| `pnpm exec vitest run` | Passed — 27 files, 402 tests |
+| `pnpm run lint` | Passed — no findings |
+| Targeted strict TypeScript command from the brief | Passed |
+| `git diff --check` | Passed after the report update |

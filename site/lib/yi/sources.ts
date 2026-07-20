@@ -1,3 +1,7 @@
+import { HISTORICAL_MIRRORS } from "./historical-mirrors";
+import { MOVIE_CHARACTERS } from "./movie-characters";
+import { TRADITIONAL_SOURCE_CATALOG } from "./traditional-sources";
+
 export type RuleSource = {
   ruleId: string;
   label: string;
@@ -93,18 +97,16 @@ export type UnifiedSource = {
 };
 
 const LIBRARY_URL = "https://github.com/6tail/lunar-typescript";
-const CLASSICAL_FRAMEWORK_URL = "https://ctext.org/book-of-changes/zh";
-const PRODUCT_METHOD_URL = "https://github.com/6tail/lunar-typescript";
 
 function ruleSource(rule: RuleSource): UnifiedSource {
   const isLibrary = rule.sourceType === "library-calculation";
   const isClassical = rule.sourceType === "classical-framework";
   return {
     id: rule.ruleId,
-    title: rule.label,
+    title: `${rule.label}${isLibrary ? "计算来源记录" : isClassical ? "框架来源记录" : "产品方法记录"}`,
     category: isLibrary ? "计算库" : isClassical ? "传统框架" : "产品启发式",
     grade: isLibrary ? "A" : isClassical ? "A/B" : "产品方法",
-    url: isLibrary ? LIBRARY_URL : isClassical ? CLASSICAL_FRAMEWORK_URL : PRODUCT_METHOD_URL,
+    url: isLibrary ? LIBRARY_URL : "",
     role: isLibrary
       ? `用于 ${rule.appliesWhen} 的程序计算；不承担传统文本解释。`
       : isClassical
@@ -113,8 +115,8 @@ function ruleSource(rule: RuleSource): UnifiedSource {
     editionNote: isLibrary
       ? `计算依赖版本：${rule.version}；规则说明与库实现分开维护。`
       : isClassical
-        ? `本地规则表版本：${rule.version}；仅保留可复核的关系条件。`
-        : `产品方法版本：${rule.version}；不引用或改写第三方现代人格文案。`,
+        ? `本地规则表版本：${rule.version}；对应古典文献来源待核，当前仅登记产品维护的关系条件。`
+        : `产品自有方法版本：${rule.version}；不引用或改写第三方现代人格文案。`,
     boundary: isLibrary
       ? "计算结果只提供历法与干支坐标，不能直接推出人格、健康或人生事件。"
       : isClassical
@@ -124,19 +126,30 @@ function ruleSource(rule: RuleSource): UnifiedSource {
   };
 }
 
-function identitySource(candidate: { id: string; name: string; sourceReferences: string[] }, category: "历史人物镜像" | "电影角色镜像"): UnifiedSource {
+type IdentityCandidate = {
+  id: string;
+  name: string;
+  sourceReferences: string[];
+  filmTitle?: string;
+  characterName?: string;
+};
+
+function identitySource(candidate: IdentityCandidate, category: "历史人物镜像" | "电影角色镜像"): UnifiedSource {
   const isMovie = category === "电影角色镜像";
-  const searchTerm = isMovie ? candidate.name.split("·")[0] : candidate.name;
+  const filmTitle = candidate.filmTitle ?? candidate.name.split("·")[0];
+  const characterName = candidate.characterName ?? candidate.name.split("·")[1];
   return {
     id: candidate.id,
-    title: `${candidate.name}身份来源`,
+    title: isMovie ? `电影《${filmTitle}》角色“${characterName}”身份来源` : `${candidate.name}人物身份权威记录`,
     category,
     grade: "B",
-    url: isMovie ? `https://www.imdb.com/find/?q=${encodeURIComponent(searchTerm)}` : historicalIdentityUrls[candidate.id] ?? "https://ctext.org/",
+    url: isMovie ? movieIdentityUrls[candidate.id] ?? "" : historicalIdentityUrls[candidate.id] ?? "",
     role: isMovie
-      ? "仅用于核对影片与角色身份；角色比较与所有人格表达均为产品原创。"
-      : "仅用于核对历史人物身份和可公开核验的作品或档案线索；比较文字为产品原创。",
-    editionNote: `对应镜像候选 ${candidate.id}；原始线索：${candidate.sourceReferences.join("；")}。`,
+      ? `仅用于核对电影《${filmTitle}》与角色“${characterName}”的对应身份；所有人格比较均为产品原创。`
+      : `仅用于核对历史人物${candidate.name}的身份和可公开核验的作品或档案线索；比较文字为产品原创。`,
+    editionNote: isMovie
+      ? `对应镜像候选 ${candidate.id}；IMDb 影片专页标识于 2026-07-20 核对。`
+      : `对应镜像候选 ${candidate.id}；身份线索于 2026-07-20 按专属权威记录核对。`,
     boundary: isMovie
       ? "不复制剧情、对白、影评或角色人格文本；不把虚构角色当作现实人格诊断。"
       : "不以人物经历推断用户命运，不复制传记文案，也不将单一人物经验当作普遍规律。",
@@ -147,19 +160,58 @@ function identitySource(candidate: { id: string; name: string; sourceReferences:
 const historicalIdentityUrls: Record<string, string> = {
   "historical-confucius": "https://www.unesco.org/en/memory-world/confucius",
   "historical-florence-nightingale": "https://www.nationalarchives.gov.uk/education/resources/florence-nightingale/",
-  "historical-gandhi": "https://www.gandhiheritageportal.org/",
+  "historical-gandhi": "https://www.wikidata.org/wiki/Q1001",
   "historical-helen-keller": "https://www.afb.org/about-afb/history/helen-keller",
-  "historical-li-qingzhao": "https://ctext.org/",
+  "historical-li-qingzhao": "https://www.wikidata.org/wiki/Q464470",
   "historical-marie-curie": "https://www.nobelprize.org/prizes/physics/1903/marie-curie/biographical/",
   "historical-nelson-mandela": "https://www.nelsonmandela.org/content/page/timeline",
-  "historical-sima-guang": "https://ctext.org/wiki.pl?if=gb&res=956454",
-  "historical-sima-qian": "https://ctext.org/shiji",
-  "historical-su-shi": "https://ctext.org/",
-  "historical-tao-yuanming": "https://ctext.org/",
-  "historical-wang-yangming": "https://ctext.org/",
-  "historical-xu-xiake": "https://ctext.org/",
-  "historical-xuanzang": "https://ctext.org/",
-  "historical-zhang-qian": "https://ctext.org/",
+  "historical-sima-guang": "https://www.wikidata.org/wiki/Q33566",
+  "historical-sima-qian": "https://www.wikidata.org/wiki/Q9372",
+  "historical-su-shi": "https://www.dpm.org.cn/lemmas/242068.html",
+  "historical-tao-yuanming": "https://www.wikidata.org/wiki/Q314210",
+  "historical-wang-yangming": "https://museum.shqp.gov.cn/museum/zlhg/20210930/892111.html",
+  "historical-xu-xiake": "https://www.dpm.org.cn/lemmas/241596.html",
+  "historical-xuanzang": "https://www.wikidata.org/wiki/Q42063",
+  "historical-zhang-qian": "https://www.wikidata.org/wiki/Q197276",
+};
+
+const movieIdentityUrls: Record<string, string> = {
+  "movie-cn-ne-zha": "https://www.imdb.com/title/tt10627720/",
+  "movie-cn-zhang-mazi": "https://www.imdb.com/title/tt1533117/",
+  "movie-cn-ma-youtie": "https://www.imdb.com/title/tt17097088/",
+  "movie-cn-liu-peiqiang": "https://www.imdb.com/title/tt7605074/",
+  "movie-cn-cheng-dongqing": "https://www.imdb.com/title/tt2278392/",
+  "movie-cn-jingqiu": "https://www.imdb.com/title/tt1554523/",
+  "movie-cn-jia-xiaoling": "https://www.imdb.com/title/tt13364790/",
+  "movie-cn-cheng-yong": "https://www.imdb.com/title/tt7362036/",
+  "movie-cn-lang-ping": "https://www.imdb.com/title/tt10670442/",
+  "movie-hk-song-zihao": "https://www.imdb.com/title/tt0092263/",
+  "movie-hk-chan-kakweui": "https://www.imdb.com/title/tt0089374/",
+  "movie-hk-yuddy": "https://www.imdb.com/title/tt0101258/",
+  "movie-hk-chen-yongren": "https://www.imdb.com/title/tt0338564/",
+  "movie-hk-li-qiao": "https://www.imdb.com/title/tt0117905/",
+  "movie-hk-su-lizhen": "https://www.imdb.com/title/tt0118694/",
+  "movie-hk-sing": "https://www.imdb.com/title/tt0286112/",
+  "movie-hk-tao-jie": "https://www.imdb.com/title/tt2008006/",
+  "movie-hk-luo-jiner": "https://www.imdb.com/title/tt1602572/",
+  "movie-asia-kim-kiwoo": "https://www.imdb.com/title/tt6751668/",
+  "movie-asia-osamu-shibata": "https://www.imdb.com/title/tt8075192/",
+  "movie-asia-lee-jongsu": "https://www.imdb.com/title/tt7282468/",
+  "movie-asia-kobayashi-daigo": "https://www.imdb.com/title/tt1069238/",
+  "movie-asia-rancho": "https://www.imdb.com/title/tt1187043/",
+  "movie-asia-simin": "https://www.imdb.com/title/tt1832382/",
+  "movie-asia-chihiro": "https://www.imdb.com/title/tt0245429/",
+  "movie-asia-shimada-kanbei": "https://www.imdb.com/title/tt0047478/",
+  "movie-asia-geeta-phogat": "https://www.imdb.com/title/tt5074352/",
+  "movie-west-michael-corleone": "https://www.imdb.com/title/tt0068646/",
+  "movie-west-maximus": "https://www.imdb.com/title/tt0172495/",
+  "movie-west-furiosa": "https://www.imdb.com/title/tt1392190/",
+  "movie-west-forrest-gump": "https://www.imdb.com/title/tt0109830/",
+  "movie-west-katherine-johnson": "https://www.imdb.com/title/tt4846340/",
+  "movie-west-will-hunting": "https://www.imdb.com/title/tt0119217/",
+  "movie-west-andy-dufresne": "https://www.imdb.com/title/tt0111161/",
+  "movie-west-erin-brockovich": "https://www.imdb.com/title/tt0195685/",
+  "movie-west-frodo-baggins": "https://www.imdb.com/title/tt0120737/",
 };
 
 function traditionalSource(source: import("./traditional-sources").TraditionalSource): UnifiedSource {
@@ -207,14 +259,11 @@ export function getAllSources(): UnifiedSource[] {
     title: "西方占星元素与模式分类",
     category: "现代占星文化模型",
     grade: "B",
-    url: "https://spaceplace.nasa.gov/constellations/sp/",
-    role: "用于说明十二太阳星座的元素与模式分组；具体档案的比较文字为产品原创。",
-    editionNote: "以静态本地分类表呈现；NASA 页面仅支持天文学与占星概念边界。",
+    url: "",
+    role: "产品分类约定，用于组织十二太阳星座的元素与模式分组；具体档案比较文字为产品原创。",
+    editionNote: "产品分类约定版本 1.0；无外部分类依据，NASA 仅保留在独立公开参考中说明科学边界。",
     boundary: "元素与模式属于现代占星文化分类，不是科学人格测量，也不能预测未来。",
     accessDate: "2026-07-20",
   });
   return [...registry.values()];
 }
-import { HISTORICAL_MIRRORS } from "./historical-mirrors";
-import { MOVIE_CHARACTERS } from "./movie-characters";
-import { TRADITIONAL_SOURCE_CATALOG } from "./traditional-sources";
