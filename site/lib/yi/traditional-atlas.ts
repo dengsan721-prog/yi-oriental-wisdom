@@ -1,4 +1,5 @@
 import type { BirthInput, FourPillarsResult } from "./types";
+import type { UserFaceSide } from "./atlas-orientation";
 
 export type AtlasMethodId = "face" | "mole" | "palm" | "star";
 
@@ -18,7 +19,7 @@ export type AtlasOption = {
   title: string;
   visual?: AtlasVisual;
   visuals?: Partial<Record<ReferenceGender, AtlasVisual>>;
-  userSide?: "left" | "center" | "right";
+  userSide?: UserFaceSide;
   landmark?: string;
   professionalResult: string;
   traditionalBasis: string;
@@ -53,6 +54,8 @@ type Seed = {
   action: string;
   crop?: string;
   hotspot?: { x: number; y: number };
+  userSide?: UserFaceSide;
+  landmark?: string;
 };
 
 const METHODS: AtlasMethod[] = [
@@ -76,18 +79,18 @@ const faceSeeds: Seed[] = [
 ];
 
 const moleSeeds: Seed[] = [
-  { id:"mole-forehead-center", title:"额中区域", signal:"额部中央的可见标记", plain:"传统多把这里联想到早期规划与公开目标，可拿来观察自己如何面对期待", scene:"新阶段开始时先想清方向，却可能给自己设下过高起点", strength:"目标感与前瞻", pitfall:"把计划当成必须一次实现的承诺", action:"把年度目标拆成三个月验证", hotspot:{x:50,y:19} },
-  { id:"mole-temple-left", title:"左侧太阳穴", signal:"左侧鬓角前方的可见标记", plain:"传统常以迁移与外部环境取象，可用来回看你如何适应陌生场域", scene:"更换团队或城市时，先观察人际规则再决定投入方式", strength:"环境扫描与适应", pitfall:"等待完全看懂才行动", action:"进入新环境七天内完成一次小连接", hotspot:{x:36,y:28} },
-  { id:"mole-temple-right", title:"右侧太阳穴", signal:"右侧鬓角前方的可见标记", plain:"传统常把此区与外部往来联系，可观察出行、跨界与切换节奏", scene:"同时处理本地事务和外部合作时，容易在切换中消耗注意力", strength:"跨场景连接", pitfall:"行程和承诺排得过密", action:"给每次切换预留十五分钟缓冲", hotspot:{x:64,y:28} },
-  { id:"mole-brow", title:"眉间眉内区域", signal:"眉部或两眉之间的可见标记", plain:"传统把眉部视为同伴与计划接口，可用于观察合作中的判断方式", scene:"伙伴意见不同的时候，容易先从规则与可信度评估对方", strength:"识别合作质量", pitfall:"过早形成固定印象", action:"判断前主动寻找一条反证", hotspot:{x:45,y:34} },
-  { id:"mole-eye-lower", title:"眼下区域", signal:"下眼睑至颧上之间的可见标记", plain:"传统多用情感与照料取象，可观察自己是否容易替他人承担情绪", scene:"家人状态低落时，会迅速进入安慰和处理问题的角色", strength:"共情与照顾", pitfall:"把陪伴误成必须解决", action:"先问对方需要倾听还是建议", hotspot:{x:56,y:41} },
-  { id:"mole-nose", title:"鼻部区域", signal:"鼻梁、鼻头或鼻翼附近的可见标记", plain:"传统常以资源流动取象，可用来检查现实中的收支与承诺边界", scene:"面对机会时既关注收益，也担心资源被长期占用", strength:"资源敏感度", pitfall:"只看即时得失忽略长期价值", action:"用时间、现金和关系三栏评估机会", hotspot:{x:50,y:51} },
-  { id:"mole-cheek-left", title:"左侧面颊", signal:"左侧颧面区域的可见标记", plain:"传统多把面颊与执行和影响力联系，可观察推动别人时的力度", scene:"项目遇阻时会主动协调，但有时把建议表达成了要求", strength:"推动与担当", pitfall:"用力过强让他人退后", action:"先问对方愿意承担哪一部分", hotspot:{x:38,y:52} },
-  { id:"mole-cheek-right", title:"右侧面颊", signal:"右侧颧面区域的可见标记", plain:"传统常从此区谈现实权责，可观察你如何拿捏表现与合作", scene:"成果要被看见时，既想负责又担心显得过于突出", strength:"责任感与呈现", pitfall:"在退让和强撑之间摆动", action:"提前约定署名、汇报和决策权", hotspot:{x:62,y:52} },
-  { id:"mole-philtrum", title:"人中区域", signal:"鼻下至上唇之间的可见标记", plain:"传统常借此谈延续与照料，本产品只用来观察长期责任的安排", scene:"面对家庭或长期项目时，容易把持续投入当成不能停下的任务", strength:"耐心与长期陪伴", pitfall:"责任没有交接机制", action:"为长期事项建立替补和休息规则", hotspot:{x:50,y:62} },
-  { id:"mole-mouth-corner", title:"口角区域", signal:"嘴角左右附近的可见标记", plain:"传统多以言语与饮食取象，这里转译为表达习惯和日常边界观察", scene:"气氛紧张时可能用玩笑缓和，却让真实需要没有被听见", strength:"活化氛围与表达", pitfall:"绕开难说的话题", action:"玩笑之后补一句真实诉求", hotspot:{x:61,y:67} },
-  { id:"mole-chin", title:"下巴中央", signal:"颏部中央的可见标记", plain:"传统常把下庭与晚段安顿联系，可观察你对稳定基地的需要", scene:"工作忙乱时会更想整理住处、流程或固定资源，让生活重新可控", strength:"安顿与收尾", pitfall:"把稳定误成拒绝变化", action:"保留一个稳定核心和一个试验空间", hotspot:{x:50,y:78} },
-  { id:"mole-jaw", title:"下颌侧区", signal:"下颌轮廓左右两侧的可见标记", plain:"传统以边界和承载取象，可观察你在压力下如何守住责任范围", scene:"别人临时加任务时，口头答应很快，事后才发现精力已经超载", strength:"承接与执行", pitfall:"责任边界说得太晚", action:"新增承诺前先说当前容量", hotspot:{x:66,y:74} },
+  { id:"mole-forehead-center", title:"额中区域", signal:"额部中央的可见标记", plain:"传统多把这里联想到早期规划与公开目标，可拿来观察自己如何面对期待", scene:"新阶段开始时先想清方向，却可能给自己设下过高起点", strength:"目标感与前瞻", pitfall:"把计划当成必须一次实现的承诺", action:"把年度目标拆成三个月验证", hotspot:{x:50,y:19}, userSide:"center", landmark:"额部正中，发际线与眉间之间" },
+  { id:"mole-temple-left", title:"左侧太阳穴", signal:"左侧鬓角前方的可见标记", plain:"传统常以迁移与外部环境取象，可用来回看你如何适应陌生场域", scene:"更换团队或城市时，先观察人际规则再决定投入方式", strength:"环境扫描与适应", pitfall:"等待完全看懂才行动", action:"进入新环境七天内完成一次小连接", hotspot:{x:36,y:28}, userSide:"left", landmark:"对应侧眉尾外上方与发际线之间" },
+  { id:"mole-temple-right", title:"右侧太阳穴", signal:"右侧鬓角前方的可见标记", plain:"传统常把此区与外部往来联系，可观察出行、跨界与切换节奏", scene:"同时处理本地事务和外部合作时，容易在切换中消耗注意力", strength:"跨场景连接", pitfall:"行程和承诺排得过密", action:"给每次切换预留十五分钟缓冲", hotspot:{x:64,y:28}, userSide:"right", landmark:"对应侧眉尾外上方与发际线之间" },
+  { id:"mole-brow", title:"眉间眉内区域", signal:"眉部或两眉之间的可见标记", plain:"传统把眉部视为同伴与计划接口，可用于观察合作中的判断方式", scene:"伙伴意见不同的时候，容易先从规则与可信度评估对方", strength:"识别合作质量", pitfall:"过早形成固定印象", action:"判断前主动寻找一条反证", hotspot:{x:45,y:34}, userSide:"center", landmark:"两眉之间至眉体内侧" },
+  { id:"mole-eye-lower", title:"眼下区域", signal:"下眼睑至颧上之间的可见标记", plain:"传统多用情感与照料取象，可观察自己是否容易替他人承担情绪", scene:"家人状态低落时，会迅速进入安慰和处理问题的角色", strength:"共情与照顾", pitfall:"把陪伴误成必须解决", action:"先问对方需要倾听还是建议", hotspot:{x:56,y:41}, userSide:"right", landmark:"用户右眼下睑与颧骨上缘之间" },
+  { id:"mole-nose", title:"鼻部区域", signal:"鼻梁、鼻头或鼻翼附近的可见标记", plain:"传统常以资源流动取象，可用来检查现实中的收支与承诺边界", scene:"面对机会时既关注收益，也担心资源被长期占用", strength:"资源敏感度", pitfall:"只看即时得失忽略长期价值", action:"用时间、现金和关系三栏评估机会", hotspot:{x:50,y:51}, userSide:"center", landmark:"鼻梁、鼻头与鼻翼区域" },
+  { id:"mole-cheek-left", title:"左侧面颊", signal:"左侧颧面区域的可见标记", plain:"传统多把面颊与执行和影响力联系，可观察推动别人时的力度", scene:"项目遇阻时会主动协调，但有时把建议表达成了要求", strength:"推动与担当", pitfall:"用力过强让他人退后", action:"先问对方愿意承担哪一部分", hotspot:{x:38,y:52}, userSide:"left", landmark:"对应侧眼外下方至鼻翼外侧的颧面区" },
+  { id:"mole-cheek-right", title:"右侧面颊", signal:"右侧颧面区域的可见标记", plain:"传统常从此区谈现实权责，可观察你如何拿捏表现与合作", scene:"成果要被看见时，既想负责又担心显得过于突出", strength:"责任感与呈现", pitfall:"在退让和强撑之间摆动", action:"提前约定署名、汇报和决策权", hotspot:{x:62,y:52}, userSide:"right", landmark:"对应侧眼外下方至鼻翼外侧的颧面区" },
+  { id:"mole-philtrum", title:"人中区域", signal:"鼻下至上唇之间的可见标记", plain:"传统常借此谈延续与照料，本产品只用来观察长期责任的安排", scene:"面对家庭或长期项目时，容易把持续投入当成不能停下的任务", strength:"耐心与长期陪伴", pitfall:"责任没有交接机制", action:"为长期事项建立替补和休息规则", hotspot:{x:50,y:62}, userSide:"center", landmark:"鼻底与上唇之间的纵向沟" },
+  { id:"mole-mouth-corner", title:"口角区域", signal:"嘴角左右附近的可见标记", plain:"传统多以言语与饮食取象，这里转译为表达习惯和日常边界观察", scene:"气氛紧张时可能用玩笑缓和，却让真实需要没有被听见", strength:"活化氛围与表达", pitfall:"绕开难说的话题", action:"玩笑之后补一句真实诉求", hotspot:{x:61,y:67}, userSide:"right", landmark:"用户右侧上下唇交界外缘" },
+  { id:"mole-chin", title:"下巴中央", signal:"颏部中央的可见标记", plain:"传统常把下庭与晚段安顿联系，可观察你对稳定基地的需要", scene:"工作忙乱时会更想整理住处、流程或固定资源，让生活重新可控", strength:"安顿与收尾", pitfall:"把稳定误成拒绝变化", action:"保留一个稳定核心和一个试验空间", hotspot:{x:50,y:78}, userSide:"center", landmark:"下唇下方至下颌底缘的正中区域" },
+  { id:"mole-jaw", title:"下颌侧区", signal:"下颌轮廓左右两侧的可见标记", plain:"传统以边界和承载取象，可观察你在压力下如何守住责任范围", scene:"别人临时加任务时，口头答应很快，事后才发现精力已经超载", strength:"承接与执行", pitfall:"责任边界说得太晚", action:"新增承诺前先说当前容量", hotspot:{x:66,y:74}, userSide:"right", landmark:"用户右侧嘴角外下方至下颌角之间" },
 ];
 
 const palmSeeds: Seed[] = [
@@ -223,6 +226,7 @@ function makeOption(method: AtlasMethodId, seed: Seed): AtlasOption {
     id: seed.id,
     title: seed.title,
     ...visual,
+    ...(method === "mole" ? { userSide: seed.userSide, landmark: seed.landmark } : {}),
     professionalResult: `${seed.title}｜传统图谱把“${seed.signal}”作为单项观察线索，不能脱离整体与现实经历独立定论。`,
     traditionalBasis: basis,
     plainLanguage: `${seed.plain}。这是一道自我提问，不是固定性格标签。`,
