@@ -158,13 +158,13 @@ function identitySource(candidate: IdentityCandidate, category: "历史人物镜
 }
 
 const historicalIdentityUrls: Record<string, string> = {
-  "historical-confucius": "https://www.unesco.org/en/memory-world/confucius",
+  "historical-confucius": "https://www.wikidata.org/wiki/Q4604",
   "historical-florence-nightingale": "https://www.nationalarchives.gov.uk/education/resources/florence-nightingale/",
   "historical-gandhi": "https://www.wikidata.org/wiki/Q1001",
   "historical-helen-keller": "https://www.afb.org/about-afb/history/helen-keller",
   "historical-li-qingzhao": "https://www.wikidata.org/wiki/Q464470",
   "historical-marie-curie": "https://www.nobelprize.org/prizes/physics/1903/marie-curie/biographical/",
-  "historical-nelson-mandela": "https://www.nelsonmandela.org/content/page/timeline",
+  "historical-nelson-mandela": "https://www.nelsonmandela.org/biography-timeline",
   "historical-sima-guang": "https://www.wikidata.org/wiki/Q33566",
   "historical-sima-qian": "https://www.wikidata.org/wiki/Q9372",
   "historical-su-shi": "https://www.dpm.org.cn/lemmas/242068.html",

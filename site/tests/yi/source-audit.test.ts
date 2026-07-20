@@ -17,13 +17,13 @@ const chart = calculateFourPillars({
 });
 
 const expectedHistoricalUrls: Record<string, string> = {
-  "historical-confucius": "https://www.unesco.org/en/memory-world/confucius",
+  "historical-confucius": "https://www.wikidata.org/wiki/Q4604",
   "historical-florence-nightingale": "https://www.nationalarchives.gov.uk/education/resources/florence-nightingale/",
   "historical-gandhi": "https://www.wikidata.org/wiki/Q1001",
   "historical-helen-keller": "https://www.afb.org/about-afb/history/helen-keller",
   "historical-li-qingzhao": "https://www.wikidata.org/wiki/Q464470",
   "historical-marie-curie": "https://www.nobelprize.org/prizes/physics/1903/marie-curie/biographical/",
-  "historical-nelson-mandela": "https://www.nelsonmandela.org/content/page/timeline",
+  "historical-nelson-mandela": "https://www.nelsonmandela.org/biography-timeline",
   "historical-sima-guang": "https://www.wikidata.org/wiki/Q33566",
   "historical-sima-qian": "https://www.wikidata.org/wiki/Q9372",
   "historical-su-shi": "https://www.dpm.org.cn/lemmas/242068.html",
@@ -32,6 +32,45 @@ const expectedHistoricalUrls: Record<string, string> = {
   "historical-xu-xiake": "https://www.dpm.org.cn/lemmas/241596.html",
   "historical-xuanzang": "https://www.wikidata.org/wiki/Q42063",
   "historical-zhang-qian": "https://www.wikidata.org/wiki/Q197276",
+};
+
+const expectedMovieUrls: Record<string, string> = {
+  "movie-cn-ne-zha": "https://www.imdb.com/title/tt10627720/",
+  "movie-cn-zhang-mazi": "https://www.imdb.com/title/tt1533117/",
+  "movie-cn-ma-youtie": "https://www.imdb.com/title/tt17097088/",
+  "movie-cn-liu-peiqiang": "https://www.imdb.com/title/tt7605074/",
+  "movie-cn-cheng-dongqing": "https://www.imdb.com/title/tt2278392/",
+  "movie-cn-jingqiu": "https://www.imdb.com/title/tt1554523/",
+  "movie-cn-jia-xiaoling": "https://www.imdb.com/title/tt13364790/",
+  "movie-cn-cheng-yong": "https://www.imdb.com/title/tt7362036/",
+  "movie-cn-lang-ping": "https://www.imdb.com/title/tt10670442/",
+  "movie-hk-song-zihao": "https://www.imdb.com/title/tt0092263/",
+  "movie-hk-chan-kakweui": "https://www.imdb.com/title/tt0089374/",
+  "movie-hk-yuddy": "https://www.imdb.com/title/tt0101258/",
+  "movie-hk-chen-yongren": "https://www.imdb.com/title/tt0338564/",
+  "movie-hk-li-qiao": "https://www.imdb.com/title/tt0117905/",
+  "movie-hk-su-lizhen": "https://www.imdb.com/title/tt0118694/",
+  "movie-hk-sing": "https://www.imdb.com/title/tt0286112/",
+  "movie-hk-tao-jie": "https://www.imdb.com/title/tt2008006/",
+  "movie-hk-luo-jiner": "https://www.imdb.com/title/tt1602572/",
+  "movie-asia-kim-kiwoo": "https://www.imdb.com/title/tt6751668/",
+  "movie-asia-osamu-shibata": "https://www.imdb.com/title/tt8075192/",
+  "movie-asia-lee-jongsu": "https://www.imdb.com/title/tt7282468/",
+  "movie-asia-kobayashi-daigo": "https://www.imdb.com/title/tt1069238/",
+  "movie-asia-rancho": "https://www.imdb.com/title/tt1187043/",
+  "movie-asia-simin": "https://www.imdb.com/title/tt1832382/",
+  "movie-asia-chihiro": "https://www.imdb.com/title/tt0245429/",
+  "movie-asia-shimada-kanbei": "https://www.imdb.com/title/tt0047478/",
+  "movie-asia-geeta-phogat": "https://www.imdb.com/title/tt5074352/",
+  "movie-west-michael-corleone": "https://www.imdb.com/title/tt0068646/",
+  "movie-west-maximus": "https://www.imdb.com/title/tt0172495/",
+  "movie-west-furiosa": "https://www.imdb.com/title/tt1392190/",
+  "movie-west-forrest-gump": "https://www.imdb.com/title/tt0109830/",
+  "movie-west-katherine-johnson": "https://www.imdb.com/title/tt4846340/",
+  "movie-west-will-hunting": "https://www.imdb.com/title/tt0119217/",
+  "movie-west-andy-dufresne": "https://www.imdb.com/title/tt0111161/",
+  "movie-west-erin-brockovich": "https://www.imdb.com/title/tt0195685/",
+  "movie-west-frodo-baggins": "https://www.imdb.com/title/tt0120737/",
 };
 
 describe("unified Yi source registry", () => {
@@ -112,5 +151,13 @@ describe("unified Yi source registry", () => {
     const model = getAllSources().find(source => source.id === "model.western-astrology-element-modality")!;
     expect(model.url).toBe("");
     expect(model.editionNote).toContain("产品分类约定");
+  });
+
+  it("matches every movie candidate to its independently verified direct IMDb record", () => {
+    const registry = new Map(getAllSources().map(source => [source.id, source]));
+    expect(Object.keys(expectedMovieUrls)).toEqual(MOVIE_CHARACTERS.map(candidate => candidate.id));
+    for (const candidate of MOVIE_CHARACTERS) {
+      expect(registry.get(candidate.id)?.url).toBe(expectedMovieUrls[candidate.id]);
+    }
   });
 });

@@ -47,7 +47,7 @@ The two overlapping classical records (`classic.san-ming-tong-hui`, `classic.di-
 - Classical originals, later compilation/commentary, and product-original interpretation remain separated by `role`, `editionNote`, and `boundary` fields.
 - Calculation libraries are labelled as program dependencies; they do not provide personality or event predictions.
 - Product heuristics are explicitly labelled “产品原创” and are never displayed as classical authority.
-- Historical records only verify identity and public documentary/works context. Film records only verify film/character identity through a stable film database search reference. The comparison prose remains local product-original copy.
+- Historical records only verify identity and public documentary/works context. Film records only verify film/character identity through direct candidate-specific IMDb title records. The comparison prose remains local product-original copy.
 - No external synopsis, review, dialogue, biography wording, or modern web personality text was copied.
 - Web-source spot checks on 2026-07-20 confirmed current institutional records including the American Foundation for the Blind’s Helen Keller archive, The National Archives’ Florence Nightingale resource, the Gandhi Heritage Portal, and NASA’s constellation boundary context.
 - All URLs are HTTPS; only the explicitly edition-pending traditional entries retain an empty URL, with their pending status recorded in the edition note.
@@ -107,3 +107,13 @@ This section supersedes the earlier film-search and generic-person URL strategy.
 | `pnpm run lint` | Passed — no findings |
 | Targeted strict TypeScript command from the brief | Passed |
 | `git diff --check` | Passed after the report update |
+
+## Second re-review fix — live authority URLs and exact film oracle
+
+- Verified the live Confucius structured authority record at Wikidata Q4604 and replaced the dead UNESCO URL.
+- Verified the Nelson Mandela Foundation’s live candidate-specific page and replaced the dead timeline URL with `https://www.nelsonmandela.org/biography-timeline`.
+- **RED:** The corrected 15-person URL oracle failed against the old Confucius production URL, demonstrating the dead-link correction before production was changed.
+- Added an independently authored 36-candidate IMDb oracle to `source-audit.test.ts`. It contains one exact direct URL for every movie candidate and asserts candidate order plus candidate-by-candidate equality.
+- **Mutation sensitivity:** Before production changes, temporarily changed the test oracle for `movie-cn-ne-zha` from `tt10627720` to `tt10627721`. The isolated movie-oracle test failed with the expected URL mismatch; the mutation was then reverted and is not committed.
+- Corrected the earlier wording so the report consistently describes direct candidate-specific IMDb title records.
+- **GREEN:** focused source suites passed 36/36; full Vitest passed 403/403; lint, targeted strict TypeScript, and `git diff --check` passed.
