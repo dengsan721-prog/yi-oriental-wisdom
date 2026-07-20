@@ -82,61 +82,89 @@ type PassageCandidate = MirrorCandidate
   & Partial<Pick<MovieCharacterRecord, "filmTitle" | "characterName">>
   & Partial<Record<PassageField, string>>;
 
-const namedInstitutions = [
-  "American Foundation for the Blind",
-  "BirdLife International",
-  "Center for Whale Research",
-  "Cornell Lab of Ornithology",
-  "Encyclopaedia Britannica",
-  "Gandhi Heritage Portal",
-  "International Crane Foundation",
-  "IUCN Red List",
-  "Monterey Bay Aquarium",
-  "NASA",
-  "Nelson Mandela Foundation",
-  "NOAA Fisheries",
-  "Nobel Prize",
-  "San Diego Zoo Wildlife Alliance",
-  "Smithsonian Institution",
-  "Smithsonian Ocean",
-  "Smithsonian's National Zoo",
-  "Snow Leopard Trust",
-  "The National Archives (UK)",
-  "U.S. Fish & Wildlife Service",
-];
-const primaryAuthors = [
-  "Florence Nightingale",
-  "Helen Keller",
-  "Li Qingzhao",
-  "Marie Curie",
-  "Nelson Mandela",
-  "孔子弟子及再传弟子编",
-  "李清照",
-  "钱谦益",
-  "司马光",
-  "司马迁",
-  "苏轼",
-  "陶渊明",
-  "王守仁",
-  "徐弘祖",
-  "玄奘、辩机",
-  "慧立、彦悰",
-];
-const authoritativeHosts = ["filmarchive.gov.hk"];
+// Intentionally independent of the production arrays: corpus additions require a reviewed entry here.
+const vettedSourceReferences: Record<string, readonly string[]> = {
+  "animal-albatross": ["Encyclopaedia Britannica《Albatross》物种条目", "Cornell Lab of Ornithology《Albatrosses》鸟类指南"],
+  "animal-bottlenose-dolphin": ["NOAA Fisheries《Common Bottlenose Dolphin》物种档案", "Smithsonian Ocean《Bottlenose Dolphin》物种介绍"],
+  "animal-elephant-herd": ["Smithsonian's National Zoo《African Elephant》物种档案", "IUCN Red List《Loxodonta africana》评估条目"],
+  "animal-gray-wolf": ["Smithsonian's National Zoo《Gray Wolf》物种档案", "U.S. Fish & Wildlife Service《Gray Wolf》物种档案"],
+  "animal-green-sea-turtle": ["NOAA Fisheries《Green Turtle》物种档案", "IUCN Red List《Chelonia mydas》评估条目"],
+  "animal-honeybee-colony": ["Smithsonian Institution《Honey Bees》教育资料", "Encyclopaedia Britannica《Honeybee》物种条目"],
+  "animal-manatee": ["U.S. Fish & Wildlife Service《West Indian Manatee》物种档案", "Smithsonian's National Zoo《Manatee》物种介绍"],
+  "animal-meerkat": ["Smithsonian's National Zoo《Meerkat》物种档案", "San Diego Zoo Wildlife Alliance《Meerkat》动物档案"],
+  "animal-orca-pod": ["NOAA Fisheries《Killer Whale》物种档案", "Center for Whale Research《Orca Survey》研究项目资料"],
+  "animal-peregrine-falcon": ["Cornell Lab of Ornithology《Peregrine Falcon》鸟类指南", "U.S. Fish & Wildlife Service《Peregrine Falcon》物种资料"],
+  "animal-giant-pacific-octopus": ["Monterey Bay Aquarium《Giant Pacific Octopus》动物指南", "Smithsonian Ocean《Giant Pacific Octopus》物种介绍"],
+  "animal-red-crowned-crane": ["International Crane Foundation《Red-crowned Crane》物种档案", "BirdLife International《Red-crowned Crane》物种资料"],
+  "animal-sloth": ["Smithsonian's National Zoo《Sloth》物种档案", "Encyclopaedia Britannica《Sloth》物种条目"],
+  "animal-snow-leopard": ["Smithsonian's National Zoo《Snow Leopard》物种档案", "Snow Leopard Trust《About Snow Leopards》物种资料"],
+  "animal-wild-goose-flock": ["Cornell Lab of Ornithology《Greater White-fronted Goose》鸟类指南", "BirdLife International《Swan Goose》物种资料"],
+  "historical-confucius": ["孔子弟子及再传弟子编《论语》", "《史记·孔子世家》"],
+  "historical-florence-nightingale": ["Florence Nightingale《Notes on Nursing》", "The National Archives (UK)《Florence Nightingale》馆藏指南"],
+  "historical-gandhi": ["Gandhi Heritage Portal《The Story of My Experiments with Truth》", "Collected Works of Mahatma Gandhi，印度政府出版档案"],
+  "historical-helen-keller": ["Helen Keller《The Story of My Life》", "American Foundation for the Blind《Helen Keller Biography》"],
+  "historical-li-qingzhao": ["李清照《金石录后序》", "《宋史·李格非传》及相关记载"],
+  "historical-marie-curie": ["Nobel Prize《Marie Curie – Biographical》", "Marie Curie《Pierre Curie》传记及自传笔记"],
+  "historical-nelson-mandela": ["Nelson Mandela Foundation《Timeline》", "Nelson Mandela《Long Walk to Freedom》"],
+  "historical-sima-guang": ["司马光《资治通鉴》", "《宋史·司马光传》"],
+  "historical-sima-qian": ["司马迁《史记·太史公自序》", "《汉书·司马迁传》"],
+  "historical-su-shi": ["苏轼《东坡全集》", "《宋史·苏轼传》"],
+  "historical-tao-yuanming": ["陶渊明《归去来兮辞》及诗文", "《晋书·陶潜传》"],
+  "historical-wang-yangming": ["王守仁《传习录》", "《明史·王守仁传》"],
+  "historical-xu-xiake": ["徐弘祖《徐霞客游记》", "钱谦益《徐霞客传》"],
+  "historical-xuanzang": ["玄奘、辩机《大唐西域记》", "慧立、彦悰《大唐大慈恩寺三藏法师传》"],
+  "historical-zhang-qian": ["《史记·大宛列传》", "《汉书·张骞李广利传》"],
+  "movie-cn-ne-zha": ["电影《哪吒之魔童降世》（2019）"],
+  "movie-cn-zhang-mazi": ["电影《让子弹飞》（2010）"],
+  "movie-cn-ma-youtie": ["电影《隐入尘烟》（2022）"],
+  "movie-cn-liu-peiqiang": ["电影《流浪地球》（2019）"],
+  "movie-cn-cheng-dongqing": ["电影《中国合伙人》（2013）"],
+  "movie-cn-jingqiu": ["电影《山楂树之恋》（2010）"],
+  "movie-cn-jia-xiaoling": ["电影《你好，李焕英》（2021）"],
+  "movie-cn-cheng-yong": ["电影《我不是药神》（2018）"],
+  "movie-cn-lang-ping": ["电影《夺冠》（2020）"],
+  "movie-hk-song-zihao": ["电影《英雄本色》（1986）"],
+  "movie-hk-chan-kakweui": ["电影《警察故事》（1985）"],
+  "movie-hk-yuddy": ["电影《阿飞正传》（1990）"],
+  "movie-hk-chen-yongren": ["电影《无间道》（2002）"],
+  "movie-hk-li-qiao": ["电影《甜蜜蜜》（1996）"],
+  "movie-hk-su-lizhen": ["电影《花样年华》（2000）"],
+  "movie-hk-sing": ["电影《少林足球》（2001）"],
+  "movie-hk-tao-jie": ["电影《桃姐》（2011）"],
+  "movie-hk-luo-jiner": ["电影《岁月神偷》（2010）", "https://www.filmarchive.gov.hk/sc/web/hkfa/pe-event-2021-mna-fs-film03.html"],
+  "movie-asia-kim-kiwoo": ["电影《寄生虫》（2019）"],
+  "movie-asia-osamu-shibata": ["电影《小偷家族》（2018）"],
+  "movie-asia-lee-jongsu": ["电影《燃烧》（2018）"],
+  "movie-asia-kobayashi-daigo": ["电影《入殓师》（2008）"],
+  "movie-asia-rancho": ["电影《三傻大闹宝莱坞》（2009）"],
+  "movie-asia-simin": ["电影《一次别离》（2011）"],
+  "movie-asia-chihiro": ["电影《千与千寻》（2001）"],
+  "movie-asia-shimada-kanbei": ["电影《七武士》（1954）"],
+  "movie-asia-geeta-phogat": ["电影《摔跤吧！爸爸》（2016）"],
+  "movie-west-michael-corleone": ["电影《教父》（1972）"],
+  "movie-west-maximus": ["电影《角斗士》（2000）"],
+  "movie-west-furiosa": ["电影《疯狂的麦克斯4：狂暴之路》（2015）"],
+  "movie-west-forrest-gump": ["电影《阿甘正传》（1994）"],
+  "movie-west-katherine-johnson": ["电影《隐藏人物》（2016）", "NASA《Katherine Johnson Biography》"],
+  "movie-west-will-hunting": ["电影《心灵捕手》（1997）"],
+  "movie-west-andy-dufresne": ["电影《肖申克的救赎》（1994）"],
+  "movie-west-erin-brockovich": ["电影《永不妥协》（2000）"],
+  "movie-west-frodo-baggins": ["电影《指环王：护戒使者》（2001）"],
+};
 
-function isRecognizableSource(source: string): boolean {
-  if (/^电影《[^》]{2,}》（(?:19|20)\d{2}）$/.test(source)) return true;
-  if (/^《(?:史记|汉书|晋书|宋史|明史)·[^》]+》/.test(source)) return true;
-  if (primaryAuthors.some(author => source.startsWith(`${author}《`))) return true;
-  if (namedInstitutions.some(institution => source.startsWith(`${institution}《`))) return true;
-  if (source.endsWith("，印度政府出版档案")) return true;
-  try {
-    const url = new URL(source);
-    return url.protocol === "https:"
-      && authoritativeHosts.some(host => url.hostname === host || url.hostname.endsWith(`.${host}`));
-  } catch {
-    return false;
-  }
+function isVettedSource(candidate: MirrorCandidate, source: string): boolean {
+  if (!vettedSourceReferences[candidate.id]?.includes(source)) return false;
+  const filmCitation = /^电影《([^》]+)》（(?:19|20)\d{2}）$/.exec(source);
+  if (!filmCitation) return true;
+  return candidate.kind === "movie"
+    && filmCitation[1] === (candidate as MovieCharacterRecord).filmTitle;
+}
+
+function candidateById(id: string): MirrorCandidate {
+  const candidate = [...ANIMAL_MIRRORS, ...HISTORICAL_MIRRORS, ...MOVIE_CHARACTERS]
+    .find(item => item.id === id);
+  if (!candidate) throw new Error(`Unknown mirror candidate: ${id}`);
+  return candidate;
 }
 
 function containsExcludedCopyrightArtifact(value: string): boolean {
@@ -163,8 +191,9 @@ function expectSubstantiveCandidate(candidate: MirrorCandidate) {
     expect(candidate[field].length, `${candidate.id}.${field}`).toBeGreaterThanOrEqual(30);
   }
   expect(candidate.sourceReferences.length).toBeGreaterThan(0);
+  expect(candidate.sourceReferences, `${candidate.id} source manifest`).toEqual(vettedSourceReferences[candidate.id]);
   for (const source of candidate.sourceReferences) {
-    expect(isRecognizableSource(source), `${candidate.id}: ${source}`).toBe(true);
+    expect(isVettedSource(candidate, source), `${candidate.id}: ${source}`).toBe(true);
   }
 }
 
@@ -238,13 +267,27 @@ function rankedIds(candidates: MirrorCandidate[], requireDistinctStages = false)
 }
 
 describe("four-layer mirror corpora", () => {
-  it("recognizes only primary, institutional or authoritative source references", () => {
-    expect(isRecognizableSource("电影《岁月神偷》（2010）")).toBe(true);
-    expect(isRecognizableSource("NOAA Fisheries《Green Turtle》物种档案")).toBe(true);
-    expect(isRecognizableSource("https://www.filmarchive.gov.hk/sc/web/hkfa/example.html")).toBe(true);
-    expect(isRecognizableSource("凭空编造的权威材料")).toBe(false);
-    expect(isRecognizableSource("伪造NASA《不存在的研究》")).toBe(false);
-    expect(isRecognizableSource("https://example.com/unknown-source")).toBe(false);
+  it("accepts only record-bound vetted source references", () => {
+    const years = candidateById("movie-hk-luo-jiner") as MovieCharacterRecord;
+    const turtle = candidateById("animal-green-sea-turtle");
+    const changedFilm = { ...years, filmTitle: "伪片名" };
+    const primaryFilmSource = "电影《岁月神偷》（2010）";
+
+    expect(isVettedSource(years, primaryFilmSource)).toBe(true);
+    expect(isVettedSource(turtle, "NOAA Fisheries《Green Turtle》物种档案")).toBe(true);
+    expect(isVettedSource(years, "https://www.filmarchive.gov.hk/sc/web/hkfa/pe-event-2021-mna-fs-film03.html")).toBe(true);
+    expect(isVettedSource(changedFilm, primaryFilmSource)).toBe(false);
+    expect(isVettedSource(years, "凭空编造的权威材料")).toBe(false);
+    expect(isVettedSource(years, "伪造NASA《不存在的研究》")).toBe(false);
+    expect(isVettedSource(years, "https://example.com/unknown-source")).toBe(false);
+  });
+
+  it.each([
+    ["movie-west-katherine-johnson", "NASA《不存在的研究》"],
+    ["historical-confucius", "《史记·不存在篇》"],
+    ["historical-gandhi", "随意内容，印度政府出版档案"],
+  ])("rejects a fabricated citation attributed to a vetted source: %s", (id, source) => {
+    expect(isVettedSource(candidateById(id), source)).toBe(false);
   });
 
   it("detects dialogue, synopsis, marketing and image artifacts in stored text", () => {
