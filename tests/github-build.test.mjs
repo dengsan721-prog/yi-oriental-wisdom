@@ -48,8 +48,11 @@ test("GitHub build is the full bundled React app", async () => {
   assert.doesNotMatch(js, /称骨/);
   assert.doesNotMatch(js, /getUserMedia|FileReader|type=["']file["']|capture=["']/);
   assert.match(js, /\/yi-oriental-wisdom\//);
-  assert.match(js, /reference\/face-reference\.webp/);
-  assert.match(js, /reference\/face-feature-reference\.webp/);
+  assert.match(js, /reference\/face-.{0,100}(?:features.{0,100}shapes|shapes.{0,100}features).{0,100}-male\.webp/);
+  assert.match(js, /reference\/face-.{0,100}(?:features.{0,100}shapes|shapes.{0,100}features).{0,100}-female\.webp/);
+  assert.match(js, /reference\/mole-male-/);
+  assert.match(js, /reference\/mole-female-/);
+  assert.doesNotMatch(js, /reference\/(?:face-reference|face-feature-reference|mole-reference)\.webp/);
   assert.match(js, /reference\/palm-shape-reference\.webp/);
   assert.match(js, /版本说明/);
   assert.match(js, /明代佚名编纂/);
@@ -67,7 +70,6 @@ test("GitHub build is the full bundled React app", async () => {
   assert.doesNotMatch(html, /href="#birth"/);
   assert.doesNotMatch(html, /function calculateChart/);
   for (const asset of [
-    "face-reference.webp", "face-feature-reference.webp", "mole-reference.webp",
     "palm-reference.webp", "palm-shape-reference.webp",
   ]) {
     const bytes = await readFile(new URL(`../../docs/reference/${asset}`, import.meta.url));
