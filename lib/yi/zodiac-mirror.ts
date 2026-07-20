@@ -23,9 +23,10 @@ export type ZodiacMirror = {
   confidence: "high" | "limited";
   yearAmbiguous: boolean;
   monthAmbiguous: boolean;
+  dayAmbiguous: boolean;
 };
 
-type ZodiacContent = Omit<ZodiacMirror, "branch" | "element" | "yinYang" | "chartAgreement" | "chartDifference" | "sources" | "confidence" | "yearAmbiguous" | "monthAmbiguous">;
+type ZodiacContent = Omit<ZodiacMirror, "branch" | "element" | "yinYang" | "chartAgreement" | "chartDifference" | "sources" | "confidence" | "yearAmbiguous" | "monthAmbiguous" | "dayAmbiguous">;
 
 const content: Record<string, ZodiacContent> = {
   子: {
@@ -237,25 +238,39 @@ export function buildZodiacMirror(chart: FourPillarsResult): ZodiacMirror {
   const record = content[branch];
   if (!record) throw new Error(`Unsupported zodiac branch: ${branch}`);
   const element = branchElements[branch];
-  const dayMaster = chart.professional.dayMaster;
   const monthBranch = chart.pillars.month.branch;
-  const command = monthCommand(chart);
-  const interaction = elementInteraction(element, dayMaster.element);
   const yearAmbiguous = chart.ambiguousPillars.includes("year");
   const monthAmbiguous = chart.ambiguousPillars.includes("month");
-  const lens = commandLens(monthAmbiguous ? "待核" : command);
+  const dayAmbiguous = chart.ambiguousPillars.includes("day")
+    || chart.professional.ambiguousFields.includes("dayMaster")
+    || chart.professional.ambiguousFields.includes("dayPillar");
   const yearBasis = yearAmbiguous ? `年柱待核，当前代表候选年支${branch}属${element}` : `年支${branch}属${element}`;
-  const monthBasis = monthAmbiguous ? `月令代表候选为月支${monthBranch}、本气十神${command}` : `月支${monthBranch}本气十神为${command}`;
+  let chartAgreement: string;
+  let chartDifference: string;
+  if (dayAmbiguous) {
+    const monthBasis = monthAmbiguous ? `月柱待核，当前月支代表候选为${monthBranch}` : `已知月支${monthBranch}`;
+    chartAgreement = `与八字主盘相互印证：${yearBasis}，${monthBasis}；日主待核，候选日柱与日主未用于互证，也未据其推导月令十神。保留年支文化记录与已知月支，不扩写日主五行互动。`;
+    chartDifference = `主盘差异提醒：生肖只读取${yearAmbiguous ? "年柱代表候选" : "年支"}${branch}属${element}这一层，${monthAmbiguous ? `月支${monthBranch}仍为代表候选` : `已知月支${monthBranch}`}；日主待核，候选日柱与日主未用于互证。补全可靠日柱后再比较日主五行与月令十神；若与现实经历冲突，以完整主盘和可观察事实为先。`;
+  } else {
+    const dayMaster = chart.professional.dayMaster;
+    const command = monthCommand(chart);
+    const interaction = elementInteraction(element, dayMaster.element);
+    const lens = commandLens(monthAmbiguous ? "待核" : command);
+    const monthBasis = monthAmbiguous ? `月令代表候选为月支${monthBranch}、本气十神${command}` : `月支${monthBranch}本气十神为${command}`;
+    chartAgreement = `与八字主盘相互印证：${yearBasis}，日主${dayMaster.stem}${dayMaster.element}，${monthBasis}。${interaction}；${lens.agreement}。`;
+    chartDifference = `主盘差异提醒：生肖只读取${yearAmbiguous ? "年柱代表候选" : "年支"}${branch}属${element}这一层，主盘还包含日主${dayMaster.stem}${dayMaster.element}、${monthAmbiguous ? "待核的月支候选" : "月支"}${monthBranch}${command}及其余干支。${lens.calibration}；若与现实经历冲突，以完整主盘和可观察事实为先。`;
+  }
   return {
     ...record,
     branch,
     element,
     yinYang: yangBranches.has(branch) ? "阳" : "阴",
-    chartAgreement: `与八字主盘相互印证：${yearBasis}，日主${dayMaster.stem}${dayMaster.element}，${monthBasis}。${interaction}；${lens.agreement}。`,
-    chartDifference: `主盘差异提醒：生肖只读取${yearAmbiguous ? "年柱代表候选" : "年支"}${branch}属${element}这一层，主盘还包含日主${dayMaster.stem}${dayMaster.element}、${monthAmbiguous ? "待核的月支候选" : "月支"}${monthBranch}${command}及其余干支。${lens.calibration}；若与现实经历冲突，以完整主盘和可观察事实为先。`,
+    chartAgreement,
+    chartDifference,
     sources: sourceIds,
-    confidence: yearAmbiguous || monthAmbiguous ? "limited" : "high",
+    confidence: yearAmbiguous || monthAmbiguous || dayAmbiguous ? "limited" : "high",
     yearAmbiguous,
     monthAmbiguous,
+    dayAmbiguous,
   };
 }
