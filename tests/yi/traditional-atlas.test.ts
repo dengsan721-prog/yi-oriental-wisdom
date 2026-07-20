@@ -10,6 +10,7 @@ import {
   resolveAtlasVisual,
 } from "../../lib/yi/traditional-atlas";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
+import { ZODIAC_PROFILES } from "../../lib/yi/zodiac-profiles";
 
 const FACE_IDS = [
   "face-oval", "face-round", "face-square", "face-long", "face-heart",
@@ -425,5 +426,36 @@ describe("mature face, mole and palm content", () => {
     expect(starOptions.every((option) => !TRADITIONAL_CONTENT[option.id])).toBe(true);
     expect(starOptions.every((option) => option.sourceIds[0] === "culture.nasa-constellations")).toBe(true);
     expect(starOptions.every((option) => option.caution.includes("不是完整星盘"))).toBe(true);
+  });
+
+  it("maps every complete sun-sign profile into the existing seven atlas layers", () => {
+    const starOptions = getAtlasGroups("star").flatMap((group) => group.options);
+
+    for (const [sign, profile] of Object.entries(ZODIAC_PROFILES)) {
+      const option = starOptions.find((candidate) => candidate.id === `star-${sign}`)!;
+      expect(option.professionalResult, sign).toContain(`元素：${profile.element}`);
+      expect(option.professionalResult, sign).toContain(`模式：${profile.modality}`);
+      expect(option.professionalResult, sign).toContain(profile.coreDrive);
+      expect(option.traditionalBasis, sign).toContain("文化分类");
+      expect(option.traditionalBasis, sign).toContain(profile.outerStyle);
+      expect(option.traditionalBasis, sign).toContain(profile.innerNeed);
+      expect(option.plainLanguage, sign).toContain(profile.commonMisreading);
+      expect(option.lifeScene, sign).toContain(`恋爱方式：${profile.loveStyle}`);
+      expect(option.lifeScene, sign).toContain(`朋友关系：${profile.friendshipStyle}`);
+      expect(option.lifeScene, sign).toContain(`工作状态：${profile.workStyle}`);
+      expect(option.strengthAndPitfall, sign).toContain(`成熟版本：${profile.matureVersion}`);
+      expect(option.strengthAndPitfall, sign).toContain(`压力反应：${profile.stressResponse}`);
+      expect(option.action, sign).toContain(profile.growthDirection);
+      expect(option.chartComparison, sign).toBe(profile.chartComparison);
+      expect(option.caution, sign).toBe(profile.caution);
+      expect(option.sourceIds, sign).toEqual(profile.sourceReferences);
+
+      for (const field of [
+        "coreDrive", "outerStyle", "innerNeed", "loveStyle", "friendshipStyle", "workStyle",
+        "stressResponse", "commonMisreading", "matureVersion", "growthDirection", "chartComparison",
+      ] as const) {
+        expect(JSON.stringify(option), `${sign}:${field}`).toContain(profile[field]);
+      }
+    }
   });
 });
