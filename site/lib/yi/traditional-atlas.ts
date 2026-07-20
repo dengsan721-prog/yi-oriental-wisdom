@@ -1,14 +1,25 @@
-import type { FourPillarsResult } from "./types";
+import type { BirthInput, FourPillarsResult } from "./types";
 
 export type AtlasMethodId = "face" | "mole" | "palm" | "star";
 
-export type AtlasOption = {
-  id: string;
-  title: string;
+export type ReferenceGender = "male" | "female";
+
+export type AtlasVisual = {
   image: string;
   imageAspect: number;
   visualFocus?: { x: number; y: number; width: number; height: number };
   hotspot?: { x: number; y: number };
+  view?: "front" | "user-left" | "user-right";
+  mirrored: boolean;
+};
+
+export type AtlasOption = {
+  id: string;
+  title: string;
+  visual?: AtlasVisual;
+  visuals?: Partial<Record<ReferenceGender, AtlasVisual>>;
+  userSide?: "left" | "center" | "right";
+  landmark?: string;
   professionalResult: string;
   traditionalBasis: string;
   plainLanguage: string;
@@ -107,7 +118,7 @@ const starSeeds: Seed[] = [
   { id:"star-pisces", title:"双鱼座", signal:"太阳落在双鱼座的现代占星分类", plain:"常被用来观察想象共情和感受多重可能的倾向", scene:"创作和陪伴时能进入细腻感受，也容易把边界放得太宽", strength:"想象与共情", pitfall:"混淆自己的需要与他人的需要", action:"分别写下事实、感受和责任" },
 ];
 
-const faceVisualFocus: Record<string, NonNullable<AtlasOption["visualFocus"]>> = {
+const faceVisualFocus: Record<string, NonNullable<AtlasVisual["visualFocus"]>> = {
   "face-oval": { x: 0, y: 0, width: 20, height: 100 },
   "face-round": { x: 20, y: 0, width: 20, height: 100 },
   "face-square": { x: 40, y: 0, width: 20, height: 100 },
@@ -120,7 +131,7 @@ const faceVisualFocus: Record<string, NonNullable<AtlasOption["visualFocus"]>> =
   "face-mouth-balanced": { x: 86, y: 55, width: 8, height: 9 },
 };
 
-const palmShapeVisualFocus: Record<string, NonNullable<AtlasOption["visualFocus"]>> = {
+const palmShapeVisualFocus: Record<string, NonNullable<AtlasVisual["visualFocus"]>> = {
   "palm-wood": { x: 0, y: 0, width: 20, height: 100 },
   "palm-fire": { x: 20, y: 0, width: 20, height: 100 },
   "palm-earth": { x: 40, y: 0, width: 20, height: 100 },
@@ -128,28 +139,64 @@ const palmShapeVisualFocus: Record<string, NonNullable<AtlasOption["visualFocus"
   "palm-water": { x: 80, y: 0, width: 20, height: 100 },
 };
 
-function getVisual(method: AtlasMethodId, seed: Seed) {
+function getVisual(method: AtlasMethodId, seed: Seed): Pick<AtlasOption, "visual" | "visuals"> {
   if (method === "face") {
     const isFeature = seed.id.startsWith("face-brow") || seed.id === "face-eye-open"
       || seed.id === "face-nose-defined" || seed.id === "face-mouth-balanced";
     return {
-      image: isFeature ? "reference/face-feature-reference.webp" : "reference/face-reference.webp",
-      imageAspect: isFeature ? 1717 / 916 : 1619 / 971,
-      visualFocus: faceVisualFocus[seed.id],
+      visuals: {
+        male: {
+          image: `reference/face-${isFeature ? "features" : "shapes"}-male.webp`,
+          imageAspect: 5 / 2,
+          visualFocus: faceVisualFocus[seed.id],
+          view: "front",
+          mirrored: true,
+        },
+        female: {
+          image: `reference/face-${isFeature ? "features" : "shapes"}-female.webp`,
+          imageAspect: 5 / 2,
+          visualFocus: faceVisualFocus[seed.id],
+          view: "front",
+          mirrored: true,
+        },
+      },
     };
   }
   if (method === "mole") {
-    return { image: "reference/mole-reference.webp", imageAspect: 1448 / 1086 };
+    const side = seed.id.endsWith("-left") ? "left" : seed.id.endsWith("-right") ? "right" : "front";
+    const view = side === "left" ? "user-left" : side === "right" ? "user-right" : "front";
+    return {
+      visuals: {
+        male: {
+          image: `reference/mole-male-${side}.webp`,
+          imageAspect: 1448 / 1086,
+          hotspot: seed.hotspot,
+          view,
+          mirrored: true,
+        },
+        female: {
+          image: `reference/mole-female-${side}.webp`,
+          imageAspect: 1448 / 1086,
+          hotspot: seed.hotspot,
+          view,
+          mirrored: true,
+        },
+      },
+    };
   }
   if (method === "palm") {
     const isShape = seed.id.startsWith("palm-") && !seed.hotspot;
     return {
-      image: isShape ? "reference/palm-shape-reference.webp" : "reference/palm-reference.webp",
-      imageAspect: isShape ? 1778 / 885 : 1448 / 1086,
-      visualFocus: isShape ? palmShapeVisualFocus[seed.id] : undefined,
+      visual: {
+        image: isShape ? "reference/palm-shape-reference.webp" : "reference/palm-reference.webp",
+        imageAspect: isShape ? 1778 / 885 : 1448 / 1086,
+        ...(isShape ? { visualFocus: palmShapeVisualFocus[seed.id] } : { hotspot: seed.hotspot }),
+        view: "front",
+        mirrored: false,
+      },
     };
   }
-  return { image: "", imageAspect: 16 / 9 };
+  return {};
 }
 
 function makeOption(method: AtlasMethodId, seed: Seed): AtlasOption {
@@ -175,10 +222,7 @@ function makeOption(method: AtlasMethodId, seed: Seed): AtlasOption {
   return {
     id: seed.id,
     title: seed.title,
-    image: visual.image,
-    imageAspect: visual.imageAspect,
-    visualFocus: visual.visualFocus,
-    hotspot: seed.hotspot,
+    ...visual,
     professionalResult: `${seed.title}｜传统图谱把“${seed.signal}”作为单项观察线索，不能脱离整体与现实经历独立定论。`,
     traditionalBasis: basis,
     plainLanguage: `${seed.plain}。这是一道自我提问，不是固定性格标签。`,
@@ -218,6 +262,20 @@ export function getAtlasGroups(method: AtlasMethodId) {
 
 export function getAtlasOption(id: string) {
   return optionIndex[id];
+}
+
+export function resolveReferenceGender(
+  birthGender: BirthInput["gender"],
+  override?: ReferenceGender,
+): ReferenceGender {
+  if (birthGender === "male" || birthGender === "female") return birthGender;
+  return override ?? "female";
+}
+
+export function resolveAtlasVisual(option: AtlasOption, gender: ReferenceGender): AtlasVisual {
+  const visual = option.visuals?.[gender] ?? option.visual;
+  if (!visual) throw new Error(`图谱缺少可用视觉：${option.id}:${gender}`);
+  return visual;
 }
 
 export function buildAtlasReading(option: AtlasOption, chart: FourPillarsResult): AtlasReading {

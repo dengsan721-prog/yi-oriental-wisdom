@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { TRADITIONAL_SOURCE_CATALOG } from "../../lib/yi/traditional-sources";
-import { buildAtlasReading, getAtlasGroups, getAtlasMethods, getAtlasOption } from "../../lib/yi/traditional-atlas";
+import {
+  buildAtlasReading,
+  getAtlasGroups,
+  getAtlasMethods,
+  getAtlasOption,
+  resolveAtlasVisual,
+} from "../../lib/yi/traditional-atlas";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 
 describe("traditional source catalog", () => {
@@ -63,22 +69,24 @@ describe("traditional self-comparison atlases", () => {
       .filter((method) => method.id !== "star")
       .flatMap((method) => getAtlasGroups(method.id))
       .flatMap((group) => group.options);
-    const visualKeys = photographicOptions.map((option) =>
-      `${option.image}:${JSON.stringify(option.visualFocus ?? option.hotspot)}`,
-    );
+    const visualKeys = photographicOptions.map((option) => {
+      const visual = resolveAtlasVisual(option, "female");
+      return `${visual.image}:${JSON.stringify(visual.visualFocus ?? visual.hotspot)}`;
+    });
 
     expect(new Set(visualKeys).size).toBe(photographicOptions.length);
     for (const option of photographicOptions) {
-      expect(option.imageAspect).toBeGreaterThan(1);
-      expect(option.visualFocus ?? option.hotspot).toBeTruthy();
+      const visual = resolveAtlasVisual(option, "female");
+      expect(visual.imageAspect).toBeGreaterThan(1);
+      expect(visual.visualFocus ?? visual.hotspot).toBeTruthy();
     }
 
     const faceFeatures = getAtlasGroups("face")[1].options;
-    expect(new Set(faceFeatures.map((option) => option.image))).toEqual(
-      new Set(["reference/face-feature-reference.webp"]),
+    expect(new Set(faceFeatures.map((option) => resolveAtlasVisual(option, "female").image))).toEqual(
+      new Set(["reference/face-features-female.webp"]),
     );
     const palmShapes = getAtlasGroups("palm")[0].options;
-    expect(new Set(palmShapes.map((option) => option.image))).toEqual(
+    expect(new Set(palmShapes.map((option) => resolveAtlasVisual(option, "female").image))).toEqual(
       new Set(["reference/palm-shape-reference.webp"]),
     );
   });
