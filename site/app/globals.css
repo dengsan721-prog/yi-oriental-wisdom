@@ -45,10 +45,13 @@ html,body{min-width:0;overflow-x:hidden}
 
 /* Code-native zodiac constellation maps */
 .constellation-map{width:100%;height:auto;border-radius:20px;background:radial-gradient(circle at 50% 38%,#5d471c24,transparent 36%),#050708}
-.constellation-lines line{stroke:#d9b75f;stroke-width:.48;stroke-linecap:round;opacity:.75;stroke-dasharray:120;animation:constellation-draw 1.4s ease both}
-.constellation-stars circle{fill:#e4c56e;filter:drop-shadow(0 0 2px #e8c76688)}
+.constellation-lines line{stroke:#d9b75f;stroke-width:.48;stroke-linecap:round;opacity:.75;stroke-dasharray:120;animation:constellation-draw .68s ease both}
+.constellation-stars circle{fill:#e4c56e;filter:drop-shadow(0 0 2px #e8c76688);opacity:0;animation:constellation-stars-in .32s ease-out .08s both}
 .constellation-stars circle.primary{fill:#fff0b1;filter:drop-shadow(0 0 5px #e7bd57)}
 .constellation-dust circle{fill:#d8c58c;opacity:.28}
 .constellation-map text{fill:#d8b65f;font-family:"Segoe UI Symbol","Noto Sans Symbols 2",serif;font-size:10px;opacity:.42}
+.constellation-meta{opacity:0;animation:constellation-meta-in .42s ease 1.55s both}
+@keyframes constellation-stars-in{from{opacity:0}to{opacity:1}}
 @keyframes constellation-draw{from{stroke-dashoffset:120;opacity:0}to{stroke-dashoffset:0;opacity:.75}}
-@media (prefers-reduced-motion: reduce){.constellation-lines line{animation:none;stroke-dasharray:none}}
+@keyframes constellation-meta-in{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion: reduce){.constellation-stars circle,.constellation-meta{animation:none;opacity:1}.constellation-lines line{animation:none;stroke-dasharray:none}}
