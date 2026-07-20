@@ -3,7 +3,14 @@
 
 import { useState } from "react";
 import { YI_REFERENCE_SOURCES } from "../../lib/yi/sources";
-import { buildAtlasReading, getAtlasGroups, getAtlasMethods, type AtlasMethodId } from "../../lib/yi/traditional-atlas";
+import {
+  buildAtlasReading,
+  getAtlasGroups,
+  getAtlasMethods,
+  resolveAtlasVisual,
+  resolveReferenceGender,
+  type AtlasMethodId,
+} from "../../lib/yi/traditional-atlas";
 import { getTraditionalSource } from "../../lib/yi/traditional-sources";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 
@@ -20,13 +27,15 @@ function getSource(id: string) {
   return reference ? { title: reference.title, grade: reference.grade, url: reference.url, role: reference.role, editionNote: "现代边界参考；链接内容与访问状态以来源页面为准。", boundary: reference.boundary } : null;
 }
 
-export function ReferenceAtlasSection({ chart }: { chart: FourPillarsResult; birth: BirthInput }) {
+export function ReferenceAtlasSection({ chart, birth }: { chart: FourPillarsResult; birth: BirthInput }) {
   const [method, setMethod] = useState<AtlasMethodId>("face");
   const [selectedId, setSelectedId] = useState("face-oval");
   const groups = getAtlasGroups(method);
   const option = groups.flatMap((group) => group.options).find((item) => item.id === selectedId) ?? groups[0].options[0];
   const reading = buildAtlasReading(option, chart);
-  const imageSrc = option.image ? `${import.meta.env.BASE_URL}${option.image}` : "";
+  const referenceGender = resolveReferenceGender(birth.gender);
+  const visual = method === "star" ? undefined : resolveAtlasVisual(option, referenceGender);
+  const imageSrc = visual ? `${import.meta.env.BASE_URL}${visual.image}` : "";
   const sources = reading.sourceIds.map(getSource).filter((source): source is NonNullable<typeof source> => Boolean(source));
 
   function selectMethod(nextMethod: AtlasMethodId) {
@@ -42,12 +51,12 @@ export function ReferenceAtlasSection({ chart }: { chart: FourPillarsResult; bir
 
     <div className="atlas-layout">
       <div className="atlas-reference" aria-label={`${option.title}标准参考图`}>
-        <div className="atlas-visual-canvas" style={{ aspectRatio: String(option.imageAspect) }}>
-          {option.image
+        <div className="atlas-visual-canvas" style={{ aspectRatio: String(visual?.imageAspect ?? 16 / 9) }}>
+          {visual
             ? <img src={imageSrc} alt={`${option.title}标准参考照片`} />
             : <div className="star-reference" aria-hidden="true"><span>{starSymbols[option.id]}</span><i /><i /><i /><i /><i /></div>}
-          {option.visualFocus && <i aria-hidden="true" className="atlas-visual-focus" style={{ left:`${option.visualFocus.x}%`, top:`${option.visualFocus.y}%`, width:`${option.visualFocus.width}%`, height:`${option.visualFocus.height}%` }} />}
-          {option.hotspot && <i aria-hidden="true" className="atlas-hotspot" style={{ left:`${option.hotspot.x}%`, top:`${option.hotspot.y}%` }} />}
+          {visual?.visualFocus && <i aria-hidden="true" className="atlas-visual-focus" style={{ left:`${visual.visualFocus.x}%`, top:`${visual.visualFocus.y}%`, width:`${visual.visualFocus.width}%`, height:`${visual.visualFocus.height}%` }} />}
+          {visual?.hotspot && <i aria-hidden="true" className="atlas-hotspot" style={{ left:`${visual.hotspot.x}%`, top:`${visual.hotspot.y}%` }} />}
           <span className="atlas-caption">选中区域 · 自行对照</span>
         </div>
       </div>

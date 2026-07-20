@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { ReferenceAtlasSection } from "../../components/yi/ReferenceAtlasSection";
+import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import {
   getAtlasGroups,
   getAtlasOption,
@@ -9,8 +13,18 @@ import {
   type AtlasVisual,
   type ReferenceGender,
 } from "../../lib/yi/traditional-atlas";
+import type { BirthInput } from "../../lib/yi/types";
 
 const genders: ReferenceGender[] = ["male", "female"];
+const atlasBirth = {
+  name: "",
+  date: "1990-06-15",
+  time: "09:30",
+  location: "上海",
+  gender: "male",
+  timeConfidence: "exact",
+} satisfies BirthInput;
+const atlasChart = calculateFourPillars(atlasBirth);
 
 function expectBoundedFocus(focus: NonNullable<AtlasVisual["visualFocus"]>) {
   expect(focus.x).toBeGreaterThanOrEqual(0);
@@ -49,6 +63,21 @@ describe("traditional atlas orientation", () => {
     ["unspecified", "female", "female"],
   ] as const)("resolves birth gender %s with override %s to %s", (birthGender, override, expected) => {
     expect(resolveReferenceGender(birthGender, override)).toBe(expected);
+  });
+
+  it.each([
+    ["male", "reference/face-shapes-male.webp"],
+    ["female", "reference/face-shapes-female.webp"],
+    ["unspecified", "reference/face-shapes-female.webp"],
+  ] as const)("renders the default face visual for %s birth gender", (gender, expectedImage) => {
+    const birth = { ...atlasBirth, gender };
+    const html = renderToStaticMarkup(createElement(ReferenceAtlasSection, { chart: atlasChart, birth }));
+
+    expect(html).toContain(`src="/${expectedImage}"`);
+    expect(html).not.toContain("src=\"undefined\"");
+    expect(html).toContain("aspect-ratio:2.5");
+    expect(html).toContain('class="atlas-visual-focus"');
+    expect(html).toContain("left:0%;top:0%;width:20%;height:100%");
   });
 
   it("resolves one stable face id and one stable mole id to gender-specific images", () => {
