@@ -81,6 +81,9 @@ const expectedGeometry = {
   "palm-sun": { hotspot: { x: 72, y: 42 } },
 } as const;
 
+const horizontalMirrorTransformPattern =
+  /scaleX\(\s*-1(?:\.0+)?\s*\)|rotateY\(\s*180(?:\.0+)?deg\s*\)|scale\(\s*-1(?:\.0+)?(?:\s*\)|\s*,\s*1(?:\.0+)?\s*\)|\s+1(?:\.0+)?\s*\))|matrix\(\s*-1(?:\.0+)?(?:\s*,\s*|\s+)0(?:\.0+)?(?:\s*,\s*|\s+)0(?:\.0+)?(?:\s*,\s*|\s+)1(?:\.0+)?(?:\s*,\s*|\s+)/i;
+
 function expectBoundedFocus(focus: NonNullable<AtlasVisual["visualFocus"]>) {
   expect(focus.x).toBeGreaterThanOrEqual(0);
   expect(focus.y).toBeGreaterThanOrEqual(0);
@@ -173,6 +176,30 @@ describe("traditional atlas orientation", () => {
     }
   });
 
+  it.each([
+    ["CSS scaleX", "transform: scaleX(-1)"],
+    ["3D rotateY", "transform: rotateY(180deg)"],
+    ["single-value scale", "transform: scale(-1)"],
+    ["CSS two-value scale", "transform: scale(-1, 1)"],
+    ["SVG space-separated scale", '<g transform="scale(-1 1)">'],
+    ["whitespace and case scale", "transform: SCALE( -1.0 , 1.0 )"],
+    ["CSS matrix", "transform: matrix(-1, 0, 0, 1, 0, 0)"],
+    ["SVG matrix", '<g transform="matrix(-1 0 0 1 0 0)">'],
+    ["whitespace and case matrix", "transform: MATRIX( -1.0 , 0 , 0 , 1 , 0 , 0 )"],
+  ])("detects the forbidden %s horizontal mirror", (_label, source) => {
+    expect(source).toMatch(horizontalMirrorTransformPattern);
+  });
+
+  it.each([
+    ["ordinary negative position", "left: -1px"],
+    ["negative translation", "transform: translateX(-1px)"],
+    ["vertical scale", "transform: scale(1, -1)"],
+    ["negative rotation", "transform: rotate(-1deg)"],
+    ["vertical matrix", "transform: matrix(1, 0, 0, -1, 0, 0)"],
+  ])("does not mistake %s for a horizontal mirror", (_label, source) => {
+    expect(source).not.toMatch(horizontalMirrorTransformPattern);
+  });
+
   it("contains no observer-side ambiguity, capture behavior, or horizontal mirror transform", () => {
     const sourcePaths = [
       new URL("../../lib/yi/traditional-atlas.ts", import.meta.url),
@@ -186,7 +213,7 @@ describe("traditional atlas orientation", () => {
     expect(productionSource).not.toMatch(
       /getUserMedia|mediaDevices|FaceDetector|FileReader|FormData|URL\.createObjectURL|type=["']file["']|accept=["']image|\bupload\b|\brecognition\b/i,
     );
-    expect(productionSource).not.toMatch(/scaleX\(\s*-1\s*\)|rotateY\(\s*180deg\s*\)/i);
+    expect(productionSource).not.toMatch(horizontalMirrorTransformPattern);
   });
 
   it.each([
