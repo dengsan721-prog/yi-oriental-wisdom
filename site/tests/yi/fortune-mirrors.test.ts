@@ -5,7 +5,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { FortuneSection } from "../../components/yi/FortuneSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { analyzeFortuneRelations, buildFortuneGuidance, buildFortuneTimeline, buildFortuneYearReading, calculateTenGod } from "../../lib/yi/fortune";
-import { matchAnimalArchetype, matchHistoricalMirror } from "../../lib/yi/mirrors";
+import { extractMirrorFeatures } from "../../lib/yi/mirror-features";
+import { matchAnimalArchetype, matchHistoricalMirror, matchLifeMirrors } from "../../lib/yi/mirrors";
 import { branchElements, stemElements } from "../../lib/yi/stems-branches";
 import type { ChartRelation, FourPillarsResult, PillarKey } from "../../lib/yi/types";
 
@@ -350,11 +351,30 @@ describe("fortune timeline", () => {
 });
 
 describe("auditable mirrors", () => {
-  it("explains explicit animal mapping without a derogatory label", () => {
-    expect(matchAnimalArchetype(chart)).toMatchObject({ name: expect.any(String), basis: expect.stringContaining("映射"), mappedFeatures: expect.any(Array), pressurePattern: expect.any(String), action: expect.any(String) });
+  it("adapts the first ranked animal while preserving the legacy public shape", () => {
+    const first = matchLifeMirrors(chart).animals[0];
+    expect(matchAnimalArchetype(chart)).toEqual({
+      name: first.name,
+      basis: `显式映射：${extractMirrorFeatures(chart).evidence.join("；")}`,
+      mappedFeatures: Object.entries(first.vector).map(([key, value]) => `${key}=${value}`),
+      strengthPattern: first.similar,
+      pressurePattern: first.shadow,
+      action: first.lesson,
+      caution: "这是行为隐喻，不是性格标签。",
+    });
   });
 
-  it("limits a sourced historical mirror to one dimension", () => {
-    expect(matchHistoricalMirror(chart)).toMatchObject({ person: expect.any(String), dimension: expect.any(String), basis: expect.any(String), source: expect.any(String), reliability: expect.stringMatching(/high|medium|contextual/), caution: expect.stringContaining("命运") });
+  it("adapts the first ranked historical candidate to a sourced single-dimension comparison", () => {
+    const first = matchLifeMirrors(chart).historical[0];
+    expect(matchHistoricalMirror(chart)).toEqual({
+      person: first.name,
+      dimension: "人生结构单维比较",
+      basis: `显式映射：${extractMirrorFeatures(chart).evidence.join("；")}`,
+      source: first.sourceReferences.join("；"),
+      reliability: "contextual",
+      observation: first.similar,
+      action: first.lesson,
+      caution: "仅比较具体维度，不表示命运相同。",
+    });
   });
 });
