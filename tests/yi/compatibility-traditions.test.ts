@@ -11,6 +11,53 @@ const axisIds = [
   "attraction", "communication", "trigger", "trust", "conflict",
   "resources", "decisions", "stability", "repair",
 ] as const;
+const confidenceLabels = { high: "高置信", medium: "中等置信", limited: "有限置信" } as const;
+
+function withAmbiguousDay(source: typeof first, marker: "ambiguousPillars" | "dayMaster" | "dayPillar") {
+  return {
+    ...source,
+    ambiguousPillars: marker === "ambiguousPillars"
+      ? [...new Set([...source.ambiguousPillars, "day" as const])]
+      : source.ambiguousPillars,
+    professional: {
+      ...source.professional,
+      ambiguousFields: marker === "ambiguousPillars"
+        ? source.professional.ambiguousFields
+        : [...source.professional.ambiguousFields, marker] as typeof source.professional.ambiguousFields,
+    },
+  };
+}
+
+function replaceDayCandidate(source: typeof first) {
+  const day = source.pillars.day.stem === "庚"
+    ? { stem: "甲", branch: "午", element: "木", branchElement: "火" } as const
+    : { stem: "庚", branch: "子", element: "金", branchElement: "水" } as const;
+  return {
+    ...source,
+    pillars: { ...source.pillars, day: { ...source.pillars.day, ...day } },
+    professional: {
+      ...source.professional,
+      dayMaster: { stem: day.stem, element: day.element, polarity: "yang" as const },
+    },
+  };
+}
+
+function publicTextSegments(result: ReturnType<typeof calculateCompatibility>): Array<[string, string]> {
+  return [
+    ["summary", result.summary],
+    ...result.axes.flatMap((axis, index) => (
+      (["label", "professionalBasis", "plainLanguage", "scene", "action", "caution"] as const)
+        .map((field) => [`axes[${index}].${field}`, axis[field]] as [string, string])
+    )),
+    ["roleSpecificGuidance", JSON.stringify(result.roleSpecificGuidance)],
+    ["elementDynamics", JSON.stringify(result.elementDynamics)],
+    ["tenGodDynamics", JSON.stringify(result.tenGodDynamics)],
+    ["combinationsAndClashes", JSON.stringify(result.combinationsAndClashes)],
+    ["communicationScenario", result.communicationScenario],
+    ["actionRules", JSON.stringify(result.actionRules)],
+    ["limitations", JSON.stringify(result.limitations)],
+  ];
+}
 
 function withoutLiteralEvidence(value: string) {
   return value
@@ -62,7 +109,7 @@ describe("compatibility", () => {
     ];
     const crossTokens = result.combinationsAndClashes.map((item) => `${item.symbols.join("")}${item.relation}`);
     const elementTokens = result.elementDynamics.map((item) => `${item.element}${item.first}/${item.second}`);
-    const confidenceTokens = [`A:${first.confidence}`, `B:${second.confidence}`];
+    const confidenceTokens = [`A:${confidenceLabels[first.confidence]}`, `B:${confidenceLabels[second.confidence]}`];
     const actualEvidenceTokens = [...directionalTokens, ...dayTokens, ...crossTokens, ...elementTokens, ...confidenceTokens];
 
     for (const basis of axisBasis) {
@@ -160,6 +207,61 @@ describe("compatibility", () => {
     expect(original.axes.every((axis) => /置信|未知时辰|交节/.test(axis.caution))).toBe(true);
     expect(original.limitations.join(" ")).toMatch(/未知时辰/);
     expect(original.limitations.join(" ")).toMatch(/交节.*候选|候选.*交节/);
+  });
+
+  it.each([
+    ["A ambiguousPillars day", "first", "ambiguousPillars"],
+    ["A professional dayMaster", "first", "dayMaster"],
+    ["B professional dayPillar", "second", "dayPillar"],
+  ] as const)("keeps %s candidate values out of every public result surface", (_name, side, marker) => {
+    const reviewed = withAmbiguousDay(side === "first" ? first : second, marker);
+    const alteredCandidate = replaceDayCandidate(reviewed);
+    const original = calculateCompatibility(
+      side === "first" ? reviewed : first,
+      side === "second" ? reviewed : second,
+      "partner",
+    );
+    const altered = calculateCompatibility(
+      side === "first" ? alteredCandidate : first,
+      side === "second" ? alteredCandidate : second,
+      "partner",
+    );
+
+    expect(altered).toEqual(original);
+    expect(original.tenGodDynamics).toEqual([]);
+    expect(JSON.stringify(original)).toContain(`${side === "first" ? "A" : "B"}日柱待核`);
+  });
+
+  it("still changes public results when a stable day pillar changes", () => {
+    const baseline = calculateCompatibility(first, second, "partner");
+    const changed = calculateCompatibility(replaceDayCandidate(first), second, "partner");
+
+    expect(changed.summary).not.toBe(baseline.summary);
+    expect(changed.axes).not.toEqual(baseline.axes);
+    expect(changed.roleSpecificGuidance).not.toEqual(baseline.roleSpecificGuidance);
+    expect({
+      elementDynamics: changed.elementDynamics,
+      tenGodDynamics: changed.tenGodDynamics,
+      combinationsAndClashes: changed.combinationsAndClashes,
+    }).not.toEqual({
+      elementDynamics: baseline.elementDynamics,
+      tenGodDynamics: baseline.tenGodDynamics,
+      combinationsAndClashes: baseline.combinationsAndClashes,
+    });
+  });
+
+  it.each([
+    ["high", "高置信"],
+    ["medium", "中等置信"],
+    ["limited", "有限置信"],
+  ] as const)("localizes %s confidence across every public text surface", (confidence, label) => {
+    const result = calculateCompatibility(first, { ...second, confidence }, "business");
+    const segments = publicTextSegments(result);
+
+    for (const [surface, value] of segments) {
+      expect(value, surface).not.toMatch(/\b(?:high|medium|limited)\b/);
+    }
+    expect(segments.map(([, value]) => value).join(" ")).toContain(label);
   });
 
   it("reports directional evidence for both people", () => {
