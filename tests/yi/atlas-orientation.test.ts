@@ -6,6 +6,11 @@ import { describe, expect, it } from "vitest";
 import { ReferenceAtlasSection } from "../../components/yi/ReferenceAtlasSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import {
+  buildMoleDetailTitle,
+  getUserSideLabel,
+  MIRROR_GUIDANCE,
+} from "../../lib/yi/atlas-orientation";
+import {
   getAtlasGroups,
   getAtlasOption,
   resolveAtlasVisual,
@@ -25,6 +30,56 @@ const atlasBirth = {
   timeConfidence: "exact",
 } satisfies BirthInput;
 const atlasChart = calculateFourPillars(atlasBirth);
+
+const expectedMoleMetadata = {
+  "mole-forehead-center": { userSide: "center", landmark: "额部正中，发际线与眉间之间" },
+  "mole-temple-left": { userSide: "left", landmark: "对应侧眉尾外上方与发际线之间" },
+  "mole-temple-right": { userSide: "right", landmark: "对应侧眉尾外上方与发际线之间" },
+  "mole-brow": { userSide: "center", landmark: "两眉之间至眉体内侧" },
+  "mole-eye-lower": { userSide: "right", landmark: "用户右眼下睑与颧骨上缘之间" },
+  "mole-nose": { userSide: "center", landmark: "鼻梁、鼻头与鼻翼区域" },
+  "mole-cheek-left": { userSide: "left", landmark: "对应侧眼外下方至鼻翼外侧的颧面区" },
+  "mole-cheek-right": { userSide: "right", landmark: "对应侧眼外下方至鼻翼外侧的颧面区" },
+  "mole-philtrum": { userSide: "center", landmark: "鼻底与上唇之间的纵向沟" },
+  "mole-mouth-corner": { userSide: "right", landmark: "用户右侧上下唇交界外缘" },
+  "mole-chin": { userSide: "center", landmark: "下唇下方至下颌底缘的正中区域" },
+  "mole-jaw": { userSide: "right", landmark: "用户右侧嘴角外下方至下颌角之间" },
+} as const;
+
+const expectedGeometry = {
+  "face-oval": { visualFocus: { x: 0, y: 0, width: 20, height: 100 } },
+  "face-round": { visualFocus: { x: 20, y: 0, width: 20, height: 100 } },
+  "face-square": { visualFocus: { x: 40, y: 0, width: 20, height: 100 } },
+  "face-long": { visualFocus: { x: 60, y: 0, width: 20, height: 100 } },
+  "face-heart": { visualFocus: { x: 80, y: 0, width: 20, height: 100 } },
+  "face-brow-straight": { visualFocus: { x: 2, y: 32, width: 16, height: 11 } },
+  "face-brow-arched": { visualFocus: { x: 22, y: 32, width: 16, height: 11 } },
+  "face-eye-open": { visualFocus: { x: 42, y: 36, width: 16, height: 10 } },
+  "face-nose-defined": { visualFocus: { x: 67, y: 39, width: 6, height: 25 } },
+  "face-mouth-balanced": { visualFocus: { x: 86, y: 55, width: 8, height: 9 } },
+  "mole-forehead-center": { hotspot: { x: 50, y: 19 } },
+  "mole-temple-left": { hotspot: { x: 36, y: 28 } },
+  "mole-temple-right": { hotspot: { x: 64, y: 28 } },
+  "mole-brow": { hotspot: { x: 45, y: 34 } },
+  "mole-eye-lower": { hotspot: { x: 56, y: 41 } },
+  "mole-nose": { hotspot: { x: 50, y: 51 } },
+  "mole-cheek-left": { hotspot: { x: 38, y: 52 } },
+  "mole-cheek-right": { hotspot: { x: 62, y: 52 } },
+  "mole-philtrum": { hotspot: { x: 50, y: 62 } },
+  "mole-mouth-corner": { hotspot: { x: 61, y: 67 } },
+  "mole-chin": { hotspot: { x: 50, y: 78 } },
+  "mole-jaw": { hotspot: { x: 66, y: 74 } },
+  "palm-wood": { visualFocus: { x: 0, y: 0, width: 20, height: 100 } },
+  "palm-fire": { visualFocus: { x: 20, y: 0, width: 20, height: 100 } },
+  "palm-earth": { visualFocus: { x: 40, y: 0, width: 20, height: 100 } },
+  "palm-metal": { visualFocus: { x: 60, y: 0, width: 20, height: 100 } },
+  "palm-water": { visualFocus: { x: 80, y: 0, width: 20, height: 100 } },
+  "palm-life": { hotspot: { x: 33, y: 58 } },
+  "palm-head": { hotspot: { x: 33, y: 49 } },
+  "palm-heart": { hotspot: { x: 34, y: 38 } },
+  "palm-fate": { hotspot: { x: 67, y: 55 } },
+  "palm-sun": { hotspot: { x: 72, y: 42 } },
+} as const;
 
 function expectBoundedFocus(focus: NonNullable<AtlasVisual["visualFocus"]>) {
   expect(focus.x).toBeGreaterThanOrEqual(0);
@@ -53,6 +108,87 @@ function geometryWithoutImage(visual: AtlasVisual) {
 }
 
 describe("traditional atlas orientation", () => {
+  it("states the mirror rule in the user's own left and right", () => {
+    expect(MIRROR_GUIDANCE).toBe(
+      "这是一张镜面人脸图。请像平时照镜子一样对照：画面右侧是你的右脸，画面左侧是你的左脸，无需在脑中反转方向。",
+    );
+    expect(MIRROR_GUIDANCE).not.toMatch(/观察者左侧|观察者右侧|摄影者左侧|摄影者右侧/);
+  });
+
+  it.each([
+    ["left", "你的左脸"],
+    ["center", "正面中线"],
+    ["right", "你的右脸"],
+  ] as const)("labels %s as %s", (side, label) => {
+    expect(getUserSideLabel(side)).toBe(label);
+  });
+
+  it("builds side-specific mole detail titles with a center fallback", () => {
+    expect(buildMoleDetailTitle({ id: "mole-temple-right", title: "右侧太阳穴", userSide: "right" }))
+      .toBe("你的右脸 · 右侧太阳穴 · temple-right");
+    expect(buildMoleDetailTitle({ id: "mole-brow", title: "眉间眉内区域" }))
+      .toBe("正面中线 · 眉间眉内区域 · brow");
+  });
+
+  it("assigns an exact user side and anatomical landmark to every mole option", () => {
+    const actual = Object.fromEntries(
+      getAtlasGroups("mole").flatMap((group) => group.options).map((option) => [option.id, {
+        userSide: option.userSide,
+        landmark: option.landmark,
+      }]),
+    );
+
+    expect(actual).toEqual(expectedMoleMetadata);
+    for (const metadata of Object.values(actual)) {
+      expect(metadata.landmark?.trim().length).toBeGreaterThan(4);
+    }
+  });
+
+  it("preserves every atlas focus and hotspot in the final display plane", () => {
+    const actual = Object.fromEntries(
+      (["face", "mole", "palm"] as const).flatMap((method) => getAtlasGroups(method))
+        .flatMap((group) => group.options)
+        .map((option) => {
+          const visual = resolveAtlasVisual(option, "female");
+          return [option.id, visual.visualFocus ? { visualFocus: visual.visualFocus } : { hotspot: visual.hotspot }];
+        }),
+    );
+
+    expect(actual).toEqual(expectedGeometry);
+  });
+
+  it("keeps mirror flags intentional and star records non-photographic", () => {
+    for (const method of ["face", "mole"] as const) {
+      for (const option of getAtlasGroups(method).flatMap((group) => group.options)) {
+        expect(resolveAtlasVisual(option, "male").mirrored).toBe(true);
+        expect(resolveAtlasVisual(option, "female").mirrored).toBe(true);
+      }
+    }
+    for (const option of getAtlasGroups("palm").flatMap((group) => group.options)) {
+      expect(resolveAtlasVisual(option, "female").mirrored).toBe(false);
+    }
+    for (const option of getAtlasGroups("star").flatMap((group) => group.options)) {
+      expect(option.visual).toBeUndefined();
+      expect(option.visuals).toBeUndefined();
+    }
+  });
+
+  it("contains no observer-side ambiguity, capture behavior, or horizontal mirror transform", () => {
+    const sourcePaths = [
+      new URL("../../lib/yi/traditional-atlas.ts", import.meta.url),
+      new URL("../../lib/yi/atlas-orientation.ts", import.meta.url),
+      new URL("../../components/yi/ReferenceAtlasSection.tsx", import.meta.url),
+      new URL("../../app/globals.css", import.meta.url),
+    ];
+    const productionSource = sourcePaths.map((path) => readFileSync(fileURLToPath(path), "utf8")).join("\n");
+
+    expect(productionSource).not.toMatch(/观察者(?:左|右)侧|摄影者(?:左|右)侧/);
+    expect(productionSource).not.toMatch(
+      /getUserMedia|mediaDevices|FaceDetector|FileReader|FormData|URL\.createObjectURL|type=["']file["']|accept=["']image|\bupload\b|\brecognition\b/i,
+    );
+    expect(productionSource).not.toMatch(/scaleX\(\s*-1\s*\)|rotateY\(\s*180deg\s*\)/i);
+  });
+
   it.each([
     ["male", undefined, "male"],
     ["male", "female", "male"],
