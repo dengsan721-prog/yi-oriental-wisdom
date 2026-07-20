@@ -13,7 +13,7 @@ import { clearLifeProfile, createLifeProfile, getBrowserStorage, loadLifeProfile
 import { useYiRoute } from "./useYiRoute";
 
 function Mark() {
-  return <div className="yi-mark" aria-label="艺"><span>艺</span><i /><b /></div>;
+  return <div className="yi-mark" aria-label="艺"><span className="yi-brand-glyph">艺</span><i /><b /></div>;
 }
 
 function RitualIntro({ restoring, onStart }: { restoring: boolean; onStart: () => void }) {
