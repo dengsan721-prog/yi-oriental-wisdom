@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { calculateCompatibility, classifyBranchRelation } from "../../lib/yi/compatibility";
 import { calculateTenGod } from "../../lib/yi/fortune";
+import type { AmbiguousProfessionalField } from "../../lib/yi/types";
 
 const first = calculateFourPillars({ name: "甲", date: "1990-06-15", time: "09:30", location: "杭州", gender: "unspecified", timeConfidence: "exact" });
 const second = calculateFourPillars({ name: "乙", date: "1992-11-03", time: "18:20", location: "上海", gender: "unspecified", timeConfidence: "exact" });
@@ -12,8 +13,9 @@ const axisIds = [
   "resources", "decisions", "stability", "repair",
 ] as const;
 const confidenceLabels = { high: "高置信", medium: "中等置信", limited: "有限置信" } as const;
+type AmbiguousDayField = Extract<"dayMaster" | "dayPillar", AmbiguousProfessionalField>;
 
-function withAmbiguousDay(source: typeof first, marker: "ambiguousPillars" | "dayMaster" | "dayPillar") {
+function withAmbiguousDay(source: typeof first, marker: "ambiguousPillars" | AmbiguousDayField) {
   return {
     ...source,
     ambiguousPillars: marker === "ambiguousPillars"
@@ -23,7 +25,7 @@ function withAmbiguousDay(source: typeof first, marker: "ambiguousPillars" | "da
       ...source.professional,
       ambiguousFields: marker === "ambiguousPillars"
         ? source.professional.ambiguousFields
-        : [...source.professional.ambiguousFields, marker] as typeof source.professional.ambiguousFields,
+        : [...source.professional.ambiguousFields, marker],
     },
   };
 }

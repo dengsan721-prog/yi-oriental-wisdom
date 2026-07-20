@@ -48,7 +48,7 @@ export type ChartRelation = {
   label: string;
 };
 
-export type AmbiguousProfessionalField = "structureBalance" | "sameAndResourceElements" | "lowerCountElements" | "tenGodSummary" | "relationSummary";
+export type AmbiguousProfessionalField = "dayMaster" | "dayPillar" | "structureBalance" | "sameAndResourceElements" | "lowerCountElements" | "tenGodSummary" | "relationSummary";
 
 export type ProfessionalChart = {
   dayMaster: { stem: string; element: ElementName; polarity: "yang" | "yin" };
