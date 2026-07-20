@@ -3,8 +3,12 @@ import { resolve } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
+import { CompatibilitySection } from "../../components/yi/CompatibilitySection";
 import { DetailSection } from "../../components/yi/DetailSection";
 import { getCalculationSteps } from "../../components/yi/YiExperience";
+import { calculateCompatibility } from "../../lib/yi/compatibility";
+import { calculateFourPillars } from "../../lib/yi/four-pillars";
+import type { BirthSubmission } from "../../components/yi/BirthIntake";
 import type { InterpretationItem } from "../../lib/yi/types";
 
 const priorities: InterpretationItem["priority"][] = ["core", "important", "supporting"];
@@ -146,4 +150,82 @@ it("keeps disclosure targets touch-safe and reading grids single-column on mobil
   const css = readFileSync(resolve("app/globals.css"), "utf8");
   expect(css).toMatch(/\.reading-card details>summary\{min-height:44px;display:flex;align-items:center;cursor:pointer;color:#dfca95\}/);
   expect(css).toMatch(/@media\(max-width:700px\)\{\.reading-contrast,\.reading-actions\{grid-template-columns:1fr\}/);
+});
+
+it("renders the complete relationship manual in progressive disclosure order", () => {
+  const chart = calculateFourPillars({ name: "甲", date: "1990-06-15", time: "09:30", location: "杭州", gender: "unspecified", timeConfidence: "exact" });
+  const secondBirth: BirthSubmission = {
+    name: "乙", date: "1992-11-03", time: "18:20", location: "上海", gender: "unspecified", timeConfidence: "exact",
+    birthDate: { mode: "solar", year: 1992, month: 11, day: 3, isLeapMonth: false }, timeMode: "exact",
+  };
+  const result = calculateCompatibility(chart, calculateFourPillars(secondBirth), "partner");
+  const html = renderToStaticMarkup(createElement(CompatibilitySection, {
+    chart,
+    relationship: "partner",
+    secondBirth,
+    onRelationshipChange: () => undefined,
+    onSecondBirthChange: () => undefined,
+  }));
+
+  expect(html).toContain('<form class="intake-card wheel-intake">');
+  const manualStart = html.indexOf('<div class="compatibility-manual">');
+  expect(manualStart, "relationship manual").toBeGreaterThan(-1);
+  const manual = extractBalancedElement(html, "div", manualStart);
+  expect(occurrences(manual, result.summary)).toBe(1);
+
+  const cardStarts = [...manual.matchAll(/<article class="compatibility-axis-card">/g)].map((match) => match.index);
+  expect(cardStarts).toHaveLength(9);
+  expectStrictOrder(manual, result.axes.map((axis) => axis.label));
+
+  result.axes.forEach((axis, index) => {
+    const article = extractBalancedElement(manual, "article", cardStarts[index]);
+    const evidenceStart = article.indexOf('<details class="compatibility-axis-evidence">');
+    expect(evidenceStart, `${axis.id} evidence`).toBeGreaterThan(-1);
+    const evidence = extractBalancedElement(article, "details", evidenceStart);
+    expect(evidence.slice(0, evidence.indexOf(">") + 1)).toBe('<details class="compatibility-axis-evidence">');
+    const visible = article.slice(0, evidenceStart) + article.slice(evidenceStart + evidence.length);
+
+    expectStrictOrder(visible, [axis.label, axis.plainLanguage, axis.scene, "可以这样做", axis.action]);
+    expectStrictOrder(evidence, ["专业依据与边界", axis.professionalBasis, axis.caution]);
+    for (const field of [axis.label, axis.plainLanguage, axis.scene, axis.action, axis.professionalBasis, axis.caution]) {
+      expect(occurrences(article, field), `${axis.id}: ${field}`).toBe(1);
+    }
+    expect(visible).not.toContain(axis.professionalBasis);
+    expect(visible).not.toContain(axis.caution);
+  });
+
+  const guidanceStart = manual.indexOf('<section class="role-guidance">');
+  expect(guidanceStart, "role guidance").toBeGreaterThan(-1);
+  const guidance = extractBalancedElement(manual, "section", guidanceStart);
+  expect(guidance).toContain("伴侣关系说明书");
+  expectStrictOrder(guidance, result.roleSpecificGuidance);
+  for (const item of result.roleSpecificGuidance) expect(occurrences(guidance, item), item).toBe(1);
+
+  const legacyEvidenceStart = manual.indexOf('<details class="compatibility-evidence">');
+  expect(legacyEvidenceStart).toBeGreaterThan(guidanceStart + guidance.length - 1);
+  const legacyEvidence = extractBalancedElement(manual, "details", legacyEvidenceStart);
+  expect(legacyEvidence.slice(0, legacyEvidence.indexOf(">") + 1)).toBe('<details class="compatibility-evidence">');
+  expectStrictOrder(legacyEvidence, ["<h2>沟通场景</h2>", "<h2>五行互动</h2>", "<h2>双向十神</h2>", "<h2>合、冲、刑、害观察</h2>", "<h2>行动规则</h2>"]);
+
+  const legacyMarkers = [
+    result.communicationScenario,
+    ...result.elementDynamics.map((item) => `${item.element} ${item.first}:${item.second}`),
+    ...result.tenGodDynamics.map((item) => `${item.direction} · ${item.theme}`),
+    ...result.combinationsAndClashes.map((item) => `${item.symbols.join("·")} · ${item.relation}`),
+    ...result.actionRules,
+    ...result.limitations,
+  ];
+  const outsideLegacyEvidence = manual.slice(0, legacyEvidenceStart) + manual.slice(legacyEvidenceStart + legacyEvidence.length);
+  for (const marker of legacyMarkers) {
+    expect(occurrences(legacyEvidence, marker), marker).toBe(1);
+    expect(outsideLegacyEvidence, marker).not.toContain(marker);
+  }
+});
+
+it("keeps relationship disclosures touch-safe and axes single-column without horizontal overflow on mobile", () => {
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+  expect(css).toMatch(/\.compatibility-manual\{min-width:0;overflow-wrap:anywhere\}/);
+  expect(css).toMatch(/\.compatibility-axes\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\);/);
+  expect(css).toMatch(/\.compatibility-axis-evidence>summary,\.compatibility-evidence>summary\{min-height:44px;display:flex;align-items:center;/);
+  expect(css).toMatch(/@media\(max-width:720px\)\{\.compatibility-axes\{grid-template-columns:1fr\}/);
 });
