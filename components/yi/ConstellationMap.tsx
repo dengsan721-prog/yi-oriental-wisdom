@@ -31,7 +31,7 @@ export function ConstellationMap({
             y1={map.nodes[from].y}
             x2={map.nodes[to].x}
             y2={map.nodes[to].y}
-            style={{ animationDelay: `${index * 70}ms` }}
+            style={{ animationDelay: `${440 + index * 28}ms` }}
           />
         ))}
       </g>

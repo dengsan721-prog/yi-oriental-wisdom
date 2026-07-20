@@ -196,11 +196,51 @@ describe("black-gold constellations", () => {
     expect(decorative).toContain('focusable="false"');
   });
 
+  it("stages stars, lines and atlas information in order over about two seconds", () => {
+    const source = readFileSync(
+      new URL("../../components/yi/ConstellationMap.tsx", import.meta.url),
+      "utf8",
+    );
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+    const lineDelay = source.match(/animationDelay: `\$\{(\d+) \+ index \* (\d+)\}ms`/);
+    const starTiming = css.match(
+      /\.constellation-stars circle\{[^}]*animation:constellation-stars-in ([\d.]+)s [^;]* ([\d.]+)s both/,
+    );
+    const lineTiming = css.match(
+      /\.constellation-lines line\{[^}]*animation:constellation-draw ([\d.]+)s ease both/,
+    );
+    const metaTiming = css.match(
+      /\.constellation-meta\{[^}]*animation:constellation-meta-in ([\d.]+)s ease ([\d.]+)s both/,
+    );
+
+    expect(lineDelay).not.toBeNull();
+    expect(starTiming).not.toBeNull();
+    expect(lineTiming).not.toBeNull();
+    expect(metaTiming).not.toBeNull();
+    if (!lineDelay || !starTiming || !lineTiming || !metaTiming) return;
+
+    const lineStart = Number(lineDelay[1]) / 1000;
+    const lineStep = Number(lineDelay[2]) / 1000;
+    const starEnd = Number(starTiming[2]) + Number(starTiming[1]);
+    const maxEdgeCount = Math.max(...ZODIAC_SIGNS.map((sign) => CONSTELLATIONS[sign].edges.length));
+    const lineEnd = lineStart + lineStep * (maxEdgeCount - 1) + Number(lineTiming[1]);
+    const metaStart = Number(metaTiming[2]);
+    const totalEnd = metaStart + Number(metaTiming[1]);
+
+    expect(starEnd).toBeLessThanOrEqual(lineStart);
+    expect(lineEnd).toBeLessThanOrEqual(metaStart);
+    expect(totalEnd).toBeGreaterThanOrEqual(1.8);
+    expect(totalEnd).toBeLessThanOrEqual(2.2);
+    expect(css).toMatch(
+      /@media\s*\(prefers-reduced-motion:\s*reduce\)\{\.constellation-stars circle,\.constellation-meta\{animation:none;opacity:1\}\.constellation-lines line\{animation:none;stroke-dasharray:none\}\}/,
+    );
+  });
+
   it("defines scoped black-gold drawing and a static reduced-motion state", () => {
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
     expect(css).toMatch(/\.constellation-map\s*\{[^}]*background:[^}]*radial-gradient[^}]*#050708/);
-    expect(css).toMatch(/\.constellation-lines line\s*\{[^}]*stroke:#d9b75f[^}]*stroke-dasharray:120[^}]*animation:constellation-draw 1\.4s/);
+    expect(css).toMatch(/\.constellation-lines line\s*\{[^}]*stroke:#d9b75f[^}]*stroke-dasharray:120[^}]*animation:constellation-draw \.68s/);
     expect(css).toMatch(/\.constellation-stars circle\s*\{[^}]*fill:#e4c56e/);
     expect(css).toMatch(/\.constellation-stars circle\.primary\s*\{[^}]*fill:#fff0b1/);
     expect(css).toMatch(/\.constellation-dust circle\s*\{[^}]*fill:#d8c58c/);
@@ -208,9 +248,7 @@ describe("black-gold constellations", () => {
       /\.constellation-map text\s*\{[^}]*fill:#d8b65f[^}]*font-family:"Segoe UI Symbol","Noto Sans Symbols 2",serif/,
     );
     expect(css).toMatch(/@keyframes constellation-draw\s*\{/);
-    expect(css).toMatch(
-      /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{[^}]*\.constellation-lines line\s*\{[^}]*animation:none[^}]*stroke-dasharray:none/,
-    );
+    expect(css).toMatch(/\.constellation-lines line\{animation:none;stroke-dasharray:none\}/);
   });
 
   it("contains no bitmap, upload, camera or recognition path", () => {
