@@ -1,3 +1,5 @@
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { TRADITIONAL_SOURCE_CATALOG } from "../../lib/yi/traditional-sources";
 import {
@@ -8,6 +10,50 @@ import {
   resolveAtlasVisual,
 } from "../../lib/yi/traditional-atlas";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
+
+const GENDERED_ATLAS_ASSETS = [
+  "face-shapes-male.webp", "face-shapes-female.webp",
+  "face-features-male.webp", "face-features-female.webp",
+  "mole-male-front.webp", "mole-male-left.webp", "mole-male-right.webp",
+  "mole-female-front.webp", "mole-female-left.webp", "mole-female-right.webp",
+] as const;
+
+function readWebpDimensions(buffer: Buffer) {
+  expect(buffer.subarray(0, 4).toString("ascii")).toBe("RIFF");
+  expect(buffer.subarray(8, 12).toString("ascii")).toBe("WEBP");
+
+  for (let offset = 12; offset + 8 <= buffer.length;) {
+    const chunkType = buffer.subarray(offset, offset + 4).toString("ascii");
+    const chunkSize = buffer.readUInt32LE(offset + 4);
+    const payload = offset + 8;
+
+    if (chunkType === "VP8X" && chunkSize >= 10) {
+      return {
+        width: buffer.readUIntLE(payload + 4, 3) + 1,
+        height: buffer.readUIntLE(payload + 7, 3) + 1,
+      };
+    }
+    if (chunkType === "VP8 " && chunkSize >= 10) {
+      expect(buffer.subarray(payload + 3, payload + 6)).toEqual(Buffer.from([0x9d, 0x01, 0x2a]));
+      return {
+        width: buffer.readUInt16LE(payload + 6) & 0x3fff,
+        height: buffer.readUInt16LE(payload + 8) & 0x3fff,
+      };
+    }
+    if (chunkType === "VP8L" && chunkSize >= 5) {
+      expect(buffer[payload]).toBe(0x2f);
+      const packed = buffer.readUInt32LE(payload + 1);
+      return {
+        width: (packed & 0x3fff) + 1,
+        height: ((packed >>> 14) & 0x3fff) + 1,
+      };
+    }
+
+    offset = payload + chunkSize + (chunkSize % 2);
+  }
+
+  throw new Error("WebP 文件缺少 VP8、VP8L 或 VP8X 图像区块");
+}
 
 describe("traditional source catalog", () => {
   it("contains every confirmed core classic with an explicit role", () => {
@@ -40,6 +86,20 @@ describe("traditional source catalog", () => {
 });
 
 describe("traditional self-comparison atlases", () => {
+  it.each(GENDERED_ATLAS_ASSETS)("ships verified gendered atlas asset %s", (file) => {
+    const path = resolve("public/reference", file);
+    expect(existsSync(path)).toBe(true);
+    expect(statSync(path).isFile()).toBe(true);
+    expect(statSync(path).size).toBeGreaterThan(20_000);
+
+    const dimensions = readWebpDimensions(readFileSync(path));
+    expect(Math.max(dimensions.width, dimensions.height)).toBeGreaterThanOrEqual(1400);
+    const ratioDelta = file.startsWith("face-")
+      ? Math.abs(dimensions.width * 2 - dimensions.height * 5)
+      : Math.abs(dimensions.width * 3 - dimensions.height * 4);
+    expect(ratioDelta).toBeLessThanOrEqual(5);
+  });
+
   it("ships four complete atlases with stable totals", () => {
     expect(getAtlasMethods().map((item) => item.id)).toEqual(["face", "mole", "palm", "star"]);
     expect(getAtlasGroups("face").flatMap((group) => group.options)).toHaveLength(10);
