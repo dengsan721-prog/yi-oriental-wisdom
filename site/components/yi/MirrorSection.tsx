@@ -22,6 +22,14 @@ function isMovieCandidate(candidate: MirrorCandidate): candidate is MovieCharact
 
 export function MirrorSection({ chart }: { chart: FourPillarsResult }) {
   const [activeView, setActiveView] = useState<MirrorView>("zodiac");
+  return <MirrorSectionView chart={chart} activeView={activeView} onSelectView={setActiveView} />;
+}
+
+export function MirrorSectionView({ chart, activeView, onSelectView }: {
+  chart: FourPillarsResult;
+  activeView: MirrorView;
+  onSelectView: (view: MirrorView) => void;
+}) {
   const zodiac = buildZodiacMirror(chart);
   const mirrors = matchLifeMirrors(chart);
   const candidateViews = [
@@ -43,7 +51,7 @@ export function MirrorSection({ chart }: { chart: FourPillarsResult }) {
         aria-pressed={activeView === tab.id}
         className={activeView === tab.id ? "active" : ""}
         key={tab.id}
-        onClick={() => setActiveView(tab.id)}
+        onClick={() => onSelectView(tab.id)}
       >{tab.label}</button>)}
     </nav>
 
