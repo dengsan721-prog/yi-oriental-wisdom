@@ -93,11 +93,13 @@ describe("public intro first frame", () => {
       Promise.resolve(renderToStaticMarkup(createElement(YiExperience))),
     ]);
     const orbit = html.match(/<div class="yi-brand-orbit yi-mark" role="img" aria-label="艺">([\s\S]*?)<\/div>/)?.[0] ?? "";
-    const rings = html.match(/<i class="yi-breath-ring" aria-hidden="true" style="--ring-index:\d"><\/i>/g) ?? [];
+    const rings = orbit.match(/<i class="yi-breath-ring" aria-hidden="true" style="--ring-index:\d"><\/i>/g) ?? [];
+    const ringRule = css.match(/\.yi-breath-ring\{[^}]*\}/)?.[0] ?? "";
 
     expect(orbit).toContain('<span class="yi-brand-glyph" aria-hidden="true">艺</span>');
     expect(rings).toHaveLength(5);
-    expect(css).toMatch(/\.yi-breath-ring\{[^}]*pointer-events:none[^}]*animation:yi-ring-outward 5s cubic-bezier\(\.22,\.55,\.28,1\) infinite[^}]*animation-delay:calc\(var\(--ring-index\) \* 1s\)/);
+    expect(ringRule).toMatch(/^\.yi-breath-ring\{[^}]*pointer-events:none[^}]*animation:yi-ring-outward 5s cubic-bezier\(\.22,\.55,\.28,1\) infinite[^}]*animation-delay:calc\(var\(--ring-index\) \* 1s\)[^}]*\}$/);
+    expect(ringRule).not.toMatch(/rotate|rotation/i);
     const keyframes = /@keyframes yi-ring-outward\{0%\{transform:scale\(\.72\);opacity:0\}12%\{opacity:\.66\}70%\{opacity:\.12\}100%\{transform:scale\(3\.1\);opacity:0\}\}/.exec(css)?.[0] ?? "";
     expect(keyframes).not.toBe("");
     expect(keyframes).not.toMatch(/rotate/i);

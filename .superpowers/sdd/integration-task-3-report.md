@@ -69,3 +69,13 @@ Browser automation itself was present, but no browser window was running and the
 - generated `docs/index.html` and `docs/assets/*`
 
 Self-review: the five-ring contract, ARIA ownership, non-interception, non-rotation, five-second cycle, reduced-motion state, font integration, and first-frame copy are covered. The only outstanding item is live-browser viewport observation, blocked by the local-server launch policy rather than a product failure.
+
+## Follow-up test-strength review
+
+The focused first-frame test now counts `yi-breath-ring` elements only within the matched `yi-brand-orbit` subtree and inspects the complete base `.yi-breath-ring{...}` rule for forbidden `rotate` / `rotation` behavior in addition to checking the keyframes.
+
+Sensitivity proof was performed with two controlled production mutations, restored immediately after each RED run:
+
+1. Kept five rings globally but moved ring index `4` outside the orbit. The focused suite failed only the strengthened test, reporting `expected length 5, received 4` for the orbit subtree; 15/16 tests passed.
+2. Restored the markup, then temporarily added `transform:rotate(1deg)` to the base ring rule. The focused suite again failed only the strengthened test, reporting that the full rule matched `/rotate|rotation/i`; 15/16 tests passed.
+3. Restored production markup and CSS. Focused GREEN returned 16/16 passing tests.
