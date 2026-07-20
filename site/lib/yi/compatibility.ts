@@ -41,8 +41,9 @@ type GodStyle = { contact: string; speech: string; pressure: string; decision: s
 type EvidenceProfile = {
   first: FourPillarsResult;
   second: FourPillarsResult;
-  aToB: TenGodName;
-  bToA: TenGodName;
+  aToB: TenGodName | null;
+  bToA: TenGodName | null;
+  dayPending: boolean;
   dayRelations: string[];
   crossRelations: CompatibilityResult["combinationsAndClashes"];
   elementDynamics: CompatibilityResult["elementDynamics"];
@@ -57,6 +58,11 @@ type EvidenceProfile = {
 
 const elements: ElementName[] = ["木", "火", "土", "金", "水"];
 const pillarKeys: PillarKey[] = ["year", "month", "day", "hour"];
+const confidenceLabels: Record<FourPillarsResult["confidence"], string> = {
+  high: "高置信",
+  medium: "中等置信",
+  limited: "有限置信",
+};
 const axisOrder: CompatibilityAxisId[] = [
   "attraction", "communication", "trigger", "trust", "conflict",
   "resources", "decisions", "stability", "repair",
@@ -190,10 +196,16 @@ export function classifyBranchRelation(left: string, right: string): string[] {
     .map(([, , relation]) => relation);
 }
 
+function hasAmbiguousDay(chart: FourPillarsResult) {
+  const fields = new Set<string>(chart.professional.ambiguousFields);
+  return chart.ambiguousPillars.includes("day") || fields.has("dayMaster") || fields.has("dayPillar");
+}
+
 function stablePillars(chart: FourPillarsResult): Array<[PillarKey, Pillar]> {
   return pillarKeys.flatMap((key) => {
     const pillar = chart.pillars[key];
-    return pillar && !chart.ambiguousPillars.includes(key) ? [[key, pillar] as [PillarKey, Pillar]] : [];
+    const ambiguous = chart.ambiguousPillars.includes(key) || (key === "day" && hasAmbiguousDay(chart));
+    return pillar && !ambiguous ? [[key, pillar] as [PillarKey, Pillar]] : [];
   });
 }
 
@@ -248,8 +260,9 @@ function lowestConfidence(first: FourPillarsResult, second: FourPillarsResult): 
 }
 
 function buildProfile(first: FourPillarsResult, second: FourPillarsResult): EvidenceProfile {
-  const aToB = calculateTenGod(first.pillars.day.stem, second.pillars.day.stem);
-  const bToA = calculateTenGod(second.pillars.day.stem, first.pillars.day.stem);
+  const dayPending = hasAmbiguousDay(first) || hasAmbiguousDay(second);
+  const aToB = dayPending ? null : calculateTenGod(first.pillars.day.stem, second.pillars.day.stem);
+  const bToA = dayPending ? null : calculateTenGod(second.pillars.day.stem, first.pillars.day.stem);
   const cross = crossRelations(first, second);
   const directRelations = cross.filter((item) => item.relation !== "无直接合冲刑害");
   const hasSupport = directRelations.some((item) => item.relation === "合");
@@ -261,13 +274,13 @@ function buildProfile(first: FourPillarsResult, second: FourPillarsResult): Evid
     Math.abs(item.first - item.second) > Math.abs(current.first - current.second) ? item : current
   ));
   const elementMode = totalGap <= 2 ? "close" : totalGap <= 6 ? "visible" : "wide";
-  const dayStable = !first.ambiguousPillars.includes("day") && !second.ambiguousPillars.includes("day");
   return {
     first,
     second,
     aToB,
     bToA,
-    dayRelations: dayStable ? classifyBranchRelation(first.pillars.day.branch, second.pillars.day.branch) : [],
+    dayPending,
+    dayRelations: dayPending ? [] : classifyBranchRelation(first.pillars.day.branch, second.pillars.day.branch),
     crossRelations: cross,
     elementDynamics,
     relationMode,
@@ -297,10 +310,23 @@ function elementMeaning(profile: EvidenceProfile) {
 }
 
 function semanticBasis(id: CompatibilityAxisId, profile: EvidenceProfile) {
-  const a = godStyles[profile.aToB];
-  const b = godStyles[profile.bToA];
   const relation = relationMeaning(profile);
   const element = elementMeaning(profile);
+  if (profile.dayPending) {
+    switch (id) {
+      case "attraction": return "至少一方日柱待核，暂不生成双向十神或由候选日干推导的靠近风格";
+      case "communication": return "至少一方日柱待核，暂不生成双向十神或由候选日干推导的表达风格";
+      case "trigger": return `日柱待核期间不生成候选日支关系；${relation}`;
+      case "trust": return `${relation}；信任更适合由可核对的小承诺逐步累积`;
+      case "conflict": return `日柱待核期间不生成候选日支关系或压力风格；${relation}`;
+      case "resources": return `${element}，资源分配要同时看投入、承受与退出责任`;
+      case "decisions": return "至少一方日柱待核，暂不生成双向十神或由候选日干推导的决策风格";
+      case "stability": return `${element}；当前证据置信为${confidenceLabels[profile.confidence]}，稳定来自可调整的结构而非静态判断`;
+      case "repair": return `日柱待核期间不生成候选日干、日支对应的修复风格；${relation}`;
+    }
+  }
+  const a = godStyles[profile.aToB!];
+  const b = godStyles[profile.bToA!];
   switch (id) {
     case "attraction": return `A对B呈${profile.aToB}，倾向${a.contact}；B对A呈${profile.bToA}，倾向${b.contact}`;
     case "communication": return `A侧${a.speech}，B侧${b.speech}，同一句关心可能经过两套表达顺序`;
@@ -309,18 +335,26 @@ function semanticBasis(id: CompatibilityAxisId, profile: EvidenceProfile) {
     case "conflict": return `${a.pressure}和${b.pressure}会在压力下放大；${relation}`;
     case "resources": return `${element}，资源分配要同时看投入、承受与退出责任`;
     case "decisions": return `A侧${a.decision}，B侧${b.decision}，需要按事项而非按人格分配主责`;
-    case "stability": return `${element}；当前证据置信为${profile.confidence}，稳定来自可调整的结构而非静态判断`;
+    case "stability": return `${element}；当前证据置信为${confidenceLabels[profile.confidence]}，稳定来自可调整的结构而非静态判断`;
     case "repair": return `A侧适合${a.repair}，B侧适合${b.repair}；${relation}`;
   }
 }
 
 function professionalBasis(id: CompatibilityAxisId, profile: EvidenceProfile) {
   const { first, second } = profile;
+  const dayStatus = [
+    hasAmbiguousDay(first) ? "A日柱待核" : `A日柱${first.pillars.day.stem}${first.pillars.day.branch}稳定`,
+    hasAmbiguousDay(second) ? "B日柱待核" : `B日柱${second.pillars.day.stem}${second.pillars.day.branch}稳定`,
+  ].join("；");
+  const pendingDayBasis = `${dayStatus}；日柱待核期间不生成候选日干十神、日支关系或对应互动风格。`;
   const aBasis = `A日干${first.pillars.day.stem}相对B日干${second.pillars.day.stem}`;
   const bBasis = `B日干${second.pillars.day.stem}相对A日干${first.pillars.day.stem}`;
   const dayRelation = profile.dayRelations.length ? profile.dayRelations.join("、") : "无直接合冲刑害";
   const cross = profile.crossRelations.map((item) => `${item.symbols.join("")}${item.relation}`).join("、");
   const five = profile.elementDynamics.map((item) => `${item.element}${item.first}/${item.second}`).join("、");
+  if (profile.dayPending && ["attraction", "communication", "trigger", "conflict", "decisions", "repair"].includes(id)) {
+    return pendingDayBasis;
+  }
   switch (id) {
     case "attraction": return `${aBasis}为${profile.aToB}；${bBasis}为${profile.bToA}，观察双方主动靠近的语言。`;
     case "communication": return `${aBasis}取${profile.aToB}，${bBasis}取${profile.bToA}，比较双向表达与接收顺序。`;
@@ -329,14 +363,27 @@ function professionalBasis(id: CompatibilityAxisId, profile: EvidenceProfile) {
     case "conflict": return `A日支${first.pillars.day.branch}、B日支${second.pillars.day.branch}的日支关系为${dayRelation}；跨盘稳定关系另见${cross}。`;
     case "resources": return `稳定柱五行差异：${five}；以计数落差观察资源接口，不据此评价贡献高低。`;
     case "decisions": return `${aBasis}的${profile.aToB}与${bBasis}的${profile.bToA}并读，观察主张、规则与承担方式。`;
-    case "stability": return `输入置信 A:${first.confidence}，B:${second.confidence}；稳定柱五行证据为${five}，候选柱不进入结论。`;
+    case "stability": return `输入置信 A:${confidenceLabels[first.confidence]}，B:${confidenceLabels[second.confidence]}；稳定柱五行证据为${five}，候选柱不进入结论。`;
     case "repair": return `A日支${first.pillars.day.branch}与B日支${second.pillars.day.branch}呈${dayRelation}，并参照${profile.aToB}与${profile.bToA}的修复入口。`;
   }
 }
 
 function evidenceAction(id: CompatibilityAxisId, profile: EvidenceProfile) {
-  const a = godStyles[profile.aToB];
-  const b = godStyles[profile.bToA];
+  if (profile.dayPending) {
+    switch (id) {
+      case "attraction": return "日柱待核期间只核对现实中的靠近需要与边界，不套用候选十神风格。";
+      case "communication": return "日柱待核期间先询问对方需要倾听、讨论还是决定，不套用候选表达风格。";
+      case "trigger": return "日柱待核期间记录真实触发事件，不把候选日支关系当作压力证据。";
+      case "conflict": return "日柱待核期间把议题缩到一个事实，不按候选日干推定任何一方的压力反应。";
+      case "trust": return profile.relationMode === "supportive" ? "把容易形成的默契写成可核对承诺，防止双方记住不同版本。" : "从低风险、短周期、能复盘的承诺开始，不用一次表态要求长期确信。";
+      case "resources": return profile.elementMode === "wide" ? `为${profile.widestElement}落差设置主责、替补与上限，防止${profile.widerSide}长期单边承担。` : "即使五行差异不大也按现实能力分工，并给每项资源安排复盘日期。";
+      case "decisions": return "日柱待核期间按现实能力与书面权限分配主责，不按候选十神指定决策者。";
+      case "stability": return profile.uncertain ? "先执行一个月可逆方案并留痕；出生信息置信有限时，不据候选柱扩大结论。" : "每月核对一次分工与承受度；即使输入置信较高，也以现实反馈修订安排。";
+      case "repair": return "日柱待核期间先确认事实、影响与补救，不按候选日干或日支指定修复入口。";
+    }
+  }
+  const a = godStyles[profile.aToB!];
+  const b = godStyles[profile.bToA!];
   switch (id) {
     case "attraction": return `A先用“${a.contact}”表达靠近，B再用“${b.contact}”确认自己的舒适边界。`;
     case "communication": return `先让A完整说出${a.speech}的依据，再请B用${b.speech}的方式复述并补充。`;
@@ -351,6 +398,7 @@ function evidenceAction(id: CompatibilityAxisId, profile: EvidenceProfile) {
 }
 
 function cautionFor(profile: EvidenceProfile) {
+  if (profile.dayPending) return "至少一方日柱待核，本轴不使用候选日干、日支、双向十神或相应风格；只保留其他稳定柱证据并由真实互动复核。";
   if (profile.boundaryCandidate) return "至少一方未知时辰且处于交节候选范围，本轴只用未标记为候选的稳定柱；判断置信有限，须由真实互动复核。";
   if (profile.uncertain) return "至少一方出生时间为约略或未知，本轴已排除不稳定柱证据并降低置信；请把文字当作观察问题而非定论。";
   return "本轴来自高置信出生输入中的结构证据，也只能提供观察语言；不能替代当事人的意愿、安全与持续互动。";
@@ -375,9 +423,15 @@ function buildAxes(relationship: RelationshipType, profile: EvidenceProfile): Co
 function roleGuidance(relationship: RelationshipType, profile: EvidenceProfile): string[] {
   const relation = relationMeaning(profile);
   const element = elementMeaning(profile);
+  const contact = profile.aToB && profile.bToA
+    ? `${godStyles[profile.aToB].contact}和${godStyles[profile.bToA].contact}都只是入口`
+    : "日柱待核，暂不生成双向十神的靠近风格";
+  const decision = profile.aToB && profile.bToA
+    ? `${godStyles[profile.aToB].decision}与${godStyles[profile.bToA].decision}都要进入制度`
+    : "日柱待核期间不按候选十神分配权限";
   const guidance: Record<RelationshipType, string[]> = {
     partner: [
-      `亲密需要：分别说明靠近与独处怎样才舒服；${godStyles[profile.aToB].contact}和${godStyles[profile.bToA].contact}都只是入口。`,
+      `亲密需要：分别说明靠近与独处怎样才舒服；${contact}。`,
       `承诺方式：把重要承诺写成负责人、时间和变更通知；${relation}。`,
       `家庭节奏：共同核对家务、消费、陪伴与休息；${element}。`,
       `修复语言：依次说事实、影响、责任与补救，不催促对方立刻恢复原状。`,
@@ -389,7 +443,7 @@ function roleGuidance(relationship: RelationshipType, profile: EvidenceProfile):
       `期待边界：期待写成阶段步骤和复盘点，孩子可以表达困难，成年人负责调整方法。`,
     ],
     business: [
-      `权限：按事项列主责、双签、否决和临时授权；${godStyles[profile.aToB].decision}与${godStyles[profile.bToA].decision}都要进入制度。`,
+      `权限：按事项列主责、双签、否决和临时授权；${decision}。`,
       `投资门槛：任何新增投入先写金额上限、审批人、回款假设和禁止追加的条件。`,
       `现金流：固定周期公开余额、应收、支出和最坏缺口，不以乐观叙事替代数据。`,
       `风险止损：触及现金流、安全、合规或交付红线时暂停新增承诺，并在限定时间内复核。`,
@@ -406,7 +460,10 @@ function roleGuidance(relationship: RelationshipType, profile: EvidenceProfile):
 }
 
 function summaryFor(relationship: RelationshipType, profile: EvidenceProfile) {
-  return `${roleFrame[relationship]}。双向十神显示，A对B以${profile.aToB}进入互动，B对A以${profile.bToA}回应；${relationMeaning(profile)}。${elementMeaning(profile)}。这份手册不判断关系成败，而把九个维度拆成可以观察、协商、复盘和修复的具体入口。`;
+  const dayEvidence = profile.dayPending
+    ? "至少一方日柱待核，暂不生成双向十神、日支关系或相应互动风格"
+    : `双向十神显示，A对B以${profile.aToB}进入互动，B对A以${profile.bToA}回应`;
+  return `${roleFrame[relationship]}。${dayEvidence}；${relationMeaning(profile)}。${elementMeaning(profile)}。这份手册不判断关系成败，而把九个维度拆成可以观察、协商、复盘和修复的具体入口。`;
 }
 
 function limitationsFor(relationship: RelationshipType, profile: EvidenceProfile) {
@@ -414,6 +471,7 @@ function limitationsFor(relationship: RelationshipType, profile: EvidenceProfile
     "合盘不输出单一分数，也不判断关系成败或预测分合。",
     "命盘只提供观察语言，不用于控制他人；关系质量仍以真实互动、当事人意愿与人身安全为准。",
   ];
+  if (profile.dayPending) limitations.push("至少一方日柱待核，未计算或输出候选日干十神、候选日支关系及相应互动风格。");
   if (profile.uncertain) limitations.push("至少一方出生时间约略或未知，已排除时柱等不稳定证据，相关内容置信有限。 ");
   if (profile.boundaryCandidate) limitations.push("至少一方处于交节日且未知时辰，年柱或月柱仅是候选，本手册不使用交节候选作关系结论。");
   if (relationship === "business") limitations.push("商业部分只用于权限、现金流、止损与退出治理讨论，不构成投资建议、金融建议或收益判断。");
@@ -426,18 +484,17 @@ export function calculateCompatibility(
   relationship: RelationshipType,
 ): CompatibilityResult {
   const profile = buildProfile(first, second);
-  const aBasis = `A日干${first.pillars.day.stem}相对B日干${second.pillars.day.stem}`;
-  const bBasis = `B日干${second.pillars.day.stem}相对A日干${first.pillars.day.stem}`;
+  const tenGodDynamics: CompatibilityResult["tenGodDynamics"] = profile.aToB && profile.bToA ? [
+    { direction: "A→B", basis: `A日干${first.pillars.day.stem}相对B日干${second.pillars.day.stem}`, theme: profile.aToB, observation: `以${profile.aToB}观察A对B的作用方式，不作价值排序或关系结果预测。` },
+    { direction: "B→A", basis: `B日干${second.pillars.day.stem}相对A日干${first.pillars.day.stem}`, theme: profile.bToA, observation: `以${profile.bToA}观察B对A的作用方式，不作价值排序或关系结果预测。` },
+  ] : [];
   return {
     relationship,
     summary: summaryFor(relationship, profile),
     axes: buildAxes(relationship, profile),
     roleSpecificGuidance: roleGuidance(relationship, profile),
     elementDynamics: profile.elementDynamics,
-    tenGodDynamics: [
-      { direction: "A→B", basis: aBasis, theme: profile.aToB, observation: `以${profile.aToB}观察A对B的作用方式，不作价值排序或关系结果预测。` },
-      { direction: "B→A", basis: bBasis, theme: profile.bToA, observation: `以${profile.bToA}观察B对A的作用方式，不作价值排序或关系结果预测。` },
-    ],
+    tenGodDynamics,
     combinationsAndClashes: profile.crossRelations,
     communicationScenario: scenarios[relationship],
     actionRules: actionRulesByRole[relationship],
