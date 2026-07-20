@@ -5,9 +5,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
 import { CompatibilitySection } from "../../components/yi/CompatibilitySection";
 import { DetailSection } from "../../components/yi/DetailSection";
+import { MirrorSection } from "../../components/yi/MirrorSection";
 import { getCalculationSteps } from "../../components/yi/YiExperience";
 import { calculateCompatibility } from "../../lib/yi/compatibility";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
+import { matchLifeMirrors, type MirrorCandidate } from "../../lib/yi/mirrors";
+import type { MovieCharacterRecord } from "../../lib/yi/movie-characters";
+import { buildZodiacMirror } from "../../lib/yi/zodiac-mirror";
 import type { BirthSubmission } from "../../components/yi/BirthIntake";
 import type { InterpretationItem } from "../../lib/yi/types";
 
@@ -80,6 +84,10 @@ function occurrences(markup: string, marker: string) {
   return markup.split(marker).length - 1;
 }
 
+function isMovieCandidate(candidate: MirrorCandidate): candidate is MovieCharacterRecord {
+  return candidate.kind === "movie" && "characterName" in candidate;
+}
+
 it("shows only calculations the product actually performs", () => {
   expect(getCalculationSteps()).toEqual(["四柱", "五行", "藏干", "十神", "干支", "大运"]);
   expect(getCalculationSteps().join(" ")).not.toMatch(/格局|喜忌/);
@@ -150,6 +158,129 @@ it("keeps disclosure targets touch-safe and reading grids single-column on mobil
   const css = readFileSync(resolve("app/globals.css"), "utf8");
   expect(css).toMatch(/\.reading-card details>summary\{min-height:44px;display:flex;align-items:center;cursor:pointer;color:#dfca95\}/);
   expect(css).toMatch(/@media\(max-width:700px\)\{\.reading-contrast,\.reading-actions\{grid-template-columns:1fr\}/);
+});
+
+it("renders four mirror entrances with the complete zodiac record selected by default", () => {
+  const chart = calculateFourPillars({ name: "甲", date: "1990-06-15", time: "09:30", location: "杭州", gender: "unspecified", timeConfidence: "exact" });
+  const zodiac = buildZodiacMirror(chart);
+  const html = renderToStaticMarkup(createElement(MirrorSection, { chart }));
+  const navStart = html.indexOf('<nav class="mirror-tabs"');
+  expect(navStart, "mirror navigation").toBeGreaterThan(-1);
+  const nav = extractBalancedElement(html, "nav", navStart);
+
+  expectStrictOrder(nav, ["生肖镜像", "动物镜像", "历史人物", "电影角色"]);
+  expect(nav.match(/<button /g)).toHaveLength(4);
+  expect(nav).toContain('<button type="button" aria-pressed="true" class="active">生肖镜像</button>');
+  for (const label of ["动物镜像", "历史人物", "电影角色"]) {
+    expect(nav).toContain(`<button type="button" aria-pressed="false" class="">${label}</button>`);
+  }
+
+  const zodiacStart = html.indexOf('<div class="mirror-view" data-mirror-view="zodiac">');
+  const zodiacView = extractBalancedElement(html, "div", zodiacStart);
+  expect(zodiacView).toContain('<article class="reading-card zodiac-mirror">');
+  expect(zodiacView).not.toMatch(/^<div[^>]* hidden/);
+  expect(html).toContain('<div class="mirror-view" data-mirror-view="animals" hidden="">');
+  expect(html).toContain('<div class="mirror-view" data-mirror-view="historical" hidden="">');
+  expect(html).toContain('<div class="mirror-view" data-mirror-view="movies" hidden="">');
+  expectStrictOrder(html, ["<h1>", "<h2>"]);
+
+  for (const marker of [
+    zodiac.firstImpression,
+    zodiac.culturalSource,
+    zodiac.trustStyle,
+    zodiac.strengthPattern,
+    zodiac.pressurePattern,
+    zodiac.workScene,
+    zodiac.relationshipScene,
+    zodiac.familyScene,
+    zodiac.chartAgreement,
+    zodiac.chartDifference,
+    zodiac.immediateAction,
+    zodiac.longTermPractice,
+    zodiac.caution,
+    "与八字主盘互证",
+    "理论与文化来源",
+    "产品观察模型",
+    "查看来源用途与边界",
+  ]) expect(zodiacView, marker).toContain(marker);
+  expect(zodiac.sources.every(id => zodiacView.includes(id) === false)).toBe(true);
+  expect(zodiacView.match(/<a /g)).toHaveLength(zodiac.sources.length);
+  expect(zodiacView).not.toMatch(/<details[^>]*\sopen(?:=|>)/);
+  expect(html).toContain("镜像提供观察语言，不宣称人与人的命运相同");
+  expect(html).not.toMatch(/\d+(?:\.\d+)?\s*[%％]/);
+  expect(html).not.toContain("匹配度");
+});
+
+it("renders three semantically owned candidate cards in every non-zodiac mirror view", () => {
+  const chart = calculateFourPillars({ name: "甲", date: "1990-06-15", time: "09:30", location: "杭州", gender: "unspecified", timeConfidence: "exact" });
+  const groups = matchLifeMirrors(chart);
+  const html = renderToStaticMarkup(createElement(MirrorSection, { chart }));
+
+  for (const [view, candidates] of Object.entries(groups) as [keyof typeof groups, (typeof groups)[keyof typeof groups]][]) {
+    const viewStart = html.indexOf(`<div class="mirror-view" data-mirror-view="${view}" hidden="">`);
+    expect(viewStart, `${view} mirror view`).toBeGreaterThan(-1);
+    const mirrorView = extractBalancedElement(html, "div", viewStart);
+    const cardStarts = [...mirrorView.matchAll(/<article class="mirror-candidate">/g)].map(match => match.index);
+    const cards = cardStarts.map(start => extractBalancedElement(mirrorView, "article", start));
+
+    expect(cards, view).toHaveLength(3);
+    candidates.forEach((candidate, index) => {
+      const card = cards[index];
+      const headerStart = card.indexOf("<header>");
+      const header = extractBalancedElement(card, "header", headerStart);
+      const movie = isMovieCandidate(candidate) ? candidate : null;
+      const identity = movie ? movie.characterName : candidate.name;
+
+      expect(header).toContain(`<h2>${identity}</h2>`);
+      if (movie) {
+        expect(header).toContain(`<p class="mirror-film-title">《${movie.filmTitle}》</p>`);
+        expect(header).not.toContain(candidate.name);
+      } else {
+        expect(header).not.toContain("mirror-film-title");
+      }
+      expectStrictOrder(card, [
+        "<header>",
+        "为什么相似",
+        "哪里不同",
+        "可以借鉴",
+        "需要避开的阴影",
+        "<details>",
+        "来源与使用边界",
+      ]);
+      for (const field of ["similar", "different", "lesson", "shadow"] as const) {
+        const owners = candidates.filter(item => item[field] === candidate[field]).length;
+        expect(occurrences(mirrorView, candidate[field]), `${view}.${candidate.id}.${field} view ownership`).toBe(owners);
+        cards.forEach((owner, ownerIndex) => {
+          const expected = candidates[ownerIndex][field] === candidate[field] ? 1 : 0;
+          expect(occurrences(owner, candidate[field]), `${view}.${candidate.id}.${field} card ${ownerIndex}`).toBe(expected);
+        });
+      }
+      const sources = renderToStaticMarkup(createElement("p", null, candidate.sourceReferences.join("｜")));
+      expect(card).toContain(`<details><summary>来源与使用边界</summary>${sources}</details>`);
+      expect(card).not.toMatch(/<details[^>]*\sopen(?:=|>)/);
+    });
+  }
+});
+
+it("wires mirror selection accessibly and applies responsive black-gold layouts", () => {
+  const source = readFileSync(resolve("components/yi/MirrorSection.tsx"), "utf8");
+  const css = readFileSync(resolve("app/globals.css"), "utf8");
+
+  expect(occurrences(source, "matchLifeMirrors(chart)")).toBe(1);
+  expect(source).toContain('useState<MirrorView>("zodiac")');
+  expect(source).toContain('onClick={() => setActiveView(tab.id)}');
+  expect(source).toContain('aria-pressed={activeView === tab.id}');
+  expect(source).toContain('hidden={activeView !== "zodiac"}');
+  expect(source).toContain("hidden={activeView !== view.id}");
+
+  expect(css).toMatch(/\.mirror-tabs\{display:grid;grid-template-columns:repeat\(4,1fr\);gap:7px\}/);
+  expect(css).toMatch(/\.mirror-tabs button\{[^}]*min-height:44px/);
+  expect(css).toMatch(/\.mirror-tabs button\.active\{border-color:#caa760;color:#e2c77e\}/);
+  expect(css).toMatch(/\.mirror-candidates\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\);gap:12px\}/);
+  expect(css).toMatch(/\.mirror-candidate\{border-radius:18px;background:linear-gradient\(160deg,#101820,#090d10\)\}/);
+  expect(css).toMatch(/\.mirror-candidate\{[^}]*min-width:0[^}]*overflow-wrap:anywhere/);
+  expect(css).toMatch(/\.mirror-candidate aside\{background:#7d301318\}/);
+  expect(css).toMatch(/@media\(max-width:760px\)\{\.mirror-tabs\{grid-template-columns:repeat\(2,1fr\)\}\.mirror-candidates\{grid-template-columns:1fr\}\}/);
 });
 
 it("renders the complete relationship manual in progressive disclosure order", () => {
