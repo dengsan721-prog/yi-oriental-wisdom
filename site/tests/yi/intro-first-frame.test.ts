@@ -87,6 +87,25 @@ describe("public intro first frame", () => {
     expect(html).not.toMatch(/<(?:p|small)\b/);
   });
 
+  it("renders an accessible five-layer outward gold ring treatment", async () => {
+    const [css, html] = await Promise.all([
+      readFile(new URL("app/globals.css", siteRoot), "utf8"),
+      Promise.resolve(renderToStaticMarkup(createElement(YiExperience))),
+    ]);
+    const orbit = html.match(/<div class="yi-brand-orbit yi-mark" role="img" aria-label="艺">([\s\S]*?)<\/div>/)?.[0] ?? "";
+    const rings = html.match(/<i class="yi-breath-ring" aria-hidden="true" style="--ring-index:\d"><\/i>/g) ?? [];
+
+    expect(orbit).toContain('<span class="yi-brand-glyph" aria-hidden="true">艺</span>');
+    expect(rings).toHaveLength(5);
+    expect(css).toMatch(/\.yi-breath-ring\{[^}]*pointer-events:none[^}]*animation:yi-ring-outward 5s cubic-bezier\(\.22,\.55,\.28,1\) infinite[^}]*animation-delay:calc\(var\(--ring-index\) \* 1s\)/);
+    const keyframes = /@keyframes yi-ring-outward\{0%\{transform:scale\(\.72\);opacity:0\}12%\{opacity:\.66\}70%\{opacity:\.12\}100%\{transform:scale\(3\.1\);opacity:0\}\}/.exec(css)?.[0] ?? "";
+    expect(keyframes).not.toBe("");
+    expect(keyframes).not.toMatch(/rotate/i);
+    expect(css).toMatch(/@media\(prefers-reduced-motion:reduce\)\{\.yi-breath-ring\{animation:none;opacity:\.16;transform:scale\(calc\(1 \+ var\(--ring-index\) \* \.34\)\)\}\}/);
+    expect(css).not.toContain("yi-breathe");
+    expect(css).not.toContain(".yi-mark i,.yi-mark b");
+  });
+
   it("locally hosts the licensed Zhongshan seal glyph used by the first frame", async () => {
     const fontUrl = new URL("public/fonts/JFZSKSealScript_V3.5.ttf", siteRoot);
     const licenseUrl = new URL("public/fonts/OFL.txt", siteRoot);
@@ -105,7 +124,7 @@ describe("public intro first frame", () => {
     expect(license).toContain("SIL OPEN FONT LICENSE Version 1.1");
     expect(css).toMatch(/@font-face\s*\{[^}]*font-family\s*:\s*["']Yi Zhongshan Seal["'][^}]*JFZSKSealScript_V3\.5\.ttf[^}]*font-display\s*:\s*swap[^}]*\}/);
     expect(css).toMatch(/\.yi-brand-glyph\s*\{[^}]*font-family\s*:\s*["']Yi Zhongshan Seal["'][^}]*serif[^}]*\}/);
-    expect(html.match(/<span class="yi-brand-glyph">艺<\/span>/g)).toHaveLength(1);
+    expect(html.match(/<span class="yi-brand-glyph" aria-hidden="true">艺<\/span>/g)).toHaveLength(1);
     expect(getCmapRecords(font)).toEqual([
       { platformId: 0, encodingId: 3, format: 4 },
       { platformId: 1, encodingId: 0, format: 0 },

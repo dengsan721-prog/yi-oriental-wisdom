@@ -75,7 +75,8 @@ test("GitHub build is the full bundled React app", async () => {
   assert.match(js, /reference\/palm-shape-reference\.webp/);
   assert.match(js, /版本说明/);
   assert.match(js, /明代佚名编纂/);
-  assert.match(css, /@keyframes yi-breathe/);
+  assert.match(css, /@keyframes yi-ring-outward/);
+  assert.doesNotMatch(css, /@keyframes yi-breathe/);
   assert.match(css, /\.birth-fact-band/);
   assert.match(css, /\.professional-pillars/);
   assert.match(css, /\.element-diagnostics/);
