@@ -1,5 +1,5 @@
 import { ANIMAL_MIRRORS } from "./animal-mirrors";
-import { calculateCompatibility, type RelationshipType } from "./compatibility";
+import { calculateCompatibility, type CompatibilityAxisId, type RelationshipType } from "./compatibility";
 import { CONSTELLATIONS, ZODIAC_SIGNS } from "./constellations";
 import { buildFortuneTimeline } from "./fortune";
 import { calculateFourPillars } from "./four-pillars";
@@ -30,17 +30,18 @@ export type AuditableContentItem = {
   action?: string;
   unknownHour?: boolean;
   sourceIdsAreRegistry?: boolean;
+  requiredSourceIds?: readonly string[];
 };
 
 const FORBIDDEN = [
   "功能入口", "资源接口", "社会接口", "能量端口", "底层模型", "高维链接",
   "注定", "必然破财", "克夫", "克妻", "疾病诊断", "寿命已定",
 ] as const;
+const DISPLAY_TITLE_FIELDS = new Set(["title", "professionalTitle", "innovationTitle", "label"]);
 
-const CERTAIN_HOUR_PATTERNS = [
-  /(?:时柱|时干|时支)(?:为|是)[甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥]/,
-  /(?:子女|晚年|晚景)(?:会|将|必|一定|注定)/,
-] as const;
+const CERTAIN_HOUR_COORDINATE = /(?:(?:时柱\s*(?:显示|为|是|[:：=])?\s*[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])|(?:时干\s*(?:显示|为|是|[:：=])?\s*[甲乙丙丁戊己庚辛壬癸])|(?:时支\s*(?:显示|为|是|[:：=])?\s*[子丑寅卯辰巳午未申酉戌亥]))/;
+const CERTAIN_LIFE_PATTERN = /(?:子女|晚年|晚景)[^。；，,\n]{0,16}(?:会|将|必然|必定|一定|注定|确定|肯定|固定为)/g;
+const UNCERTAIN_LIFE_WORDING = /(?:不会|不将|不能|无法|未必|尚未|暂不|可能会|或许会|也许会)/;
 
 const EXPECTED_INTERPRETATION_IDS = [
   "self-day-master", "self-support", "self-interface",
@@ -54,6 +55,10 @@ const EXPECTED_INTERPRETATION_IDS = [
 
 const EXPECTED_DOMAINS = ["self", "talent", "career", "wealth", "relationship", "family", "rhythm"] as const;
 const RELATIONSHIPS: RelationshipType[] = ["partner", "parent-child", "business", "friend"];
+const EXPECTED_COMPATIBILITY_AXIS_IDS: readonly CompatibilityAxisId[] = [
+  "attraction", "communication", "trigger", "trust", "conflict",
+  "resources", "decisions", "stability", "repair",
+];
 const COMPATIBILITY_SOURCE_IDS = ["ten-god.hidden-stems.v1", "relation.gan-zhi.v1", "domain.mapping.v2"];
 const FORTUNE_SOURCE_IDS = ["calendar.eight-char.v1", "ten-god.hidden-stems.v1", "relation.gan-zhi.v1"];
 
@@ -81,6 +86,11 @@ function issue(
   return { module, itemId, rule, field };
 }
 
+function containsCertainHourDependentClaim(text: string): boolean {
+  if (CERTAIN_HOUR_COORDINATE.test(text)) return true;
+  return [...text.matchAll(CERTAIN_LIFE_PATTERN)].some(match => !UNCERTAIN_LIFE_WORDING.test(match[0]));
+}
+
 export function auditContentItems(items: readonly AuditableContentItem[]): ContentAuditIssue[] {
   const issues: ContentAuditIssue[] = [];
   const knownSourceIds = new Set(getAllSources().map(source => source.id));
@@ -99,11 +109,12 @@ export function auditContentItems(items: readonly AuditableContentItem[]): Conte
         issues.push(issue(item.module, item.itemId, "missing", field));
         continue;
       }
-      if (text.length < 12) issues.push(issue(item.module, item.itemId, "too-short", field));
+      const minimumLength = DISPLAY_TITLE_FIELDS.has(field) ? 2 : 12;
+      if (text.length < minimumLength) issues.push(issue(item.module, item.itemId, "too-short", field));
       if (FORBIDDEN.some(term => text.includes(term))) {
         issues.push(issue(item.module, item.itemId, "forbidden", field));
       }
-      if (item.unknownHour && CERTAIN_HOUR_PATTERNS.some(pattern => pattern.test(text))) {
+      if (item.unknownHour && containsCertainHourDependentClaim(text)) {
         issues.push(issue(item.module, item.itemId, "certainty", field));
       }
     }
@@ -113,6 +124,9 @@ export function auditContentItems(items: readonly AuditableContentItem[]): Conte
     } else if (item.sourceIdsAreRegistry !== false && item.sourceIds.some(id => !knownSourceIds.has(id))) {
       issues.push(issue(item.module, item.itemId, "missing-source", "sourceIds"));
     } else if (item.sourceIds.some(id => !id.trim())) {
+      issues.push(issue(item.module, item.itemId, "missing-source", "sourceIds"));
+    }
+    if (item.requiredSourceIds?.some(id => !item.sourceIds.includes(id))) {
       issues.push(issue(item.module, item.itemId, "missing-source", "sourceIds"));
     }
 
@@ -161,6 +175,8 @@ function interpretationItem(
     module: `interpretation:${fixtureId}`,
     itemId: item.id,
     fields: {
+      professionalTitle: item.professionalTitle,
+      innovationTitle: item.innovationTitle,
       basis: item.basis,
       traditionalJudgment: item.traditionalJudgment,
       plainLanguage: item.plainLanguage,
@@ -228,6 +244,7 @@ function atlasItem(method: AtlasMethodId, option: AtlasOption): AuditableContent
     module: `atlas:${method}`,
     itemId: option.id,
     fields: {
+      title: option.title,
       professionalResult: option.professionalResult,
       traditionalBasis: option.traditionalBasis,
       plainLanguage: option.plainLanguage,
@@ -313,6 +330,7 @@ export function auditProductContent(): ContentAuditIssue[] {
       ["unknown-time", uncertain, true],
     ] as const) {
       const moduleName = `compatibility:${relationship}:${variant}`;
+      requireExactIds(issues, moduleName, result.axes.map(axis => axis.id), EXPECTED_COMPATIBILITY_AXIS_IDS);
       items.push({
         module: moduleName,
         itemId: "summary",
@@ -322,6 +340,9 @@ export function auditProductContent(): ContentAuditIssue[] {
           communicationScenario: result.communicationScenario,
           actionRules: result.actionRules.join("；"),
           limitations: result.limitations.join("；"),
+          elementDynamics: result.elementDynamics.map(entry => `${entry.element}:${entry.first}/${entry.second}；${entry.observation}`).join("；"),
+          tenGodDynamics: result.tenGodDynamics.map(entry => `${entry.direction}；${entry.basis}；${entry.theme}；${entry.observation}`).join("；"),
+          combinationsAndClashes: result.combinationsAndClashes.map(entry => `${entry.symbols.join("")}；${entry.relation}；${entry.observation}`).join("；"),
         },
         sourceIds: COMPATIBILITY_SOURCE_IDS,
         boundary: result.limitations.join("；"),
@@ -333,6 +354,7 @@ export function auditProductContent(): ContentAuditIssue[] {
         module: moduleName,
         itemId: axis.id,
         fields: {
+          label: axis.label,
           professionalBasis: axis.professionalBasis,
           plainLanguage: axis.plainLanguage,
           scene: axis.scene,
@@ -433,6 +455,7 @@ export function auditProductContent(): ContentAuditIssue[] {
       caution: profile.caution,
     },
     sourceIds: profile.sourceReferences,
+    requiredSourceIds: ["model.western-astrology-element-modality"],
     boundary: profile.caution,
     scenario: profile.workStyle,
     action: profile.growthDirection,

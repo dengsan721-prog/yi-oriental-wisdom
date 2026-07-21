@@ -424,7 +424,8 @@ describe("mature face, mole and palm content", () => {
       "star-libra", "star-scorpio", "star-sagittarius", "star-capricorn", "star-aquarius", "star-pisces",
     ]);
     expect(starOptions.every((option) => !TRADITIONAL_CONTENT[option.id])).toBe(true);
-    expect(starOptions.every((option) => option.sourceIds[0] === "culture.nasa-constellations")).toBe(true);
+    expect(starOptions.every((option) => option.sourceIds[0] === "model.western-astrology-element-modality")).toBe(true);
+    expect(starOptions.every((option) => option.sourceIds.includes("culture.nasa-constellations"))).toBe(true);
     expect(starOptions.every((option) => option.caution.includes("不是完整星盘"))).toBe(true);
   });
 

@@ -36,7 +36,7 @@ function makeProfile(
     modality,
     ...copy,
     caution: CAUTION,
-    sourceReferences: ["culture.nasa-constellations"],
+    sourceReferences: ["model.western-astrology-element-modality", "culture.nasa-constellations"],
   };
 }
 
