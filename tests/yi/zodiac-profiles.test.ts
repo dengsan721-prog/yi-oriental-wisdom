@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { YI_REFERENCE_SOURCES } from "../../lib/yi/sources";
+import { getAllSources, YI_REFERENCE_SOURCES } from "../../lib/yi/sources";
 import { getZodiacProfile, ZODIAC_PROFILES } from "../../lib/yi/zodiac-profiles";
 
 const EXPECTED_SIGNS = [
@@ -139,6 +139,7 @@ describe("thirteen-dimension sun-sign profiles", () => {
   });
 
   it("states the scientific, astronomy, full-chart and lived-choice boundaries", () => {
+    const knownSourceIds = new Set(getAllSources().map(source => source.id));
     for (const profile of Object.values(ZODIAC_PROFILES)) {
       expect(profile.caution, profile.sign).toContain("太阳星座");
       expect(profile.caution, profile.sign).toContain("不是完整星盘");
@@ -151,8 +152,11 @@ describe("thirteen-dimension sun-sign profiles", () => {
       for (const dimension of ["月亮", "上升", "行星", "宫位", "相位"]) {
         expect(profile.chartComparison, profile.sign).toContain(dimension);
       }
-      expect(profile.sourceReferences, profile.sign).toEqual(["culture.nasa-constellations"]);
-      expect(profile.sourceReferences.every((id) => Boolean(YI_REFERENCE_SOURCES[id])), profile.sign).toBe(true);
+      expect(profile.sourceReferences, profile.sign).toEqual([
+        "model.western-astrology-element-modality",
+        "culture.nasa-constellations",
+      ]);
+      expect(profile.sourceReferences.every((id) => knownSourceIds.has(id)), profile.sign).toBe(true);
     }
 
     const serialized = JSON.stringify(ZODIAC_PROFILES);

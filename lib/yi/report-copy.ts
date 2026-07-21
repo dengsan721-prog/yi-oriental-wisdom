@@ -131,6 +131,17 @@ function overviewConfidence(confidence: FourPillarsResult["confidence"]): string
   return "有限置信";
 }
 
+type ResolvedMonthCommandFact = Extract<MonthCommandFact, { ambiguous: false }>;
+type AmbiguousMonthCommandFact = Extract<MonthCommandFact, { ambiguous: true }>;
+
+export function monthCommandTenGod(monthCommand: ResolvedMonthCommandFact): TenGodName;
+export function monthCommandTenGod(monthCommand: AmbiguousMonthCommandFact): null;
+export function monthCommandTenGod(monthCommand: MonthCommandFact): TenGodName | null;
+export function monthCommandTenGod(monthCommand: MonthCommandFact): TenGodName | null {
+  if (monthCommand.ambiguous) return null;
+  return monthCommand.tenGod;
+}
+
 function overviewMonth(context: ReportCopyContext): { evidence: string; tenGod: TenGodName | null } {
   if (context.monthCommand.ambiguous) {
     return {
@@ -140,7 +151,7 @@ function overviewMonth(context: ReportCopyContext): { evidence: string; tenGod: 
   }
   return {
     evidence: `${context.monthCommand.branch}月令以${context.monthCommand.hiddenStem}为本气、呈${context.monthCommand.tenGod}`,
-    tenGod: context.monthCommand.tenGod,
+    tenGod: monthCommandTenGod(context.monthCommand),
   };
 }
 
