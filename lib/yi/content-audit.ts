@@ -43,18 +43,21 @@ const HARD_FORBIDDEN_JARGON = [
 const PROMOTIONAL_CLAIM = /改名改命|最吉|必选|补足五行|康熙古法|公安保证批准|保证投资收益|保证婚姻|保证生育|注定|必然破财|克夫|克妻|疾病诊断|寿命已定/g;
 const DETERMINISTIC_MODAL = /保证|确保|一定(?!要)(?:能够|能|会)?|肯定(?:会|能)?|必会|必能|必定|必然|注定/g;
 const SUCCESS_PREDICATES = [
-  { category: "fate", pattern: /(?:改变|改善|扭转)(?:运势|命运)|避灾/g },
+  { category: "fate", pattern: /(?:改变|改善|扭转)(?:运势|命运)|(?:运势|命运).{0,8}(?:改变|改善|扭转|变好)|避灾/g },
   { category: "medical", pattern: /治疗(?:疾病|病情|高血压)|治愈(?:疾病|病情|高血压)?|治好(?:疾病|病情|高血压|病)|(?:把)?(?:疾病|病情|高血压|病).{0,6}治好|(?:疾病|病情|高血压).{0,4}好转|康复/g },
-  { category: "legal", pattern: /(?:法律)?胜诉|官司.{0,4}获胜|(?:获得)?有利判决/g },
-  { category: "financial", pattern: /盈利|赚钱|发财|获得(?:投资)?(?:收益|回报)|带来投资收益|(?:投资)?收益(?:可达|达到|为|增长|增加)/g },
-  { category: "registration", pattern: /(?:姓名)?登记成功|成功登记(?:姓名)?|获准(?:落户|登记)|批准登记|获得批准/g },
+  { category: "legal", pattern: /(?:法律)?胜诉|(?:官司|诉讼).{0,8}(?:获胜|打赢)|(?:获胜|打赢).{0,8}(?:官司|诉讼)|(?:获得)?有利判决/g },
+  { category: "financial", pattern: /盈利|赚钱|发财|获得(?:投资)?(?:收益|回报)|带来投资收益|(?:投资)?收益(?:可达|达到|为|增长|增加)|(?:投资|资金).{0,8}(?:有收益|获得收益|获得回报|盈利|赚钱|发财)/g },
+  { category: "registration", pattern: /(?:姓名|户籍|落户).{0,8}(?:登记成功|成功登记|获批登记|获准登记|批准登记)|(?:登记成功|成功登记|获批登记|获准登记|批准登记).{0,8}(?:姓名|户籍|落户)|获准落户|获得批准/g },
   { category: "marriage", pattern: /婚姻(?:幸福|美满)|改善婚姻|白头到老|感情(?:圆满|幸福)|改善感情/g },
-  { category: "fertility", pattern: /怀孕(?:生子)?|生子|有孩子|得子|成功生育/g },
+  { category: "fertility", pattern: /怀孕(?:生子)?|怀上孩子|生子|有孩子|得子|成功生育/g },
 ] as const;
-const NEGATED_CLAIM_PREFIX = /(?:未必(?:是|属于)?|不一定(?:是|属于)?|没有所谓|没有|从未|并非|未曾|不会|不能|无法|从不|并不|不是|不属于|不表示|不代表|不意味着|不等于|不构成|不保证|不作|不予|不提供|拒绝|禁止|不得|不)(?:向任何用户|对任何用户|向用户|对用户|作出|提供)?\s*$/;
-const SCOPED_NEGATION = /未必|不一定|没有所谓|没有|从未|并非|未曾|不会|不能|无法|从不|并不|不是|不属于|不表示|不代表|不意味着|不等于|不构成|不保证|不作|不予|不提供|拒绝|禁止|不得|不/;
-const PROMOTIONAL_COMPLEMENT_NEGATION = /^(?:并不是|不是|并非|不属于)[^。！？；，,\n]{0,16}(?:承诺|建议|方案|结论|判断|选择)/;
-const DENIED_ASSERTION_FRAME = /(?:(?:不能|无法)(?:回答|判断|断定|确认|确定|说明)|(?:不确定|难以判断))[^。！？；，,\n]{0,24}是否/;
+const NEGATED_CLAIM_PREFIX = /(?:未必(?:是|属于)?|不一定(?:是|属于)?|不是所谓|不会宣称|绝不是|没有所谓|没有|从未|并非|未曾|不会|不能|无法|从不|并不|不是|不属于|不表示|不代表|不意味着|不等于|不构成|不保证|不作|不予|不提供|拒绝|禁止|不得|不)(?:向任何用户|对任何用户|向用户|对用户|作出|提供)?\s*$/;
+const SCOPED_NEGATION = /未必|不一定|不是所谓|不会宣称|绝不是|并不属于|没有所谓|没有|从未|并非|未曾|不会|不能|无法|从不|并不|不是|不属于|不表示|不代表|不意味着|不等于|不构成|不保证|不作|不予|不提供|拒绝|禁止|不得|不/;
+const POST_MODAL_NEGATION = /^(?:(?:绝不是|并不是|不是)[^。！？；，,\n]{0,20}(?:结论|承诺|保证|建议|判断)|(?:无法|不能)保证|(?:并不属于|不属于)[^。！？；，,\n]{0,16}(?:承诺|建议|方案|结论|判断))/;
+const PROMOTIONAL_COMPLEMENT_NEGATION = /^(?:绝不是|并不是|并不属于|不是|并非|不属于|无法保证|不能保证)[^。！？；，,\n]{0,16}(?:承诺|建议|方案|结论|判断|选择)/;
+const EPISTEMIC_DENIAL = /(?:(?:不能|无法)(?:回答|判断|断定|确认|确定|说明)|(?:不确定|难以判断))/g;
+const VERIFICATION_VERB = /核对|确认|检查|验证|查验/;
+const VERIFICATION_OBJECT = /数据|证据|材料|信息|记录|是否|齐全/;
 const DISPLAY_TITLE_FIELDS = new Set([
   "title", "professionalTitle", "innovationTitle", "label",
   "methodLabel", "methodSubtitle", "groupTitle", "directionTitle",
@@ -179,18 +182,28 @@ function successPredicateSpans(segment: string, modals: readonly ClaimSpan[]): C
   });
 }
 
+function hasEpistemicDenial(scope: string): boolean {
+  EPISTEMIC_DENIAL.lastIndex = 0;
+  return [...scope.matchAll(EPISTEMIC_DENIAL)].some(match =>
+    scope.indexOf("是否", (match.index ?? 0) + match[0].length) >= 0);
+}
+
+function isVerificationDirective(segment: string, modal: ClaimSpan): boolean {
+  if (segment.slice(modal.start, modal.end) !== "确保") return false;
+  if (!/(?:请|务必)\s*$/.test(segment.slice(0, modal.start))) return false;
+  const suffix = segment.slice(modal.end);
+  const verb = suffix.match(VERIFICATION_VERB);
+  if (!verb || verb.index === undefined) return false;
+  return VERIFICATION_OBJECT.test(suffix.slice(verb.index + verb[0].length));
+}
+
 function hasScopedNegation(segment: string, modal: ClaimSpan, predicate: ClaimSpan): boolean {
   const claimStart = Math.min(modal.start, predicate.start);
   const claimEnd = Math.max(modal.end, predicate.end);
-  if (DENIED_ASSERTION_FRAME.test(segment.slice(0, claimEnd))) return true;
-  const modalText = segment.slice(modal.start, modal.end);
+  if (hasEpistemicDenial(segment.slice(0, claimEnd))) return true;
+  if (isVerificationDirective(segment, modal)) return true;
   const modalPrefix = segment.slice(0, modal.start);
-  const modalSuffix = segment.slice(modal.end);
-  if (
-    modalText === "确保"
-    && /(?:请|务必)\s*$/.test(modalPrefix)
-    && /^(?:先)?(?:核对|确认|检查|验证)[^。！？；，,\n]{0,32}(?:证据|数据|记录|来源|账户)/.test(modalSuffix)
-  ) return true;
+  if (predicate.end <= modal.start && POST_MODAL_NEGATION.test(segment.slice(modal.end))) return true;
   if (NEGATED_CLAIM_PREFIX.test(segment.slice(0, claimStart))) return true;
   if (NEGATED_CLAIM_PREFIX.test(modalPrefix)) return true;
   if (modal.end <= predicate.start) return SCOPED_NEGATION.test(segment.slice(modal.end, predicate.start));
