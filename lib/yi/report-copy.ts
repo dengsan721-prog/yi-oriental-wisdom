@@ -138,7 +138,7 @@ export function monthCommandTenGod(monthCommand: ResolvedMonthCommandFact): TenG
 export function monthCommandTenGod(monthCommand: AmbiguousMonthCommandFact): null;
 export function monthCommandTenGod(monthCommand: MonthCommandFact): TenGodName | null;
 export function monthCommandTenGod(monthCommand: MonthCommandFact): TenGodName | null {
-  if (monthCommand.ambiguous) return null;
+  if (monthCommand.ambiguous === true) return null;
   return monthCommand.tenGod;
 }
 

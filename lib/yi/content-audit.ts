@@ -8,7 +8,7 @@ import { buildInterpretations, buildProfessionalOverview } from "./interpretatio
 import { matchLifeMirrors, type MirrorCandidate } from "./mirrors";
 import { MOVIE_CHARACTERS, type MovieCharacterRecord } from "./movie-characters";
 import { getAllSources } from "./source-audit";
-import { getAtlasGroups, type AtlasMethodId, type AtlasOption } from "./traditional-atlas";
+import { getAtlasGroups, getAtlasMethods, type AtlasMethodId, type AtlasOption } from "./traditional-atlas";
 import type { BirthInput, FourPillarsResult, InterpretationItem } from "./types";
 import { buildZodiacMirror } from "./zodiac-mirror";
 import { ZODIAC_PROFILES } from "./zodiac-profiles";
@@ -37,11 +37,15 @@ const FORBIDDEN = [
   "功能入口", "资源接口", "社会接口", "能量端口", "底层模型", "高维链接",
   "注定", "必然破财", "克夫", "克妻", "疾病诊断", "寿命已定",
 ] as const;
-const DISPLAY_TITLE_FIELDS = new Set(["title", "professionalTitle", "innovationTitle", "label"]);
+const DISPLAY_TITLE_FIELDS = new Set([
+  "title", "professionalTitle", "innovationTitle", "label",
+  "methodLabel", "methodSubtitle", "groupTitle",
+]);
 
-const CERTAIN_HOUR_COORDINATE = /(?:(?:时柱\s*(?:显示|为|是|[:：=])?\s*[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])|(?:时干\s*(?:显示|为|是|[:：=])?\s*[甲乙丙丁戊己庚辛壬癸])|(?:时支\s*(?:显示|为|是|[:：=])?\s*[子丑寅卯辰巳午未申酉戌亥]))/;
+const CERTAIN_HOUR_COORDINATE = /(?:(?:时柱\s*(?:显示|为|是|[:：=])?\s*[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])|(?:时干\s*(?:显示|为|是|[:：=])?\s*[甲乙丙丁戊己庚辛壬癸])|(?:时支\s*(?:显示|为|是|[:：=])?\s*[子丑寅卯辰巳午未申酉戌亥]))/g;
+const NEGATED_HOUR_PREFIX = /(?:不确定|不一定|无法确定|不能确定|不能断言|无法断言|不可断言|不宜断言|并非一定|尚未确定|暂不确定)[^。；，,\n]{0,12}$/;
 const CERTAIN_LIFE_PATTERN = /(?:子女|晚年|晚景)[^。；，,\n]{0,16}(?:会|将|必然|必定|一定|注定|确定|肯定|固定为)/g;
-const UNCERTAIN_LIFE_WORDING = /(?:不会|不将|不能|无法|未必|尚未|暂不|可能会|或许会|也许会)/;
+const UNCERTAIN_LIFE_WORDING = /(?:不会|不将|不能|无法|未必|不一定|不确定|并非一定|不能断言|无法断言|不可断言|尚未|暂不|可能会|或许会|也许会)/;
 
 const EXPECTED_INTERPRETATION_IDS = [
   "self-day-master", "self-support", "self-interface",
@@ -87,7 +91,10 @@ function issue(
 }
 
 function containsCertainHourDependentClaim(text: string): boolean {
-  if (CERTAIN_HOUR_COORDINATE.test(text)) return true;
+  for (const match of text.matchAll(CERTAIN_HOUR_COORDINATE)) {
+    const clausePrefix = text.slice(0, match.index).split(/[。；，,\n]/).at(-1) ?? "";
+    if (!NEGATED_HOUR_PREFIX.test(clausePrefix)) return true;
+  }
   return [...text.matchAll(CERTAIN_LIFE_PATTERN)].some(match => !UNCERTAIN_LIFE_WORDING.test(match[0]));
 }
 
@@ -461,9 +468,31 @@ export function auditProductContent(): ContentAuditIssue[] {
     action: profile.growthDirection,
   })));
 
+  const atlasMethods = getAtlasMethods();
+  requireExactIds(issues, "atlas:methods", atlasMethods.map(method => method.id), ["face", "mole", "palm", "star"]);
   for (const [method, expected] of [["face", 10], ["mole", 12], ["palm", 10], ["star", 12]] as const) {
-    const options = getAtlasGroups(method).flatMap(group => group.options);
+    const groups = getAtlasGroups(method);
+    const options = groups.flatMap(group => group.options);
     requireCount(issues, `atlas:${method}`, "matrix", "items", options.length, expected);
+    const firstOption = options[0];
+    const methodCopy = atlasMethods.find(item => item.id === method);
+    items.push({
+      module: `atlas:${method}:navigation`,
+      itemId: `method:${method}`,
+      fields: {
+        methodLabel: methodCopy?.label ?? "",
+        methodSubtitle: methodCopy?.subtitle ?? "",
+      },
+      sourceIds: firstOption?.sourceIds ?? [],
+      boundary: firstOption?.caution ?? "",
+    });
+    items.push(...groups.map((group, index) => ({
+      module: `atlas:${method}:navigation`,
+      itemId: `group:${index}`,
+      fields: { groupTitle: group.title },
+      sourceIds: group.options[0]?.sourceIds ?? [],
+      boundary: group.options[0]?.caution ?? "",
+    })));
     items.push(...options.map(option => atlasItem(method, option)));
   }
   requireCount(issues, "constellation", "matrix", "signs", ZODIAC_SIGNS.length, 12);
