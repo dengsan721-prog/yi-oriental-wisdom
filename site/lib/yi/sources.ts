@@ -9,6 +9,7 @@ export type RuleSource = {
   sourceType: "library-calculation" | "classical-framework" | "product-method" | "product-heuristic";
   version: string;
   references: readonly string[];
+  accessDate?: string;
 };
 
 export type ReferenceSource = {
@@ -30,6 +31,7 @@ export const YI_RULE_SOURCES: Record<string, RuleSource> = {
   "structure.support-score.v2": { ruleId: "structure.support-score.v2", label: "五行支持度结构观察", appliesWhen: "至少三柱已知", sourceType: "product-heuristic", version: "2.0.0", references: ["干支主五行计数；月柱双权重", "非古籍格局或喜忌判定"] },
   "domain.mapping.v2": { ruleId: "domain.mapping.v2", label: "生活主题映射", appliesWhen: "命盘结构字段已生成", sourceType: "product-heuristic", version: "2.0.0", references: ["七主题独立选择器", "用于自我观察，不预测具体事件"] },
   "fortune.translation.v1": { ruleId: "fortune.translation.v1", label: "岁运生活领域、故事与行动转译", appliesWhen: "大运与流年计算坐标已经生成", sourceType: "product-method", version: "1.0.0", references: ["五类生活领域的产品转译表", "阶段故事与行动建议由命盘、岁运关系和十神主题共同生成"] },
+  "name.semantic-five-elements.v1": { ruleId: "name.semantic-five-elements.v1", label: "姓名语义五行人工审校", appliesWhen: "姓名字义与采用字形已经人工确认", sourceType: "product-method", version: "1.0.0", references: ["只覆盖有限人工审校字集", "五元素向量与 unknownShare 分开记录", "不从部首、笔画或国家规范推导汉字五行"], accessDate: "2026-07-22" },
 };
 
 export const YI_REFERENCE_SOURCES: Record<string, ReferenceSource> = {
@@ -83,6 +85,146 @@ export const YI_REFERENCE_SOURCES: Record<string, ReferenceSource> = {
     editionNote: "NASA Space Place 科普页；用于天文学概念边界，不为占星人格提供科学背书。",
     accessDate: "2026-07-20",
   },
+  "standard.tgh-table": {
+    id: "standard.tgh-table",
+    grade: "A",
+    title: "教育部《通用规范汉字表》",
+    url: "https://www.moe.gov.cn/jyb_sjzl/ziliao/A19/201306/t20130601_186002.html",
+    role: "用于确定通用规范汉字的 8105 字范围、顺序、三级边界和人名用字规范背景。",
+    boundary: "国家字表只支持规范字范围与序号，不支持姓名吉凶、汉字五行或人生结果。",
+    editionNote: "2013 年发布页；生成资产另以教育部 GF 0023-2020 PDF 的《字表》序号/UCS 列逐项复核。",
+    accessDate: "2026-07-22",
+  },
+  "standard.tgh-implementation": {
+    id: "standard.tgh-implementation",
+    grade: "A",
+    title: "教育部等十二部门关于贯彻实施《通用规范汉字表》的通知",
+    url: "https://www.moe.gov.cn/srcsite/A19/s229/201310/t20131015_159487.html",
+    role: "用于说明通用规范汉字表在教育、公共服务和新命名更名等场景中的实施口径。",
+    boundary: "实施通知不保证每个字体、输入法或业务系统都能正确显示所有规范字，也不支持姓名评价。",
+    editionNote: "教语信〔2013〕2 号实施通知；按教育部现有公开页面核对。",
+    accessDate: "2026-07-22",
+  },
+  "standard.tgh-variants": {
+    id: "standard.tgh-variants",
+    grade: "A/B",
+    title: "教育部《汉字规范的科学化》",
+    url: "https://www.moe.gov.cn/jyb_xwfb/xw_fbh/moe_2069/s7135/s7562/s7569/201308/t20130827_156343.html",
+    role: "用于说明《通用规范汉字表》附表的简繁对应、一简多繁分解与规范化原则。",
+    boundary: "简繁对应必须结合具体义项确认；该来源不授权静默换写现实登记字形，也不等同于康熙字形。",
+    editionNote: "2013 年教育部新闻发布会背景材料；与正式字表附表结合使用。",
+    accessDate: "2026-07-22",
+  },
+  "unicode.uax38": {
+    id: "unicode.uax38",
+    grade: "A",
+    title: "Unicode Standard Annex #38: Unicode Han Database",
+    url: "https://www.unicode.org/reports/tr38/",
+    role: "用于解释 Unihan 数据文件、属性类型、变体关系、检字字段和工程状态。",
+    boundary: "Unihan 属性是字符工程数据；读音、变体、部首与总笔画均不能直接证明姓名含义或汉字五行。",
+    editionNote: "Unicode 17.0.0，UAX #38 Revision 39；属性语义按该版本核对。",
+    accessDate: "2026-07-22",
+  },
+  "unicode.unihan-17.data": {
+    id: "unicode.unihan-17.data",
+    grade: "A",
+    title: "Unicode 17.0.0 Unihan.zip",
+    url: "https://www.unicode.org/Public/17.0.0/ucd/Unihan.zip",
+    role: "用于生成 kTGH、kTGHZ2013、kMandarin、kRSUnicode、kTotalStrokes 和简繁候选的离线工程数据。",
+    boundary: "kRSUnicode 是可多值检字记录，kTotalStrokes 是 informative 工程记录，简繁字段为 provisional；这些都不是汉字五行。",
+    editionNote: "Unicode 17.0.0 数据快照；ZIP SHA-256 为 f7a48b2b545acfaa77b2d607ae28747404ce02baefee16396c5d2d7a8ef34b5e。",
+    accessDate: "2026-07-22",
+  },
+  "unicode.license-v3": {
+    id: "unicode.license-v3",
+    grade: "A",
+    title: "Unicode License V3",
+    url: "https://www.unicode.org/license.txt",
+    role: "用于记录随派生 Unihan 数据再分发所适用的版权与许可声明。",
+    boundary: "许可允许按条件使用和分发数据，但不为产品结论、数据正确性或特定用途提供保证。",
+    editionNote: "UNICODE LICENSE V3；完整通知保存在 site/THIRD_PARTY_NOTICES.md。",
+    accessDate: "2026-07-22",
+  },
+  "law.civil-code-name-rights": {
+    id: "law.civil-code-name-rights",
+    grade: "A",
+    title: "中华人民共和国民法典姓名权相关条款",
+    url: "https://www.court.gov.cn/zixun/xiangqing/233181.html",
+    role: "用于说明姓名权、姓氏选择和姓名变更后依法登记等基本法律边界。",
+    boundary: "民法典不保证具体改名申请必然获批，产品也不替代户籍机关的个案办理要求。",
+    editionNote: "重点使用第一千零一十二、一千零一十五和第一千零一十六条；现行公开文本。",
+    accessDate: "2026-07-22",
+  },
+  "classic.zuozhuan-naming": {
+    id: "classic.zuozhuan-naming",
+    grade: "A/B",
+    title: "《左传·桓公六年》命名材料",
+    url: "https://ctext.org/chun-qiu-zuo-zhuan/huan-gong-liu-nian/zhs",
+    role: "用于呈现信、义、象、假、类及命名避讳的古典命名文化背景。",
+    boundary: "古典命名材料不提供现代姓名分数、Unicode 字形映射或每字唯一五行表。",
+    editionNote: "中国哲学书电子化计划公开文本；用于文化原文定位，版本异文仍需纸本互校。",
+    accessDate: "2026-07-22",
+  },
+  "classic.liji-quli-naming": {
+    id: "classic.liji-quli-naming",
+    grade: "A/B",
+    title: "《礼记·曲礼上》命名避讳材料",
+    url: "https://ctext.org/text.pl?if=gb&node=9516&show=parallel",
+    role: "用于呈现古代命名和避讳的礼制语境，不直接转成现代评分。",
+    boundary: "礼制文本不规定现代户籍登记结果，也不支持姓名改变命运或每字唯一五行。",
+    editionNote: "中国哲学书电子化计划中英对照公开文本；用于原文定位与文化说明。",
+    accessDate: "2026-07-22",
+  },
+  "classic.shangshu-hongfan-five-elements": {
+    id: "classic.shangshu-hongfan-five-elements",
+    grade: "A/B",
+    title: "《尚书·洪范》五行材料",
+    url: "https://ctext.org/shang-shu/great-plan",
+    role: "用于水、火、木、金、土及润下、炎上、曲直、从革、稼穑的文化母题。",
+    boundary: "原典没有现代 8105 字逐字五行表；产品的字符向量必须另行标为人工审校规则。",
+    editionNote: "中国哲学书电子化计划公开文本；仅作五行母题和术语背景。",
+    accessDate: "2026-07-22",
+  },
+  "classic.liji-yueling-five-elements": {
+    id: "classic.liji-yueling-five-elements",
+    grade: "A/B",
+    title: "《礼记·月令》五音与时令材料",
+    url: "https://ctext.org/liji/yue-ling",
+    role: "用于说明古代五音、时令与五行配属的历史文化体系。",
+    boundary: "古代五音体系不能机械换算现代普通话声母，也不能直接生成姓名五行得分。",
+    editionNote: "中国哲学书电子化计划公开文本；用于体系边界与历史语境。",
+    accessDate: "2026-07-22",
+  },
+  "academic.five-grid-history": {
+    id: "academic.five-grid-history",
+    grade: "B",
+    title: "王治理《中日姓名预测学漫谈及比较》",
+    url: "https://core.ac.uk/download/41439923.pdf",
+    role: "用于追溯近现代五格剖象与中日姓名预测方法的历史传播背景。",
+    boundary: "五格属于近现代文化附录，不是中国古法，不进入主分，也不作为改名建议门禁。",
+    editionNote: "公开学术论文下载页；仅用于方法史定位，不为预测效力背书。",
+    accessDate: "2026-07-22",
+  },
+  "mps.name-report-2021": {
+    id: "mps.name-report-2021",
+    grade: "A/B",
+    title: "公安部户政管理研究中心《二〇二一年全国姓名报告》",
+    url: "https://gat.hunan.gov.cn/gat/jwgk/jwzx/gabyw/202201/t20220126_22471460.html",
+    role: "仅用于选择高频姓名字的首版人工审校覆盖样本，并提示流行度与重名风险。",
+    boundary: "报告中的频次不代表名字质量、性别适配、文化五行或个体人生结果。",
+    editionNote: "公安部户政管理研究中心 2021 年报告的政府网站公开转载页。",
+    accessDate: "2026-07-22",
+  },
+  "mps.same-name-service": {
+    id: "mps.same-name-service",
+    grade: "A",
+    title: "公安部互联网政务服务平台",
+    url: "https://ywtb.mps.gov.cn/",
+    role: "作为用户主动离站查询同名信息的官方服务入口，不预填姓名。",
+    boundary: "登录、实名认证和离站后的数据处理由公安部平台负责；本产品不代查，也不保证服务结果。",
+    editionNote: "公安部互联网政务服务平台入口；访问前应展示离站与隐私提示。",
+    accessDate: "2026-07-22",
+  },
 };
 
 export type UnifiedSource = {
@@ -128,7 +270,7 @@ function ruleSource(rule: RuleSource): UnifiedSource {
         : isProductMethod
           ? "产品方法由团队维护，只用于结构核对、生活转译与行动练习；不冒充古籍原文、科学测量或确定性预测。"
           : "产品启发式仅作自我观察和行动练习，不冒充古籍原文或科学测量结论。",
-    accessDate: "2026-07-20",
+    accessDate: rule.accessDate ?? "2026-07-20",
   };
 }
 

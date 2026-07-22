@@ -74,6 +74,42 @@ const expectedMovieUrls: Record<string, string> = {
 };
 
 describe("unified Yi source registry", () => {
+  it("registers every name-data source with a distinct role, boundary, edition and access date", () => {
+    const requiredNameSourceIds = [
+      "standard.tgh-table",
+      "standard.tgh-implementation",
+      "standard.tgh-variants",
+      "unicode.uax38",
+      "unicode.unihan-17.data",
+      "unicode.license-v3",
+      "law.civil-code-name-rights",
+      "classic.zuozhuan-naming",
+      "classic.liji-quli-naming",
+      "classic.shangshu-hongfan-five-elements",
+      "classic.liji-yueling-five-elements",
+      "academic.five-grid-history",
+      "mps.name-report-2021",
+      "mps.same-name-service",
+      "name.semantic-five-elements.v1",
+    ];
+    const registry = new Map(getAllSources().map(source => [source.id, source]));
+
+    for (const id of requiredNameSourceIds) {
+      const source = registry.get(id);
+      expect(source, id).toBeDefined();
+      expect(source?.role.length, id).toBeGreaterThanOrEqual(12);
+      expect(source?.boundary.length, id).toBeGreaterThanOrEqual(12);
+      expect(source?.editionNote.length, id).toBeGreaterThanOrEqual(12);
+      expect(source?.accessDate, id).toBe("2026-07-22");
+    }
+
+    expect(registry.get("name.semantic-five-elements.v1")?.category).toBe("产品方法");
+    expect(registry.get("name.semantic-five-elements.v1")?.id).not.toBe("standard.tgh-table");
+    expect(registry.get("mps.name-report-2021")?.boundary).toContain("不代表名字质量");
+    expect(registry.get("unicode.unihan-17.data")?.boundary).toContain("不是汉字五行");
+    expect(registry.get("academic.five-grid-history")?.boundary).toContain("不进入主分");
+  });
+
   it("keeps descriptive, HTTPS-safe, uniquely identified source records", () => {
     const sources = getAllSources();
     expect(sources.length).toBeGreaterThanOrEqual(15);
