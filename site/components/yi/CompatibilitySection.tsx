@@ -20,7 +20,12 @@ export function getCompatibilityParticipants(primaryName: string, secondName: st
 }
 
 export function formatCompatibilityCopy(copy: string, participants: CompatibilityParticipants) {
-  return copy.replace(/[AB]/g, marker => marker === "A" ? participants.first : participants.second);
+  return copy
+    .replaceAll("A→B", `${participants.first}→${participants.second}`)
+    .replaceAll("B→A", `${participants.second}→${participants.first}`)
+    .replaceAll("A对B", `${participants.first}对${participants.second}`)
+    .replaceAll("B对A", `${participants.second}对${participants.first}`)
+    .replace(/(A|B)(?=侧|(?:年|月|日|时)(?:柱|干|支)?|先|再|注意|从|会|该|的|待核|[：:]|长期|完整|用)/g, marker => marker === "A" ? participants.first : participants.second);
 }
 
 export function CompatibilitySection({ chart, primaryName, relationship, primaryParentRole, secondBirth, onRelationshipChange, onSecondBirthChange, onParentChildPrimaryRoleChange }: { chart: FourPillarsResult; primaryName: string; relationship: RelationshipType; primaryParentRole: ParentChildPrimaryRole; secondBirth: BirthSubmission | null; onRelationshipChange: (value: RelationshipType) => void; onSecondBirthChange: (value: BirthSubmission) => void; onParentChildPrimaryRoleChange: (value: ParentChildPrimaryRole) => void }) {
@@ -32,7 +37,7 @@ export function CompatibilitySection({ chart, primaryName, relationship, primary
     <label className="relationship-kind">关系类型<select value={relationship} onChange={event => onRelationshipChange(event.target.value as RelationshipType)}>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     {relationship === "parent-child" && <section className="parent-child-role" role="group" aria-label="报告主人亲子角色"><button type="button" aria-pressed={primaryParentRole === "caregiver"} className={primaryParentRole === "caregiver" ? "active" : ""} onClick={() => onParentChildPrimaryRoleChange("caregiver")}>报告主人是照顾者</button><button type="button" aria-pressed={primaryParentRole === "child"} className={primaryParentRole === "child" ? "active" : ""} onClick={() => onParentChildPrimaryRoleChange("child")}>报告主人是孩子</button></section>}
     <BirthIntake heading="录入对方出生坐标" onSubmit={onSecondBirthChange} />
-    {result && <aside className="compatibility-participants" aria-label="合盘参与者"><span>A方：{participants.first}</span><span>B方：{participants.second}</span></aside>}
+    {result && <aside className="compatibility-participants" aria-label="合盘参与者"><span>报告主人：{participants.first}</span><span>对方：{participants.second}</span></aside>}
     {result && <div className="compatibility-manual">
       <header className="compatibility-summary"><small>两个人的关系主旋律</small><p>{format(result.summary)}</p></header>
       <div className="compatibility-axes">

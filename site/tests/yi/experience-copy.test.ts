@@ -437,6 +437,9 @@ it("names submitted parent-child participants without changing the A/B calculati
   expect(getCompatibilityParticipants("顾临川", "小满", "parent-child", "caregiver")).toEqual({ first: "顾临川（照顾者）", second: "小满（孩子）" });
   expect(getCompatibilityParticipants("顾临川", "小满", "parent-child", "child")).toEqual({ first: "顾临川（孩子）", second: "小满（照顾者）" });
   expect(getCompatibilityParticipants("", "", "partner", "caregiver")).toEqual({ first: "报告主人", second: "第二位" });
+  const caregiverParticipants = getCompatibilityParticipants("顾临川", "小满", "parent-child", "caregiver");
+  expect(formatCompatibilityCopy("A→B；B→A；A先/B先；A侧/B侧；A注意/B注意；A从/B从；A会/B会；A该/B该", caregiverParticipants)).toBe("顾临川（照顾者）→小满（孩子）；小满（孩子）→顾临川（照顾者）；顾临川（照顾者）先/小满（孩子）先；顾临川（照顾者）侧/小满（孩子）侧；顾临川（照顾者）注意/小满（孩子）注意；顾临川（照顾者）从/小满（孩子）从；顾临川（照顾者）会/小满（孩子）会；顾临川（照顾者）该/小满（孩子）该");
+  expect(formatCompatibilityCopy("AI、AB test、API、B2B", caregiverParticipants)).toBe("AI、AB test、API、B2B");
 
   const html = renderToStaticMarkup(createElement(CompatibilitySection, {
     chart,
@@ -452,8 +455,8 @@ it("names submitted parent-child participants without changing the A/B calculati
   expect(html).toContain('aria-label="报告主人亲子角色"');
   expect(html).toMatch(/aria-pressed="true"[^>]*>报告主人是照顾者<\/button>/);
   expect(html).toMatch(/aria-pressed="false"[^>]*>报告主人是孩子<\/button>/);
-  expect(html).toContain("A方：顾临川（照顾者）");
-  expect(html).toContain("B方：小满（孩子）");
+  expect(html).toContain("报告主人：顾临川（照顾者）");
+  expect(html).toContain("对方：小满（孩子）");
   expect(html).toContain("录入对方出生坐标");
 
   const childHtml = renderToStaticMarkup(createElement(CompatibilitySection, {
@@ -469,10 +472,10 @@ it("names submitted parent-child participants without changing the A/B calculati
 
   expect(childHtml).toMatch(/aria-pressed="false"[^>]*>报告主人是照顾者<\/button>/);
   expect(childHtml).toMatch(/aria-pressed="true"[^>]*>报告主人是孩子<\/button>/);
-  expect(childHtml).toContain("A方：顾临川（孩子）");
-  expect(childHtml).toContain("B方：小满（照顾者）");
+  expect(childHtml).toContain("报告主人：顾临川（孩子）");
+  expect(childHtml).toContain("对方：小满（照顾者）");
 
-  const unexplainedMarkers = /(?:A先|B先|A侧|B侧|A注意|B注意|A从|B从|A会|B会|A该|B该)/;
+  const unexplainedMarkers = /(?:A→B|B→A|A对B|B对A|A先|B先|A再|B再|A侧|B侧|A注意|B注意|A从|B从|A会|B会|A该|B该|A(?:年|月|日|时)(?:柱|干|支)?|B(?:年|月|日|时)(?:柱|干|支)?|A待核|B待核|A长期|B长期|A完整|B用)/;
   expect(html).not.toMatch(unexplainedMarkers);
   expect(html).toContain("顾临川（照顾者）→小满（孩子）");
   expect(html).toContain("顾临川（照顾者）：");
