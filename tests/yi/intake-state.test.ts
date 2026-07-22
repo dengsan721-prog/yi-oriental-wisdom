@@ -5,8 +5,10 @@ import {
   BirthIntake,
   clampWheelDate,
   getTimeFocusTarget,
+  getReadyBirthSubmission,
   isBirthSubmissionReady,
   normalizeBirthSubmission,
+  transitionBirthSelection,
   type BirthConfirmationState,
   type BirthSubmissionDraft,
 } from "../../components/yi/BirthIntake";
@@ -25,6 +27,23 @@ const baseInput: BirthSubmissionDraft = {
 };
 
 describe("birth intake state", () => {
+  it("keeps only adopted birth coordinates through selection transitions", () => {
+    const dateConfirmed = transitionBirthSelection({ draft: baseInput, confirmation: { date: false, time: false } }, { type: "confirm-date", date: { mode: "solar", year: 1992, month: 11, day: 3, isLeapMonth: false } });
+    expect(dateConfirmed).toMatchObject({ draft: { date: { year: 1992, month: 11, day: 3 } }, confirmation: { date: true, time: false } });
+
+    const unknown = transitionBirthSelection({ draft: baseInput, confirmation: { date: true, time: false } }, { type: "confirm-unknown-time" });
+    expect(unknown).toMatchObject({ draft: { timeMode: "unknown", hour: null, minute: null, earthlyIndex: null }, confirmation: { date: true, time: true } });
+    expect(transitionBirthSelection(unknown, { type: "cancel" })).toEqual(unknown);
+
+    const exact = transitionBirthSelection({ draft: baseInput, confirmation: { date: true, time: true } }, { type: "confirm-time", time: { timeMode: "exact", hour: 9, minute: 30, earthlyIndex: null } });
+    expect(transitionBirthSelection(exact, { type: "cancel" })).toEqual(exact);
+  });
+
+  it("returns no submission until both adopted coordinates are confirmed", () => {
+    expect(getReadyBirthSubmission(baseInput, { date: false, time: true })).toBeNull();
+    expect(getReadyBirthSubmission(baseInput, { date: true, time: true })).toEqual(normalizeBirthSubmission(baseInput));
+  });
+
   it("requires explicit date and time confirmation before submission", () => {
     const unconfirmed: BirthConfirmationState = { date: false, time: false };
 

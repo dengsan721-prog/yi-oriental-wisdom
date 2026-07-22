@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createInitialResultShellState, createResultScrollPositions, getAvailableSections, getResultSections, resultShellReducer, restoreScrollTop, selectResultSection } from "../../components/yi/ResultShell";
@@ -34,6 +35,15 @@ function renderResult(birth: BirthInput = exactBirth) {
 }
 
 describe("result navigation", () => {
+  it("allows a 390px report header to wrap a long name and its actions", () => {
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+
+    expect(css).toMatch(/@media\(max-width:390px\)\{[^}]*\.result-head-main\{[^}]*flex-wrap:wrap/);
+    expect(css).toMatch(/\.result-head-main>div:first-child\{[^}]*min-width:0/);
+    expect(css).toMatch(/\.result-head-main>div:first-child b\{[^}]*overflow-wrap:anywhere/);
+    expect(css).toMatch(/\.result-head-main>div:last-child\{[^}]*width:100%[^}]*justify-content:flex-end[^}]*flex-wrap:wrap/);
+  });
+
   it("shows the adopted report facts and unknown-time scope in the header", () => {
     const { report, html } = renderResult();
     const unknown = renderResult({ ...exactBirth, time: null, timeConfidence: "unknown" as const });

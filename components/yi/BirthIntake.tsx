@@ -14,8 +14,14 @@ export type BirthSubmissionDraft = {
   gender: BirthInput["gender"];
 };
 export type BirthConfirmationState = { date: boolean; time: boolean };
+export type BirthTimeSelection = Pick<BirthSubmissionDraft, "timeMode" | "hour" | "minute" | "earthlyIndex">;
+export type BirthSelectionState = { draft: BirthSubmissionDraft; confirmation: BirthConfirmationState };
+export type BirthSelectionAction =
+  | { type: "confirm-date"; date: BirthDateSelection }
+  | { type: "confirm-time"; time: BirthTimeSelection }
+  | { type: "confirm-unknown-time" }
+  | { type: "cancel" };
 
-type PendingTime = Pick<BirthSubmissionDraft, "timeMode" | "hour" | "minute" | "earthlyIndex">;
 type FocusTarget = { isConnected: boolean; focus: () => void };
 
 export function getTimeFocusTarget<T extends FocusTarget>(opener: T | null, fallback: T | null) {
@@ -31,6 +37,13 @@ export function clampWheelDate(current: Pick<BirthDateSelection, "year" | "month
 
 export function isBirthSubmissionReady(state: BirthConfirmationState) {
   return state.date && state.time;
+}
+
+export function transitionBirthSelection(state: BirthSelectionState, action: BirthSelectionAction): BirthSelectionState {
+  if (action.type === "confirm-date") return { draft: { ...state.draft, date: action.date }, confirmation: { ...state.confirmation, date: true } };
+  if (action.type === "confirm-time") return { draft: { ...state.draft, ...action.time }, confirmation: { ...state.confirmation, time: true } };
+  if (action.type === "confirm-unknown-time") return { draft: { ...state.draft, timeMode: "unknown", hour: null, minute: null, earthlyIndex: null }, confirmation: { ...state.confirmation, time: true } };
+  return state;
 }
 
 export function normalizeBirthSubmission(draft: BirthSubmissionDraft): BirthSubmission {
@@ -52,6 +65,10 @@ export function normalizeBirthSubmission(draft: BirthSubmissionDraft): BirthSubm
   };
 }
 
+export function getReadyBirthSubmission(draft: BirthSubmissionDraft, confirmation: BirthConfirmationState) {
+  return isBirthSubmissionReady(confirmation) ? normalizeBirthSubmission(draft) : null;
+}
+
 export function BirthIntake({ onSubmit, heading = "建立出生坐标" }: { onSubmit: (value: BirthSubmission) => void; heading?: string }) {
   const currentYear = new Date().getFullYear();
   const [draft, setDraft] = useState<BirthSubmissionDraft>({
@@ -61,7 +78,7 @@ export function BirthIntake({ onSubmit, heading = "建立出生坐标" }: { onSu
   const [dateOpen, setDateOpen] = useState(false);
   const [pendingDate, setPendingDate] = useState(draft.date);
   const [timeOpen, setTimeOpen] = useState(false);
-  const [pendingTime, setPendingTime] = useState<PendingTime>({
+  const [pendingTime, setPendingTime] = useState<BirthTimeSelection>({
     timeMode: draft.timeMode, hour: draft.hour, minute: draft.minute, earthlyIndex: draft.earthlyIndex,
   });
   const [confirmation, setConfirmation] = useState<BirthConfirmationState>({ date: false, time: false });
@@ -79,6 +96,12 @@ export function BirthIntake({ onSubmit, heading = "建立出生坐标" }: { onSu
   const dateSummary = confirmation.date ? (draft.date.mode === "solar" ? labels.solar : labels.lunar) : "请选择出生日期";
   const timeSummary = draft.timeMode === "unknown" ? "时柱未定，仍可排盘" : draft.timeMode === "earthly" ? getEarthlyPeriodLabel(draft.earthlyIndex) : `${String(draft.hour).padStart(2, "0")}:${String(draft.minute).padStart(2, "0")}`;
   const isReady = isBirthSubmissionReady(confirmation);
+
+  const applyBirthTransition = (action: BirthSelectionAction) => {
+    const next = transitionBirthSelection({ draft, confirmation }, action);
+    setDraft(next.draft);
+    setConfirmation(next.confirmation);
+  };
 
   useEffect(() => {
     if (dateOpen) cancelRef.current?.focus();
@@ -102,6 +125,11 @@ export function BirthIntake({ onSubmit, heading = "建立出生坐标" }: { onSu
     });
   };
 
+  const cancelDatePicker = () => {
+    applyBirthTransition({ type: "cancel" });
+    closeDatePicker();
+  };
+
   const closeTimePicker = () => {
     setTimeOpen(false);
     if (restoreTimeFocusFrame.current !== null) cancelAnimationFrame(restoreTimeFocusFrame.current);
@@ -112,10 +140,14 @@ export function BirthIntake({ onSubmit, heading = "建立出生坐标" }: { onSu
     });
   };
 
+  const cancelTimePicker = () => {
+    applyBirthTransition({ type: "cancel" });
+    closeTimePicker();
+  };
+
   const chooseTimeMode = (timeMode: TimeMode, opener: HTMLButtonElement) => {
     if (timeMode === "unknown") {
-      setDraft({ ...draft, timeMode, hour: null, minute: null, earthlyIndex: null });
-      setConfirmation(value => ({ ...value, time: true }));
+      applyBirthTransition({ type: "confirm-unknown-time" });
       return;
     }
     timeOpenerRef.current = opener;
@@ -149,7 +181,7 @@ export function BirthIntake({ onSubmit, heading = "建立出生坐标" }: { onSu
   };
 
   return (
-    <form className="intake-card wheel-intake" onSubmit={(event) => { event.preventDefault(); if (!isBirthSubmissionReady(confirmation)) return; onSubmit(normalizeBirthSubmission(draft)); }}>
+    <form className="intake-card wheel-intake" onSubmit={(event) => { event.preventDefault(); const submission = getReadyBirthSubmission(draft, confirmation); if (!submission) return; onSubmit(submission); }}>
       <div className="step-head"><h1>{heading}</h1></div>
       <div className="identity-row">
         <label><span>姓名（选填）</span><input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="姓名（选填）" /></label>
@@ -172,7 +204,7 @@ export function BirthIntake({ onSubmit, heading = "建立出生坐标" }: { onSu
       <button className="primary submit" type="submit" disabled={!isReady}>生成命盘 <span>→</span></button>
       {dateOpen && (
         <div className="picker-overlay" role="dialog" aria-modal="true" aria-labelledby="date-picker-title" ref={dialogRef} onKeyDown={(event) => {
-          if (event.key === "Escape") { event.preventDefault(); closeDatePicker(); return; }
+          if (event.key === "Escape") { event.preventDefault(); cancelDatePicker(); return; }
           if (event.key !== "Tab") return;
           const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]):not([tabindex="-1"]), [tabindex="0"]') ?? []);
           if (!focusable.length) return;
@@ -181,7 +213,7 @@ export function BirthIntake({ onSubmit, heading = "建立出生坐标" }: { onSu
           else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
         }}>
           <div className="picker-sheet">
-            <header><button ref={cancelRef} type="button" onClick={closeDatePicker}>取消</button><h2 id="date-picker-title">选择出生日期</h2><button type="button" onClick={() => { setDraft({ ...draft, date: pendingDate }); setConfirmation(value => ({ ...value, date: true })); closeDatePicker(); }}>确认</button></header>
+            <header><button ref={cancelRef} type="button" onClick={cancelDatePicker}>取消</button><h2 id="date-picker-title">选择出生日期</h2><button type="button" onClick={() => { applyBirthTransition({ type: "confirm-date", date: pendingDate }); closeDatePicker(); }}>确认</button></header>
             <div className="calendar-switch" role="group" aria-label="历法"><button type="button" aria-pressed={pendingDate.mode === "solar"} className={pendingDate.mode === "solar" ? "active" : ""} onClick={() => updatePending({ mode: "solar", isLeapMonth: false })}>阳历</button><button type="button" aria-pressed={pendingDate.mode === "lunar"} className={pendingDate.mode === "lunar" ? "active" : ""} onClick={() => updatePending({ mode: "lunar", isLeapMonth: false })}>农历</button></div>
             <div className="date-wheels">
               <WheelPicker label="年" value={pendingDate.year} options={options.years.map((value) => ({ value, label: `${value} 年` }))} onChange={(year) => updatePending({ year })} />
@@ -193,7 +225,7 @@ export function BirthIntake({ onSubmit, heading = "建立出生坐标" }: { onSu
       )}
       {timeOpen && (
         <div className="picker-overlay" role="dialog" aria-modal="true" aria-labelledby="time-picker-title" ref={timeDialogRef} onKeyDown={(event) => {
-          if (event.key === "Escape") { event.preventDefault(); closeTimePicker(); return; }
+          if (event.key === "Escape") { event.preventDefault(); cancelTimePicker(); return; }
           if (event.key !== "Tab") return;
           const focusable = Array.from(timeDialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]):not([tabindex="-1"]), [tabindex="0"]') ?? []);
           if (!focusable.length) return;
@@ -202,7 +234,7 @@ export function BirthIntake({ onSubmit, heading = "建立出生坐标" }: { onSu
           else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
         }}>
           <div className="picker-sheet time-picker-sheet">
-            <header><button ref={timeCancelRef} type="button" onClick={closeTimePicker}>取消</button><h2 id="time-picker-title">选择出生时辰</h2><button type="button" onClick={() => { setDraft({ ...draft, ...pendingTime }); setConfirmation(value => ({ ...value, time: true })); closeTimePicker(); }}>确认</button></header>
+            <header><button ref={timeCancelRef} type="button" onClick={cancelTimePicker}>取消</button><h2 id="time-picker-title">选择出生时辰</h2><button type="button" onClick={() => { applyBirthTransition({ type: "confirm-time", time: pendingTime }); closeTimePicker(); }}>确认</button></header>
             <TimePicker mode={pendingTime.timeMode} hour={pendingTime.hour} minute={pendingTime.minute} earthlyIndex={pendingTime.earthlyIndex} onChange={(time) => setPendingTime({ timeMode: time.mode, hour: time.hour, minute: time.minute, earthlyIndex: time.earthlyIndex })} />
           </div>
         </div>
