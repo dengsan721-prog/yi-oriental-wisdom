@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Solar } from "lunar-typescript";
+import { EightChar, Solar } from "lunar-typescript";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChartSection } from "../../components/yi/ChartSection";
 import { FortuneSection } from "../../components/yi/FortuneSection";
@@ -53,6 +53,7 @@ function relationCoordinates(relation: unknown): string[] | undefined {
 }
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.doUnmock("../../lib/yi/fortune");
   vi.doUnmock("../../lib/yi/report-model");
   vi.resetModules();
@@ -73,11 +74,24 @@ describe("1. civil-midnight day convention", () => {
     expect(dayOracle("1990-06-15", "23:40", 2)).not.toBe(dayOracle("1990-06-15", "23:40", 1));
   });
 
-  it("locks sect 2 explicitly in every base-chart constructor", () => {
-    const fourPillarsSource = readFileSync(new URL("../../lib/yi/four-pillars.ts", import.meta.url), "utf8");
-    const fortuneSource = readFileSync(new URL("../../lib/yi/fortune.ts", import.meta.url), "utf8");
-    expect(fourPillarsSource).toMatch(/setSect\(2\)/);
-    expect(fortuneSource).toMatch(/setSect\(2\)/);
+  it("calls setSect(2) before the base chart consumes its day coordinate", () => {
+    const sequence: string[] = [];
+    const originalSetSect = EightChar.prototype.setSect;
+    const originalGetDayGan = EightChar.prototype.getDayGan;
+    const setSect = vi.spyOn(EightChar.prototype, "setSect").mockImplementation(function (this: EightChar, sect: number) {
+      sequence.push(`set:${sect}`);
+      return originalSetSect.call(this, sect);
+    });
+    vi.spyOn(EightChar.prototype, "getDayGan").mockImplementation(function (this: EightChar) {
+      sequence.push("read:day");
+      return originalGetDayGan.call(this);
+    });
+
+    calculateFourPillars(exactBirth);
+
+    expect(setSect).toHaveBeenCalledWith(2);
+    expect(sequence.indexOf("set:2")).toBeGreaterThanOrEqual(0);
+    expect(sequence.indexOf("set:2")).toBeLessThan(sequence.indexOf("read:day"));
   });
 
   it("discloses the civil-midnight convention and the late-子时 boundary in professional copy", () => {
@@ -92,10 +106,25 @@ describe("1. civil-midnight day convention", () => {
     expect(`${ordinaryBoundary}${lateBoundary}`).not.toMatch(/sect\s*[12]/i);
   });
 
-  it("distinguishes the start-age algorithm parameter from the day-boundary convention", () => {
-    const period = buildFortuneTimeline(calculateFourPillars(exactBirth), exactBirth)[0];
-    const fortuneSource = readFileSync(new URL("../../lib/yi/fortune.ts", import.meta.url), "utf8");
-    expect(fortuneSource).toMatch(/getYun\([^,]+,\s*1\)/);
+  it("sets sect 2 before fortune calls getYun with gender and start-age method 1", () => {
+    const chart = calculateFourPillars(exactBirth);
+    const sequence: string[] = [];
+    const originalSetSect = EightChar.prototype.setSect;
+    const originalGetYun = EightChar.prototype.getYun;
+    const setSect = vi.spyOn(EightChar.prototype, "setSect").mockImplementation(function (this: EightChar, sect: number) {
+      sequence.push(`set:${sect}`);
+      return originalSetSect.call(this, sect);
+    });
+    const getYun = vi.spyOn(EightChar.prototype, "getYun").mockImplementation(function (this: EightChar, gender: number, sect?: number) {
+      sequence.push(`yun:${gender}:${sect}`);
+      return originalGetYun.call(this, gender, sect);
+    });
+
+    const period = buildFortuneTimeline(chart, exactBirth)[0];
+
+    expect(setSect).toHaveBeenCalledWith(2);
+    expect(getYun).toHaveBeenCalledWith(1, 1);
+    expect(sequence.indexOf("set:2")).toBeLessThan(sequence.indexOf("yun:1:1"));
     expect(period.method.basis).toMatch(/起运年龄.*第1种计算口径/);
     expect(`${period.method.basis}${period.method.ruleVersion}`).not.toMatch(/(?:日柱|换日).*sect|yun-sect/i);
   });
@@ -171,6 +200,17 @@ describe("3. complete compatibility relationship rules", () => {
     const result = calculateCompatibility(first, second, "business");
     expect(result.combinationsAndClashes.some((item) => item.relation === "三合" && item.symbols.includes("辰"))).toBe(false);
   });
+
+  it("does not use an ambiguous candidate pillar to complete a trine", () => {
+    const filler = "丑";
+    const first = chartWithBranches(["申", "子", filler, filler]);
+    const second = chartWithBranches([filler, filler, filler, "辰"]);
+    second.ambiguousPillars = ["hour"];
+
+    const result = calculateCompatibility(first, second, "business");
+
+    expect(result.combinationsAndClashes.some((item) => item.relation === "三合" && item.symbols.join("") === "申子辰")).toBe(false);
+  });
 });
 
 describe("4. truthful relationship provenance", () => {
@@ -180,6 +220,14 @@ describe("4. truthful relationship provenance", () => {
     expect(rule.sourceType).toBe("product-method");
     expect(unified?.title).toContain("产品方法记录");
     expect(`${unified?.role}${unified?.editionNote}`).not.toContain("古典文献来源待核");
+  });
+
+  it("gives product methods a dedicated boundary instead of calling them heuristics", () => {
+    for (const id of ["relation.gan-zhi.v1", "fortune.translation.v1"]) {
+      const source = getAllSources().find((item) => item.id === id);
+      expect(source?.boundary, id).toMatch(/产品方法|产品维护/);
+      expect(source?.boundary, id).not.toContain("产品启发式");
+    }
   });
 
   it("shows 三命通会 only as contextual background beside relationship rules", () => {
