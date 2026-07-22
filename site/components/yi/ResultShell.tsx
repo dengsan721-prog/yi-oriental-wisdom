@@ -12,11 +12,12 @@ import { SourceNote } from "./SourceNote";
 import { FortuneSection } from "./FortuneSection";
 import { MirrorSection } from "./MirrorSection";
 import { CompatibilitySection } from "./CompatibilitySection";
+import type { ParentChildPrimaryRole } from "./CompatibilitySection";
 import { TraditionSection } from "./TraditionSection";
 
 export const getResultSections = () => [
   ["portrait", "画像"], ["chart", "命盘"], ["detail", "详批"],
-  ["fortune", "大运"], ["mirror", "镜像"], ["compatibility", "合盘"],
+  ["fortune", "大运"], ["compatibility", "合盘"], ["mirror", "镜像"],
   ["tradition", "传统"],
 ] as const;
 
@@ -28,12 +29,13 @@ export const selectResultSection = (positions: Map<ReportSectionId, number>, act
   positions.set(activeSection, scrollTop);
   onSectionChange(next);
 };
-export type ResultShellState = { compatibility: { relationship: RelationshipType; secondBirth: BirthSubmission | null } };
-export type ResultShellAction = { type: "set-relationship"; relationship: RelationshipType } | { type: "set-second-birth"; birth: BirthSubmission };
-export const createInitialResultShellState = (): ResultShellState => ({ compatibility: { relationship: "partner", secondBirth: null } });
+export type ResultShellState = { compatibility: { relationship: RelationshipType; secondBirth: BirthSubmission | null; primaryParentRole: ParentChildPrimaryRole } };
+export type ResultShellAction = { type: "set-relationship"; relationship: RelationshipType } | { type: "set-second-birth"; birth: BirthSubmission } | { type: "set-parent-child-primary-role"; primaryParentRole: ParentChildPrimaryRole };
+export const createInitialResultShellState = (): ResultShellState => ({ compatibility: { relationship: "partner", secondBirth: null, primaryParentRole: "caregiver" } });
 export function resultShellReducer(state: ResultShellState, action: ResultShellAction): ResultShellState {
   if (action.type === "set-relationship") return { ...state, compatibility: { ...state.compatibility, relationship: action.relationship } };
-  return { ...state, compatibility: { ...state.compatibility, secondBirth: action.birth } };
+  if (action.type === "set-second-birth") return { ...state, compatibility: { ...state.compatibility, secondBirth: action.birth } };
+  return { ...state, compatibility: { ...state.compatibility, primaryParentRole: action.primaryParentRole } };
 }
 
 export function ResultShell({ name, chart, birth, report, overview, interpretations, activeSection, onSectionChange, onRestart, onSaveHome, storageError }: {
@@ -68,7 +70,7 @@ export function ResultShell({ name, chart, birth, report, overview, interpretati
       <div hidden={activeSection !== "detail"}><DetailSection items={interpretations} /></div>
       <div hidden={activeSection !== "fortune"}><FortuneSection chart={chart} birth={birth} /></div>
       <div hidden={activeSection !== "mirror"}><MirrorSection chart={chart} /></div>
-      <div hidden={activeSection !== "compatibility"}><CompatibilitySection chart={chart} relationship={state.compatibility.relationship} secondBirth={state.compatibility.secondBirth} onRelationshipChange={relationship => dispatch({ type: "set-relationship", relationship })} onSecondBirthChange={birth => dispatch({ type: "set-second-birth", birth })} /></div>
+      <div hidden={activeSection !== "compatibility"}><CompatibilitySection chart={chart} primaryName={name} relationship={state.compatibility.relationship} primaryParentRole={state.compatibility.primaryParentRole} secondBirth={state.compatibility.secondBirth} onRelationshipChange={relationship => dispatch({ type: "set-relationship", relationship })} onSecondBirthChange={birth => dispatch({ type: "set-second-birth", birth })} onParentChildPrimaryRoleChange={primaryParentRole => dispatch({ type: "set-parent-child-primary-role", primaryParentRole })} /></div>
       <div hidden={activeSection !== "tradition"}><TraditionSection chart={chart} birth={birth} /></div>
       {shouldRenderSourceNote(activeSection) && <SourceNote chart={chart} items={interpretations} />}
     </div>
