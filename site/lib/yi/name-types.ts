@@ -1,4 +1,4 @@
-import type { ElementName } from "./types";
+import type { ElementName, Pillar, PillarKey } from "./types";
 
 export type UnicodeCodePoint = `U+${string}`;
 export type TghLevel = 1 | 2 | 3;
@@ -192,4 +192,71 @@ export type ReviewedFullNameRecord = {
   reviewDate: string;
   reviewerRole: string;
   risks: ReviewedFullNameRisk[];
+};
+
+export type NameBlockerOccurrence = AnalysisBlocker & {
+  characterIndex: number;
+  rawCluster: string;
+};
+
+export type NameSemanticSummary = {
+  vector: ElementVector | null;
+  reviewedCount: number;
+  totalCount: number;
+  coverage: number;
+  unknownShare: number;
+  methodIds: CharacterMethodEvidence["methodId"][];
+  sourceIds: string[];
+};
+
+export type NameSurname = {
+  value: string;
+  kind: "single" | "compound" | "unknown";
+};
+
+export type NameChartUnavailableReason = "year-boundary" | "month-boundary" | "unknown-time";
+
+export type NameChartInteractionInput = {
+  available: boolean;
+  certainPillars: Readonly<Partial<Record<PillarKey, Readonly<Pillar>>>>;
+  unavailableReasons: NameChartUnavailableReason[];
+};
+
+export type NameChartInteraction = {
+  available: boolean;
+  input: NameChartInteractionInput;
+  nameVector: ElementVector | null;
+  ruleObservation: string;
+  plainLanguageScene: string;
+  action: string;
+  boundary: string;
+  sourceIds: string[];
+};
+
+export type NameAdviceTier = "hold" | "keep" | "micro-adjust" | "rebuild" | "rebuild-direction";
+
+export type NameAdvice = {
+  tier: NameAdviceTier;
+  ruleObservation: string;
+  plainLanguageScene: string;
+  action: string;
+  boundary: string;
+  sourceIds: string[];
+};
+
+export type NameDirectionExample = {
+  glyph: string;
+  meaning: string;
+  sourceIds: string[];
+};
+
+export type NameDirection = {
+  id: string;
+  title: string;
+  ruleObservation: string;
+  plainLanguageScene: string;
+  action: string;
+  boundary: string;
+  exampleCharacters: NameDirectionExample[];
+  sourceIds: string[];
 };
