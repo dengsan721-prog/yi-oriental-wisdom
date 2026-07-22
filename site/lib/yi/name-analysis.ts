@@ -389,7 +389,7 @@ export async function analyzeName(
       totalStrokeRecord: reviewedPair
         ? { ...reviewedPair.totalStrokeRecord }
         : coreRecord ? { ...coreRecord.totalStrokeRecord } : null,
-      inputTghFacts: reviewedPair && inputRecord ? {
+      inputTghFacts: selectedCandidate && inputRecord ? {
         glyph: inputRecord.glyph,
         codePoint: inputRecord.codePoint,
         tghIndex: inputRecord.tghIndex,

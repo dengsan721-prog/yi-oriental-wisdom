@@ -12,13 +12,13 @@ import type {
 import type { NameRealityScore, NameRealityTestAnswers } from "../../lib/yi/name-score-contract";
 import type { FourPillarsResult, ProfessionalReport } from "../../lib/yi/types";
 
-type NameAnalysisMode = "current" | "traditional-reference";
+type NameAnalysisMode = "current" | "traditional-reference" | "candidate";
 type RealityDimension = keyof NameRealityTestAnswers;
 type RealityAnswer = NameRealityTestAnswers[RealityDimension];
 
 export type NameAnalysisViewResult = {
   rawInput: string;
-  mode: NameAnalysisMode | "candidate";
+  mode: NameAnalysisMode;
   characters: NameCharacterRecord[];
   blockers: NameBlockerOccurrence[];
   semanticSummary: NameSemanticSummary;
@@ -40,6 +40,7 @@ type NameAnalysisRequest = {
   traditionalSelections: Readonly<Record<number, string | undefined>>;
   actualReadings: Readonly<Record<number, string | undefined>>;
   realityTest: NameRealityTestAnswers;
+  requestFreshDirection: boolean;
   chart?: Readonly<FourPillarsResult>;
   professionalReport?: Readonly<ProfessionalReport>;
 };
@@ -106,7 +107,6 @@ export type NameAnalysisViewState = {
   traditionalSelections: Record<number, string | undefined>;
   actualReadings: Record<number, string | undefined>;
   realityTest: NameRealityTestAnswers;
-  showDirections: boolean;
   sameNameExitConfirmed: boolean;
 };
 
@@ -116,7 +116,6 @@ export type NameAnalysisViewAction =
   | { type: "select-traditional"; characterIndex: number; glyph: string }
   | { type: "select-reading"; characterIndex: number; reading: string }
   | { type: "answer-reality"; dimension: RealityDimension; answer: RealityAnswer }
-  | { type: "toggle-directions" }
   | { type: "confirm-same-name-exit" };
 
 export function createNameAnalysisViewState(name: string): NameAnalysisViewState {
@@ -126,7 +125,6 @@ export function createNameAnalysisViewState(name: string): NameAnalysisViewState
     traditionalSelections: {},
     actualReadings: {},
     realityTest: { ...DEFAULT_REALITY_TEST },
-    showDirections: false,
     sameNameExitConfirmed: false,
   };
 }
@@ -147,7 +145,6 @@ export function nameAnalysisViewReducer(state: NameAnalysisViewState, action: Na
     ...state,
     realityTest: { ...state.realityTest, [action.dimension]: action.answer } as NameRealityTestAnswers,
   };
-  if (action.type === "toggle-directions") return { ...state, showDirections: !state.showDirections };
   return { ...state, sameNameExitConfirmed: true };
 }
 
@@ -164,6 +161,7 @@ export async function loadNameAnalysisForView(
     traditionalSelections: request.traditionalSelections ?? {},
     actualReadings: request.actualReadings ?? {},
     realityTest: request.realityTest ?? { ...DEFAULT_REALITY_TEST },
+    requestFreshDirection: request.mode === "candidate",
     chart: request.chart,
     professionalReport: request.professionalReport,
   });
@@ -294,23 +292,23 @@ function ChartComparison({ interaction }: { interaction: NameChartInteraction | 
       <article><small>出生盘稳定坐标</small><p>{Object.entries(interaction.input.certainPillars).map(([key, pillar]) => `${PILLAR_LABELS[key as keyof typeof PILLAR_LABELS]} ${pillar.stem}${pillar.branch}`).join(" · ") || "边界坐标仍待核"}</p></article>
     </div>
     <p>{interaction.ruleObservation}</p>
+    <p>{interaction.plainLanguageScene}</p>
     <p>{interaction.action}</p>
     <aside>{interaction.boundary}</aside>
   </section>;
 }
 
-function AdviceAndDirections({ analysis, showDirections, onToggleDirections }: {
+function AdviceAndDirections({ analysis, candidateMode }: {
   analysis: NameAnalysisViewResult;
-  showDirections: boolean;
-  onToggleDirections: () => void;
+  candidateMode: boolean;
 }) {
   return <section className="name-advice" aria-labelledby="name-advice-title">
     <header><small>建议门禁</small><h3 id="name-advice-title">{ADVICE_LABELS[analysis.advice.tier]}</h3></header>
     <p>{analysis.advice.ruleObservation}</p>
+    <p>{analysis.advice.plainLanguageScene}</p>
     <p>{analysis.advice.action}</p>
     <aside>{analysis.advice.boundary}</aside>
-    <button aria-expanded={showDirections} onClick={onToggleDirections} type="button">{showDirections ? "收起命名方向" : "看看命名方向"}</button>
-    {showDirections && <section className="name-directions" aria-labelledby="name-directions-title">
+    {candidateMode && <section className="name-directions" aria-labelledby="name-directions-title">
       <h4 id="name-directions-title">三个命名方向</h4>
       <p>示例字经过逐字审校；动态组合的完整姓名统一标为“待人工复核”。</p>
       <div>{analysis.directions.map(direction => <article key={direction.id}>
@@ -356,7 +354,6 @@ export function NameAnalysisView({
   onTraditionalSelection,
   onReadingSelection,
   onRealityAnswer,
-  onToggleDirections,
   onConfirmSameNameExit,
 }: {
   analysis: NameAnalysisViewResult;
@@ -365,7 +362,6 @@ export function NameAnalysisView({
   onTraditionalSelection: (characterIndex: number, glyph: string) => void;
   onReadingSelection: (characterIndex: number, reading: string) => void;
   onRealityAnswer: (dimension: RealityDimension, answer: RealityAnswer) => void;
-  onToggleDirections: () => void;
   onConfirmSameNameExit: () => void;
 }) {
   return <section className="name-analysis-section" data-name-analysis="ready">
@@ -375,7 +371,12 @@ export function NameAnalysisView({
         <div><dt>姓名现实使用实测分</dt><dd>{scoreStatus(analysis.realityScore)}</dd></div>
         <div><dt>资料覆盖</dt><dd>字义 {analysis.semanticSummary.reviewedCount}/{analysis.semanticSummary.totalCount} · 未知占比 {percent(analysis.semanticSummary.unknownShare)}</dd></div>
       </dl>
+      <div className="name-summary-translation">
+        <p><b>本次观察</b>{analysis.ruleObservation}</p>
+        <p><b>现实场景</b>{analysis.plainLanguageScene}</p>
+      </div>
       <p className="name-first-action"><b>现在做一件事</b>{analysis.action}</p>
+      <p className="name-summary-boundary"><b>阅读边界</b>{analysis.boundary}</p>
     </header>
 
     <details className="name-analysis-depth">
@@ -386,6 +387,7 @@ export function NameAnalysisView({
           <div className="name-mode-switch">
             <button aria-pressed={state.mode === "current"} onClick={() => onModeChange("current")} type="button">现用姓名</button>
             <button aria-pressed={state.mode === "traditional-reference"} onClick={() => onModeChange("traditional-reference")} type="button">传统字形参考（可选）</button>
+            <button aria-pressed={state.mode === "candidate"} onClick={() => onModeChange("candidate")} type="button">新姓名方向</button>
           </div>
           <div className="name-character-grid">{analysis.characters.map((character, index) => <NameCharacterCard
             character={character}
@@ -400,7 +402,7 @@ export function NameAnalysisView({
 
         <RealityTest analysis={analysis} onRealityAnswer={onRealityAnswer} state={state} />
         <ChartComparison interaction={analysis.chartInteraction} />
-        <AdviceAndDirections analysis={analysis} onToggleDirections={onToggleDirections} showDirections={state.showDirections} />
+        <AdviceAndDirections analysis={analysis} candidateMode={state.mode === "candidate"} />
         <EvidenceAndSources analysis={analysis} onConfirmSameNameExit={onConfirmSameNameExit} sameNameExitConfirmed={state.sameNameExitConfirmed} />
       </div>
     </details>
@@ -458,7 +460,6 @@ export function NameAnalysisSection({ name, chart, report }: {
     onModeChange={mode => dispatch({ type: "set-mode", mode })}
     onReadingSelection={(characterIndex, reading) => dispatch({ type: "select-reading", characterIndex, reading })}
     onRealityAnswer={(dimension, answer) => dispatch({ type: "answer-reality", dimension, answer })}
-    onToggleDirections={() => dispatch({ type: "toggle-directions" })}
     onTraditionalSelection={(characterIndex, glyph) => dispatch({ type: "select-traditional", characterIndex, glyph })}
     state={state}
   />;

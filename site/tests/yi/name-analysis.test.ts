@@ -213,11 +213,24 @@ describe("name analysis input and glyph adoption", () => {
       expect.objectContaining({ id: "key-meaning-unreviewed" }),
     ]));
 
+    const core = await nameDataModule.loadTghCoreData();
+    const inputRecord = core.lookupByGlyph("后");
     const unreviewed = await analyzeName({ rawInput: "后", mode: "traditional-reference", traditionalSelections: { 0: "後" } });
     expect(unreviewed?.characters[0].analysisBlockers).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: "unsupported-input" }),
       expect.objectContaining({ id: "key-meaning-unreviewed" }),
     ]));
+    expect(inputRecord).not.toBeNull();
+    expect(unreviewed?.characters[0].inputTghFacts).toEqual({
+      glyph: "后",
+      codePoint: inputRecord!.codePoint,
+      tghIndex: inputRecord!.tghIndex,
+      tghLevel: inputRecord!.tghLevel,
+      readings: inputRecord!.readings,
+      radicalStrokeRecords: inputRecord!.radicalStrokeRecords,
+      totalStrokeRecord: inputRecord!.totalStrokeRecord,
+      sourceIds: ["standard.tgh-table", "unicode.unihan-17.data"],
+    });
   });
 
   it("requires an actual reading for a multi-reading glyph and never guesses an unreviewed meaning", async () => {
