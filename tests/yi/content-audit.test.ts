@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   auditContentItems,
+  auditNameAnalysis,
   auditProductContent,
+  nameAnalysisToAuditableItems,
   type AuditableContentItem,
 } from "../../lib/yi/content-audit";
 import type { CompatibilityResult } from "../../lib/yi/compatibility";
+import { analyzeName } from "../../lib/yi/name-analysis";
+import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import type { MonthCommandFact } from "../../lib/yi/types";
 
 it("passes the complete product content matrix", () => {
@@ -45,6 +49,31 @@ describe("content audit rule guards", () => {
     expect(issues).toContainEqual(expect.objectContaining({ rule: "forbidden", field: "summary" }));
   });
 
+  it.each([
+    "改名改命", "最吉", "必选", "补足五行", "康熙古法", "公安保证批准",
+    "保证发财", "保证治愈", "保证婚姻", "保证生育", "保证避灾", "保证投资收益",
+  ])("rejects the name-module prohibited claim %s", forbidden => {
+    const issues = auditContentItems([{
+      ...completeItem,
+      itemId: forbidden,
+      fields: { summary: `这段姓名说明错误地承诺${forbidden}，必须被审计拒绝。` },
+    }]);
+
+    expect(issues).toContainEqual(expect.objectContaining({ rule: "forbidden", field: "summary" }));
+  });
+
+  it("does not mistake an explicit no-guarantee boundary for a deterministic promise", () => {
+    const issues = auditContentItems([{
+      ...completeItem,
+      itemId: "no-guarantee",
+      fields: { summary: "本产品不保证投资收益，也不替代任何医疗、法律或财务判断。" },
+    }]);
+
+    expect(issues).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ itemId: "no-guarantee", rule: "forbidden" }),
+    ]));
+  });
+
   it("reports duplicate scenarios and actions inside one module", () => {
     const duplicate = { ...completeItem, itemId: "duplicate" };
     const issues = auditContentItems([completeItem, duplicate]);
@@ -77,6 +106,121 @@ describe("content audit rule guards", () => {
 
     expect(issues).toEqual(expect.arrayContaining([
       expect.objectContaining({ rule: "certainty", field: "summary" }),
+    ]));
+  });
+
+  it("rejects certain year or month coordinates when those pillars are awaiting confirmation", () => {
+    const issues = auditContentItems([
+      { ...completeItem, itemId: "year", uncertainPillars: ["year"], fields: { summary: "年柱显示甲子，因此把边界候选写成了确定事实。" } },
+      { ...completeItem, itemId: "month", uncertainPillars: ["month"], fields: { summary: "月柱为丙寅，因此把交节候选写成了确定事实。" } },
+      { ...completeItem, itemId: "boundary", uncertainPillars: ["year", "month"], fields: { summary: "年柱与月柱尚未确定，当前不把候选坐标写成结论。" } },
+    ]);
+
+    expect(issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ itemId: "year", rule: "certainty", field: "summary" }),
+      expect.objectContaining({ itemId: "month", rule: "certainty", field: "summary" }),
+    ]));
+    expect(issues).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ itemId: "boundary", rule: "certainty" }),
+    ]));
+  });
+});
+
+describe("name analysis audit conversion", () => {
+  it("converts every visible layer, scans every converted field, and passes clean source-backed content", async () => {
+    const birth = { name: "林知远", date: "1985-02-20", time: "10:20", location: "成都", gender: "unspecified" as const, timeConfidence: "exact" as const };
+    const result = await analyzeName({
+      rawInput: birth.name,
+      chart: calculateFourPillars(birth),
+      realityTest: { hearing: "both", inputDisplay: "both", documents: "both", meaningAcceptance: "accepted" },
+    });
+    expect(result).not.toBeNull();
+
+    const items = nameAnalysisToAuditableItems(result!);
+    const visibleFields = new Set(items.flatMap(item => Object.keys(item.fields)));
+    for (const required of [
+      "rawInput", "ruleObservation", "plainLanguageScene", "adviceTier", "scoreSummary",
+      "rawAndCodePoints", "adoptedGlyphAndBasis", "tghFacts", "readings", "engineeringFacts",
+      "meaningAndSemantic", "variantCandidates", "analysisBlockers", "confirmedUsageRisks",
+      "aggregateBlockers", "aggregateConfirmedUsageRisks", "fullNameRecord", "chartStatus",
+      "unavailableReasons", "stablePillars", "nameVector", "directionTitle", "exampleCharacters",
+    ]) {
+      expect(visibleFields.has(required), required).toBe(true);
+    }
+    expect(auditNameAnalysis(result!)).toEqual([]);
+
+    for (const item of items) {
+      for (const field of Object.keys(item.fields)) {
+        const mutated: AuditableContentItem = {
+          ...item,
+          itemId: `${item.itemId}:${field}`,
+          fields: { ...item.fields, [field]: "这段可见内容被注入改名改命的错误承诺，审计必须发现。" },
+        };
+        expect(auditContentItems([mutated]), `${item.itemId}.${field}`).toEqual(expect.arrayContaining([
+          expect.objectContaining({ rule: "forbidden", field }),
+        ]));
+      }
+    }
+  });
+
+  it("collects and validates nested character, score, chart, advice, and direction source IDs", async () => {
+    const result = await analyzeName({ rawInput: "林知远" });
+    expect(result).not.toBeNull();
+    const readingMutation = structuredClone(result!);
+    readingMutation.characters[0].readings[0].sourceId = "unknown.name-source" as "unicode.unihan-17.data";
+
+    expect(auditNameAnalysis(readingMutation)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ module: "name-analysis:character", rule: "missing-source", field: "sourceIds" }),
+    ]));
+
+    const methodMutation = structuredClone(result!);
+    methodMutation.characters[0].semantic!.methodId = "unknown.name-method" as "name.semantic-five-elements.v1";
+    expect(auditNameAnalysis(methodMutation)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ module: "name-analysis:character", rule: "missing-source", field: "sourceIds" }),
+    ]));
+
+    const directionMutation = structuredClone(result!);
+    directionMutation.directions[0].exampleCharacters[0].sourceIds[0] = "unknown.direction-source";
+    expect(auditNameAnalysis(directionMutation)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ module: "name-analysis:direction", rule: "missing-source", field: "sourceIds" }),
+    ]));
+  });
+
+  it("scans aggregate risk evidence and exact reviewed full-name metadata", async () => {
+    const result = await analyzeName({
+      rawInput: "林知远",
+      usageRisks: [{
+        id: "persistent-input-document-or-calling-issue",
+        severity: "hard",
+        evidence: "本人和人工复核均确认多个系统持续无法正确录入。",
+        manuallyReviewed: true,
+        userConfirmed: true,
+      }],
+    });
+    expect(result?.exactReviewedFullName).not.toBeNull();
+
+    const riskMutation = structuredClone(result!);
+    riskMutation.confirmedUsageRisks[0].evidence = "这项风险证据被注入改名改命的错误承诺。";
+    expect(auditNameAnalysis(riskMutation)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ module: "name-analysis:summary", rule: "forbidden", field: "aggregateConfirmedUsageRisks" }),
+    ]));
+
+    const reviewMutation = structuredClone(result!);
+    reviewMutation.exactReviewedFullName!.reviewerRole = "宣称康熙古法的错误复核角色";
+    expect(auditNameAnalysis(reviewMutation)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ module: "name-analysis:summary", rule: "forbidden", field: "fullNameRecord" }),
+    ]));
+  });
+
+  it("carries unknown-hour and year/month boundary state into certainty auditing", async () => {
+    const base = { name: "林知远", date: "2024-02-04", time: null, location: "北京", gender: "unspecified" as const, timeConfidence: "unknown" as const };
+    const result = await analyzeName({ rawInput: base.name, chart: calculateFourPillars(base) });
+    expect(result?.chartInteraction).not.toBeNull();
+    const corrupted = structuredClone(result!);
+    corrupted.chartInteraction!.ruleObservation = "年柱显示甲子，月柱为丙寅，时柱显示甲子，因此形成确定结论。";
+
+    expect(auditNameAnalysis(corrupted)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ module: "name-analysis:chart", rule: "certainty", field: "chartStatus" }),
     ]));
   });
 });

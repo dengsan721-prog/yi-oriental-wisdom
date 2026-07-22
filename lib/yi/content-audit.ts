@@ -10,7 +10,9 @@ import { matchLifeMirrors, type MirrorCandidate } from "./mirrors";
 import { MOVIE_CHARACTERS, type MovieCharacterRecord } from "./movie-characters";
 import { getAllSources } from "./source-audit";
 import { getAtlasGroups, getAtlasMethods, type AtlasMethodId, type AtlasOption } from "./traditional-atlas";
-import type { BirthInput, FourPillarsResult, InterpretationItem } from "./types";
+import type { NameAnalysisResult } from "./name-analysis";
+import type { NameCharacterRecord } from "./name-types";
+import type { BirthInput, FourPillarsResult, InterpretationItem, PillarKey } from "./types";
 import { buildZodiacMirror } from "./zodiac-mirror";
 import { ZODIAC_PROFILES } from "./zodiac-profiles";
 
@@ -30,6 +32,7 @@ export type AuditableContentItem = {
   scenario?: string;
   action?: string;
   unknownHour?: boolean;
+  uncertainPillars?: readonly PillarKey[];
   sourceIdsAreRegistry?: boolean;
   requiredSourceIds?: readonly string[];
 };
@@ -37,10 +40,14 @@ export type AuditableContentItem = {
 const FORBIDDEN = [
   "功能入口", "资源接口", "社会接口", "能量端口", "底层模型", "高维链接",
   "注定", "必然破财", "克夫", "克妻", "疾病诊断", "寿命已定",
+  "改名改命", "最吉", "必选", "补足五行", "康熙古法", "公安保证批准",
+  "保证发财", "保证治愈", "保证婚姻", "保证生育", "保证避灾",
 ] as const;
+const DETERMINISTIC_PROMISE = /(?:保证|必定|必然)[^。；，,\n]{0,12}(?:发财|收益|治愈|康复|婚姻|生育|避灾|批准|法律结果|投资)/g;
+const NEGATED_PROMISE_PREFIX = /(?:不|不会|不能|无法|从不|并不|不作|不予)[^。；，,\n]{0,4}$/;
 const DISPLAY_TITLE_FIELDS = new Set([
   "title", "professionalTitle", "innovationTitle", "label",
-  "methodLabel", "methodSubtitle", "groupTitle",
+  "methodLabel", "methodSubtitle", "groupTitle", "directionTitle",
 ]);
 
 const CERTAIN_HOUR_COORDINATE = /(?:(?:时柱\s*(?:显示|为|是|[:：=])?\s*[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥])|(?:时干\s*(?:显示|为|是|[:：=])?\s*[甲乙丙丁戊己庚辛壬癸])|(?:时支\s*(?:显示|为|是|[:：=])?\s*[子丑寅卯辰巳午未申酉戌亥]))/g;
@@ -113,6 +120,24 @@ function containsCertainHourDependentClaim(text: string): boolean {
   return [...text.matchAll(CERTAIN_LIFE_PATTERN)].some(match => !UNCERTAIN_LIFE_WORDING.test(match[0]));
 }
 
+function containsCertainPillarCoordinate(text: string, pillar: "year" | "month"): boolean {
+  const label = pillar === "year" ? "年" : "月";
+  const pattern = new RegExp(`${label}柱\\s*(?:显示|为|是|[:：=])?\\s*[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]`, "g");
+  for (const match of text.matchAll(pattern)) {
+    const clausePrefix = text.slice(0, match.index).split(/[。；，,\n]/).at(-1) ?? "";
+    if (!NEGATED_HOUR_PREFIX.test(clausePrefix)) return true;
+  }
+  return false;
+}
+
+function containsDeterministicPromise(text: string): boolean {
+  for (const match of text.matchAll(DETERMINISTIC_PROMISE)) {
+    const clausePrefix = text.slice(0, match.index).split(/[。；，,\n]/).at(-1) ?? "";
+    if (!NEGATED_PROMISE_PREFIX.test(clausePrefix)) return true;
+  }
+  return false;
+}
+
 export function auditContentItems(items: readonly AuditableContentItem[]): ContentAuditIssue[] {
   const issues: ContentAuditIssue[] = [];
   const knownSourceIds = new Set(getAllSources().map(source => source.id));
@@ -133,10 +158,16 @@ export function auditContentItems(items: readonly AuditableContentItem[]): Conte
       }
       const minimumLength = DISPLAY_TITLE_FIELDS.has(field) ? 2 : 12;
       if (text.length < minimumLength) issues.push(issue(item.module, item.itemId, "too-short", field));
-      if (FORBIDDEN.some(term => text.includes(term))) {
+      if (FORBIDDEN.some(term => text.includes(term)) || containsDeterministicPromise(text)) {
         issues.push(issue(item.module, item.itemId, "forbidden", field));
       }
-      if (item.unknownHour && containsCertainHourDependentClaim(text)) {
+      const uncertainPillars = new Set(item.uncertainPillars ?? []);
+      if (item.unknownHour) uncertainPillars.add("hour");
+      if (
+        (uncertainPillars.has("hour") && containsCertainHourDependentClaim(text))
+        || (uncertainPillars.has("year") && containsCertainPillarCoordinate(text, "year"))
+        || (uncertainPillars.has("month") && containsCertainPillarCoordinate(text, "month"))
+      ) {
         issues.push(issue(item.module, item.itemId, "certainty", field));
       }
     }
@@ -162,6 +193,156 @@ export function auditContentItems(items: readonly AuditableContentItem[]): Conte
   }
 
   return issues;
+}
+
+function uniqueSourceIds(values: readonly string[]): string[] {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function characterSourceIds(character: NameCharacterRecord): string[] {
+  return uniqueSourceIds([
+    ...(character.tghIndex === null ? [] : ["standard.tgh-table"]),
+    ...character.readings.map(reading => reading.sourceId),
+    ...character.radicalStrokeRecords.map(record => record.sourceId),
+    ...(character.totalStrokeRecord ? [character.totalStrokeRecord.sourceId] : []),
+    ...character.variantCandidates.flatMap(candidate => candidate.sourceIds),
+    ...(character.semantic ? [character.semantic.methodId] : []),
+    ...(character.semantic?.sourceIds ?? []),
+  ]);
+}
+
+function vectorText(vector: Record<string, number> | null): string {
+  if (!vector) return "姓名语义向量暂未取得，当前保持未知状态。";
+  return Object.entries(vector).map(([element, value]) => `${element}${value.toFixed(3)}`).join("、");
+}
+
+export function nameAnalysisToAuditableItems(result: NameAnalysisResult): AuditableContentItem[] {
+  const items: AuditableContentItem[] = [{
+    module: "name-analysis:summary",
+    itemId: "summary",
+    fields: {
+      rawInput: `本次完整保留的原始姓名输入为：“${result.rawInput}”。`,
+      analysisMode: `本次姓名分析模式为${result.mode}，模式切换不会静默改写原始姓名。`,
+      surnameAndGivenName: `识别姓氏为“${result.surname.value || "待核"}”（${result.surname.kind}），其余名字为“${result.givenName || "待核"}”。`,
+      reviewStatus: `完整姓名组合复核状态：${result.fullNameReviewStatus}；只有有限整名库的精确匹配才显示已审校。`,
+      fullNameRecord: result.exactReviewedFullName
+        ? `精确整名记录为${result.exactReviewedFullName.id}，姓名${result.exactReviewedFullName.fullName}，采用读音${result.exactReviewedFullName.adoptedReadings.join("、")}，字形口径${result.exactReviewedFullName.adoptedGlyphBasis}，复核日期${result.exactReviewedFullName.reviewDate}，复核角色${result.exactReviewedFullName.reviewerRole}，记录风险${result.exactReviewedFullName.risks.map(risk => `${risk.id}：${risk.evidence}`).join("；") || "无"}。`
+        : "当前完整姓名没有命中有限整名审校库，组合状态保持待人工复核。",
+      ruleObservation: result.ruleObservation,
+      plainLanguageScene: result.plainLanguageScene,
+      semanticCoverage: `人工审校字义覆盖${result.semanticSummary.reviewedCount}/${result.semanticSummary.totalCount}，覆盖率${(result.semanticSummary.coverage * 100).toFixed(1)}%，未知比例${(result.semanticSummary.unknownShare * 100).toFixed(1)}%，采用方法${result.semanticSummary.methodIds.join("、") || "待核"}。`,
+      semanticVector: `姓名文化向量：${vectorText(result.semanticSummary.vector)}`,
+      adviceTier: `建议门禁档位为${result.advice.tier}；${result.advice.ruleObservation}`,
+      adviceScene: result.advice.plainLanguageScene,
+      adviceAction: result.advice.action,
+      aggregateBlockers: result.blockers.length
+        ? `整名待确认事实为${result.blockers.map(blocker => `第${blocker.characterIndex + 1}字${blocker.id}：${blocker.evidence}`).join("；")}`
+        : "当前完整姓名没有字形、读音或字义口径的待确认阻断项。",
+      aggregateConfirmedUsageRisks: result.confirmedUsageRisks.length
+        ? `整名共同确认的现实硬风险为${result.confirmedUsageRisks.map(risk => `${risk.id}：${risk.evidence}；人工复核${risk.manuallyReviewed}；用户确认${risk.userConfirmed}`).join("；")}`
+        : "当前完整姓名没有经人工与用户共同确认的现实硬风险。",
+      frequencyContext: result.frequencyContext,
+    },
+    sourceIds: uniqueSourceIds([...result.sourceIds, ...result.advice.sourceIds, ...result.semanticSummary.methodIds, ...result.semanticSummary.sourceIds]),
+    boundary: `${result.boundary}；${result.advice.boundary}`,
+    scenario: result.plainLanguageScene,
+    action: result.action,
+  }];
+
+  items.push({
+    module: "name-analysis:score",
+    itemId: result.realityScore.version,
+    fields: {
+      scoreSummary: result.realityScore.total === null
+        ? `现实使用实测总分暂不显示，当前状态为${result.realityScore.totalStatus}，不重算已验证项目的权重。`
+        : `现实使用实测总分为${result.realityScore.total}分，来自四项固定规则直接相加。`,
+      hearingRule: `听见与读准：回答${result.realityScore.dimensions.hearing.answer}；${result.realityScore.dimensions.hearing.reason}；规则${result.realityScore.dimensions.hearing.ruleId}；得分${result.realityScore.dimensions.hearing.score ?? "未验证"}。`,
+      inputRule: `输入与显示：回答${result.realityScore.dimensions.inputDisplay.answer}；${result.realityScore.dimensions.inputDisplay.reason}；规则${result.realityScore.dimensions.inputDisplay.ruleId}；得分${result.realityScore.dimensions.inputDisplay.score ?? "未验证"}。`,
+      documentRule: `证件与系统：回答${result.realityScore.dimensions.documents.answer}；${result.realityScore.dimensions.documents.reason}；规则${result.realityScore.dimensions.documents.ruleId}；得分${result.realityScore.dimensions.documents.score ?? "未验证"}。`,
+      meaningRule: `含义与本人接受度：回答${result.realityScore.dimensions.meaningAcceptance.answer}；${result.realityScore.dimensions.meaningAcceptance.reason}；规则${result.realityScore.dimensions.meaningAcceptance.ruleId}；得分${result.realityScore.dimensions.meaningAcceptance.score ?? "未验证"}。`,
+    },
+    sourceIds: result.realityScore.sourceIds,
+    boundary: "分数仅来自用户明确完成的现实场景验证；资料收录、文化向量和命盘并读均不加分。",
+    action: "未验证项目保持未验证，不按已完成项目重新计算分母。",
+  });
+
+  for (const [index, character] of result.characters.entries()) {
+    const vector = character.semantic?.vector ?? null;
+    items.push({
+      module: "name-analysis:character",
+      itemId: `character:${index}`,
+      fields: {
+        rawAndCodePoints: `原始字簇“${character.rawCluster}”，输入码点${character.inputCodePoints.join("、")}，NFC 查表形式为${character.nfcLookup ?? "停用"}。`,
+        adoptedGlyphAndBasis: `本次采用字形为“${character.adoptedGlyph ?? "待确认"}”，采用口径为${character.glyphBasis}，候选确认状态为${character.requiresConfirmation ? "待确认" : "已满足"}，不得静默换写。`,
+        tghFacts: character.tghIndex === null
+          ? "通用规范汉字表序号与级别暂未取得，当前保持未知。"
+          : `通用规范汉字表序号为${character.tghIndex}，级别为${character.tghLevel}级。`,
+        readings: character.readings.length
+          ? `实际读音采用${character.adoptedReading ?? "待确认"}；全部工程读音候选为${character.readings.map(reading => `${reading.pinyin}(${reading.sourceProperty})`).join("、")}。`
+          : "实际读音与工程读音候选均暂未取得，当前保持未知。",
+        engineeringFacts: `部首检字工程记录为${character.radicalStrokeRecords.map(record => record.value).join("、") || "未知"}；总笔画工程记录为${character.totalStrokeRecord?.rawValue ?? "未知"}。`,
+        meaningAndSemantic: character.semantic
+          ? `人工审校字义为${character.meaning}；方法${character.semantic.methodId}@${character.semantic.version}；可信状态${character.semantic.confidence}；向量${vectorText(vector)}；未知比例${character.semantic.unknownShare}；依据${character.semantic.basisText}`
+          : "采用字义与姓名文化向量尚未进入有限人工审校集，当前不作推断。",
+        variantCandidates: character.variantCandidates.length
+          ? `可能关联字为${character.variantCandidates.map(candidate => `${candidate.glyph}（${candidate.variantRelation}；${candidate.meaningHint}）`).join("；")}；候选不会默认采用。`
+          : "当前没有需要展示的简繁或异体候选关系，仍保留原始输入。",
+        analysisBlockers: character.analysisBlockers.length
+          ? `待确认事实为${character.analysisBlockers.map(blocker => `${blocker.id}：${blocker.evidence}`).join("；")}`
+          : "当前字形、读音与字义口径没有待确认阻断项。",
+        confirmedUsageRisks: character.confirmedUsageRisks.length
+          ? `共同确认的现实使用风险为${character.confirmedUsageRisks.map(risk => `${risk.id}：${risk.evidence}`).join("；")}`
+          : "当前字符没有经人工与用户共同确认的现实硬风险。",
+      },
+      sourceIds: uniqueSourceIds([...characterSourceIds(character), "unicode.uax38"]),
+      boundary: "部首、笔画、字表级别和拼音都是工程或规范资料，不能生成姓名五行或人生结论。",
+    });
+  }
+
+  if (result.chartInteraction) {
+    const uncertainPillars: PillarKey[] = result.chartInteraction.input.unavailableReasons.flatMap(reason =>
+      reason === "year-boundary" ? ["year"] : reason === "month-boundary" ? ["month"] : reason === "unknown-time" ? ["hour"] : []);
+    items.push({
+      module: "name-analysis:chart",
+      itemId: "side-by-side",
+      fields: {
+        chartStatus: result.chartInteraction.ruleObservation,
+        chartScene: result.chartInteraction.plainLanguageScene,
+        unavailableReasons: `命局文化并读的不可用或降级原因为${result.chartInteraction.input.unavailableReasons.join("、") || "无"}。`,
+        stablePillars: `稳定柱事实为${Object.entries(result.chartInteraction.input.certainPillars).map(([key, pillar]) => `${key}:${pillar?.stem}${pillar?.branch}/${pillar?.element}/${pillar?.branchElement}`).join("；") || "暂无可用稳定柱"}。`,
+        nameVector: `并排展示的姓名文化向量为${vectorText(result.chartInteraction.nameVector)}。`,
+        chartAction: result.chartInteraction.action,
+      },
+      sourceIds: result.chartInteraction.sourceIds,
+      boundary: result.chartInteraction.boundary,
+      action: result.chartInteraction.action,
+      unknownHour: uncertainPillars.includes("hour"),
+      uncertainPillars,
+    });
+  }
+
+  for (const direction of result.directions) {
+    items.push({
+      module: "name-analysis:direction",
+      itemId: direction.id,
+      fields: {
+        directionTitle: direction.title,
+        directionObservation: direction.ruleObservation,
+        directionScene: direction.plainLanguageScene,
+        directionAction: direction.action,
+        exampleCharacters: `有限人工审校示例字为${direction.exampleCharacters.map(example => `${example.glyph}：${example.meaning}`).join("；")}。`,
+      },
+      sourceIds: uniqueSourceIds([...direction.sourceIds, ...direction.exampleCharacters.flatMap(example => example.sourceIds)]),
+      boundary: direction.boundary,
+      scenario: direction.plainLanguageScene,
+      action: direction.action,
+    });
+  }
+  return items;
+}
+
+export function auditNameAnalysis(result: NameAnalysisResult): ContentAuditIssue[] {
+  return auditContentItems(nameAnalysisToAuditableItems(result));
 }
 
 function requireCount(

@@ -32,6 +32,8 @@ export const YI_RULE_SOURCES: Record<string, RuleSource> = {
   "domain.mapping.v2": { ruleId: "domain.mapping.v2", label: "生活主题映射", appliesWhen: "命盘结构字段已生成", sourceType: "product-heuristic", version: "2.0.0", references: ["七主题独立选择器", "用于自我观察，不预测具体事件"] },
   "fortune.translation.v1": { ruleId: "fortune.translation.v1", label: "岁运生活领域、故事与行动转译", appliesWhen: "大运与流年计算坐标已经生成", sourceType: "product-method", version: "1.0.0", references: ["五类生活领域的产品转译表", "阶段故事与行动建议由命盘、岁运关系和十神主题共同生成"] },
   "name.semantic-five-elements.v1": { ruleId: "name.semantic-five-elements.v1", label: "姓名语义五行人工审校", appliesWhen: "姓名字义与采用字形已经人工确认", sourceType: "product-method", version: "1.0.0", references: ["只覆盖有限人工审校字集", "五元素向量与 unknownShare 分开记录", "不从部首、笔画或国家规范推导汉字五行"], accessDate: "2026-07-22" },
+  "name.reality-score.v1": { ruleId: "name.reality-score.v1", label: "姓名现实使用实测规则", appliesWhen: "用户自愿完成四项现实场景验证", sourceType: "product-method", version: "1.0.0", references: ["四项固定分值直接相加", "任一项未验证时不显示总分", "资料覆盖、文化向量与命盘并读均不加分"], accessDate: "2026-07-22" },
+  "name.advice-gate.v1": { ruleId: "name.advice-gate.v1", label: "姓名建议保守门禁", appliesWhen: "资料口径已确认并且现实使用风险由人工与用户共同确认", sourceType: "product-method", version: "1.0.0", references: ["资料缺口只阻断结论", "建议档位只读取共同确认的现实硬风险", "分数和命盘文化并读不改变建议档位"], accessDate: "2026-07-22" },
 };
 
 export const YI_REFERENCE_SOURCES: Record<string, ReferenceSource> = {
