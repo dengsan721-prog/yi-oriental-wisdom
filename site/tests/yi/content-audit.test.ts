@@ -74,6 +74,38 @@ describe("content audit rule guards", () => {
     ]));
   });
 
+  it.each([
+    "一定能够治愈疾病并改善婚姻",
+    "肯定带来投资收益和法律胜诉",
+    "必会发财并且婚姻幸福",
+    "这项服务宣传改名改命",
+  ])("rejects clause-level unnegated promotional claim: %s", summary => {
+    const issues = auditContentItems([{
+      ...completeItem,
+      itemId: summary,
+      fields: { summary: `这段姓名说明宣称${summary}，应当被明确拒绝。` },
+    }]);
+
+    expect(issues).toContainEqual(expect.objectContaining({ rule: "forbidden", field: "summary" }));
+  });
+
+  it.each([
+    "本产品不保证发财，也不替代现实判断。",
+    "本产品不能向任何用户保证投资收益，请以真实结果为准。",
+    "姓名文化说明不会治愈疾病，身体问题请咨询医生。",
+    "本产品不提供改名改命承诺，只做现实使用核对。",
+  ])("allows a natural explicit boundary: %s", summary => {
+    const issues = auditContentItems([{
+      ...completeItem,
+      itemId: summary,
+      fields: { summary },
+    }]);
+
+    expect(issues).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ rule: "forbidden", field: "summary" }),
+    ]));
+  });
+
   it("reports duplicate scenarios and actions inside one module", () => {
     const duplicate = { ...completeItem, itemId: "duplicate" };
     const issues = auditContentItems([completeItem, duplicate]);
@@ -143,7 +175,9 @@ describe("name analysis audit conversion", () => {
       "rawAndCodePoints", "adoptedGlyphAndBasis", "tghFacts", "readings", "engineeringFacts",
       "meaningAndSemantic", "variantCandidates", "analysisBlockers", "confirmedUsageRisks",
       "aggregateBlockers", "aggregateConfirmedUsageRisks", "fullNameRecord", "chartStatus",
-      "unavailableReasons", "stablePillars", "nameVector", "directionTitle", "exampleCharacters",
+      "unavailableReasons", "nameVector", "directionTitle", "exampleCharacters",
+      "pillar_year_stem", "pillar_year_branch", "pillar_year_element",
+      "pillar_year_branchElement", "pillar_year_label",
     ]) {
       expect(visibleFields.has(required), required).toBe(true);
     }
@@ -161,6 +195,43 @@ describe("name analysis audit conversion", () => {
         ]));
       }
     }
+  });
+
+  it("audits every structured pillar field, including the label, independently", async () => {
+    const birth = { name: "林知远", date: "1985-02-20", time: "10:20", location: "成都", gender: "unspecified" as const, timeConfidence: "exact" as const };
+    const result = await analyzeName({ rawInput: birth.name, chart: calculateFourPillars(birth) });
+    expect(result?.chartInteraction?.input.certainPillars.year).not.toBeNull();
+
+    for (const field of ["stem", "branch", "element", "branchElement", "label"] as const) {
+      const mutated = structuredClone(result!);
+      const pillar = mutated.chartInteraction!.input.certainPillars.year! as unknown as Record<string, string>;
+      pillar[field] = "这项结构化字段被注入改名改命的错误承诺";
+
+      expect(auditNameAnalysis(mutated), field).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          module: "name-analysis:chart",
+          rule: "forbidden",
+          field: `pillar_year_${field}`,
+        }),
+      ]));
+    }
+  });
+
+  it("requires the public-security name report source wherever frequency context is visible", async () => {
+    const result = await analyzeName({ rawInput: "林知远" });
+    expect(result?.sourceIds).toContain("mps.name-report-2021");
+    const summary = nameAnalysisToAuditableItems(result!).find(item => item.module === "name-analysis:summary");
+    expect(summary?.requiredSourceIds).toContain("mps.name-report-2021");
+
+    const mutated = structuredClone(result!);
+    mutated.sourceIds = mutated.sourceIds.filter(id => id !== "mps.name-report-2021");
+    expect(auditNameAnalysis(mutated)).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        module: "name-analysis:summary",
+        rule: "missing-source",
+        field: "sourceIds",
+      }),
+    ]));
   });
 
   it("collects and validates nested character, score, chart, advice, and direction source IDs", async () => {

@@ -6,6 +6,7 @@ import {
   type UsageRiskInput,
 } from "../../lib/yi/name-analysis";
 import { findReviewedNameCharacter } from "../../lib/yi/name-data";
+import * as nameDataModule from "../../lib/yi/name-data";
 import {
   NAME_REALITY_SCORE_VERSION,
   scoreNameRealityTest,
@@ -111,6 +112,111 @@ describe("name analysis input and glyph adoption", () => {
     expect(invalidWithoutCandidates?.characters[0].adoptedGlyph).toBeNull();
     expect(invalidWithoutCandidates?.characters[0].analysisBlockers).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: "adopted-glyph-unconfirmed" }),
+    ]));
+  });
+
+  it("uses only the three finite reviewed traditional pairs with exact Unicode 17 engineering facts", () => {
+    const pairs = (nameDataModule as typeof nameDataModule & {
+      REVIEWED_TRADITIONAL_PAIRS?: Array<{
+        inputGlyph: string;
+        adoptedGlyph: string;
+        readings: Array<{ pinyin: string; sourceProperty: string }>;
+        radicalStrokeRecords: Array<{ value: string; sourceProperty: string }>;
+        totalStrokeRecord: { rawValue: string; sourceProperty: string };
+        meaning: string;
+        semantic: { methodId: string; sourceIds: string[] };
+      }>;
+    }).REVIEWED_TRADITIONAL_PAIRS;
+
+    expect(pairs?.map(pair => `${pair.inputGlyph}→${pair.adoptedGlyph}`)).toEqual(["发→發", "发→髮", "艺→藝"]);
+    expect(pairs).toEqual([
+      expect.objectContaining({
+        adoptedGlyph: "發",
+        readings: [{ pinyin: "fā", sourceProperty: "kMandarin", sourceId: "unicode.unihan-17.data", tone: 1 }],
+        radicalStrokeRecords: [{ value: "105.7", sourceProperty: "kRSUnicode", sourceId: "unicode.unihan-17.data" }],
+        totalStrokeRecord: { rawValue: "12", sourceProperty: "kTotalStrokes", sourceId: "unicode.unihan-17.data", informative: true },
+      }),
+      expect.objectContaining({
+        adoptedGlyph: "髮",
+        readings: [
+          { pinyin: "fà", sourceProperty: "kMandarin", sourceId: "unicode.unihan-17.data", tone: 4 },
+          { pinyin: "fǎ", sourceProperty: "kMandarin", sourceId: "unicode.unihan-17.data", tone: 3 },
+        ],
+        radicalStrokeRecords: [{ value: "190.5", sourceProperty: "kRSUnicode", sourceId: "unicode.unihan-17.data" }],
+        totalStrokeRecord: { rawValue: "15", sourceProperty: "kTotalStrokes", sourceId: "unicode.unihan-17.data", informative: true },
+      }),
+      expect.objectContaining({
+        adoptedGlyph: "藝",
+        readings: [{ pinyin: "yì", sourceProperty: "kMandarin", sourceId: "unicode.unihan-17.data", tone: 4 }],
+        radicalStrokeRecords: [{ value: "140.15", sourceProperty: "kRSUnicode", sourceId: "unicode.unihan-17.data" }],
+        totalStrokeRecord: { rawValue: "18", sourceProperty: "kTotalStrokes", sourceId: "unicode.unihan-17.data", informative: true },
+      }),
+    ]);
+    for (const pair of pairs ?? []) {
+      expect(pair.meaning.length).toBeGreaterThan(0);
+      expect(pair.semantic.methodId).toBe("name.semantic-five-elements.v1");
+      expect(pair.semantic.sourceIds).toEqual(expect.arrayContaining([
+        "name.semantic-five-elements.v1",
+        "unicode.unihan-17.data",
+      ]));
+    }
+  });
+
+  it("analyzes reviewed traditional pairs end to end while retaining input TGH facts separately", async () => {
+    const [development, hairPending, hairConfirmed, art] = await Promise.all([
+      analyzeName({ rawInput: "发", mode: "traditional-reference", traditionalSelections: { 0: "發" } }),
+      analyzeName({ rawInput: "发", mode: "traditional-reference", traditionalSelections: { 0: "髮" } }),
+      analyzeName({ rawInput: "发", mode: "traditional-reference", traditionalSelections: { 0: "髮" }, actualReadings: { 0: "fà" } }),
+      analyzeName({ rawInput: "艺", mode: "traditional-reference", traditionalSelections: { 0: "藝" } }),
+    ]);
+    const cases = [
+      { result: development, glyph: "發", reading: "fā", radical: "105.7", strokes: "12" },
+      { result: hairConfirmed, glyph: "髮", reading: "fà", radical: "190.5", strokes: "15" },
+      { result: art, glyph: "藝", reading: "yì", radical: "140.15", strokes: "18" },
+    ];
+
+    for (const { result, glyph, reading, radical, strokes } of cases) {
+      const character = result!.characters[0] as NonNullable<typeof result>["characters"][0] & {
+        inputTghFacts?: {
+          glyph: string;
+          tghIndex: number;
+          readings: Array<{ pinyin: string }>;
+          radicalStrokeRecords: Array<{ value: string }>;
+          totalStrokeRecord: { rawValue: string };
+        };
+      };
+      expect(character).toMatchObject({
+        inputGlyph: glyph === "藝" ? "艺" : "发",
+        adoptedGlyph: glyph,
+        tghIndex: null,
+        adoptedReading: reading,
+        meaning: expect.any(String),
+        semantic: expect.objectContaining({ methodId: "name.semantic-five-elements.v1" }),
+        analysisBlockers: [],
+      });
+      expect(character.radicalStrokeRecords.map(record => record.value)).toEqual([radical]);
+      expect(character.totalStrokeRecord?.rawValue).toBe(strokes);
+      expect(character.inputTghFacts).toMatchObject({
+        glyph: glyph === "藝" ? "艺" : "发",
+        tghIndex: expect.any(Number),
+      });
+      expect(character.inputTghFacts?.radicalStrokeRecords.length).toBeGreaterThan(0);
+      expect(character.inputTghFacts?.totalStrokeRecord).not.toBeNull();
+    }
+
+    expect(hairPending?.characters[0].readings.map(reading => reading.pinyin)).toEqual(["fà", "fǎ"]);
+    expect(hairPending?.characters[0].analysisBlockers).toEqual([
+      expect.objectContaining({ id: "actual-reading-unconfirmed" }),
+    ]);
+    expect(hairPending?.characters[0].analysisBlockers).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "unsupported-input" }),
+      expect.objectContaining({ id: "key-meaning-unreviewed" }),
+    ]));
+
+    const unreviewed = await analyzeName({ rawInput: "后", mode: "traditional-reference", traditionalSelections: { 0: "後" } });
+    expect(unreviewed?.characters[0].analysisBlockers).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "unsupported-input" }),
+      expect.objectContaining({ id: "key-meaning-unreviewed" }),
     ]));
   });
 
@@ -276,6 +382,29 @@ describe("reality-test score contract", () => {
   });
 });
 
+describe("exact reviewed full-name resolution", () => {
+  it("resolves candidate mode only after adopted glyphs, readings, and basis exactly match", async () => {
+    const [candidate, nearMiss, readingMismatch, currentReadingMismatch, traditionalMismatch] = await Promise.all([
+      analyzeName({ rawInput: "林知远", mode: "candidate" }),
+      analyzeName({ rawInput: "林远知", mode: "candidate" }),
+      analyzeName({ rawInput: "林知远", mode: "candidate", actualReadings: { 0: "lǐn" } }),
+      analyzeName({ rawInput: "林知远", actualReadings: { 0: "lǐn" } }),
+      analyzeName({ rawInput: "林知远", mode: "traditional-reference", traditionalSelections: { 2: "遠" } }),
+    ]);
+
+    expect(candidate?.exactReviewedFullName).toMatchObject({
+      fullName: "林知远",
+      adoptedGlyphBasis: "registered-input",
+      adoptedReadings: ["lín", "zhī", "yuǎn"],
+    });
+    expect(candidate?.fullNameReviewStatus).toBe("已审校");
+    expect(nearMiss?.exactReviewedFullName).toBeNull();
+    expect(readingMismatch?.exactReviewedFullName).toBeNull();
+    expect(currentReadingMismatch?.exactReviewedFullName).toBeNull();
+    expect(traditionalMismatch?.exactReviewedFullName).toBeNull();
+  });
+});
+
 describe("directions and chart side-by-side boundaries", () => {
   it("returns exactly three finite reviewed directions and never manufactures reviewed full names", async () => {
     const result = await analyzeName({ rawInput: "林远知" });
@@ -317,6 +446,23 @@ describe("directions and chart side-by-side boundaries", () => {
     expect(chart).toEqual(chartBefore);
     expect(report).toEqual(reportBefore);
     expect(result?.chartInteraction?.boundary).toContain("姓名不会改写出生盘");
+  });
+
+  it("defensively copies every field of every returned certain pillar", () => {
+    const chart = calculateFourPillars(exactBirth);
+    const chartBefore = structuredClone(chart);
+    const input = buildNameChartInteractionInput(chart);
+    const fields = ["stem", "branch", "element", "branchElement", "label"] as const;
+
+    for (const key of ["year", "month", "day", "hour"] as const) {
+      const returned = input.certainPillars[key];
+      expect(returned).not.toBe(chart.pillars[key]);
+      for (const field of fields) {
+        (returned as unknown as Record<string, string>)[field] = `tampered-${key}-${field}`;
+      }
+    }
+
+    expect(chart).toEqual(chartBefore);
   });
 
   it("keeps main chart and professional report outputs invariant when only the name changes", async () => {

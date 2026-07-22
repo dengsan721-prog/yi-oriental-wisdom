@@ -8,6 +8,7 @@ import type {
   RawInputProtection,
   ReviewedFullNameRecord,
   ReviewedNameCharacterRecord,
+  ReviewedTraditionalPairRecord,
   TghCoreData,
   TghCoreRecord,
   TghReading,
@@ -307,6 +308,116 @@ const reviewedCharactersByGlyph = new Map(REVIEWED_NAME_CHARACTERS.map(record =>
 
 export function findReviewedNameCharacter(glyph: string): ReviewedNameCharacterRecord | null {
   return reviewedCharactersByGlyph.get(glyph) ?? null;
+}
+
+function reviewedTraditionalPair(
+  id: string,
+  inputGlyph: string,
+  adoptedGlyph: string,
+  readings: TghReading[],
+  radicalStroke: string,
+  totalStrokes: string,
+  meaning: string,
+  vector: ElementVector,
+  unknownShare: number,
+  basisText: string,
+): ReviewedTraditionalPairRecord {
+  const sourceIds = [
+    "standard.tgh-variants",
+    "unicode.unihan-17.data",
+    "name.semantic-five-elements.v1",
+    "classic.shangshu-hongfan-five-elements",
+  ];
+  return {
+    id,
+    inputGlyph,
+    adoptedGlyph,
+    codePoints: codePoints(adoptedGlyph),
+    readings,
+    radicalStrokeRecords: [{
+      value: radicalStroke,
+      sourceId: "unicode.unihan-17.data",
+      sourceProperty: "kRSUnicode",
+    }],
+    totalStrokeRecord: {
+      rawValue: totalStrokes,
+      informative: true,
+      sourceId: "unicode.unihan-17.data",
+      sourceProperty: "kTotalStrokes",
+    },
+    meaning,
+    semantic: {
+      methodId: "name.semantic-five-elements.v1",
+      version: "1.0.0",
+      vector,
+      unknownShare,
+      basisText,
+      sourceIds: [
+        "name.semantic-five-elements.v1",
+        "unicode.unihan-17.data",
+        "classic.shangshu-hongfan-five-elements",
+      ],
+      confidence: "reviewed",
+    },
+    reviewedOn: "2026-07-22",
+    reviewerRole: "传统字形姓名义项复核",
+    sourceIds,
+  };
+}
+
+const mandarinReading = (pinyin: string, tone: TghReading["tone"]): TghReading => ({
+  pinyin,
+  tone,
+  sourceId: "unicode.unihan-17.data",
+  sourceProperty: "kMandarin",
+});
+
+export const REVIEWED_TRADITIONAL_PAIRS: ReviewedTraditionalPairRecord[] = [
+  reviewedTraditionalPair(
+    "traditional-pair-fa-development",
+    "发",
+    "發",
+    [mandarinReading("fā", 1)],
+    "105.7",
+    "12",
+    "生发、出发、发展等义项。",
+    { 木: 0.35, 火: 0.3, 土: 0.1, 金: 0.1, 水: 0.15 },
+    0.25,
+    "按生发与发展的已确认义项作产品语义审校，不从部首或笔画推导五行。",
+  ),
+  reviewedTraditionalPair(
+    "traditional-pair-fa-hair",
+    "发",
+    "髮",
+    [mandarinReading("fà", 4), mandarinReading("fǎ", 3)],
+    "190.5",
+    "15",
+    "头发、毛发。",
+    { 木: 0.25, 火: 0.1, 土: 0.15, 金: 0.2, 水: 0.3 },
+    0.4,
+    "按头发、毛发这一已确认义项作保守复合向量，不从部首或笔画推导五行。",
+  ),
+  reviewedTraditionalPair(
+    "traditional-pair-yi-art",
+    "艺",
+    "藝",
+    [mandarinReading("yì", 4)],
+    "140.15",
+    "18",
+    "技能、才艺、艺术与持续练习。",
+    { 木: 0.45, 火: 0.3, 土: 0.1, 金: 0.1, 水: 0.05 },
+    0.2,
+    "按技能、才艺与练习的已确认义项作复合向量，不从部首或笔画推导五行。",
+  ),
+];
+
+export function findReviewedTraditionalPair(
+  inputGlyph: string,
+  adoptedGlyph: string,
+): ReviewedTraditionalPairRecord | null {
+  return REVIEWED_TRADITIONAL_PAIRS.find(
+    record => record.inputGlyph === inputGlyph && record.adoptedGlyph === adoptedGlyph,
+  ) ?? null;
 }
 
 export const REVIEWED_FULL_NAMES: ReviewedFullNameRecord[] = [

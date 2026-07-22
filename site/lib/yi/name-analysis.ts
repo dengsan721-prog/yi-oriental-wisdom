@@ -1,6 +1,7 @@
 import {
   findReviewedFullName,
   findReviewedNameCharacter,
+  findReviewedTraditionalPair,
   getCommonVariantDisambiguation,
   inspectRawNameInput,
   loadTghCoreData,
@@ -250,7 +251,7 @@ export function buildNameChartInteractionInput(chart: Readonly<FourPillarsResult
   const certainPillars: Partial<Record<PillarKey, Readonly<FourPillarsResult["pillars"][PillarKey]>>> = {};
   for (const key of PILLAR_KEYS) {
     const pillar = chart.pillars[key];
-    if (pillar && !chart.ambiguousPillars.includes(key)) certainPillars[key] = pillar;
+    if (pillar && !chart.ambiguousPillars.includes(key)) certainPillars[key] = { ...pillar };
   }
   return {
     available: !unavailableReasons.includes("year-boundary") && !unavailableReasons.includes("month-boundary"),
@@ -293,6 +294,7 @@ function characterSources(character: NameCharacterRecord): string[] {
     ...character.readings.map(item => item.sourceId),
     ...character.radicalStrokeRecords.map(item => item.sourceId),
     ...(character.totalStrokeRecord ? [character.totalStrokeRecord.sourceId] : []),
+    ...(character.inputTghFacts?.sourceIds ?? []),
     ...character.variantCandidates.flatMap(item => item.sourceIds),
     ...(character.semantic?.sourceIds ?? []),
   ]);
@@ -306,7 +308,7 @@ export async function analyzeName(
   const mode = request.mode ?? "current";
   const inspection = inspectRawNameInput(request.rawInput);
   const core = await (dependencies.loadCore ?? loadTghCoreData)();
-  const exactReviewedFullName = cloneReviewedFullName(mode === "current" ? findReviewedFullName(request.rawInput) : null);
+  const currentReviewedFullName = mode === "current" ? findReviewedFullName(request.rawInput) : null;
   const confirmedUsageRisks = validConfirmedRisks(request.usageRisks ?? []);
 
   const characters = inspection.graphemes.map((grapheme, index): NameCharacterRecord => {
@@ -324,7 +326,11 @@ export async function analyzeName(
     const coreRecord = adoptedGlyph
       ? (adoptedGlyph === grapheme.rawCluster ? inputRecord : core.lookupByGlyph(adoptedGlyph))
       : null;
-    const reviewed = adoptedGlyph ? findReviewedNameCharacter(adoptedGlyph) : null;
+    const reviewedPair = selectedCandidate
+      ? findReviewedTraditionalPair(grapheme.rawCluster, selectedCandidate.glyph)
+      : null;
+    const reviewed = reviewedPair ?? (adoptedGlyph ? findReviewedNameCharacter(adoptedGlyph) : null);
+    const selectedReadings = reviewedPair?.readings ?? coreRecord?.readings ?? [];
     const blockers: AnalysisBlocker[] = [];
     if (needsTraditionalSelection && !selectedCandidate) addBlocker(blockers, {
       id: "adopted-glyph-unconfirmed",
@@ -336,27 +342,27 @@ export async function analyzeName(
       id: "registration-glyph-pending",
       evidence: `原始字符包含${grapheme.protections.join("、")}，需先核对证件登记字形。`,
     });
-    if (adoptedGlyph && !coreRecord) addBlocker(blockers, {
+    if (adoptedGlyph && !coreRecord && !reviewedPair) addBlocker(blockers, {
       id: "unsupported-input",
       evidence: `本地 8105 字核心表暂未覆盖采用字形“${adoptedGlyph}”，不补猜工程资料。`,
     });
 
     let adoptedReading: string | null = null;
     if (adoptedGlyph) {
-      const reviewedReading = exactReviewedFullName?.adoptedReadings[index];
+      const reviewedReading = currentReviewedFullName?.adoptedReadings[index];
       const explicitReading = request.actualReadings?.[index];
-      if (reviewedReading) adoptedReading = reviewedReading;
-      else if (explicitReading !== undefined) {
-        if (coreRecord?.readings.some(reading => reading.pinyin === explicitReading)) adoptedReading = explicitReading;
+      if (explicitReading !== undefined) {
+        if (selectedReadings.some(reading => reading.pinyin === explicitReading)) adoptedReading = explicitReading;
         else addBlocker(blockers, {
           id: "actual-reading-unconfirmed",
           evidence: `所选读音“${explicitReading}”不在“${adoptedGlyph}”的实际读音候选中，请重新确认。`,
         });
       }
-      else if (coreRecord?.readings.length === 1) adoptedReading = coreRecord.readings[0].pinyin;
+      else if (reviewedReading) adoptedReading = reviewedReading;
+      else if (selectedReadings.length === 1) adoptedReading = selectedReadings[0].pinyin;
       else addBlocker(blockers, {
         id: "actual-reading-unconfirmed",
-        evidence: coreRecord?.readings.length
+        evidence: selectedReadings.length
           ? `“${adoptedGlyph}”有多个读音候选，请确认姓名中的实际读音。`
           : `“${adoptedGlyph}”缺少可采用的实际读音记录。`,
       });
@@ -377,10 +383,22 @@ export async function analyzeName(
       requiresConfirmation: needsTraditionalSelection && !selectedCandidate,
       tghIndex: coreRecord?.tghIndex ?? null,
       tghLevel: coreRecord?.tghLevel ?? null,
-      readings: coreRecord?.readings.map(reading => ({ ...reading })) ?? [],
+      readings: selectedReadings.map(reading => ({ ...reading })),
       adoptedReading,
-      radicalStrokeRecords: coreRecord?.radicalStrokeRecords.map(record => ({ ...record })) ?? [],
-      totalStrokeRecord: coreRecord ? { ...coreRecord.totalStrokeRecord } : null,
+      radicalStrokeRecords: (reviewedPair?.radicalStrokeRecords ?? coreRecord?.radicalStrokeRecords ?? []).map(record => ({ ...record })),
+      totalStrokeRecord: reviewedPair
+        ? { ...reviewedPair.totalStrokeRecord }
+        : coreRecord ? { ...coreRecord.totalStrokeRecord } : null,
+      inputTghFacts: reviewedPair && inputRecord ? {
+        glyph: inputRecord.glyph,
+        codePoint: inputRecord.codePoint,
+        tghIndex: inputRecord.tghIndex,
+        tghLevel: inputRecord.tghLevel,
+        readings: inputRecord.readings.map(reading => ({ ...reading })),
+        radicalStrokeRecords: inputRecord.radicalStrokeRecords.map(record => ({ ...record })),
+        totalStrokeRecord: { ...inputRecord.totalStrokeRecord },
+        sourceIds: ["standard.tgh-table", "unicode.unihan-17.data"],
+      } : null,
       meaning: reviewed?.meaning ?? null,
       semantic: reviewed ? { ...reviewed.semantic, vector: { ...reviewed.semantic.vector }, sourceIds: [...reviewed.semantic.sourceIds] } : null,
       analysisBlockers: blockers,
@@ -389,6 +407,20 @@ export async function analyzeName(
         .map(confirmedRisk),
     };
   });
+
+  const adoptedFullName = characters.every(character => character.adoptedGlyph !== null)
+    ? characters.map(character => character.adoptedGlyph).join("")
+    : null;
+  const fullNameCandidate = adoptedFullName ? findReviewedFullName(adoptedFullName) : null;
+  const exactReviewedFullName = cloneReviewedFullName(
+    fullNameCandidate
+    && fullNameCandidate.adoptedReadings.length === characters.length
+    && characters.every((character, index) =>
+      character.adoptedReading === fullNameCandidate.adoptedReadings[index]
+      && character.glyphBasis === fullNameCandidate.adoptedGlyphBasis)
+      ? fullNameCandidate
+      : null,
+  );
 
   const blockers = characters.flatMap((character, characterIndex) => character.analysisBlockers.map(blocker => ({
     ...blocker,
@@ -402,6 +434,7 @@ export async function analyzeName(
   const chartInteraction = request.chart ? buildChartInteraction(request.chart, semantics) : null;
   void request.professionalReport;
   const sourceIds = unique([
+    "mps.name-report-2021",
     ...characters.flatMap(characterSources),
     ...semantics.sourceIds,
     ...realityScore.sourceIds,

@@ -127,6 +127,32 @@ export type CharacterMethodEvidence = {
   confidence: "reviewed" | "contested" | "unknown";
 };
 
+export type NameInputTghFacts = {
+  glyph: string;
+  codePoint: UnicodeCodePoint;
+  tghIndex: number;
+  tghLevel: TghLevel;
+  readings: TghReading[];
+  radicalStrokeRecords: RadicalStrokeRecord[];
+  totalStrokeRecord: TotalStrokeRecord;
+  sourceIds: string[];
+};
+
+export type ReviewedTraditionalPairRecord = {
+  id: string;
+  inputGlyph: string;
+  adoptedGlyph: string;
+  codePoints: UnicodeCodePoint[];
+  readings: TghReading[];
+  radicalStrokeRecords: RadicalStrokeRecord[];
+  totalStrokeRecord: TotalStrokeRecord;
+  meaning: string;
+  semantic: CharacterMethodEvidence;
+  reviewedOn: string;
+  reviewerRole: string;
+  sourceIds: string[];
+};
+
 export type AnalysisBlocker = {
   id:
     | "registration-glyph-pending"
@@ -160,6 +186,7 @@ export type NameCharacterRecord = {
   adoptedReading: string | null;
   radicalStrokeRecords: RadicalStrokeRecord[];
   totalStrokeRecord: TotalStrokeRecord | null;
+  inputTghFacts: NameInputTghFacts | null;
   meaning: string | null;
   semantic: CharacterMethodEvidence | null;
   analysisBlockers: AnalysisBlocker[];
