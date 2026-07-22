@@ -224,6 +224,7 @@ it("renders four mirror entrances with the complete zodiac record selected by de
   expect(html).toContain("镜像提供观察语言，不宣称人与人的命运相同");
   expect(html).not.toMatch(/\d+(?:\.\d+)?\s*[%％]/);
   expect(html).not.toContain("匹配度");
+  expect(html).toContain("本章依据与使用边界");
 });
 
 it("renders three semantically owned candidate cards in every non-zodiac mirror view", () => {
@@ -299,6 +300,9 @@ it("executes every mirror tab transition and reveals only the matching panel", (
     expect(activeView, `${label} selected view`).toBe(view);
 
     const updated = render();
+    const updatedHtml = renderToStaticMarkup(updated);
+    expect(updatedHtml).toContain("本章依据与使用边界");
+    if (view === "animals") expect(updatedHtml).toContain("动物行为镜像");
     const buttons = findHostElements(updated, "button");
     expect(buttons).toHaveLength(4);
     for (const [candidateLabel, candidateView] of expectedViews) {
@@ -347,6 +351,11 @@ it("renders the complete relationship manual in progressive disclosure order", (
     onSecondBirthChange: () => undefined,
     onParentChildPrimaryRoleChange: () => undefined,
   }));
+
+  expect(html).toContain("第二份出生资料只在本次报告浏览期间保留");
+  expect(html).not.toContain("会随报告保留");
+  expect(html).toContain("本章依据与使用边界");
+  expect(html).toContain("干支关系结构规则");
 
   expect(html).toContain('<form class="intake-card wheel-intake">');
   const manualStart = html.indexOf('<div class="compatibility-manual">');

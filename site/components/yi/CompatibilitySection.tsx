@@ -4,6 +4,7 @@ import { calculateCompatibility, type RelationshipType } from "../../lib/yi/comp
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import type { FourPillarsResult } from "../../lib/yi/types";
 import { BirthIntake, type BirthSubmission } from "./BirthIntake";
+import { ChapterSources } from "./ChapterSources";
 
 const labels: Record<RelationshipType, string> = { partner: "伴侣", "parent-child": "亲子", business: "商业伙伴", friend: "朋友" };
 
@@ -33,7 +34,7 @@ export function CompatibilitySection({ chart, primaryName, relationship, primary
   const format = (copy: string) => formatCompatibilityCopy(copy, participants);
   const result = secondBirth ? calculateCompatibility(chart, calculateFourPillars(secondBirth), relationship) : null;
   return <section className="report-section">
-    <header><small>关系合盘</small><h1>不打分，拆开看互动</h1><p>第二份完整出生录入会随报告保留，支持阳历、农历、精确时刻、十二时辰或未知时辰。</p></header>
+    <header><small>关系合盘</small><h1>不打分，拆开看互动</h1><p>第二份出生资料只在本次报告浏览期间保留；刷新或离开后需重新填写。支持阳历、农历、精确时刻、十二时辰或未知时辰。</p></header>
     <label className="relationship-kind">关系类型<select value={relationship} onChange={event => onRelationshipChange(event.target.value as RelationshipType)}>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
     {relationship === "parent-child" && <section className="parent-child-role" role="group" aria-label="报告主人亲子角色"><button type="button" aria-pressed={primaryParentRole === "caregiver"} className={primaryParentRole === "caregiver" ? "active" : ""} onClick={() => onParentChildPrimaryRoleChange("caregiver")}>报告主人是照顾者</button><button type="button" aria-pressed={primaryParentRole === "child"} className={primaryParentRole === "child" ? "active" : ""} onClick={() => onParentChildPrimaryRoleChange("child")}>报告主人是孩子</button></section>}
     <BirthIntake heading="录入对方出生坐标" onSubmit={onSecondBirthChange} />
@@ -61,5 +62,9 @@ export function CompatibilitySection({ chart, primaryName, relationship, primary
         </div>
       </details>
     </div>}
+    <ChapterSources
+      note="本章依照干支关系结构规则与双向十神坐标拆解互动；不判断关系成败，也不替代现实沟通、法律或投资判断。"
+      sourceIds={["ten-god.hidden-stems.v1", "relation.gan-zhi.v1", "classic.san-ming-tong-hui", "domain.mapping.v2"]}
+    />
   </section>;
 }

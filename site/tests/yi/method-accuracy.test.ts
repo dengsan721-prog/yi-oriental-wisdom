@@ -146,6 +146,8 @@ describe("2. portrait semantic mappings", () => {
     expect(pressure?.professionalTitle).not.toBe(mainLine?.professionalTitle);
     expect(html).toContain(`压力下的反应 · ${pressure?.professionalTitle}`);
     expect(html).toContain(`当前人生主线 · ${mainLine?.professionalTitle}`);
+    expect(html).toContain("本章依据与使用边界");
+    expect(html).toContain("外部来源");
   });
 
   it("fails loudly when a required portrait item is absent", () => {

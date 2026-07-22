@@ -6,6 +6,7 @@ import type { MovieCharacterRecord } from "../../lib/yi/movie-characters";
 import { YI_REFERENCE_SOURCES } from "../../lib/yi/sources";
 import type { FourPillarsResult } from "../../lib/yi/types";
 import { buildZodiacMirror } from "../../lib/yi/zodiac-mirror";
+import { ChapterSources } from "./ChapterSources";
 
 type MirrorView = "zodiac" | "animals" | "historical" | "movies";
 
@@ -37,6 +38,9 @@ export function MirrorSectionView({ chart, activeView, onSelectView }: {
     { id: "historical", candidates: mirrors.historical },
     { id: "movies", candidates: mirrors.movies },
   ] as const;
+  const activeSourceIds = activeView === "zodiac"
+    ? zodiac.sources
+    : candidateViews.find(view => view.id === activeView)?.candidates.map(candidate => candidate.id) ?? [];
 
   return <section className="report-section">
     <header>
@@ -128,5 +132,9 @@ export function MirrorSectionView({ chart, activeView, onSelectView }: {
         })}
       </div>
     </div>)}
+    <ChapterSources
+      note="本章来源只核对生肖文化、动物行为以及人物或影片身份；相似、差异、行动与阴影文字均为产品原创观察，不是人格诊断。"
+      sourceIds={activeSourceIds}
+    />
   </section>;
 }

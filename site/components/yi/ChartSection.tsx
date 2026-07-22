@@ -6,6 +6,7 @@ import type {
   ProfessionalReport,
 } from "../../lib/yi/types";
 import { NameAnalysisSection } from "./NameAnalysisSection";
+import { ChapterSources } from "./ChapterSources";
 
 const confidenceLabel = { high: "高", medium: "中", limited: "有限" } as const;
 const pillarNames: Record<PillarKey, string> = { year: "年柱", month: "月柱", day: "日柱", hour: "时柱" };
@@ -176,5 +177,9 @@ export function ChartSection({ name = "", chart, report }: { name?: string; char
     </details>
 
     <aside className="ambiguity-note"><b>计算边界</b><p>{chart.disclaimer}</p></aside>
+    <ChapterSources
+      note="本章把历法计算、十神藏干、干支关系与产品结构观察分层展示；数量记录不直接推出喜忌。"
+      sourceIds={["calendar.eight-char.v1", "ten-god.hidden-stems.v1", "relation.gan-zhi.v1", "structure.support-score.v2", "classic.san-ming-tong-hui"]}
+    />
   </section>;
 }

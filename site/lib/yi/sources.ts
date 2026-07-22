@@ -1,3 +1,4 @@
+import { ANIMAL_MIRRORS } from "./animal-mirrors";
 import { HISTORICAL_MIRRORS } from "./historical-mirrors";
 import { MOVIE_CHARACTERS } from "./movie-characters";
 import { TRADITIONAL_SOURCE_CATALOG } from "./traditional-sources";
@@ -290,7 +291,7 @@ function identitySource(candidate: IdentityCandidate, category: "历史人物镜
   const characterName = candidate.characterName ?? candidate.name.split("·")[1];
   return {
     id: candidate.id,
-    title: isMovie ? `电影《${filmTitle}》角色“${characterName}”身份来源` : `${candidate.name}人物身份权威记录`,
+    title: isMovie ? `电影《${filmTitle}》角色“${characterName}”身份来源` : `${candidate.name}人物公开身份记录`,
     category,
     grade: "B",
     url: isMovie ? movieIdentityUrls[candidate.id] ?? "" : historicalIdentityUrls[candidate.id] ?? "",
@@ -299,11 +300,43 @@ function identitySource(candidate: IdentityCandidate, category: "历史人物镜
       : `仅用于核对历史人物${candidate.name}的身份和可公开核验的作品或档案线索；比较文字为产品原创。`,
     editionNote: isMovie
       ? `对应镜像候选 ${candidate.id}；IMDb 影片专页标识于 2026-07-20 核对。`
-      : `对应镜像候选 ${candidate.id}；身份线索于 2026-07-20 按专属权威记录核对。`,
+      : `对应镜像候选 ${candidate.id}；身份线索于 2026-07-20 按所列公开记录核对。`,
     boundary: isMovie
       ? "不复制剧情、对白、影评或角色人格文本；不把虚构角色当作现实人格诊断。"
       : "不以人物经历推断用户命运，不复制传记文案，也不将单一人物经验当作普遍规律。",
     accessDate: "2026-07-20",
+  };
+}
+
+const animalIdentityUrls: Record<string, string> = {
+  "animal-albatross": "https://www.britannica.com/animal/albatross",
+  "animal-bottlenose-dolphin": "https://www.fisheries.noaa.gov/species/common-bottlenose-dolphin",
+  "animal-elephant-herd": "https://nationalzoo.si.edu/animals/african-elephant",
+  "animal-gray-wolf": "https://nationalzoo.si.edu/animals/gray-wolf",
+  "animal-green-sea-turtle": "https://www.fisheries.noaa.gov/species/green-turtle",
+  "animal-honeybee-colony": "https://www.si.edu/spotlight/buginfo/honey-bee",
+  "animal-manatee": "https://www.fws.gov/species/manatee-trichechus-manatus",
+  "animal-meerkat": "https://nationalzoo.si.edu/animals/meerkat",
+  "animal-orca-pod": "https://www.fisheries.noaa.gov/species/killer-whale",
+  "animal-peregrine-falcon": "https://www.allaboutbirds.org/guide/Peregrine_Falcon/overview",
+  "animal-giant-pacific-octopus": "https://www.montereybayaquarium.org/animals-the-ocean/animals-a-to-z/giant-pacific-octopus",
+  "animal-red-crowned-crane": "https://savingcranes.org/species-field-guide/red-crowned-crane/",
+  "animal-sloth": "https://nationalzoo.si.edu/animals/two-toed-sloth",
+  "animal-snow-leopard": "https://nationalzoo.si.edu/animals/snow-leopard",
+  "animal-wild-goose-flock": "https://www.allaboutbirds.org/guide/Greater_White-fronted_Goose/overview",
+};
+
+function animalIdentitySource(candidate: IdentityCandidate): UnifiedSource {
+  return {
+    id: candidate.id,
+    title: `${candidate.name}动物行为公开参考`,
+    category: "动物行为镜像",
+    grade: "B",
+    url: animalIdentityUrls[candidate.id],
+    role: `仅用于核对${candidate.name}的物种与行为参考；镜像比较和行动文字为产品原创。`,
+    editionNote: `对应镜像候选 ${candidate.id}；参考目录：${candidate.sourceReferences.join("；")}。`,
+    boundary: "动物行为只能作为隐喻素材，不作为人格诊断、能力测量或命运判断。",
+    accessDate: "2026-07-22",
   };
 }
 
@@ -402,6 +435,7 @@ export function getAllSources(): UnifiedSource[] {
   Object.values(YI_RULE_SOURCES).forEach(rule => add(ruleSource(rule)));
   Object.values(YI_REFERENCE_SOURCES).forEach(source => add(referenceSource(source)));
   Object.values(TRADITIONAL_SOURCE_CATALOG).forEach(source => add(traditionalSource(source), true));
+  ANIMAL_MIRRORS.forEach(candidate => add(animalIdentitySource(candidate)));
   HISTORICAL_MIRRORS.forEach(candidate => add(identitySource(candidate, "历史人物镜像")));
   MOVIE_CHARACTERS.forEach(candidate => add(identitySource(candidate, "电影角色镜像")));
   add({
