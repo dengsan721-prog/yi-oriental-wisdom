@@ -135,23 +135,42 @@ test("GitHub build publishes the lunar-typescript MIT notice", async () => {
   assert.match(notice, /THE SOFTWARE IS PROVIDED "AS IS"/);
 });
 
-test("GitHub build publishes the local Zhongshan font and license", async () => {
-  const [sourceFont, deployedFont, sourceLicense, deployedLicense] = await Promise.all([
-    readFile(new URL("../public/fonts/JFZSKSealScript_V3.5.ttf", import.meta.url)),
-    readFile(new URL("../../docs/fonts/JFZSKSealScript_V3.5.ttf", import.meta.url)),
-    readFile(new URL("../public/fonts/OFL.txt", import.meta.url)),
-    readFile(new URL("../../docs/fonts/OFL.txt", import.meta.url)),
+test("GitHub build publishes the audited lishu vector and its license", async () => {
+  const [sourceSvg, deployedSvg, sourceAudit, deployedAudit, sourceLicense, deployedLicense, sourceReadme, deployedReadme, attributes] = await Promise.all([
+    readFile(new URL("../public/fonts/yi-lishu-u827a.svg", import.meta.url)),
+    readFile(new URL("../../docs/fonts/yi-lishu-u827a.svg", import.meta.url)),
+    readFile(new URL("../public/fonts/yi-lishu-source-audit.json", import.meta.url)),
+    readFile(new URL("../../docs/fonts/yi-lishu-source-audit.json", import.meta.url)),
+    readFile(new URL("../public/fonts/OFL-1.1.rtf", import.meta.url)),
+    readFile(new URL("../../docs/fonts/OFL-1.1.rtf", import.meta.url)),
+    readFile(new URL("../public/fonts/README.md", import.meta.url)),
+    readFile(new URL("../../docs/fonts/README.md", import.meta.url)),
+    readFile(new URL("../../.gitattributes", import.meta.url), "utf8"),
   ]);
   const assets = await readdir(new URL("../../docs/assets/", import.meta.url));
   const cssName = assets.find((name) => /^index-.+\.css$/.test(name));
   assert.ok(cssName);
   const css = await readFile(new URL(`../../docs/assets/${cssName}`, import.meta.url), "utf8");
+  const audit = JSON.parse(sourceAudit.toString("utf8"));
+  const svg = sourceSvg.toString("utf8");
+  const outline = svg.match(/<path\b[^>]*\bd="([^"]+)"/)?.[1] ?? "";
 
-  assert.equal(deployedFont.length, sourceFont.length);
-  assert.equal(sha256(deployedFont), sha256(sourceFont));
+  assert.deepEqual(deployedSvg, sourceSvg);
+  assert.deepEqual(deployedAudit, sourceAudit);
   assert.deepEqual(deployedLicense, sourceLicense);
+  assert.deepEqual(deployedReadme, sourceReadme);
+  assert.match(attributes, /^site\/public\/fonts\/OFL-1\.1\.rtf -text$/m);
+  assert.match(attributes, /^docs\/fonts\/OFL-1\.1\.rtf -text$/m);
+  assert.equal(sha256(sourceLicense), audit.source.licenseSha256);
+  assert.equal(sha256(sourceSvg), audit.inlineSvgSha256);
+  assert.equal(sha256(outline), audit.outlineSha256);
+  assert.equal(audit.codePoint, "U+827A");
+  assert.equal(audit.style, "lishu");
+  assert.equal(audit.coverage.matchingGlyphRecords, 1);
+  assert.match(svg, /data-code-point="U\+827A"/);
+  assert.doesNotMatch(svg, /<text\b|font-family/i);
   assert.match(deployedLicense.toString("utf8"), /SIL OPEN FONT LICENSE Version 1\.1/);
-  assert.match(css, /url\(\/yi-oriental-wisdom\/fonts\/JFZSKSealScript_V3\.5\.ttf\)/);
+  assert.doesNotMatch(css, /@font-face|JFZSKSealScript|Yi Zhongshan Seal/i);
 });
 
 test("GitHub build publishes every public reference file byte for byte", async () => {

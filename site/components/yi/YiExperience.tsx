@@ -11,10 +11,11 @@ import { ResultShell } from "./ResultShell";
 import { LifeHome } from "./LifeHome";
 import { clearLifeProfile, createLifeProfile, getBrowserStorage, loadLifeProfile, saveLifeProfile, type LifeProfile, type StorageResult } from "../../lib/yi/life-profile";
 import { useYiRoute } from "./useYiRoute";
+import { YiLishuGlyph } from "./YiLishuGlyph";
 
 function Mark() {
   return <div className="yi-brand-orbit yi-mark" role="img" aria-label="艺">
-    <span className="yi-brand-glyph" aria-hidden="true">艺</span>
+    <YiLishuGlyph />
     {Array.from({ length: 5 }, (_, index) => <i className="yi-breath-ring" aria-hidden="true" style={{ "--ring-index": index } as CSSProperties} key={index} />)}
   </div>;
 }

@@ -1,77 +1,11 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { readFile, stat } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { YiExperience } from "../../components/yi/YiExperience";
 
 const siteRoot = new URL("../../", import.meta.url);
-
-function getCmapRecords(font: Uint8Array) {
-  const view = new DataView(font.buffer, font.byteOffset, font.byteLength);
-  const tableCount = view.getUint16(4);
-  let cmapOffset = -1;
-  for (let index = 0; index < tableCount; index += 1) {
-    const offset = 12 + index * 16;
-    if (view.getUint32(offset) === 0x636d6170) cmapOffset = view.getUint32(offset + 8);
-  }
-  if (cmapOffset < 0) return [];
-
-  const encodingCount = view.getUint16(cmapOffset + 2);
-  return Array.from({ length: encodingCount }, (_, index) => {
-    const recordOffset = cmapOffset + 4 + index * 8;
-    const subtableOffset = cmapOffset + view.getUint32(recordOffset + 4);
-    return {
-      platformId: view.getUint16(recordOffset),
-      encodingId: view.getUint16(recordOffset + 2),
-      format: view.getUint16(subtableOffset),
-    };
-  });
-}
-
-function cmapHasCodePoint(font: Uint8Array, codePoint: number) {
-  const view = new DataView(font.buffer, font.byteOffset, font.byteLength);
-  const tableCount = view.getUint16(4);
-  let cmapOffset = -1;
-  for (let index = 0; index < tableCount; index += 1) {
-    const offset = 12 + index * 16;
-    if (view.getUint32(offset) === 0x636d6170) cmapOffset = view.getUint32(offset + 8);
-  }
-  if (cmapOffset < 0) return false;
-
-  const encodingCount = view.getUint16(cmapOffset + 2);
-  for (let index = 0; index < encodingCount; index += 1) {
-    const subtableOffset = cmapOffset + view.getUint32(cmapOffset + 4 + index * 8 + 4);
-    const format = view.getUint16(subtableOffset);
-    if (format === 4 && codePoint <= 0xffff) {
-      const segmentCount = view.getUint16(subtableOffset + 6) / 2;
-      const endCodes = subtableOffset + 14;
-      const startCodes = endCodes + segmentCount * 2 + 2;
-      const deltas = startCodes + segmentCount * 2;
-      const rangeOffsets = deltas + segmentCount * 2;
-      for (let segment = 0; segment < segmentCount; segment += 1) {
-        const start = view.getUint16(startCodes + segment * 2);
-        const end = view.getUint16(endCodes + segment * 2);
-        if (codePoint < start || codePoint > end) continue;
-        const delta = view.getInt16(deltas + segment * 2);
-        const rangeOffset = view.getUint16(rangeOffsets + segment * 2);
-        if (rangeOffset === 0) return ((codePoint + delta) & 0xffff) !== 0;
-        const glyphOffset = rangeOffsets + segment * 2 + rangeOffset + (codePoint - start) * 2;
-        const glyph = view.getUint16(glyphOffset);
-        return glyph !== 0 && ((glyph + delta) & 0xffff) !== 0;
-      }
-    }
-    if (format === 12) {
-      const groupCount = view.getUint32(subtableOffset + 12);
-      for (let group = 0; group < groupCount; group += 1) {
-        const groupOffset = subtableOffset + 16 + group * 12;
-        const start = view.getUint32(groupOffset);
-        const end = view.getUint32(groupOffset + 4);
-        if (codePoint >= start && codePoint <= end) return view.getUint32(groupOffset + 8) !== 0;
-      }
-    }
-  }
-  return false;
-}
 
 describe("public intro first frame", () => {
   it("shows only the ritual identity while local storage is being restored", () => {
@@ -96,7 +30,7 @@ describe("public intro first frame", () => {
     const rings = orbit.match(/<i class="yi-breath-ring" aria-hidden="true" style="--ring-index:\d"><\/i>/g) ?? [];
     const ringRule = css.match(/\.yi-breath-ring\{[^}]*\}/)?.[0] ?? "";
 
-    expect(orbit).toContain('<span class="yi-brand-glyph" aria-hidden="true">艺</span>');
+    expect(orbit).toMatch(/<svg class="yi-brand-glyph" aria-hidden="true" viewBox="0 0 1000 1000" data-code-point="U\+827A"[^>]*>/);
     expect(rings).toHaveLength(5);
     expect(ringRule).toMatch(/^\.yi-breath-ring\{[^}]*pointer-events:none[^}]*animation:yi-ring-outward 5s cubic-bezier\(\.22,\.55,\.28,1\) infinite[^}]*animation-delay:calc\(var\(--ring-index\) \* 1s\)[^}]*\}$/);
     expect(ringRule).not.toMatch(/rotate|rotation/i);
@@ -108,33 +42,60 @@ describe("public intro first frame", () => {
     expect(css).not.toContain(".yi-mark i,.yi-mark b");
   });
 
-  it("locally hosts the licensed Zhongshan seal glyph used by the first frame", async () => {
-    const fontUrl = new URL("public/fonts/JFZSKSealScript_V3.5.ttf", siteRoot);
-    const licenseUrl = new URL("public/fonts/OFL.txt", siteRoot);
+  it("ships one audited lishu vector for U+827A without a device-font dependency", async () => {
+    const auditUrl = new URL("public/fonts/yi-lishu-source-audit.json", siteRoot);
+    const sourceSvgUrl = new URL("public/fonts/yi-lishu-u827a.svg", siteRoot);
+    const licenseUrl = new URL("public/fonts/OFL-1.1.rtf", siteRoot);
     const readmeUrl = new URL("public/fonts/README.md", siteRoot);
     const cssUrl = new URL("app/globals.css", siteRoot);
-    const [fontInfo, font, license, readme, css] = await Promise.all([
-      stat(fontUrl),
-      readFile(fontUrl),
+    const [auditText, sourceSvg, license, readme, css] = await Promise.all([
+      readFile(auditUrl, "utf8"),
+      readFile(sourceSvgUrl, "utf8"),
       readFile(licenseUrl, "utf8"),
       readFile(readmeUrl, "utf8"),
       readFile(cssUrl, "utf8"),
     ]);
+    const audit = JSON.parse(auditText) as {
+      glyph: string;
+      codePoint: string;
+      style: string;
+      rendering: string;
+      outlineSha256: string;
+      source: {
+        project: string;
+        repository: string;
+        release: string;
+        archiveSha256: string;
+        license: string;
+      };
+      coverage: { matchingGlyphRecords: number };
+    };
     const html = renderToStaticMarkup(createElement(YiExperience));
+    const renderedPath = html.match(/<path\b[^>]*\bd="([^"]+)"[^>]*(?:><\/path>|\/>)/)?.[1] ?? "";
 
-    expect(fontInfo.size).toBeGreaterThan(10_000);
+    expect(audit).toMatchObject({
+      glyph: "艺",
+      codePoint: "U+827A",
+      style: "lishu",
+      rendering: "inline-svg",
+      source: {
+        project: "FontPlayer template project",
+        repository: "https://github.com/HiToysMaker/fontplayer",
+        release: "v0.4.1",
+        archiveSha256: "424abbce964b40bc32ee8f27d95c190f3647dff9db8881003bbc3bf6b34235ab",
+        license: "SIL Open Font License 1.1",
+      },
+      coverage: { matchingGlyphRecords: 1 },
+    });
+    expect(audit.outlineSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(createHash("sha256").update(renderedPath).digest("hex")).toBe(audit.outlineSha256);
+    expect(sourceSvg).toContain(`d="${renderedPath}"`);
     expect(license).toContain("SIL OPEN FONT LICENSE Version 1.1");
-    expect(css).toMatch(/@font-face\s*\{[^}]*font-family\s*:\s*["']Yi Zhongshan Seal["'][^}]*JFZSKSealScript_V3\.5\.ttf[^}]*font-display\s*:\s*swap[^}]*\}/);
-    expect(css).toMatch(/\.yi-brand-glyph\s*\{[^}]*font-family\s*:\s*["']Yi Zhongshan Seal["'][^}]*serif[^}]*\}/);
-    expect(html.match(/<span class="yi-brand-glyph" aria-hidden="true">艺<\/span>/g)).toHaveLength(1);
-    expect(getCmapRecords(font)).toEqual([
-      { platformId: 0, encodingId: 3, format: 4 },
-      { platformId: 1, encodingId: 0, format: 0 },
-      { platformId: 3, encodingId: 1, format: 4 },
-    ]);
-    expect(readme).toContain("Cmap record formats: `4` and `0`");
-    expect(readme).toContain("U+827A resolves through format `4`");
-    expect(readme).not.toMatch(/formats?\s+4\s+and\s+12/i);
-    expect(cmapHasCodePoint(font, 0x827a)).toBe(true);
+    expect(readme).toContain("U+827A");
+    expect(readme.toLowerCase()).toContain(audit.outlineSha256);
+    expect(css).not.toMatch(/@font-face|font-family:\s*["']Yi Zhongshan Seal|JFZSKSealScript/i);
+    expect(html.match(/<svg class="yi-brand-glyph"[^>]*data-code-point="U\+827A"[^>]*>/g)).toHaveLength(1);
+    expect(html).toMatch(/<path fill="currentColor" d="[^"]{100,}"(?:><\/path>|\/>)/);
+    expect(html).not.toContain(">艺<");
   });
 });
