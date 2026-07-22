@@ -56,7 +56,7 @@ export function ResultShell({ name, chart, birth, report, overview, interpretati
     selectResultSection(scrollPositions, activeSection, next, window.scrollY, onSectionChange);
   }
   return <section className="result-shell">
-    <header className="result-head"><div><span className="mini-mark">艺</span><b>{name || "访客"}的人生报告</b></div><div>{onSaveHome && <button onClick={() => setSaveConfirmOpen(true)}>保存到本机</button>}<button onClick={onRestart}>重新排盘</button></div></header>
+    <header className="result-head"><div className="result-head-main"><div><span className="mini-mark">艺</span><b>{name || "访客"}的人生报告</b></div><div>{onSaveHome && <button onClick={() => setSaveConfirmOpen(true)}>保存到本机</button>}<button onClick={onRestart}>修改出生资料</button></div></div><aside className="adopted-facts" aria-label="本次采用出生事实"><b>本次采用</b><span>{report.birthFacts.solar}</span><span>{report.birthFacts.timeConfidence}</span><span>{report.birthFacts.location}</span><span>{report.birthFacts.timezone}</span>{report.birthFacts.timeConfidence === "时辰不详" && <small>已关闭：时柱、时柱派生判断与精确大运年份。</small>}</aside></header>
     {saveConfirmOpen && <aside className="source-note" role="dialog" aria-label="确认保存本机档案"><b>保存前确认</b><p>将保存：姓名、出生日期与时辰、性别、命盘摘要、行动计划、事件及关系记录；不会保存出生地点。</p><p>数据写入当前网站来源的浏览器存储；同一设备上能使用此浏览器资料的人可能看到，清理浏览器数据也可能删除档案。</p><button onClick={() => { setSaveConfirmOpen(false); onSaveHome?.(); }}>确认保存并进入人生首页</button><button onClick={() => setSaveConfirmOpen(false)}>仅本次使用，不保存</button></aside>}
     {storageError && <p className="storage-error" role="alert">{storageError}</p>}
     <nav className="result-tabs" aria-label="人生报告章节">

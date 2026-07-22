@@ -5,7 +5,9 @@ import {
   BirthIntake,
   clampWheelDate,
   getTimeFocusTarget,
+  isBirthSubmissionReady,
   normalizeBirthSubmission,
+  type BirthConfirmationState,
   type BirthSubmissionDraft,
 } from "../../components/yi/BirthIntake";
 import { TimePicker } from "../../components/yi/TimePicker";
@@ -23,6 +25,25 @@ const baseInput: BirthSubmissionDraft = {
 };
 
 describe("birth intake state", () => {
+  it("requires explicit date and time confirmation before submission", () => {
+    const unconfirmed: BirthConfirmationState = { date: false, time: false };
+
+    expect(isBirthSubmissionReady(unconfirmed)).toBe(false);
+    expect(isBirthSubmissionReady({ date: true, time: false })).toBe(false);
+    expect(isBirthSubmissionReady({ date: true, time: true })).toBe(true);
+  });
+
+  it("keeps picker seeds unconfirmed before the visitor explicitly adopts them", () => {
+    const html = renderToStaticMarkup(createElement(BirthIntake, { onSubmit: () => {} }));
+
+    expect(html).toContain("请选择出生日期");
+    expect(html).toContain("请选择时辰，或选择不知道时辰");
+    expect(html).toMatch(/<button[^>]+type="submit"[^>]+disabled/);
+    expect(html).toContain("仅支持出生地当时采用中国标准时间（UTC+8）的钟表时间");
+    expect(html).toContain("出生地址只作报告记录");
+    expect(html).toMatch(/<div class="time-modes"[^>]*><button[^>]+aria-pressed="false"[^>]*>精确时间<\/button><button[^>]+aria-pressed="false"[^>]*>十二时辰<\/button><button[^>]+aria-pressed="false"[^>]*>不知道时辰<\/button><\/div>/);
+  });
+
   it("restores time-dialog focus to the real opener while it remains mounted", () => {
     const modeButton = { isConnected: true, focus: () => {} };
     const modifyButton = { isConnected: true, focus: () => {} };
