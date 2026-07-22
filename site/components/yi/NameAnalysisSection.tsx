@@ -302,13 +302,15 @@ function AdviceAndDirections({ analysis, candidateMode }: {
   analysis: NameAnalysisViewResult;
   candidateMode: boolean;
 }) {
+  const canShowDirections = candidateMode && analysis.advice.tier === "rebuild-direction";
   return <section className="name-advice" aria-labelledby="name-advice-title">
     <header><small>建议门禁</small><h3 id="name-advice-title">{ADVICE_LABELS[analysis.advice.tier]}</h3></header>
     <p>{analysis.advice.ruleObservation}</p>
     <p>{analysis.advice.plainLanguageScene}</p>
     <p>{analysis.advice.action}</p>
     <aside>{analysis.advice.boundary}</aside>
-    {candidateMode && <section className="name-directions" aria-labelledby="name-directions-title">
+    {candidateMode && !canShowDirections && <p className="name-pending-note">事实确认后再显示方向。</p>}
+    {canShowDirections && <section className="name-directions" aria-labelledby="name-directions-title">
       <h4 id="name-directions-title">三个命名方向</h4>
       <p>示例字经过逐字审校；动态组合的完整姓名统一标为“待人工复核”。</p>
       <div>{analysis.directions.map(direction => <article key={direction.id}>
