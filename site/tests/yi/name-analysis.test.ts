@@ -91,6 +91,23 @@ describe("name analysis input and glyph adoption", () => {
     expect(multiple?.characters[0].variantCandidates.map(candidate => candidate.glyph)).toEqual(["發", "髮"]);
   });
 
+  it("keeps registered input TGH facts before a traditional candidate is selected", async () => {
+    const result = await analyzeName({ rawInput: "发", mode: "traditional-reference" });
+
+    expect(result?.characters[0]).toMatchObject({
+      inputGlyph: "发",
+      adoptedGlyph: null,
+      tghIndex: null,
+      tghLevel: null,
+      totalStrokeRecord: null,
+      inputTghFacts: {
+        glyph: "发",
+        tghLevel: 1,
+        totalStrokeRecord: { rawValue: "5" },
+      },
+    });
+  });
+
   it("accepts only an explicitly selected glyph from the candidate set", async () => {
     const [valid, invalid, invalidWithoutCandidates] = await Promise.all([
       analyzeName({ rawInput: "发", mode: "traditional-reference", traditionalSelections: { 0: "發" } }),

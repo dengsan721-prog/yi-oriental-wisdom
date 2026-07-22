@@ -37,6 +37,7 @@ function renderView(
   return renderToStaticMarkup(createElement(NameAnalysisView, {
     analysis,
     state,
+    onDetailsOpenChange: noop,
     onModeChange: noop,
     onTraditionalSelection: noop,
     onReadingSelection: noop,
@@ -116,6 +117,29 @@ describe("name analysis state", () => {
     expect(state.traditionalSelections).toEqual({});
     expect(state.actualReadings).toEqual({});
     expect(Object.values(state.realityTest)).toEqual(["unverified", "unverified", "unverified", "unverified"]);
+  });
+
+  it("keeps expanded details open across analysis controls and closes for a new name", async () => {
+    let state = createNameAnalysisViewState("发");
+    state = nameAnalysisViewReducer(state, { type: "set-details-open", open: true });
+    expect(state.detailsOpen).toBe(true);
+
+    state = nameAnalysisViewReducer(state, { type: "set-mode", mode: "traditional-reference" });
+    expect(state.detailsOpen).toBe(true);
+    state = nameAnalysisViewReducer(state, { type: "select-traditional", characterIndex: 0, glyph: "髮" });
+    expect(state.detailsOpen).toBe(true);
+    state = nameAnalysisViewReducer(state, { type: "select-reading", characterIndex: 0, reading: "fà" });
+    expect(state.detailsOpen).toBe(true);
+    state = nameAnalysisViewReducer(state, { type: "answer-reality", dimension: "hearing", answer: "both" });
+    expect(state.detailsOpen).toBe(true);
+    state = nameAnalysisViewReducer(state, { type: "set-mode", mode: "candidate" });
+    expect(state.detailsOpen).toBe(true);
+
+    const analysis = await analyzeName({ rawInput: "发", mode: "candidate", requestFreshDirection: true });
+    expect(renderView(analysis!, state)).toContain('<details class="name-analysis-depth" open="">');
+
+    state = nameAnalysisViewReducer(state, { type: "reset-name", name: "林知远" });
+    expect(state.detailsOpen).toBe(false);
   });
 });
 
@@ -218,6 +242,8 @@ describe("name analysis reading view", () => {
     expect(pendingHtml).toContain("生发、出发、发展等义项");
     expect(pendingHtml).toContain("头发、毛发等义项");
     expect(pendingHtml).toContain("现实登记字形事实");
+    expect(pendingHtml).toContain("U+53D1 · 通用规范汉字表第 1 级 · 总笔画工程记录 5");
+    expect(pendingHtml).toContain("尚未采用");
     expect(pendingHtml).not.toContain("U+53D1 · 8105 字核心表暂未覆盖");
     expect(pendingHtml).not.toMatch(/name="traditional-0"[^>]*checked/);
     expect(hairHtml).toContain("采用的传统参考字形");
