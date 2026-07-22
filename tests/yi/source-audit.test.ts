@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ANIMAL_MIRRORS } from "../../lib/yi/animal-mirrors";
 import { HISTORICAL_MIRRORS } from "../../lib/yi/historical-mirrors";
 import { buildInterpretations } from "../../lib/yi/interpretation";
 import { MOVIE_CHARACTERS } from "../../lib/yi/movie-characters";
@@ -129,6 +130,7 @@ describe("unified Yi source registry", () => {
       ...Object.keys(YI_RULE_SOURCES),
       ...Object.keys(YI_REFERENCE_SOURCES),
       ...Object.keys(TRADITIONAL_SOURCE_CATALOG).filter(id => !(id in YI_REFERENCE_SOURCES)),
+      ...ANIMAL_MIRRORS.map(candidate => candidate.id),
       ...HISTORICAL_MIRRORS.map(candidate => candidate.id),
       ...MOVIE_CHARACTERS.map(candidate => candidate.id),
       "model.western-astrology-element-modality",
@@ -164,6 +166,8 @@ describe("unified Yi source registry", () => {
       expect(matches[0].title).toContain(candidate.name);
       expect(matches[0].url).toMatch(/^https:\/\/(?!ctext\.org\/?$)(?!.*(?:find|search))[\w.-]+\/.+/);
       expect(matches[0].url).toBe(expectedHistoricalUrls[candidate.id]);
+      expect(matches[0].title).not.toContain("权威");
+      expect(matches[0].editionNote).not.toContain("专属权威");
     }
     const movieUrls: string[] = [];
     for (const candidate of MOVIE_CHARACTERS) {
@@ -176,6 +180,20 @@ describe("unified Yi source registry", () => {
       movieUrls.push(matches[0].url);
     }
     expect(new Set(movieUrls).size).toBe(MOVIE_CHARACTERS.length);
+  });
+
+  it("registers every animal mirror instead of bypassing registry validation", () => {
+    const registry = new Map(getAllSources().map(source => [source.id, source]));
+
+    for (const candidate of ANIMAL_MIRRORS) {
+      const source = registry.get(candidate.id);
+      expect(source, candidate.id).toBeDefined();
+      expect(source?.category).toBe("动物行为镜像");
+      expect(source?.title).toContain(candidate.name);
+      expect(source?.url).toMatch(/^https:\/\//);
+      expect(source?.role).toContain("行为参考");
+      expect(source?.boundary).toContain("人格诊断");
+    }
   });
 
   it("allows empty URLs only for truthfully documented local or edition-pending records", () => {

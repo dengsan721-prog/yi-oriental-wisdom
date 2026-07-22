@@ -693,8 +693,8 @@ export function auditProductContent(): ContentAuditIssue[] {
   items.push(...ANIMAL_MIRRORS.map(candidate => mirrorItem(
     "mirror:animal",
     candidate,
-    candidate.sourceReferences,
-    false,
+    [candidate.id],
+    true,
   )));
   items.push(...HISTORICAL_MIRRORS.map(candidate => mirrorItem(
     "mirror:historical",

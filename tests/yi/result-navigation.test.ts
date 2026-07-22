@@ -94,6 +94,36 @@ describe("result navigation", () => {
     expect(css).toMatch(/\.result-tabs\{position:sticky;top:0;[^}]*display:flex/);
   });
 
+  it("keeps all five life-home destinations visible at 390px without horizontal scrolling", () => {
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+
+    expect(css).toContain(".life-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding-inline:12px}");
+    expect(css).toContain(".life-nav button{min-width:0}");
+  });
+
+  it("defines a modal keyboard contract for save confirmation", async () => {
+    const resultModule = await import("../../components/yi/ResultShell");
+    const resolver = (resultModule as unknown as Record<string, unknown>).resolveSaveDialogKey;
+    expect(resolver).toBeTypeOf("function");
+    if (typeof resolver !== "function") return;
+
+    expect(resolver("Escape", false, 0, 2)).toEqual({ type: "close" });
+    expect(resolver("Tab", false, 1, 2)).toEqual({ type: "focus", index: 0 });
+    expect(resolver("Tab", true, 0, 2)).toEqual({ type: "focus", index: 1 });
+    expect(resolver("Tab", false, 0, 2)).toEqual({ type: "none" });
+  });
+
+  it("marks the save dialog modal and restores focus through the real trigger", () => {
+    const source = readFileSync(new URL("../../components/yi/ResultShell.tsx", import.meta.url), "utf8");
+
+    expect(source).toContain('aria-modal="true"');
+    expect(source).toContain('aria-labelledby="save-home-title"');
+    expect(source).toContain('aria-describedby="save-home-description"');
+    expect(source).toMatch(/event\.key === "Escape"/);
+    expect(source).toMatch(/event\.key === "Tab"/);
+    expect(source).toContain("saveTriggerRef.current?.focus()");
+  });
+
   it("delegates section changes while keeping reusable scroll positions", () => {
     expect(getAvailableSections()).toEqual(["portrait", "chart", "detail"]);
     const positions = createResultScrollPositions();

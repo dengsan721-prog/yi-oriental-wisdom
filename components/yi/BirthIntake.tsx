@@ -187,7 +187,7 @@ export function BirthIntake({ onSubmit, heading = "建立出生坐标" }: { onSu
         <label><span>姓名（选填）</span><input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="姓名（选填）" /></label>
         <label><span>出生地址（选填）</span><input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} placeholder="城市或区县" /></label>
       </div>
-      <section className="calendar-switch gender-switch" role="group" aria-label="出生性别（用于大运顺逆）">
+      <section className="calendar-switch gender-switch" role="group" aria-label="出生性别（用于大运顺逆及面相、面痣参考图）">
         {(["male", "female", "unspecified"] as const).map(value => <button type="button" key={value} aria-pressed={draft.gender === value} className={draft.gender === value ? "active" : ""} onClick={() => setDraft({ ...draft, gender: value })}>{value === "male" ? "男" : value === "female" ? "女" : "暂不指定"}</button>)}
       </section>
       <section className="summary-control"><span>出生日期 · {draft.date.mode === "solar" ? "阳历" : "农历"}</span><strong>{dateSummary}</strong><button ref={dateTriggerRef} type="button" onClick={() => { setPendingDate(draft.date); setDateOpen(true); }}>选择日期</button></section>

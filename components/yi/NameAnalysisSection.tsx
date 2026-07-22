@@ -10,11 +10,13 @@ import type {
   NameSemanticSummary,
 } from "../../lib/yi/name-types";
 import type { NameRealityScore, NameRealityTestAnswers } from "../../lib/yi/name-score-contract";
+import type { UsageRiskInput } from "../../lib/yi/name-analysis";
 import type { FourPillarsResult, ProfessionalReport } from "../../lib/yi/types";
 
 type NameAnalysisMode = "current" | "traditional-reference" | "candidate";
 type RealityDimension = keyof NameRealityTestAnswers;
 type RealityAnswer = NameRealityTestAnswers[RealityDimension];
+type UsageRiskId = UsageRiskInput["id"];
 
 export type NameAnalysisViewResult = {
   rawInput: string;
@@ -40,6 +42,7 @@ type NameAnalysisRequest = {
   traditionalSelections: Readonly<Record<number, string | undefined>>;
   actualReadings: Readonly<Record<number, string | undefined>>;
   realityTest: NameRealityTestAnswers;
+  usageRisks: readonly UsageRiskInput[];
   requestFreshDirection: boolean;
   chart?: Readonly<FourPillarsResult>;
   professionalReport?: Readonly<ProfessionalReport>;
@@ -107,6 +110,7 @@ export type NameAnalysisViewState = {
   traditionalSelections: Record<number, string | undefined>;
   actualReadings: Record<number, string | undefined>;
   realityTest: NameRealityTestAnswers;
+  usageRiskReviews: Partial<Record<UsageRiskId, boolean>>;
   detailsOpen: boolean;
   sameNameExitConfirmed: boolean;
 };
@@ -117,6 +121,7 @@ export type NameAnalysisViewAction =
   | { type: "select-traditional"; characterIndex: number; glyph: string }
   | { type: "select-reading"; characterIndex: number; reading: string }
   | { type: "answer-reality"; dimension: RealityDimension; answer: RealityAnswer }
+  | { type: "set-usage-risk-reviewed"; riskId: UsageRiskId; reviewed: boolean }
   | { type: "set-details-open"; open: boolean }
   | { type: "confirm-same-name-exit" };
 
@@ -127,6 +132,7 @@ export function createNameAnalysisViewState(name: string): NameAnalysisViewState
     traditionalSelections: {},
     actualReadings: {},
     realityTest: { ...DEFAULT_REALITY_TEST },
+    usageRiskReviews: {},
     detailsOpen: false,
     sameNameExitConfirmed: false,
   };
@@ -148,6 +154,10 @@ export function nameAnalysisViewReducer(state: NameAnalysisViewState, action: Na
     ...state,
     realityTest: { ...state.realityTest, [action.dimension]: action.answer } as NameRealityTestAnswers,
   };
+  if (action.type === "set-usage-risk-reviewed") return {
+    ...state,
+    usageRiskReviews: { ...state.usageRiskReviews, [action.riskId]: action.reviewed },
+  };
   if (action.type === "set-details-open") {
     return state.detailsOpen === action.open ? state : { ...state, detailsOpen: action.open };
   }
@@ -167,10 +177,45 @@ export async function loadNameAnalysisForView(
     traditionalSelections: request.traditionalSelections ?? {},
     actualReadings: request.actualReadings ?? {},
     realityTest: request.realityTest ?? { ...DEFAULT_REALITY_TEST },
+    usageRisks: request.usageRisks ?? [],
     requestFreshDirection: request.mode === "candidate",
     chart: request.chart,
     professionalReport: request.professionalReport,
   });
+}
+
+export function buildUsageRiskInputs(
+  realityTest: NameRealityTestAnswers,
+  reviews: Readonly<Partial<Record<UsageRiskId, boolean>>>,
+): UsageRiskInput[] {
+  const risks: UsageRiskInput[] = [];
+  const persistentScenes = [
+    realityTest.hearing === "none" ? "两位听读测试者都未能正确复述" : "",
+    realityTest.inputDisplay === "none" ? "手机与电脑都持续出现输入或显示问题" : "",
+    realityTest.documents === "one" ? "一个实际办理场景持续出现姓名使用问题" : "",
+    realityTest.documents === "none" ? "两个实际办理场景都持续出现姓名使用问题" : "",
+  ].filter(Boolean);
+  if (persistentScenes.length) {
+    const id: UsageRiskId = "persistent-input-document-or-calling-issue";
+    risks.push({
+      id,
+      severity: "hard",
+      evidence: `本人确认：${persistentScenes.join("；")}。${reviews[id] ? "并确认已经人工复核。" : "尚未确认完成人工复核。"}`,
+      manuallyReviewed: reviews[id] === true,
+      userConfirmed: true,
+    });
+  }
+  if (realityTest.meaningAcceptance === "severe-confirmed") {
+    const id: UsageRiskId = "confirmed-severe-homophone-or-ambiguity";
+    risks.push({
+      id,
+      severity: "hard",
+      evidence: `本人确认姓名含义存在严重且长期的负面歧义。${reviews[id] ? "并确认已经人工复核。" : "尚未确认完成人工复核。"}`,
+      manuallyReviewed: reviews[id] === true,
+      userConfirmed: true,
+    });
+  }
+  return risks;
 }
 
 function percent(value: number): string {
@@ -289,6 +334,27 @@ function RealityTest({ analysis, state, onRealityAnswer }: {
   </section>;
 }
 
+function UsageRiskReview({ state, onReview }: {
+  state: NameAnalysisViewState;
+  onReview: (riskId: UsageRiskId, reviewed: boolean) => void;
+}) {
+  const risks = buildUsageRiskInputs(state.realityTest, state.usageRiskReviews);
+  if (!risks.length) return null;
+  return <section className="name-risk-review" aria-labelledby="name-risk-review-title">
+    <header><small>建议门禁</small><h3 id="name-risk-review-title">现实风险复核门</h3></header>
+    <p>实测低分只说明出现了摩擦，不会自动触发更名建议。只有本人确认、并且已经人工复核的持续硬风险才会进入建议引擎。</p>
+    {risks.map(risk => <label key={risk.id}>
+      <input
+        checked={risk.manuallyReviewed}
+        onChange={event => onReview(risk.id, event.target.checked)}
+        type="checkbox"
+      />
+      <span><b>{risk.id === "confirmed-severe-homophone-or-ambiguity" ? "严重含义歧义" : "持续称呼、输入或证件摩擦"}</b><small>{risk.evidence}</small></span>
+    </label>)}
+    <aside>勾选表示：你确认这项问题已经由人工结合真实材料复核。确认前不会触发更名建议。</aside>
+  </section>;
+}
+
 function ChartComparison({ interaction }: { interaction: NameChartInteraction | null }) {
   if (!interaction) return null;
   return <section className="name-chart-comparison" aria-labelledby="name-chart-title">
@@ -363,6 +429,7 @@ export function NameAnalysisView({
   onTraditionalSelection,
   onReadingSelection,
   onRealityAnswer,
+  onUsageRiskReview = () => {},
   onConfirmSameNameExit,
 }: {
   analysis: NameAnalysisViewResult;
@@ -372,6 +439,7 @@ export function NameAnalysisView({
   onTraditionalSelection: (characterIndex: number, glyph: string) => void;
   onReadingSelection: (characterIndex: number, reading: string) => void;
   onRealityAnswer: (dimension: RealityDimension, answer: RealityAnswer) => void;
+  onUsageRiskReview?: (riskId: UsageRiskId, reviewed: boolean) => void;
   onConfirmSameNameExit: () => void;
 }) {
   return <section className="name-analysis-section" data-name-analysis="ready">
@@ -411,6 +479,7 @@ export function NameAnalysisView({
         </section>
 
         <RealityTest analysis={analysis} onRealityAnswer={onRealityAnswer} state={state} />
+        <UsageRiskReview onReview={onUsageRiskReview} state={state} />
         <ChartComparison interaction={analysis.chartInteraction} />
         <AdviceAndDirections analysis={analysis} candidateMode={state.mode === "candidate"} />
         <EvidenceAndSources analysis={analysis} onConfirmSameNameExit={onConfirmSameNameExit} sameNameExitConfirmed={state.sameNameExitConfirmed} />
@@ -425,12 +494,15 @@ export function NameAnalysisSection({ name, chart, report }: {
   report: ProfessionalReport;
 }) {
   const [state, dispatch] = useReducer(nameAnalysisViewReducer, name, createNameAnalysisViewState);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const requestKey = JSON.stringify([
     name,
     state.mode,
     state.traditionalSelections,
     state.actualReadings,
     state.realityTest,
+    state.usageRiskReviews,
+    loadAttempt,
     chart.pillars,
     chart.ambiguousPillars,
     report.birthFacts.solar,
@@ -449,6 +521,7 @@ export function NameAnalysisSection({ name, chart, report }: {
       traditionalSelections: state.traditionalSelections,
       actualReadings: state.actualReadings,
       realityTest: state.realityTest,
+      usageRisks: buildUsageRiskInputs(state.realityTest, state.usageRiskReviews),
       chart,
       professionalReport: report,
     }).then(result => {
@@ -457,11 +530,11 @@ export function NameAnalysisSection({ name, chart, report }: {
       if (active) setLoaded({ requestKey, analysis: null, error: true });
     });
     return () => { active = false; };
-  }, [chart, name, report, requestKey, state.actualReadings, state.mode, state.realityTest, state.traditionalSelections]);
+  }, [chart, name, report, requestKey, state.actualReadings, state.mode, state.realityTest, state.traditionalSelections, state.usageRiskReviews]);
 
   if (!name.trim()) return null;
   const analysis = loaded?.requestKey === requestKey ? loaded.analysis : null;
-  if (loaded?.requestKey === requestKey && loaded.error) return <section className="name-analysis-loading" data-name-analysis="error" role="alert">姓名资料暂时无法载入；命盘其他内容不受影响。</section>;
+  if (loaded?.requestKey === requestKey && loaded.error) return <section className="name-analysis-loading" data-name-analysis="error" role="alert"><span>姓名资料暂时无法载入；命盘其他内容不受影响。</span><button onClick={() => setLoadAttempt(value => value + 1)} type="button">重试姓名资料</button></section>;
   if (!analysis) return <section aria-busy="true" className="name-analysis-loading" data-name-analysis="loading"><span>正在本机核对姓名字形资料…</span></section>;
 
   return <NameAnalysisView
@@ -471,6 +544,7 @@ export function NameAnalysisSection({ name, chart, report }: {
     onModeChange={mode => dispatch({ type: "set-mode", mode })}
     onReadingSelection={(characterIndex, reading) => dispatch({ type: "select-reading", characterIndex, reading })}
     onRealityAnswer={(dimension, answer) => dispatch({ type: "answer-reality", dimension, answer })}
+    onUsageRiskReview={(riskId, reviewed) => dispatch({ type: "set-usage-risk-reviewed", riskId, reviewed })}
     onTraditionalSelection={(characterIndex, glyph) => dispatch({ type: "select-traditional", characterIndex, glyph })}
     state={state}
   />;

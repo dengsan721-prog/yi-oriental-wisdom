@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { formatYiHash, guardYiRoute, parseYiHash, resolveYiHydratedRoute } from "../../lib/yi/hash-router";
+import { formatYiHash, guardYiRoute, parseYiHash, resolveYiHydratedRoute, type YiRoute, type YiRouteDataState } from "../../lib/yi/hash-router";
 import { useYiRoute } from "../../components/yi/useYiRoute";
 
 function RouteProbe() {
@@ -52,7 +52,7 @@ describe("yi hash router", () => {
     expect(guardYiRoute({ page: "home" }, cleared)).toEqual({ page: "intro" });
   });
 
-  it.each([
+  it.each<[string, YiRouteDataState, YiRoute]>([
     ["#/report/detail", { hasProfile: false, hasResult: false, hasBirth: false }, { page: "birth" }],
     ["#/calculating", { hasProfile: false, hasResult: false, hasBirth: false }, { page: "birth" }],
     ["#/home", { hasProfile: false, hasResult: false, hasBirth: false }, { page: "intro" }],

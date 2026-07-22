@@ -60,6 +60,7 @@ describe("birth intake state", () => {
     expect(html).toMatch(/<button[^>]+type="submit"[^>]+disabled/);
     expect(html).toContain("仅支持出生地当时采用中国标准时间（UTC+8）的钟表时间");
     expect(html).toContain("出生地址只作报告记录");
+    expect(html).toContain('aria-label="出生性别（用于大运顺逆及面相、面痣参考图）"');
     expect(html).toMatch(/<div class="time-modes"[^>]*><button[^>]+aria-pressed="false"[^>]*>精确时间<\/button><button[^>]+aria-pressed="false"[^>]*>十二时辰<\/button><button[^>]+aria-pressed="false"[^>]*>不知道时辰<\/button><\/div>/);
   });
 

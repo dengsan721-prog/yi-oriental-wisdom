@@ -1,5 +1,6 @@
 import { matchAnimalArchetype, matchHistoricalMirror } from "../../lib/yi/mirrors";
 import type { FourPillarsResult, InterpretationItem, ProfessionalOverview } from "../../lib/yi/types";
+import { ChapterSources } from "./ChapterSources";
 
 function pick(items: InterpretationItem[], id: string) {
   const item = items.find(candidate => candidate.id === id);
@@ -59,5 +60,9 @@ export function PortraitSection({ chart, overview, items }: { chart: FourPillars
         <small>{person.caution}</small>
       </article>
     </div>
+    <ChapterSources
+      note="本章以稳定命盘坐标和产品生活化转译组织画像；动物与人物只作单维镜像，不等于人格诊断或命运相同。"
+      sourceIds={items.flatMap(item => item.sourceRuleIds)}
+    />
   </section>;
 }

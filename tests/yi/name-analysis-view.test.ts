@@ -87,6 +87,22 @@ describe("name analysis loading boundary", () => {
     }));
   });
 
+  it("passes only explicitly reviewed real-world risks into the advice engine", async () => {
+    const analyzeName = vi.fn().mockResolvedValue(null);
+    const loadEngine = vi.fn().mockResolvedValue({ analyzeName });
+    const usageRisks = [{
+      id: "confirmed-severe-homophone-or-ambiguity" as const,
+      severity: "hard" as const,
+      evidence: "本人确认存在严重长期歧义，并已完成人工复核。",
+      manuallyReviewed: true,
+      userConfirmed: true,
+    }];
+
+    await loadNameAnalysisForView("林知远", { usageRisks } as never, loadEngine);
+
+    expect(analyzeName).toHaveBeenCalledWith(expect.objectContaining({ usageRisks }));
+  });
+
   it("keeps fixed UI copy free of prohibited promises and persistence calls", () => {
     const source = readFileSync(new URL("../../components/yi/NameAnalysisSection.tsx", import.meta.url), "utf8");
 
@@ -94,6 +110,18 @@ describe("name analysis loading boundary", () => {
       expect(source).not.toContain(forbidden);
     }
     expect(source).not.toMatch(/localStorage|sessionStorage|URLSearchParams|fetch\(|XMLHttpRequest/);
+  });
+
+  it("offers an in-place retry when the lazy name data load fails", () => {
+    const source = readFileSync(new URL("../../components/yi/NameAnalysisSection.tsx", import.meta.url), "utf8");
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+
+    expect(source).toContain("姓名资料暂时无法载入");
+    expect(source).toContain("重试姓名资料");
+    expect(source).toMatch(/setLoadAttempt\([^)]+\+\s*1\)/);
+    expect(css).toMatch(/\.name-analysis-loading button\{[^}]*min-height:44px/);
+    expect(css).toMatch(/\.name-risk-review\{[^}]*border/);
+    expect(css).toMatch(/\.name-risk-review label\{[^}]*min-height:44px/);
   });
 });
 
@@ -108,14 +136,17 @@ describe("name analysis state", () => {
     state = nameAnalysisViewReducer(state, { type: "select-traditional", characterIndex: 0, glyph: "髮" });
     state = nameAnalysisViewReducer(state, { type: "select-reading", characterIndex: 0, reading: "fà" });
     state = nameAnalysisViewReducer(state, { type: "answer-reality", dimension: "hearing", answer: "both" });
+    state = nameAnalysisViewReducer(state, { type: "set-usage-risk-reviewed", riskId: "persistent-input-document-or-calling-issue", reviewed: true } as never);
     state = nameAnalysisViewReducer(state, { type: "confirm-same-name-exit" });
 
     expect(state.traditionalSelections).toEqual({ 0: "髮" });
+    expect((state as typeof state & { usageRiskReviews: Record<string, boolean> }).usageRiskReviews).toEqual({ "persistent-input-document-or-calling-issue": true });
     state = nameAnalysisViewReducer(state, { type: "reset-name", name: "林知远" });
 
     expect(state).toEqual(createNameAnalysisViewState("林知远"));
     expect(state.traditionalSelections).toEqual({});
     expect(state.actualReadings).toEqual({});
+    expect((state as typeof state & { usageRiskReviews: Record<string, boolean> }).usageRiskReviews).toEqual({});
     expect(Object.values(state.realityTest)).toEqual(["unverified", "unverified", "unverified", "unverified"]);
   });
 
@@ -163,6 +194,31 @@ describe("name analysis reading view", () => {
     expect(summaryHtml).toContain(analysis!.boundary);
     expect(html).not.toContain("姓名适配分");
     expect(unverifiedHtml).toContain("尚未完成现实验证，暂不评分");
+  });
+
+  it("shows a manual review gate before severe reality-test problems can change advice", async () => {
+    const analysis = await analyzeName({
+      rawInput: exactBirth.name,
+      realityTest: {
+        hearing: "none",
+        inputDisplay: "none",
+        documents: "none",
+        meaningAcceptance: "severe-confirmed",
+      },
+    });
+    const html = renderView(analysis!, {
+      ...createNameAnalysisViewState(exactBirth.name),
+      realityTest: {
+        hearing: "none",
+        inputDisplay: "none",
+        documents: "none",
+        meaningAcceptance: "severe-confirmed",
+      },
+    });
+
+    expect(html).toContain("现实风险复核门");
+    expect(html).toContain("人工复核");
+    expect(html).toContain("确认前不会触发更名建议");
   });
 
   it("uses explicit candidate mode for directions and conservative advice, then returns to current", async () => {
