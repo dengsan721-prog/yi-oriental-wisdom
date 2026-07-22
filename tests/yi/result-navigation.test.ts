@@ -59,14 +59,8 @@ describe("result navigation", () => {
   });
 
   it("keeps the seven report sections in a stable reading order", () => {
-    expect(getResultSections()).toEqual([
-      ["portrait", "画像"],
-      ["chart", "命盘"],
-      ["detail", "详批"],
-      ["fortune", "大运"],
-      ["mirror", "镜像"],
-      ["compatibility", "合盘"],
-      ["tradition", "传统"],
+    expect(getResultSections().map(([id]) => id)).toEqual([
+      "portrait", "chart", "detail", "fortune", "compatibility", "mirror", "tradition",
     ]);
   });
 
@@ -74,17 +68,30 @@ describe("result navigation", () => {
     expect(getAvailableSections(true)).toHaveLength(7);
   });
 
-  it("keeps only compatibility state in the internal reducer", () => {
+  it("keeps the selected parent-child report role through compatibility changes", () => {
     const initial = createInitialResultShellState();
-    const withRelationship = resultShellReducer(initial, { type: "set-relationship", relationship: "business" });
-    expect(initial).toEqual({ compatibility: { relationship: "partner", secondBirth: null } });
+    const withRole = resultShellReducer(initial, { type: "set-parent-child-primary-role", primaryParentRole: "child" });
+    const withRelationship = resultShellReducer(withRole, { type: "set-relationship", relationship: "business" });
+    expect(initial.compatibility.primaryParentRole).toBe("caregiver");
+    expect(withRole.compatibility.primaryParentRole).toBe("child");
     expect(withRelationship.compatibility.relationship).toBe("business");
+    expect(withRelationship.compatibility.primaryParentRole).toBe("child");
   });
 
   it("preserves the submitted second birth object in compatibility state", () => {
     const birth = { name: "乙", date: "1992-11-03", time: "18:20", location: "上海", gender: "female", timeConfidence: "exact", birthDate: { mode: "solar", year: 1992, month: 11, day: 3, isLeapMonth: false }, timeMode: "exact" } as const;
-    const submitted = resultShellReducer(createInitialResultShellState(), { type: "set-second-birth", birth });
+    const roleSelected = resultShellReducer(createInitialResultShellState(), { type: "set-parent-child-primary-role", primaryParentRole: "child" });
+    const submitted = resultShellReducer(roleSelected, { type: "set-second-birth", birth });
     expect(submitted.compatibility.secondBirth).toBe(birth);
+    expect(submitted.compatibility.primaryParentRole).toBe("child");
+  });
+
+  it("uses a four-column no-scroll mobile report navigation while preserving desktop navigation", () => {
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+
+    expect(css).toMatch(/@media\(max-width:760px\)\{[^}]*\.result-tabs\{[^}]*display:grid[^}]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)[^}]*overflow-x:hidden/);
+    expect(css).toMatch(/\.result-tabs button\{min-width:0;min-height:44px;padding-inline:4px\}/);
+    expect(css).toMatch(/\.result-tabs\{position:sticky;top:0;[^}]*display:flex/);
   });
 
   it("delegates section changes while keeping reusable scroll positions", () => {

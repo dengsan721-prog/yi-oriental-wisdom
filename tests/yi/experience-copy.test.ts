@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { Children, createElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it } from "vitest";
-import { CompatibilitySection } from "../../components/yi/CompatibilitySection";
+import { CompatibilitySection, formatCompatibilityCopy, getCompatibilityParticipants } from "../../components/yi/CompatibilitySection";
 import { DetailSection } from "../../components/yi/DetailSection";
 import { MirrorSection, MirrorSectionView } from "../../components/yi/MirrorSection";
 import { ReferenceAtlasSection } from "../../components/yi/ReferenceAtlasSection";
@@ -335,12 +335,17 @@ it("renders the complete relationship manual in progressive disclosure order", (
     birthDate: { mode: "solar", year: 1992, month: 11, day: 3, isLeapMonth: false }, timeMode: "exact",
   };
   const result = calculateCompatibility(chart, calculateFourPillars(secondBirth), "partner");
+  const participants = getCompatibilityParticipants("甲", "乙", "partner", "caregiver");
+  const format = (copy: string) => formatCompatibilityCopy(copy, participants);
   const html = renderToStaticMarkup(createElement(CompatibilitySection, {
     chart,
     relationship: "partner",
     secondBirth,
+    primaryName: "甲",
+    primaryParentRole: "caregiver",
     onRelationshipChange: () => undefined,
     onSecondBirthChange: () => undefined,
+    onParentChildPrimaryRoleChange: () => undefined,
   }));
 
   expect(html).toContain('<form class="intake-card wheel-intake">');
@@ -364,14 +369,14 @@ it("renders the complete relationship manual in progressive disclosure order", (
     '<details class="compatibility-evidence">',
   ]);
   expect(manual).toBe(`<div class="compatibility-manual">${summary}${axes}${guidance}${legacyEvidence}</div>`);
-  expect(occurrences(summary, result.summary)).toBe(1);
-  expect(manual.slice(0, summaryStart) + manual.slice(summaryStart + summary.length)).not.toContain(result.summary);
+  expect(occurrences(summary, format(result.summary))).toBe(1);
+  expect(manual.slice(0, summaryStart) + manual.slice(summaryStart + summary.length)).not.toContain(format(result.summary));
 
   const cardStarts = [...axes.matchAll(/<article class="compatibility-axis-card">/g)].map((match) => match.index);
   const articles = cardStarts.map((start) => extractBalancedElement(axes, "article", start));
   expect(articles).toHaveLength(9);
   expect(axes).toBe(`<div class="compatibility-axes">${articles.join("")}</div>`);
-  expectStrictOrder(manual, result.axes.map((axis) => axis.label));
+  expectStrictOrder(manual, result.axes.map((axis) => format(axis.label)));
 
   result.axes.forEach((axis, index) => {
     const article = articles[index];
@@ -381,45 +386,98 @@ it("renders the complete relationship manual in progressive disclosure order", (
     expect(evidence.slice(0, evidence.indexOf(">") + 1)).toBe('<details class="compatibility-axis-evidence">');
     const visible = article.slice(0, evidenceStart) + article.slice(evidenceStart + evidence.length);
 
-    expect(article).toContain(`<h2>${axis.label}</h2>`);
-    expectStrictOrder(visible, [axis.label, axis.plainLanguage, axis.scene, "可以这样做", axis.action]);
-    expectStrictOrder(evidence, ["专业依据与边界", axis.professionalBasis, axis.caution]);
+    expect(article).toContain(`<h2>${format(axis.label)}</h2>`);
+    expectStrictOrder(visible, [format(axis.label), format(axis.plainLanguage), format(axis.scene), "可以这样做", format(axis.action)]);
+    expectStrictOrder(evidence, ["专业依据与边界", format(axis.professionalBasis), format(axis.caution)]);
     for (const field of ["label", "plainLanguage", "scene", "action", "professionalBasis", "caution"] as const) {
-      const value = axis[field];
-      const owners = result.axes.filter((candidate) => candidate[field] === value).length;
+      const rawValue = axis[field];
+      const value = format(rawValue);
+      const owners = result.axes.filter((candidate) => candidate[field] === rawValue).length;
       expect(occurrences(manual, value), `${axis.id}.${field} manual ownership`).toBe(owners);
       articles.forEach((candidate, candidateIndex) => {
-        const expected = result.axes[candidateIndex][field] === value ? 1 : 0;
+        const expected = result.axes[candidateIndex][field] === rawValue ? 1 : 0;
         expect(occurrences(candidate, value), `${axis.id}.${field} in card ${candidateIndex}`).toBe(expected);
       });
       expect(summary, `${axis.id}.${field} summary`).not.toContain(value);
       expect(guidance, `${axis.id}.${field} guidance`).not.toContain(value);
       expect(legacyEvidence, `${axis.id}.${field} legacy evidence`).not.toContain(value);
     }
-    expect(visible).not.toContain(axis.professionalBasis);
-    expect(visible).not.toContain(axis.caution);
+    expect(visible).not.toContain(format(axis.professionalBasis));
+    expect(visible).not.toContain(format(axis.caution));
   });
 
   expect(guidance).toContain("伴侣关系说明书");
-  expectStrictOrder(guidance, result.roleSpecificGuidance);
-  for (const item of result.roleSpecificGuidance) expect(occurrences(guidance, item), item).toBe(1);
+  expectStrictOrder(guidance, result.roleSpecificGuidance.map(format));
+  for (const item of result.roleSpecificGuidance) expect(occurrences(guidance, format(item)), item).toBe(1);
 
   expect(legacyEvidence.slice(0, legacyEvidence.indexOf(">") + 1)).toBe('<details class="compatibility-evidence">');
   expectStrictOrder(legacyEvidence, ["<h2>沟通场景</h2>", "<h2>五行互动</h2>", "<h2>双向十神</h2>", "<h2>合、冲、刑、害、破与三合观察</h2>", "<h2>行动规则</h2>"]);
 
   const legacyMarkers = [
-    result.communicationScenario,
-    ...result.elementDynamics.map((item) => `${item.element} ${item.first}:${item.second}`),
-    ...result.tenGodDynamics.map((item) => `${item.direction} · ${item.theme}`),
+    format(result.communicationScenario),
+    ...result.elementDynamics.map((item) => `${item.element} ${participants.first}：${item.first}；${participants.second}：${item.second}`),
+    ...result.tenGodDynamics.map((item) => `${format(item.direction)} · ${item.theme}`),
     ...result.combinationsAndClashes.map((item) => `${item.symbols.join("·")} · ${item.relation}`),
-    ...result.actionRules,
-    ...result.limitations,
+    ...result.actionRules.map(format),
+    ...result.limitations.map(format),
   ];
   const outsideLegacyEvidence = manual.slice(0, legacyEvidenceStart) + manual.slice(legacyEvidenceStart + legacyEvidence.length);
   for (const marker of legacyMarkers) {
     expect(occurrences(legacyEvidence, marker), marker).toBe(1);
     expect(outsideLegacyEvidence, marker).not.toContain(marker);
   }
+});
+
+it("names submitted parent-child participants without changing the A/B calculation order", () => {
+  const chart = calculateFourPillars({ name: "顾临川", date: "1990-06-15", time: "09:30", location: "杭州", gender: "unspecified", timeConfidence: "exact" });
+  const secondBirth: BirthSubmission = {
+    name: "小满", date: "2012-11-03", time: "18:20", location: "上海", gender: "unspecified", timeConfidence: "exact",
+    birthDate: { mode: "solar", year: 2012, month: 11, day: 3, isLeapMonth: false }, timeMode: "exact",
+  };
+  expect(getCompatibilityParticipants("顾临川", "小满", "parent-child", "caregiver")).toEqual({ first: "顾临川（照顾者）", second: "小满（孩子）" });
+  expect(getCompatibilityParticipants("顾临川", "小满", "parent-child", "child")).toEqual({ first: "顾临川（孩子）", second: "小满（照顾者）" });
+  expect(getCompatibilityParticipants("", "", "partner", "caregiver")).toEqual({ first: "报告主人", second: "第二位" });
+
+  const html = renderToStaticMarkup(createElement(CompatibilitySection, {
+    chart,
+    relationship: "parent-child",
+    secondBirth,
+    primaryName: "顾临川",
+    primaryParentRole: "caregiver",
+    onRelationshipChange: () => undefined,
+    onSecondBirthChange: () => undefined,
+    onParentChildPrimaryRoleChange: () => undefined,
+  }));
+
+  expect(html).toContain('aria-label="报告主人亲子角色"');
+  expect(html).toMatch(/aria-pressed="true"[^>]*>报告主人是照顾者<\/button>/);
+  expect(html).toMatch(/aria-pressed="false"[^>]*>报告主人是孩子<\/button>/);
+  expect(html).toContain("A方：顾临川（照顾者）");
+  expect(html).toContain("B方：小满（孩子）");
+  expect(html).toContain("录入对方出生坐标");
+
+  const childHtml = renderToStaticMarkup(createElement(CompatibilitySection, {
+    chart,
+    relationship: "parent-child",
+    secondBirth,
+    primaryName: "顾临川",
+    primaryParentRole: "child",
+    onRelationshipChange: () => undefined,
+    onSecondBirthChange: () => undefined,
+    onParentChildPrimaryRoleChange: () => undefined,
+  }));
+
+  expect(childHtml).toMatch(/aria-pressed="false"[^>]*>报告主人是照顾者<\/button>/);
+  expect(childHtml).toMatch(/aria-pressed="true"[^>]*>报告主人是孩子<\/button>/);
+  expect(childHtml).toContain("A方：顾临川（孩子）");
+  expect(childHtml).toContain("B方：小满（照顾者）");
+
+  const unexplainedMarkers = /(?:A先|B先|A侧|B侧|A注意|B注意|A从|B从|A会|B会|A该|B该)/;
+  expect(html).not.toMatch(unexplainedMarkers);
+  expect(html).toContain("顾临川（照顾者）→小满（孩子）");
+  expect(html).toContain("顾临川（照顾者）：");
+  expect(html).toMatch(/顾临川（照顾者）(?:年|月|日|时)柱/);
+  expect(html).toMatch(/<small>坐标：顾临川（照顾者）(?:年|月|日|时)柱/);
 });
 
 it("keeps relationship disclosures touch-safe and axes single-column without horizontal overflow on mobile", () => {
