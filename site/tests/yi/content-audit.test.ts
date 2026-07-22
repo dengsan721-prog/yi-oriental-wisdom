@@ -102,6 +102,11 @@ describe("content audit rule guards", () => {
     ["fate-improvement-modal-after", "改善运势是必然的"],
     ["medical-improvement-modal-inside", "病情肯定会好转"],
     ["medical-cure-modal-after", "治好疾病是肯定的"],
+    ["fate-passive-improvement", "命运一定会得到改善"],
+    ["legal-colloquial-win", "这场官司肯定能打赢"],
+    ["financial-bidirectional-return", "投资一定会有收益"],
+    ["registration-bidirectional-approval", "这个姓名必定获批登记"],
+    ["fertility-colloquial-success", "肯定能顺利怀上孩子"],
   ])("rejects clause-level unnegated %s claim: %s", (_category, summary) => {
     const issues = auditContentItems([{
       ...completeItem,
@@ -142,6 +147,15 @@ describe("content audit rule guards", () => {
     ["promotional-reversed-not-belong", "必选不属于我们的建议"],
     ["financial-evidence-directive", "请确保先核对投资收益达到目标的证据"],
     ["denied-fate-assertion", "我们不能回答姓名是否一定能改变命运"],
+    ["medical-post-modal-denial", "治愈疾病肯定不是本说明的结论"],
+    ["legal-post-modal-denial", "胜诉肯定无法保证"],
+    ["marriage-post-modal-denial", "婚姻幸福肯定不是一个名字能保证的"],
+    ["promotional-not-so-called", "本方案不是所谓最吉"],
+    ["promotional-absolute-denial", "最吉绝不是本方案的结论"],
+    ["promotional-post-not-belong", "必选并不属于我们的建议"],
+    ["promotional-declines-claim", "本产品不会宣称改名改命"],
+    ["long-epistemic-denial", "我们无法判断在缺少本人证件办理地区政策以及完整申请材料的情况下这个姓名是否一定能改变命运"],
+    ["registration-material-check", "请确保检查姓名登记成功所需的材料是否齐全"],
   ])("allows a natural explicit %s boundary: %s", (_category, summary) => {
     const issues = auditContentItems([{
       ...completeItem,
