@@ -1,11 +1,14 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { gzipSync } from "node:zlib";
+import * as ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
   COMMON_VARIANT_DISAMBIGUATIONS,
   REVIEWED_FULL_NAMES,
   REVIEWED_NAME_CHARACTERS,
+  decodeTghCoreRow,
   findReviewedFullName,
   findReviewedNameCharacter,
   getCommonVariantDisambiguation,
@@ -13,6 +16,23 @@ import {
   inspectRawNameInput,
   loadTghCoreData,
 } from "../../lib/yi/name-data";
+import {
+  NAME_TGH_COMPACT_PAYLOAD,
+  NAME_TGH_GENERATION_METADATA,
+} from "../../lib/yi/name-tgh-data";
+
+const SITE_ROOT = fileURLToPath(new URL("../..", import.meta.url));
+
+function productionSourceFiles(directory: string): string[] {
+  const excludedDirectories = new Set([".next", ".wrangler", "dist", "node_modules", "scripts", "tests"]);
+  return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+    const path = `${directory}/${entry.name}`;
+    if (entry.isDirectory()) {
+      return excludedDirectories.has(entry.name) ? [] : productionSourceFiles(path);
+    }
+    return /\.(?:[cm]?[jt]sx?)$/.test(entry.name) ? [path] : [];
+  });
+}
 
 describe("Yi name data", () => {
   it("matches the official 8,105-codepoint sequence, indexes and three levels exactly", async () => {
@@ -63,6 +83,23 @@ describe("Yi name data", () => {
       sourceProperty: "kTotalStrokes",
     });
     expect(core.lookupByGlyph("一")).not.toHaveProperty("kangxiStrokes");
+    expect(core.records.every(record => record.readings.every(reading => reading.sourceProperty === "kTGHZ2013"))).toBe(
+      true,
+    );
+    expect(core.metadata.readingSelection).toEqual({
+      preferredProperty: "kTGHZ2013",
+      fallbackProperty: "kMandarin",
+      preferredCount: 8105,
+      fallbackCount: 0,
+    });
+  });
+
+  it("preserves the selected reading property through the isolated decoder fallback path", () => {
+    const record = decodeTghCoreRow("3400|kMandarin|qiū|1.4|5||", 1);
+
+    expect(record.readings).toEqual([
+      { pinyin: "qiū", tone: 1, sourceId: "unicode.unihan-17.data", sourceProperty: "kMandarin" },
+    ]);
   });
 
   it("returns unknown for characters outside the TGH core instead of guessing", async () => {
@@ -120,7 +157,8 @@ describe("Yi name data", () => {
     expect(proposal.requiresConfirmation).toBe(true);
   });
 
-  it("covers common one-to-many simplified/traditional cases with meaning hints", () => {
+  it("covers common one-to-many simplified/traditional cases with per-relationship sources", async () => {
+    const core = await loadTghCoreData();
     expect(COMMON_VARIANT_DISAMBIGUATIONS.map(record => record.inputGlyph)).toEqual(["发", "后", "台", "干", "里"]);
     const expectedCandidates: Record<string, string[]> = {
       发: ["發", "髮"],
@@ -134,6 +172,16 @@ describe("Yi name data", () => {
       expect(record.candidates.map(candidate => candidate.glyph)).toEqual(candidates);
       expect(record.candidates.every(candidate => candidate.meaningHint.length >= 4)).toBe(true);
       expect(record.candidates.every(candidate => candidate.sourceIds.includes("standard.tgh-variants"))).toBe(true);
+      for (const candidate of record.candidates) {
+        if (candidate.glyph === glyph) {
+          expect(candidate.variantRelation).toBe("retained-form");
+          expect(candidate.sourceIds).toEqual(["standard.tgh-variants"]);
+          continue;
+        }
+        expect(candidate.variantRelation).toBe("simplified-to-traditional");
+        expect(candidate.sourceIds).toEqual(["standard.tgh-variants", "unicode.unihan-17.data"]);
+        expect(core.lookupByGlyph(glyph)?.traditionalVariants.map(variant => variant.glyph)).toContain(candidate.glyph);
+      }
       expect(record.adoptedGlyph).toBeNull();
       expect(record.requiresConfirmation).toBe(true);
     }
@@ -175,7 +223,7 @@ describe("Yi name data", () => {
     expect(findReviewedFullName("林知川")).toBeNull();
   });
 
-  it("records source checksums, license, deterministic verification and lazy asset budget", async () => {
+  it("records source checksums, license, deterministic verification and measured lazy asset budgets", async () => {
     const core = await loadTghCoreData();
     expect(core.metadata).toMatchObject({
       unicodeVersion: "17.0.0",
@@ -189,12 +237,19 @@ describe("Yi name data", () => {
         sha256: "0ff0890afc34c5e486edeebafb05350dec69a7bf0d1d75044d7d3f7b722ec3d0",
       },
     });
-    expect(core.metadata.payloadGzipBytes).toBeLessThanOrEqual(160 * 1024);
+    const payloadGzipBytes = gzipSync(Buffer.from(NAME_TGH_COMPACT_PAYLOAD, "utf8"), { level: 9 }).length;
+    expect(payloadGzipBytes).toBe(NAME_TGH_GENERATION_METADATA.payloadGzipBytes);
+    expect(payloadGzipBytes).toBeLessThanOrEqual(160 * 1024);
+
+    const generatedModulePath = fileURLToPath(new URL("../../lib/yi/name-tgh-data.ts", import.meta.url));
+    const generatedModuleSource = readFileSync(generatedModulePath, "utf8");
+    expect(gzipSync(Buffer.from(generatedModuleSource, "utf8"), { level: 9 }).length).toBeLessThanOrEqual(160 * 1024);
+    expect(generatedModuleSource).toContain("satisfies NameDataGenerationMetadata");
 
     const nameDataPath = fileURLToPath(new URL("../../lib/yi/name-data.ts", import.meta.url));
     const nameDataSource = readFileSync(nameDataPath, "utf8");
     expect(nameDataSource).toContain('import("./name-tgh-data")');
-    expect(nameDataSource).not.toMatch(/from\s+["']\.\/name-tgh-data["']/);
+    expect(nameDataSource).not.toContain("as unknown as");
     expect(nameDataSource).not.toContain("fetch(");
 
     const noticePath = fileURLToPath(new URL("../../THIRD_PARTY_NOTICES.md", import.meta.url));
@@ -202,5 +257,44 @@ describe("Yi name data", () => {
     expect(notice).toContain("UNICODE LICENSE V3");
     expect(notice).toContain("Unicode Data Files and Software License");
     expect(notice).toContain("https://www.unicode.org/license.txt");
+  });
+
+  it("has no production static import of the generated payload and exactly one intended dynamic import", () => {
+    const staticImports: string[] = [];
+    const dynamicImports: string[] = [];
+
+    for (const file of productionSourceFiles(SITE_ROOT)) {
+      const source = readFileSync(file, "utf8");
+      const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+      const isGeneratedModule = (specifier: ts.Expression | undefined): boolean =>
+        Boolean(
+          specifier &&
+            ts.isStringLiteral(specifier) &&
+            /(?:^|\/)name-tgh-data(?:\.[cm]?[jt]sx?)?$/.test(specifier.text),
+        );
+      const visit = (node: ts.Node): void => {
+        if (ts.isImportDeclaration(node) && isGeneratedModule(node.moduleSpecifier)) {
+          staticImports.push(file);
+        }
+        if (ts.isExportDeclaration(node) && isGeneratedModule(node.moduleSpecifier)) {
+          staticImports.push(file);
+        }
+        if (
+          ts.isCallExpression(node) &&
+          node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+          node.arguments.length === 1 &&
+          isGeneratedModule(node.arguments[0])
+        ) {
+          dynamicImports.push(file);
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sourceFile);
+    }
+
+    expect(staticImports).toEqual([]);
+    expect(dynamicImports.map(file => file.replaceAll("\\", "/").replace(`${SITE_ROOT.replaceAll("\\", "/")}/`, ""))).toEqual([
+      "lib/yi/name-data.ts",
+    ]);
   });
 });

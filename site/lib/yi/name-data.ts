@@ -93,39 +93,51 @@ function provisionalCandidates(rawCodePoints: string): ProvisionalVariantCandida
   });
 }
 
-function decodeCore(payload: string, metadata: NameDataGenerationMetadata): TghCoreData {
-  const records = payload.trimEnd().split("\n").map((row, offset): TghCoreRecord => {
-    const [rawCodePoint, rawReadings, rawRadicals, rawTotalStrokes, rawTraditional, rawSimplified] = row.split("|");
-    const numericCodePoint = Number.parseInt(rawCodePoint, 16);
-    const tghIndex = offset + 1;
-    const readings: TghReading[] = rawReadings.split(",").map(pinyin => ({
-      pinyin,
-      tone: toneOf(pinyin),
+export function decodeTghCoreRow(row: string, tghIndex: number): TghCoreRecord {
+  const [
+    rawCodePoint,
+    rawReadingProperty,
+    rawReadings,
+    rawRadicals,
+    rawTotalStrokes,
+    rawTraditional,
+    rawSimplified,
+  ] = row.split("|");
+  if (rawReadingProperty !== "kTGHZ2013" && rawReadingProperty !== "kMandarin") {
+    throw new Error(`Unsupported Unihan reading property: ${rawReadingProperty}`);
+  }
+  const numericCodePoint = Number.parseInt(rawCodePoint, 16);
+  const readings: TghReading[] = rawReadings.split(",").map(pinyin => ({
+    pinyin,
+    tone: toneOf(pinyin),
+    sourceId: "unicode.unihan-17.data",
+    sourceProperty: rawReadingProperty,
+  }));
+  return {
+    glyph: String.fromCodePoint(numericCodePoint),
+    codePoint: codePointLabel(numericCodePoint),
+    rawTgh: `2013:${tghIndex}`,
+    tghIndex,
+    tghLevel: tghIndex <= 3500 ? 1 : tghIndex <= 6500 ? 2 : 3,
+    readings,
+    radicalStrokeRecords: rawRadicals.split(" ").map(value => ({
+      value,
       sourceId: "unicode.unihan-17.data",
-      sourceProperty: "kTGHZ2013",
-    }));
-    return {
-      glyph: String.fromCodePoint(numericCodePoint),
-      codePoint: codePointLabel(numericCodePoint),
-      rawTgh: `2013:${tghIndex}`,
-      tghIndex,
-      tghLevel: tghIndex <= 3500 ? 1 : tghIndex <= 6500 ? 2 : 3,
-      readings,
-      radicalStrokeRecords: rawRadicals.split(" ").map(value => ({
-        value,
-        sourceId: "unicode.unihan-17.data",
-        sourceProperty: "kRSUnicode",
-      })),
-      totalStrokeRecord: {
-        rawValue: rawTotalStrokes,
-        informative: true,
-        sourceId: "unicode.unihan-17.data",
-        sourceProperty: "kTotalStrokes",
-      },
-      traditionalVariants: provisionalCandidates(rawTraditional),
-      simplifiedVariants: provisionalCandidates(rawSimplified),
-    };
-  });
+      sourceProperty: "kRSUnicode",
+    })),
+    totalStrokeRecord: {
+      rawValue: rawTotalStrokes,
+      informative: true,
+      sourceId: "unicode.unihan-17.data",
+      sourceProperty: "kTotalStrokes",
+    },
+    traditionalVariants: provisionalCandidates(rawTraditional),
+    simplifiedVariants: provisionalCandidates(rawSimplified),
+  };
+}
+
+function decodeCore(payload: string, metadata: NameDataGenerationMetadata): TghCoreData {
+  const records = payload.trimEnd().split("\n").map((row, offset) => decodeTghCoreRow(row, offset + 1));
   const byCodePoint = new Map(records.map(record => [record.codePoint, record]));
   return {
     metadata,
@@ -142,20 +154,25 @@ function decodeCore(payload: string, metadata: NameDataGenerationMetadata): TghC
 
 export function loadTghCoreData(): Promise<TghCoreData> {
   corePromise ??= import("./name-tgh-data").then(module =>
-    decodeCore(
-      module.NAME_TGH_COMPACT_PAYLOAD,
-      module.NAME_TGH_GENERATION_METADATA as unknown as NameDataGenerationMetadata,
-    ),
+    decodeCore(module.NAME_TGH_COMPACT_PAYLOAD, module.NAME_TGH_GENERATION_METADATA),
   );
   return corePromise;
 }
 
-function manualVariant(glyph: string, meaningHint: string): VariantCandidate {
+function manualVariant(
+  glyph: string,
+  meaningHint: string,
+  variantRelation: VariantCandidate["variantRelation"] = "simplified-to-traditional",
+): VariantCandidate {
   return {
     glyph,
     codePoints: codePoints(glyph),
     meaningHint,
-    sourceIds: ["standard.tgh-variants", "unicode.unihan-17.data"],
+    variantRelation,
+    sourceIds:
+      variantRelation === "retained-form"
+        ? ["standard.tgh-variants"]
+        : ["standard.tgh-variants", "unicode.unihan-17.data"],
   };
 }
 
@@ -170,7 +187,10 @@ export const COMMON_VARIANT_DISAMBIGUATIONS: CommonVariantDisambiguation[] = [
   {
     inputGlyph: "后",
     inputCodePoints: codePoints("后"),
-    candidates: [manualVariant("后", "君主、皇后等保留原字义项"), manualVariant("後", "先后、之后、后方等义项")],
+    candidates: [
+      manualVariant("后", "君主、皇后等保留原字义项", "retained-form"),
+      manualVariant("後", "先后、之后、后方等义项"),
+    ],
     adoptedGlyph: null,
     requiresConfirmation: true,
   },
@@ -178,7 +198,7 @@ export const COMMON_VARIANT_DISAMBIGUATIONS: CommonVariantDisambiguation[] = [
     inputGlyph: "台",
     inputCodePoints: codePoints("台"),
     candidates: [
-      manualVariant("台", "兄台、台辅等保留原字义项"),
+      manualVariant("台", "兄台、台辅等保留原字义项", "retained-form"),
       manualVariant("臺", "高台、台湾等义项"),
       manualVariant("檯", "桌台、柜台等器物义项"),
       manualVariant("颱", "台风这一气象义项"),
@@ -190,7 +210,7 @@ export const COMMON_VARIANT_DISAMBIGUATIONS: CommonVariantDisambiguation[] = [
     inputGlyph: "干",
     inputCodePoints: codePoints("干"),
     candidates: [
-      manualVariant("干", "干涉、盾牌等保留原字义项"),
+      manualVariant("干", "干涉、盾牌等保留原字义项", "retained-form"),
       manualVariant("乾", "干燥、乾坤等义项"),
       manualVariant("幹", "才干、从事等义项"),
     ],
@@ -201,7 +221,7 @@ export const COMMON_VARIANT_DISAMBIGUATIONS: CommonVariantDisambiguation[] = [
     inputGlyph: "里",
     inputCodePoints: codePoints("里"),
     candidates: [
-      manualVariant("里", "里程、乡里等保留原字义项"),
+      manualVariant("里", "里程、乡里等保留原字义项", "retained-form"),
       manualVariant("裏", "内部、里面等义项的一种传统字形"),
       manualVariant("裡", "内部、里面等义项的另一传统字形"),
     ],
