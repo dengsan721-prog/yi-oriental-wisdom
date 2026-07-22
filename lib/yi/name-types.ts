@@ -48,6 +48,12 @@ export type NameDataGenerationMetadata = {
   generatedOn: string;
   sequenceSha256: string;
   payloadGzipBytes: number;
+  readingSelection: {
+    preferredProperty: "kTGHZ2013";
+    fallbackProperty: "kMandarin";
+    preferredCount: number;
+    fallbackCount: number;
+  };
   unihan: { url: string; sha256: string };
   officialTgh: { url: string; sha256: string; document: string };
   officialVerification: {
@@ -90,6 +96,7 @@ export type VariantCandidate = {
   glyph: string;
   codePoints: UnicodeCodePoint[];
   meaningHint: string;
+  variantRelation: "retained-form" | "simplified-to-traditional";
   sourceIds: string[];
 };
 
