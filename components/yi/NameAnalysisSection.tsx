@@ -107,6 +107,7 @@ export type NameAnalysisViewState = {
   traditionalSelections: Record<number, string | undefined>;
   actualReadings: Record<number, string | undefined>;
   realityTest: NameRealityTestAnswers;
+  detailsOpen: boolean;
   sameNameExitConfirmed: boolean;
 };
 
@@ -116,6 +117,7 @@ export type NameAnalysisViewAction =
   | { type: "select-traditional"; characterIndex: number; glyph: string }
   | { type: "select-reading"; characterIndex: number; reading: string }
   | { type: "answer-reality"; dimension: RealityDimension; answer: RealityAnswer }
+  | { type: "set-details-open"; open: boolean }
   | { type: "confirm-same-name-exit" };
 
 export function createNameAnalysisViewState(name: string): NameAnalysisViewState {
@@ -125,6 +127,7 @@ export function createNameAnalysisViewState(name: string): NameAnalysisViewState
     traditionalSelections: {},
     actualReadings: {},
     realityTest: { ...DEFAULT_REALITY_TEST },
+    detailsOpen: false,
     sameNameExitConfirmed: false,
   };
 }
@@ -145,6 +148,9 @@ export function nameAnalysisViewReducer(state: NameAnalysisViewState, action: Na
     ...state,
     realityTest: { ...state.realityTest, [action.dimension]: action.answer } as NameRealityTestAnswers,
   };
+  if (action.type === "set-details-open") {
+    return state.detailsOpen === action.open ? state : { ...state, detailsOpen: action.open };
+  }
   return { ...state, sameNameExitConfirmed: true };
 }
 
@@ -352,6 +358,7 @@ function EvidenceAndSources({ analysis, sameNameExitConfirmed, onConfirmSameName
 export function NameAnalysisView({
   analysis,
   state,
+  onDetailsOpenChange,
   onModeChange,
   onTraditionalSelection,
   onReadingSelection,
@@ -360,6 +367,7 @@ export function NameAnalysisView({
 }: {
   analysis: NameAnalysisViewResult;
   state: NameAnalysisViewState;
+  onDetailsOpenChange: (open: boolean) => void;
   onModeChange: (mode: NameAnalysisMode) => void;
   onTraditionalSelection: (characterIndex: number, glyph: string) => void;
   onReadingSelection: (characterIndex: number, reading: string) => void;
@@ -381,7 +389,7 @@ export function NameAnalysisView({
       <p className="name-summary-boundary"><b>阅读边界</b>{analysis.boundary}</p>
     </header>
 
-    <details className="name-analysis-depth">
+    <details className="name-analysis-depth" onToggle={event => onDetailsOpenChange(event.currentTarget.open)} open={state.detailsOpen}>
       <summary>展开姓名事实、现实实测与文化并读</summary>
       <div className="name-analysis-depth-content">
         <section className="name-mode-section" aria-label="姓名分析口径">
@@ -459,6 +467,7 @@ export function NameAnalysisSection({ name, chart, report }: {
   return <NameAnalysisView
     analysis={analysis}
     onConfirmSameNameExit={() => dispatch({ type: "confirm-same-name-exit" })}
+    onDetailsOpenChange={open => dispatch({ type: "set-details-open", open })}
     onModeChange={mode => dispatch({ type: "set-mode", mode })}
     onReadingSelection={(characterIndex, reading) => dispatch({ type: "select-reading", characterIndex, reading })}
     onRealityAnswer={(dimension, answer) => dispatch({ type: "answer-reality", dimension, answer })}
