@@ -41,8 +41,17 @@ const HARD_FORBIDDEN_JARGON = [
   "功能入口", "资源接口", "社会接口", "能量端口", "底层模型", "高维链接",
 ] as const;
 const PROMOTIONAL_CLAIM = /改名改命|最吉|必选|补足五行|康熙古法|公安保证批准|注定|必然破财|克夫|克妻|疾病诊断|寿命已定/g;
-const DETERMINISTIC_PROMISE = /(?:保证|确保|一定(?:能够|能|会)?|肯定(?:会|能|带来)?|必会|必能|必定|必然|注定)[^。！？；，,\n]{0,20}(?:发财|收益|治愈|康复|疾病|婚姻|生育|避灾|批准|法律(?:胜诉|结果)|胜诉|投资)/g;
-const NEGATED_CLAIM_PREFIX = /(?:不|不会|不能|无法|从不|并不|不作|不予|不提供|拒绝|禁止|不得)[^。！？；，,\n]{0,24}$/;
+const DETERMINISTIC_MODAL = /保证|确保|一定(?:能够|能|会)?|肯定(?:会|能)?|必会|必能|必定|必然|注定/g;
+const PROTECTED_OUTCOMES = [
+  { category: "fate", pattern: /命运|改命|人生结果|避灾|吉凶/ },
+  { category: "medical", pattern: /治疗|治愈|康复|疾病|高血压|病情|医疗结果/ },
+  { category: "legal", pattern: /有利判决|判决|胜诉|法律结果|诉讼结果/ },
+  { category: "financial", pattern: /盈利|赚钱|发财|破财|收益|投资回报|投资收益/ },
+  { category: "registration", pattern: /登记姓名|姓名登记|户籍登记|成功登记|公安批准|批准登记|批准/ },
+  { category: "marriage", pattern: /婚姻|婚恋|感情|结婚|伴侣关系/ },
+  { category: "fertility", pattern: /怀孕|生子|生育|得子/ },
+] as const;
+const NEGATED_CLAIM_PREFIX = /(?:没有|从未|并非|未曾|不会|不能|无法|从不|并不|不表示|不代表|不意味着|不等于|不构成|不作|不予|不提供|拒绝|禁止|不得|不)(?:向任何用户|对任何用户|向用户|对用户|作出|提供)?\s*$/;
 const DISPLAY_TITLE_FIELDS = new Set([
   "title", "professionalTitle", "innovationTitle", "label",
   "methodLabel", "methodSubtitle", "groupTitle", "directionTitle",
@@ -131,12 +140,17 @@ function containsCertainPillarCoordinate(text: string, pillar: "year" | "month")
 function containsPromotionalClaim(text: string): boolean {
   const segments = text.split(/[。！？；，,\n]|(?:但是|但|然而|可是|不过|却)/);
   for (const segment of segments) {
-    for (const pattern of [PROMOTIONAL_CLAIM, DETERMINISTIC_PROMISE]) {
-      pattern.lastIndex = 0;
-      for (const match of segment.matchAll(pattern)) {
-        const prefix = segment.slice(0, match.index);
-        if (!NEGATED_CLAIM_PREFIX.test(prefix)) return true;
-      }
+    PROMOTIONAL_CLAIM.lastIndex = 0;
+    for (const match of segment.matchAll(PROMOTIONAL_CLAIM)) {
+      const prefix = segment.slice(0, match.index);
+      if (!NEGATED_CLAIM_PREFIX.test(prefix)) return true;
+    }
+    DETERMINISTIC_MODAL.lastIndex = 0;
+    for (const match of segment.matchAll(DETERMINISTIC_MODAL)) {
+      const prefix = segment.slice(0, match.index);
+      if (NEGATED_CLAIM_PREFIX.test(prefix)) continue;
+      const outcomeText = segment.slice((match.index ?? 0) + match[0].length);
+      if (PROTECTED_OUTCOMES.some(({ pattern }) => pattern.test(outcomeText))) return true;
     }
   }
   return false;
