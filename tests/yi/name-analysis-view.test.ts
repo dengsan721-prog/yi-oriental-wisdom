@@ -162,6 +162,26 @@ describe("name analysis reading view", () => {
     expect(returnedHtml).not.toContain("三个命名方向");
   });
 
+  it("shows directions only for an unblocked candidate advice tier", async () => {
+    const [blocked, unblocked] = await Promise.all([
+      analyzeName({ rawInput: "行", mode: "candidate", requestFreshDirection: true }),
+      analyzeName({ rawInput: exactBirth.name, mode: "candidate", requestFreshDirection: true }),
+    ]);
+    const blockedHtml = renderView(blocked!, { ...createNameAnalysisViewState("行"), mode: "candidate" });
+    const unblockedHtml = renderView(unblocked!, { ...createNameAnalysisViewState(exactBirth.name), mode: "candidate" });
+
+    expect(blocked?.advice.tier).toBe("hold");
+    expect(blockedHtml).toContain(blocked!.advice.ruleObservation);
+    expect(blockedHtml).toContain(blocked!.advice.action);
+    expect(blockedHtml).toContain("事实确认后再显示方向");
+    expect(blockedHtml).not.toContain("三个命名方向");
+    expect(blockedHtml).not.toContain("生长与涵养");
+
+    expect(unblocked?.advice.tier).toBe("rebuild-direction");
+    expect(unblockedHtml).toContain("三个命名方向");
+    expect(unblockedHtml).toContain("生长与涵养");
+  });
+
   it("renders unselected 发→發/髮 meaning choices, then requires an explicit 髮 reading", async () => {
     const pending = await analyzeName({ rawInput: "发", mode: "traditional-reference" });
     const hair = await analyzeName({
