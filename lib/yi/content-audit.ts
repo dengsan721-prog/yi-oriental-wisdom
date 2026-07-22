@@ -37,14 +37,12 @@ export type AuditableContentItem = {
   requiredSourceIds?: readonly string[];
 };
 
-const FORBIDDEN = [
+const HARD_FORBIDDEN_JARGON = [
   "功能入口", "资源接口", "社会接口", "能量端口", "底层模型", "高维链接",
-  "注定", "必然破财", "克夫", "克妻", "疾病诊断", "寿命已定",
-  "改名改命", "最吉", "必选", "补足五行", "康熙古法", "公安保证批准",
-  "保证发财", "保证治愈", "保证婚姻", "保证生育", "保证避灾",
 ] as const;
-const DETERMINISTIC_PROMISE = /(?:保证|必定|必然)[^。；，,\n]{0,12}(?:发财|收益|治愈|康复|婚姻|生育|避灾|批准|法律结果|投资)/g;
-const NEGATED_PROMISE_PREFIX = /(?:不|不会|不能|无法|从不|并不|不作|不予)[^。；，,\n]{0,4}$/;
+const PROMOTIONAL_CLAIM = /改名改命|最吉|必选|补足五行|康熙古法|公安保证批准|注定|必然破财|克夫|克妻|疾病诊断|寿命已定/g;
+const DETERMINISTIC_PROMISE = /(?:保证|确保|一定(?:能够|能|会)?|肯定(?:会|能|带来)?|必会|必能|必定|必然|注定)[^。！？；，,\n]{0,20}(?:发财|收益|治愈|康复|疾病|婚姻|生育|避灾|批准|法律(?:胜诉|结果)|胜诉|投资)/g;
+const NEGATED_CLAIM_PREFIX = /(?:不|不会|不能|无法|从不|并不|不作|不予|不提供|拒绝|禁止|不得)[^。！？；，,\n]{0,24}$/;
 const DISPLAY_TITLE_FIELDS = new Set([
   "title", "professionalTitle", "innovationTitle", "label",
   "methodLabel", "methodSubtitle", "groupTitle", "directionTitle",
@@ -130,10 +128,16 @@ function containsCertainPillarCoordinate(text: string, pillar: "year" | "month")
   return false;
 }
 
-function containsDeterministicPromise(text: string): boolean {
-  for (const match of text.matchAll(DETERMINISTIC_PROMISE)) {
-    const clausePrefix = text.slice(0, match.index).split(/[。；，,\n]/).at(-1) ?? "";
-    if (!NEGATED_PROMISE_PREFIX.test(clausePrefix)) return true;
+function containsPromotionalClaim(text: string): boolean {
+  const segments = text.split(/[。！？；，,\n]|(?:但是|但|然而|可是|不过|却)/);
+  for (const segment of segments) {
+    for (const pattern of [PROMOTIONAL_CLAIM, DETERMINISTIC_PROMISE]) {
+      pattern.lastIndex = 0;
+      for (const match of segment.matchAll(pattern)) {
+        const prefix = segment.slice(0, match.index);
+        if (!NEGATED_CLAIM_PREFIX.test(prefix)) return true;
+      }
+    }
   }
   return false;
 }
@@ -158,7 +162,7 @@ export function auditContentItems(items: readonly AuditableContentItem[]): Conte
       }
       const minimumLength = DISPLAY_TITLE_FIELDS.has(field) ? 2 : 12;
       if (text.length < minimumLength) issues.push(issue(item.module, item.itemId, "too-short", field));
-      if (FORBIDDEN.some(term => text.includes(term)) || containsDeterministicPromise(text)) {
+      if (HARD_FORBIDDEN_JARGON.some(term => text.includes(term)) || containsPromotionalClaim(text)) {
         issues.push(issue(item.module, item.itemId, "forbidden", field));
       }
       const uncertainPillars = new Set(item.uncertainPillars ?? []);
@@ -205,6 +209,12 @@ function characterSourceIds(character: NameCharacterRecord): string[] {
     ...character.readings.map(reading => reading.sourceId),
     ...character.radicalStrokeRecords.map(record => record.sourceId),
     ...(character.totalStrokeRecord ? [character.totalStrokeRecord.sourceId] : []),
+    ...(character.inputTghFacts ? [
+      ...character.inputTghFacts.sourceIds,
+      ...character.inputTghFacts.readings.map(reading => reading.sourceId),
+      ...character.inputTghFacts.radicalStrokeRecords.map(record => record.sourceId),
+      character.inputTghFacts.totalStrokeRecord.sourceId,
+    ] : []),
     ...character.variantCandidates.flatMap(candidate => candidate.sourceIds),
     ...(character.semantic ? [character.semantic.methodId] : []),
     ...(character.semantic?.sourceIds ?? []),
@@ -244,6 +254,7 @@ export function nameAnalysisToAuditableItems(result: NameAnalysisResult): Audita
       frequencyContext: result.frequencyContext,
     },
     sourceIds: uniqueSourceIds([...result.sourceIds, ...result.advice.sourceIds, ...result.semanticSummary.methodIds, ...result.semanticSummary.sourceIds]),
+    requiredSourceIds: ["mps.name-report-2021"],
     boundary: `${result.boundary}；${result.advice.boundary}`,
     scenario: result.plainLanguageScene,
     action: result.action,
@@ -281,6 +292,9 @@ export function nameAnalysisToAuditableItems(result: NameAnalysisResult): Audita
           ? `实际读音采用${character.adoptedReading ?? "待确认"}；全部工程读音候选为${character.readings.map(reading => `${reading.pinyin}(${reading.sourceProperty})`).join("、")}。`
           : "实际读音与工程读音候选均暂未取得，当前保持未知。",
         engineeringFacts: `部首检字工程记录为${character.radicalStrokeRecords.map(record => record.value).join("、") || "未知"}；总笔画工程记录为${character.totalStrokeRecord?.rawValue ?? "未知"}。`,
+        inputTghFacts: character.inputTghFacts
+          ? `原始输入字形“${character.inputTghFacts.glyph}”另存通用规范汉字表序号${character.inputTghFacts.tghIndex}、级别${character.inputTghFacts.tghLevel}、读音${character.inputTghFacts.readings.map(reading => reading.pinyin).join("、")}、部首检字记录${character.inputTghFacts.radicalStrokeRecords.map(record => record.value).join("、")}与总笔画${character.inputTghFacts.totalStrokeRecord.rawValue}，不覆盖采用传统字形的工程事实。`
+          : "当前没有需要与采用字形分开保存的原始输入通用规范汉字表事实。",
         meaningAndSemantic: character.semantic
           ? `人工审校字义为${character.meaning}；方法${character.semantic.methodId}@${character.semantic.version}；可信状态${character.semantic.confidence}；向量${vectorText(vector)}；未知比例${character.semantic.unknownShare}；依据${character.semantic.basisText}`
           : "采用字义与姓名文化向量尚未进入有限人工审校集，当前不作推断。",
@@ -302,6 +316,15 @@ export function nameAnalysisToAuditableItems(result: NameAnalysisResult): Audita
   if (result.chartInteraction) {
     const uncertainPillars: PillarKey[] = result.chartInteraction.input.unavailableReasons.flatMap(reason =>
       reason === "year-boundary" ? ["year"] : reason === "month-boundary" ? ["month"] : reason === "unknown-time" ? ["hour"] : []);
+    const pillarFields = Object.fromEntries(
+      Object.entries(result.chartInteraction.input.certainPillars).flatMap(([key, pillar]) =>
+        pillar
+          ? (["stem", "branch", "element", "branchElement", "label"] as const).map(field => [
+              `pillar_${key}_${field}`,
+              `稳定${key}柱的${field}结构化事实为“${pillar[field]}”，仅作已确认坐标展示。`,
+            ])
+          : []),
+    );
     items.push({
       module: "name-analysis:chart",
       itemId: "side-by-side",
@@ -309,7 +332,7 @@ export function nameAnalysisToAuditableItems(result: NameAnalysisResult): Audita
         chartStatus: result.chartInteraction.ruleObservation,
         chartScene: result.chartInteraction.plainLanguageScene,
         unavailableReasons: `命局文化并读的不可用或降级原因为${result.chartInteraction.input.unavailableReasons.join("、") || "无"}。`,
-        stablePillars: `稳定柱事实为${Object.entries(result.chartInteraction.input.certainPillars).map(([key, pillar]) => `${key}:${pillar?.stem}${pillar?.branch}/${pillar?.element}/${pillar?.branchElement}`).join("；") || "暂无可用稳定柱"}。`,
+        ...pillarFields,
         nameVector: `并排展示的姓名文化向量为${vectorText(result.chartInteraction.nameVector)}。`,
         chartAction: result.chartInteraction.action,
       },
