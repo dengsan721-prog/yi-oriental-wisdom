@@ -66,7 +66,7 @@ export function ResultShell({ name, chart, birth, report, overview, interpretati
     </nav>
     <div className="result-content">
       <div hidden={activeSection !== "portrait"}><PortraitSection chart={chart} overview={overview} items={interpretations} /></div>
-      <div hidden={activeSection !== "chart"}><ChartSection chart={chart} report={report} /></div>
+      <div hidden={activeSection !== "chart"}><ChartSection chart={chart} name={name} report={report} /></div>
       <div hidden={activeSection !== "detail"}><DetailSection items={interpretations} /></div>
       <div hidden={activeSection !== "fortune"}><FortuneSection chart={chart} birth={birth} /></div>
       <div hidden={activeSection !== "mirror"}><MirrorSection chart={chart} /></div>
