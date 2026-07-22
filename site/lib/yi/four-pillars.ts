@@ -6,6 +6,12 @@ import type { AmbiguousProfessionalField, BirthInput, ElementName, FourPillarsRe
 const labels = { year: "根基｜年柱", month: "环境｜月柱", day: "本我｜日柱", hour: "愿景｜时柱" };
 const elementOrder: ElementName[] = ["木", "火", "土", "金", "水"];
 
+function eightCharAt(year: number, month: number, day: number, hour: number, minute: number) {
+  const eightChar = Solar.fromYmdHms(year, month, day, hour, minute, 0).getLunar().getEightChar();
+  eightChar.setSect(2);
+  return eightChar;
+}
+
 function makePillar(stem: string, branch: string, label: string): Pillar {
   return { stem, branch, element: stemElements[stem], branchElement: branchElements[branch], label };
 }
@@ -59,11 +65,11 @@ function calculateFourPillarsInternal(input: BirthInput, compareUnknownTimeEndpo
   const hour = Number(timeMatch[1]), minute = Number(timeMatch[2]);
   if (hour > 23 || minute > 59) throw new Error("请输入有效的出生时间");
 
-  const eightChar = Solar.fromYmdHms(year, month, day, hour, minute, 0).getLunar().getEightChar();
+  const eightChar = eightCharAt(year, month, day, hour, minute);
   const ambiguousPillars: PillarKey[] = [];
   if (!input.time || input.timeConfidence === "unknown") {
-    const start = Solar.fromYmdHms(year, month, day, 0, 0, 0).getLunar().getEightChar();
-    const end = Solar.fromYmdHms(year, month, day, 23, 59, 0).getLunar().getEightChar();
+    const start = eightCharAt(year, month, day, 0, 0);
+    const end = eightCharAt(year, month, day, 23, 59);
     if (start.getYear() !== end.getYear()) ambiguousPillars.push("year");
     if (start.getMonth() !== end.getMonth()) ambiguousPillars.push("month");
     if (start.getDay() !== end.getDay()) ambiguousPillars.push("day");

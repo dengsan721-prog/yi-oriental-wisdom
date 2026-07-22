@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ConstellationMap } from "./ConstellationMap";
 import { buildMoleDetailTitle, getUserSideLabel, MIRROR_GUIDANCE } from "../../lib/yi/atlas-orientation";
 import { CONSTELLATIONS, type ZodiacSign } from "../../lib/yi/constellations";
-import { YI_REFERENCE_SOURCES } from "../../lib/yi/sources";
+import { getAllSources } from "../../lib/yi/sources";
 import {
   buildAtlasReading,
   getAtlasGroups,
@@ -16,15 +16,11 @@ import {
   type AtlasOption,
   type ReferenceGender,
 } from "../../lib/yi/traditional-atlas";
-import { getTraditionalSource } from "../../lib/yi/traditional-sources";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 import { getZodiacProfile } from "../../lib/yi/zodiac-profiles";
 
 function getSource(id: string) {
-  const classic = getTraditionalSource(id);
-  if (classic) return { title: classic.title, grade: classic.grade, url: classic.url, role: classic.usage, editionNote: classic.editionNote, boundary: classic.boundary };
-  const reference = YI_REFERENCE_SOURCES[id];
-  return reference ? { title: reference.title, grade: reference.grade, url: reference.url, role: reference.role, editionNote: "现代边界参考；链接内容与访问状态以来源页面为准。", boundary: reference.boundary } : null;
+  return getAllSources().find((source) => source.id === id) ?? null;
 }
 
 function getOptionLabel(method: AtlasMethodId, item: AtlasOption) {
@@ -57,7 +53,7 @@ export function ReferenceAtlasSection({ chart, birth }: { chart: FourPillarsResu
   }
 
   return <section className="reference-atlas">
-    <div className="atlas-methods" aria-label="传统图谱方法">
+    <div className="atlas-methods" aria-label="传统图谱与星座文化模型">
       {getAtlasMethods().map((item) => <button type="button" className={method === item.id ? "active" : ""} aria-pressed={method === item.id} onClick={() => selectMethod(item.id)} key={item.id}><b>{item.label}</b><small>{item.subtitle}</small></button>)}
     </div>
     <p className="atlas-boundary">标准照片与图谱仅供自行对照；本页不会读取、上传或识别你的照片。</p>

@@ -292,6 +292,7 @@ export function buildAtlasReading(option: AtlasOption, chart: FourPillarsResult)
   const structure = chart.professional.structureBalance === "support-heavy" ? "内在支持较集中"
     : chart.professional.structureBalance === "expression-heavy" ? "向外输出较集中" : "支持与输出相对混合";
   const confidence = chart.confidence === "limited" ? "当前主盘含待核坐标，只作有限对照" : "当前主盘坐标可用于结构对照";
+  const isStarModel = option.id.startsWith("star-");
   return {
     id: option.id,
     title: option.title,
@@ -299,8 +300,8 @@ export function buildAtlasReading(option: AtlasOption, chart: FourPillarsResult)
     caution: option.caution,
     sourceIds: option.sourceIds,
     layers: [
-      { label: "传统结果", text: option.professionalResult },
-      { label: "传统依据", text: option.traditionalBasis },
+      { label: isStarModel ? "文化模型结果" : "传统结果", text: option.professionalResult },
+      { label: isStarModel ? "模型依据" : "传统依据", text: option.traditionalBasis },
       { label: "白话翻译", text: option.plainLanguage },
       { label: "生活场景", text: option.lifeScene },
       { label: "优势与误区", text: option.strengthAndPitfall },

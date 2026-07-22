@@ -1,10 +1,11 @@
 import { ANIMAL_MIRRORS } from "./animal-mirrors";
 import { calculateCompatibility, type CompatibilityAxisId, type RelationshipType } from "./compatibility";
 import { CONSTELLATIONS, ZODIAC_SIGNS } from "./constellations";
-import { buildFortuneTimeline } from "./fortune";
+import { buildFortuneTimeline, FORTUNE_SOURCE_IDS } from "./fortune";
 import { calculateFourPillars } from "./four-pillars";
 import { HISTORICAL_MIRRORS } from "./historical-mirrors";
 import { buildInterpretations, buildProfessionalOverview } from "./interpretation";
+import { buildProfessionalReport } from "./report-model";
 import { matchLifeMirrors, type MirrorCandidate } from "./mirrors";
 import { MOVIE_CHARACTERS, type MovieCharacterRecord } from "./movie-characters";
 import { getAllSources } from "./source-audit";
@@ -63,8 +64,7 @@ const EXPECTED_COMPATIBILITY_AXIS_IDS: readonly CompatibilityAxisId[] = [
   "attraction", "communication", "trigger", "trust", "conflict",
   "resources", "decisions", "stability", "repair",
 ];
-const COMPATIBILITY_SOURCE_IDS = ["ten-god.hidden-stems.v1", "relation.gan-zhi.v1", "domain.mapping.v2"];
-const FORTUNE_SOURCE_IDS = ["calendar.eight-char.v1", "ten-god.hidden-stems.v1", "relation.gan-zhi.v1"];
+const COMPATIBILITY_SOURCE_IDS = ["ten-god.hidden-stems.v1", "relation.gan-zhi.v1", "classic.san-ming-tong-hui", "domain.mapping.v2"];
 
 const FIXTURES: Array<{ id: "male" | "female" | "unknown-time"; birth: BirthInput }> = [
   {
@@ -78,6 +78,21 @@ const FIXTURES: Array<{ id: "male" | "female" | "unknown-time"; birth: BirthInpu
   {
     id: "unknown-time",
     birth: { name: "周未央", date: "1992-11-03", time: null, location: "北京", gender: "unspecified", timeConfidence: "unknown" },
+  },
+];
+
+const FORTUNE_GUARD_FIXTURES: Array<{ id: string; birth: BirthInput }> = [
+  {
+    id: "male-unknown-time",
+    birth: { name: "男性时辰待核", date: "1985-02-20", time: null, location: "成都", gender: "male", timeConfidence: "unknown" },
+  },
+  {
+    id: "female-unknown-time",
+    birth: { name: "女性时辰待核", date: "1978-12-05", time: null, location: "上海", gender: "female", timeConfidence: "unknown" },
+  },
+  {
+    id: "unspecified-gender-exact-time",
+    birth: { name: "性别待核", date: "1992-11-03", time: "18:20", location: "北京", gender: "unspecified", timeConfidence: "exact" },
   },
 ];
 
@@ -275,6 +290,7 @@ function auditFixture(
 ) {
   const unknownHour = fixture.birth.timeConfidence === "unknown";
   const overview = buildProfessionalOverview(fixture.chart);
+  const report = buildProfessionalReport(fixture.chart, fixture.birth);
   for (const [field, value] of Object.entries({
     dayMaster: overview.dayMaster,
     pattern: overview.pattern,
@@ -290,6 +306,10 @@ function auditFixture(
     fields: {
       structure: `${overview.dayMaster}日主；${overview.pattern}；${overview.climate}`,
       professionalSummary: `十神分布：${overview.tenGodSummary}；干支关系：${overview.relationSummary}。`,
+      lifeTheme: report.lifeTheme,
+      coreTalents: report.coreTalents.join("；"),
+      centralTensions: report.centralTensions.join("；"),
+      currentLesson: report.currentLesson,
     },
     sourceIds: ["structure.support-score.v2", "ten-god.hidden-stems.v1", "relation.gan-zhi.v1"],
     boundary: fixture.chart.disclaimer,
@@ -523,7 +543,8 @@ export function auditProductContent(): ContentAuditIssue[] {
           actions: period.actions.join("；"),
           reading: Object.values(period.reading).join("；"),
         },
-        sourceIds: FORTUNE_SOURCE_IDS,
+        sourceIds: period.method.sourceIds,
+        requiredSourceIds: FORTUNE_SOURCE_IDS,
         boundary: period.method.disclaimer,
         scenario: period.stageStory,
         action: period.actions.join("；"),
@@ -542,7 +563,8 @@ export function auditProductContent(): ContentAuditIssue[] {
             scenario: year.scenario,
             action: year.action,
           },
-          sourceIds: FORTUNE_SOURCE_IDS,
+          sourceIds: period.method.sourceIds,
+          requiredSourceIds: FORTUNE_SOURCE_IDS,
           boundary: period.method.disclaimer,
           scenario: year.scenario,
           action: year.action,
@@ -550,8 +572,12 @@ export function auditProductContent(): ContentAuditIssue[] {
       }
     }
   }
-  const unknownTimeline = buildFortuneTimeline(unknown.chart, unknown.birth);
-  if (unknownTimeline.length) issues.push(issue("fortune:unknown-time", "matrix", "certainty", "periods"));
+  for (const fixture of FORTUNE_GUARD_FIXTURES) {
+    const chart = calculateFourPillars(fixture.birth);
+    if (buildFortuneTimeline(chart, fixture.birth).length) {
+      issues.push(issue(`fortune:${fixture.id}`, "matrix", "certainty", "periods"));
+    }
+  }
 
   issues.push(...auditContentItems(items));
   return issues;

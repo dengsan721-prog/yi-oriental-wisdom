@@ -177,11 +177,11 @@ export function buildLifeOverview(
   const confidence = overviewConfidence(context.confidence);
 
   return {
-    lifeTheme: `人生主调：${context.dayMaster}日主行于${month.evidence}，以${monthGift}立足；先把优势做成一个可验证行动，再根据反馈扩大。结论按${confidence}阅读，不把结构当作确定结果。`,
+    lifeTheme: `主调线索：${context.dayMaster}日主行于${month.evidence}，以${monthGift}立足；先把优势做成一个可验证行动，再根据反馈扩大。结论按${confidence}阅读，不把结构当作确定结果。`,
     coreTalents: [
-      `核心天赋一：${context.dayMaster}日主以${context.dayMasterElement}为参照轴，观察主题是“${dayStyle.gift}”；当${dayStyle.scene}时，可以先做一个两周内可交付的小版本。${exposed}是稳定柱可见的表达坐标，最终仍用结果和反例确认这份能力是否成立。`,
-      `核心天赋二：${month.evidence}把重点放在“${monthGift}”；当${monthScene}时，这份能力更容易被看见。它来自月令本气与十神换算的组合观察，不等同于某个职业、财富或关系结果。`,
-      `核心天赋三：围绕${context.dayMaster}日主，${firstRelation}对应“${primaryDynamics.scene}”；成熟优势是${primaryDynamics.advantage}。根气证据为${root}，因此仍要记录触发、对方需求与实际结果，才能知道这份能力何时真正有效。`,
+      `待验证优势一：${context.dayMaster}日主以${context.dayMasterElement}为参照轴，观察主题是“${dayStyle.gift}”；当${dayStyle.scene}时，可以先做一个两周内可交付的小版本。${exposed}是稳定柱可见的表达坐标，最终仍用结果和反例确认这份能力是否成立。`,
+      `待验证优势二：${month.evidence}把重点放在“${monthGift}”；当${monthScene}时，这份能力更容易被看见。它来自月令本气与十神换算的组合观察，不等同于某个职业、财富或关系结果。`,
+      `待验证优势三：围绕${context.dayMaster}日主，${firstRelation}对应“${primaryDynamics.scene}”；成熟优势是${primaryDynamics.advantage}。根气证据为${root}，因此仍要记录触发、对方需求与实际结果，才能知道这份能力何时真正有效。`,
     ],
     centralTensions: [
       `核心张力一：${context.dayMaster}日主倾向“${dayStyle.gift}”，其代价可能是${dayStyle.friction}；${month.evidence}又把人推向“${monthGift}”，两层吃力时常表现为${monthFriction}。这是一组需要调度的结构张力，不是性格缺陷，更不意味着某件事必然发生。`,

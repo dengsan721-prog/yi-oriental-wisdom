@@ -31,7 +31,7 @@ export function CompatibilitySection({ chart, relationship, secondBirth, onRelat
           <section><h2>沟通场景</h2><p>{result.communicationScenario}</p></section>
           <section><h2>五行互动</h2>{result.elementDynamics.map(item => <p key={item.element}><b>{item.element} {item.first}:{item.second}</b>　{item.observation}</p>)}</section>
           <section><h2>双向十神</h2>{result.tenGodDynamics.map(item => <p key={item.direction}><b>{item.direction} · {item.theme}</b>　{item.basis}；{item.observation}</p>)}</section>
-          <section><h2>合、冲、刑、害观察</h2>{result.combinationsAndClashes.map((item, index) => <p key={`${item.symbols.join("")}-${item.relation}-${index}`}><b>{item.symbols.join("·")} · {item.relation}</b>　{item.observation}</p>)}</section>
+          <section><h2>合、冲、刑、害、破与三合观察</h2>{result.combinationsAndClashes.map((item, index) => <p key={`${item.symbols.join("")}-${item.relation}-${index}`}><b>{item.symbols.join("·")} · {item.relation}</b>　{item.observation}</p>)}</section>
           <section><h2>行动规则</h2>{result.actionRules.map(item => <p key={item}>{item}</p>)}{result.limitations.map(item => <small key={item}>{item}</small>)}</section>
         </div>
       </details>

@@ -28,6 +28,13 @@ export type FortuneYear = {
   action: string;
 };
 
+export const FORTUNE_SOURCE_IDS = [
+  "calendar.eight-char.v1",
+  "ten-god.hidden-stems.v1",
+  "relation.gan-zhi.v1",
+  "fortune.translation.v1",
+] as const;
+
 export type FortunePeriod = {
   id: string;
   stemBranch: string;
@@ -51,7 +58,7 @@ export type FortunePeriod = {
   actions: [string, string, string];
   years: FortuneYear[];
   confidence: FourPillarsResult["confidence"];
-  method: { ruleVersion: string; basis: string; disclaimer: string };
+  method: { ruleVersion: string; basis: string; disclaimer: string; sourceIds: string[] };
 };
 
 type FortuneCoordinateKey = "annual" | "period" | PillarKey;
@@ -461,7 +468,9 @@ export function buildFortuneTimeline(chart: FourPillarsResult, input: BirthInput
   const [year, month, day] = input.date.split("-").map(Number);
   const [hour, minute] = input.time?.split(":").map(Number) ?? [12, 0];
   const eightChar = Solar.fromYmdHms(year, month, day, hour, minute, 0).getLunar().getEightChar();
-  const yun = eightChar.getYun(input.gender === "male" ? 1 : 0);
+  eightChar.setSect(2);
+  const gender = input.gender === "male" ? 1 : 0;
+  const yun = eightChar.getYun(gender, 1);
   const direction = yun.isForward() ? "顺排" : "逆排";
   return yun.getDaYun(10).filter(item => item.getIndex() > 0).map((period, periodIndex) => {
     const stemBranch = period.getGanZhi();
@@ -488,8 +497,9 @@ export function buildFortuneTimeline(chart: FourPillarsResult, input: BirthInput
       years,
       confidence: chart.confidence,
       method: {
-        ruleVersion: "lunar-typescript-1.8.6-yun-sect1",
-        basis: `lunar-typescript EightChar.getYun(${input.gender === "male" ? 1 : 0}) 判定${direction}，Yun.getDaYun() 生成大运；起运于${yun.getStartYear()}年${yun.getStartMonth()}月${yun.getStartDay()}日${yun.getStartHour()}时。`,
+        ruleVersion: "lunar-typescript-1.8.6-yun-start-age-method-1",
+        basis: `lunar-typescript EightChar.getYun(${gender}, 1) 判定${direction}并生成大运；第二个参数采用产品固定的起运年龄第1种计算口径，与日柱按00:00换日的口径彼此独立。起运于${yun.getStartYear()}年${yun.getStartMonth()}月${yun.getStartDay()}日${yun.getStartHour()}时。`,
+        sourceIds: [...FORTUNE_SOURCE_IDS],
         disclaimer: input.timeConfidence === "approximate"
           ? "出生时间标记为约略时间，起运年龄与阶段年份按所填时刻计算，结论保持中等置信；不预测确定事件，也不替代现实决定。"
           : "大运用于传统文化中的阶段观察，不预测确定事件，也不替代医疗、法律、财务或关系决定。",

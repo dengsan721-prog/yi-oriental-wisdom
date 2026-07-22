@@ -76,20 +76,21 @@ export function ChartSection({ chart, report }: { chart: FourPillarsResult; repo
         <dl>
           <div><dt>时区口径</dt><dd>{report.birthFacts.timezone}</dd></div>
           <div><dt>真太阳时</dt><dd>{report.birthFacts.trueSolarTime}</dd></div>
+          <div><dt>日柱换日口径</dt><dd>{report.birthFacts.dayBoundary}</dd></div>
         </dl>
       </details>
     </section>
 
     <section className="life-overview" aria-labelledby="life-overview-title">
       <article className="life-theme">
-        <small>人生主调</small>
+        <small>主调线索</small>
         <h2 id="life-overview-title">先看懂贯穿全局的那条线</h2>
         <p>{report.lifeTheme}</p>
       </article>
       <details className="overview-depth"><summary>展开30秒人生概览</summary>
         <div className="overview-grid">
           <section className="core-talents" aria-labelledby="core-talents-title">
-            <h2 id="core-talents-title">核心天赋</h2>
+            <h2 id="core-talents-title">待验证优势</h2>
             <ol>{report.coreTalents.map((talent, index) => <li key={talent}><span>0{index + 1}</span><p>{talent}</p></li>)}</ol>
           </section>
           <section className="central-tensions" aria-labelledby="central-tensions-title">

@@ -405,7 +405,7 @@ it("renders the complete relationship manual in progressive disclosure order", (
   for (const item of result.roleSpecificGuidance) expect(occurrences(guidance, item), item).toBe(1);
 
   expect(legacyEvidence.slice(0, legacyEvidence.indexOf(">") + 1)).toBe('<details class="compatibility-evidence">');
-  expectStrictOrder(legacyEvidence, ["<h2>沟通场景</h2>", "<h2>五行互动</h2>", "<h2>双向十神</h2>", "<h2>合、冲、刑、害观察</h2>", "<h2>行动规则</h2>"]);
+  expectStrictOrder(legacyEvidence, ["<h2>沟通场景</h2>", "<h2>五行互动</h2>", "<h2>双向十神</h2>", "<h2>合、冲、刑、害、破与三合观察</h2>", "<h2>行动规则</h2>"]);
 
   const legacyMarkers = [
     result.communicationScenario,

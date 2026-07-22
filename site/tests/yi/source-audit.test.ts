@@ -144,7 +144,7 @@ describe("unified Yi source registry", () => {
 
   it("allows empty URLs only for truthfully documented local or edition-pending records", () => {
     for (const source of getAllSources().filter(source => !source.url)) {
-      expect(["产品启发式", "传统框架", "现代占星文化模型", "子平", "相学", "象数"]).toContain(source.category);
+      expect(["产品方法", "产品启发式", "传统框架", "现代占星文化模型", "子平", "相学", "象数"]).toContain(source.category);
       expect(source.editionNote).toMatch(/产品自有|产品分类约定|来源待核|待补录/);
     }
 

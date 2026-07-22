@@ -44,6 +44,9 @@ function formatBirthFacts(chart: FourPillarsResult, birth: BirthInput): Professi
   const trueSolarTime = location
     ? "未校正：当前仅记录出生地址，尚未接入经纬度与真太阳时换算，不展示校正钟点。"
     : "未校正：未提供出生地址，且当前未接入经纬度与真太阳时换算，不展示校正钟点。";
+  const dayBoundary = effectiveTimeConfidence === "exact" && birth.time?.startsWith("23:")
+    ? "日柱统一按民用日期00:00换日。部分子平传统以23:00换日；本报告仍按00:00换日，便于保持同一计算口径。"
+    : "日柱统一按民用日期00:00换日；这是本报告采用的固定计算口径。";
   const zodiac = zodiacByBranch[chart.pillars.year.branch] ?? "待核";
   const zodiacLabel = chart.ambiguousPillars.includes("year") ? `${zodiac}（年柱待核）` : zodiac;
   const lunarTime = effectiveTimeConfidence === "unknown"
@@ -55,6 +58,7 @@ function formatBirthFacts(chart: FourPillarsResult, birth: BirthInput): Professi
     location: location || "未提供",
     timezone: "中国标准时间（UTC+8，按录入的当地钟表时间）",
     trueSolarTime,
+    dayBoundary,
     zodiac: zodiacLabel,
     starSign: `${solar.getXingZuo()}座（现代文化辅助）`,
     timeConfidence: effectiveTimeConfidence === "exact" ? "精确时间" : effectiveTimeConfidence === "approximate" ? "约略时间" : "时辰不详",
