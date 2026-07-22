@@ -19,10 +19,11 @@ function renderChart(birth: BirthInput) {
   const chart = calculateFourPillars(birth);
   const report = buildProfessionalReport(chart, birth);
   const Component = ChartSection as unknown as ComponentType<{
+    name?: string;
     chart: FourPillarsResult;
     report: ProfessionalReport;
   }>;
-  const html = renderToStaticMarkup(createElement(Component, { chart, report }));
+  const html = renderToStaticMarkup(createElement(Component, { name: birth.name, chart, report }));
   return { chart, report, html };
 }
 
@@ -42,6 +43,16 @@ it("exposes all paid-report chart rows", () => {
 });
 
 describe("complete professional chart rendering", () => {
+  it("omits blank-name DOM and places a nonblank name module between birth facts and the life overview", () => {
+    const named = renderChart(exactBirth).html;
+    const blank = renderChart({ ...exactBirth, name: " \t " }).html;
+
+    expect(blank).not.toContain("data-name-analysis");
+    expect(named).toContain("data-name-analysis");
+    expect(named.indexOf("birth-fact-band")).toBeLessThan(named.indexOf("data-name-analysis"));
+    expect(named.indexOf("data-name-analysis")).toBeLessThan(named.indexOf("life-overview"));
+  });
+
   it("renders the factual band, paid summary, complete pillars and diagnostic skeleton", () => {
     const { report, html } = renderChart(exactBirth);
 

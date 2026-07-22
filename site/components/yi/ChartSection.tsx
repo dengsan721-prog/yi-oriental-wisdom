@@ -5,6 +5,7 @@ import type {
   PillarKey,
   ProfessionalReport,
 } from "../../lib/yi/types";
+import { NameAnalysisSection } from "./NameAnalysisSection";
 
 const confidenceLabel = { high: "高", medium: "中", limited: "有限" } as const;
 const pillarNames: Record<PillarKey, string> = { year: "年柱", month: "月柱", day: "日柱", hour: "时柱" };
@@ -53,7 +54,7 @@ function seasonSupportLabel(diagnostic: ElementDiagnostic): string {
   return diagnostic.inSeason ? "是" : "否";
 }
 
-export function ChartSection({ chart, report }: { chart: FourPillarsResult; report: ProfessionalReport }) {
+export function ChartSection({ name = "", chart, report }: { name?: string; chart: FourPillarsResult; report: ProfessionalReport }) {
   const chartRows = buildChartRows(report);
   return <section className="report-section chart-report">
     <header className="chart-report-head">
@@ -80,6 +81,8 @@ export function ChartSection({ chart, report }: { chart: FourPillarsResult; repo
         </dl>
       </details>
     </section>
+
+    {name.trim() && <NameAnalysisSection chart={chart} key={name} name={name} report={report} />}
 
     <section className="life-overview" aria-labelledby="life-overview-title">
       <article className="life-theme">
