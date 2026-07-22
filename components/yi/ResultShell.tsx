@@ -99,7 +99,11 @@ export function ResultShell({ name, chart, birth, report, overview, interpretati
     window.requestAnimationFrame(() => saveTriggerRef.current?.focus());
   }
   return <section className="result-shell">
-    <header className="result-head"><div className="result-head-main"><div><span className="mini-mark">艺</span><b>{name || "访客"}的人生报告</b></div><div>{onSaveHome && <button ref={saveTriggerRef} onClick={() => setSaveConfirmOpen(true)}>保存到本机</button>}<button onClick={onRestart}>修改出生资料</button></div></div><aside className="adopted-facts" aria-label="本次采用出生事实"><b>本次采用</b><span>{report.birthFacts.solar}</span><span>{report.birthFacts.timeConfidence}</span><span>{report.birthFacts.location}</span><span>{report.birthFacts.timezone}</span>{report.birthFacts.timeConfidence === "时辰不详" && <small>已关闭：时柱、时柱派生判断与精确大运年份。</small>}</aside></header>
+    <header className="result-head">
+      <div className="result-head-main"><div><span className="mini-mark">艺</span><b>{name || "访客"}的人生报告</b></div></div>
+      <aside className="adopted-facts" aria-label="本次采用出生事实"><b>本次采用</b><span>{report.birthFacts.solar}</span><span>{report.birthFacts.timeConfidence}</span><span>{report.birthFacts.location}</span><span>{report.birthFacts.timezone}</span>{report.birthFacts.timeConfidence === "时辰不详" && <small>已关闭：时柱、时柱派生判断与精确大运年份。</small>}</aside>
+      <div className="result-head-actions">{onSaveHome && <button className="primary" ref={saveTriggerRef} onClick={() => setSaveConfirmOpen(true)}>保存并进入人生首页</button>}<button onClick={onRestart}>修改出生资料</button></div>
+    </header>
     {saveConfirmOpen && <SaveHomeDialog onClose={closeSaveDialog} onConfirm={() => { closeSaveDialog(); onSaveHome?.(); }} />}
     {storageError && <p className="storage-error" role="alert">{storageError}</p>}
     <nav className="result-tabs" aria-label="人生报告章节">

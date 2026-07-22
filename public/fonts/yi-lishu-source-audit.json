@@ -1,0 +1,56 @@
+{
+  "glyph": "艺",
+  "codePoint": "U+827A",
+  "style": "lishu",
+  "rendering": "inline-svg",
+  "outlineSha256": "bd591988dd868e9d74cfc8db82faab537bb5adffc06b51e96b8e1e26c922d5d3",
+  "inlineSvgSha256": "86e45dd2b264c71b5d981895ffd61ace2f1e6baebe0dd736f8c58ea45a3bc1c8",
+  "source": {
+    "project": "FontPlayer template project",
+    "repository": "https://github.com/HiToysMaker/fontplayer",
+    "release": "v0.4.1",
+    "commit": "10ed43287044e5531b90fda9e34948fcfbfb0f33",
+    "archiveUrl": "https://github.com/HiToysMaker/fontplayer/releases/download/v0.4.1/template.zip",
+    "archiveBytes": 74508252,
+    "archiveSha256": "424abbce964b40bc32ee8f27d95c190f3647dff9db8881003bbc3bf6b34235ab",
+    "license": "SIL Open Font License 1.1",
+    "licenseFile": "OFL-1.1.rtf",
+    "licenseSha256": "b3131d001ec1c5b140a7e065dc9d7ad0b7cb68e1414db7eb60277bdb5191d7a4"
+  },
+  "coverage": {
+    "projectCharacterRecords": 7121,
+    "matchingTextRecords": 1,
+    "matchingCodePointRecords": 1,
+    "matchingGlyphRecords": 1,
+    "recordUuid": "QLTsANtQ-gHRdKGnTuB4v",
+    "componentCount": 4
+  },
+  "generation": {
+    "application": "FontPlayer v0.4.1",
+    "targetStyle": "字玩标准隶书",
+    "componentStylesVerified": 4,
+    "longHorizontalSubstitution": "横 -> 横波",
+    "parameters": {
+      "weight": 50,
+      "startStyle": 1,
+      "startValue": 2,
+      "turnStyle": 1,
+      "turnValue": 2,
+      "weightVariation": 0,
+      "bend": 1
+    }
+  },
+  "output": {
+    "viewBox": "0 0 1000 1000",
+    "pathCount": 1,
+    "textCount": 0,
+    "rawExportSha256": "5c082df0309044307140676417ddf1f18662c8fa585212d1fb333eec6e8106bf",
+    "boundingBox": {
+      "x": 48.79,
+      "y": 39.01,
+      "width": 902.86,
+      "height": 890.74
+    }
+  },
+  "verifiedAt": "2026-07-22"
+}

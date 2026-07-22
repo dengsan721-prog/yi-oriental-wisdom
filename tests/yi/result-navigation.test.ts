@@ -31,17 +31,38 @@ function renderResult(birth: BirthInput = exactBirth) {
     activeSection: "portrait",
     onSectionChange: () => {},
     onRestart: () => {},
+    onSaveHome: () => {},
   })) };
 }
 
 describe("result navigation", () => {
-  it("allows a 390px report header to wrap a long name and its actions", () => {
+  it("places save and restart actions after the adopted facts, outside the title row", () => {
+    const { html } = renderResult();
+    const titleStart = html.indexOf('class="result-head-main"');
+    const factsStart = html.indexOf('class="adopted-facts"');
+    const actionsStart = html.indexOf('class="result-head-actions"');
+    const headerEnd = html.indexOf("</header>");
+
+    expect(titleStart).toBeGreaterThan(-1);
+    expect(factsStart).toBeGreaterThan(titleStart);
+    expect(html.slice(titleStart, factsStart)).not.toContain("<button");
+    expect(actionsStart).toBeGreaterThan(factsStart);
+    expect(actionsStart).toBeLessThan(headerEnd);
+    expect(html).toContain('<button class="primary">保存并进入人生首页</button>');
+    expect(html).toContain("<button>修改出生资料</button>");
+    expect(html).not.toContain("保存到本机");
+  });
+
+  it("keeps the result actions tappable and free of horizontal overflow on narrow screens", () => {
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-    expect(css).toMatch(/@media\(max-width:390px\)\{[^}]*\.result-head-main\{[^}]*flex-wrap:wrap/);
+    expect(css).toMatch(/\.result-head-actions\{[^}]*display:flex[^}]*justify-content:flex-end[^}]*gap:8px/);
+    expect(css).toMatch(/\.result-head-actions button\{[^}]*min-width:0[^}]*min-height:44px/);
+    expect(css).toMatch(/@media\(max-width:520px\)\{\.result-head>\.result-head-actions\{[^}]*display:grid[^}]*grid-template-columns:1fr/);
+    expect(css).toMatch(/@media\(max-width:520px\)\{\.result-head>\.result-head-actions\{[^}]*\}\.result-head-actions button\{[^}]*width:100%/);
     expect(css).toMatch(/\.result-head-main>div:first-child\{[^}]*min-width:0/);
     expect(css).toMatch(/\.result-head-main>div:first-child b\{[^}]*overflow-wrap:anywhere/);
-    expect(css).toMatch(/\.result-head-main>div:last-child\{[^}]*width:100%[^}]*justify-content:flex-end[^}]*flex-wrap:wrap/);
+    expect(css).not.toContain(".result-head-main>div:last-child");
   });
 
   it("shows the adopted report facts and unknown-time scope in the header", () => {
