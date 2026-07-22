@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { buildFortuneTimeline, type FortuneReading } from "../../lib/yi/fortune";
+import { getAllSources } from "../../lib/yi/sources";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 
 const readingLabels: ReadonlyArray<[keyof FortuneReading, string]> = [
@@ -36,6 +37,10 @@ export function FortuneSection({ chart, birth }: { chart: FourPillarsResult; bir
   if (!timeline.length) return <section className="report-section"><header><small>阶段节律</small><h1>大运时间线待确认</h1><p>{birth.timeConfidence === "unknown" ? "出生时辰未知会影响起运时刻、起运年龄与阶段年份，当前不生成精确大运或流年时间线；补充可靠时辰后再查看。" : "顺逆排需要出生性别。当前未指定，因此不生成可能误导的起运年份；补全资料后再查看。"}</p></header></section>;
   const period = timeline[Math.min(periodIndex, timeline.length - 1)];
   const year = period.years[Math.min(yearIndex, period.years.length - 1)];
+  const sourceRegistry = new Map(getAllSources().map((source) => [source.id, source]));
+  const methodSources = period.method.sourceIds
+    .map((id) => sourceRegistry.get(id))
+    .filter((source): source is NonNullable<typeof source> => Boolean(source));
   return <section className="report-section fortune-report">
     <header><small>大运流年</small><h1>把阶段主题落到一年</h1><p>{period.method.disclaimer}</p></header>
 
@@ -62,7 +67,7 @@ export function FortuneSection({ chart, birth }: { chart: FourPillarsResult; bir
         <dl className="fortune-reading">
           {readingLabels.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{period.reading[key]}</dd></div>)}
         </dl>
-        <details className="fortune-method"><summary>查看排运方法与起运依据</summary><p>{period.method.basis}</p><small>规则版本：{period.method.ruleVersion}</small></details>
+        <details className="fortune-method"><summary>查看排运方法与起运依据</summary><p>{period.method.basis}</p><small>规则版本：{period.method.ruleVersion}</small><ul>{methodSources.map((source) => <li key={source.id}><b>{source.title}</b><span>{source.grade} · {source.role}</span></li>)}</ul></details>
       </details>
     </article>
 

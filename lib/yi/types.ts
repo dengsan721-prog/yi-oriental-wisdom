@@ -117,6 +117,7 @@ export type ProfessionalReport = {
     location: string;
     timezone: string;
     trueSolarTime: string;
+    dayBoundary: string;
     zodiac: string;
     starSign: string;
     timeConfidence: "精确时间" | "约略时间" | "时辰不详";

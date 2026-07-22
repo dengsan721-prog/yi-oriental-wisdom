@@ -445,7 +445,8 @@ describe("professional interpretation", () => {
     expect(relationSource).toMatchObject({
       label: "干支关系完整规则表",
       appliesWhen: "两支关系需两处已知坐标；三合与三刑需三支齐全；自刑需同一地支出现在两处已知坐标",
-      version: "1.1.0",
+      sourceType: "product-method",
+      version: "1.2.0",
     });
     const relationItem = buildInterpretations(knownChart)
       .find(item => item.sourceRuleIds.includes("relation.gan-zhi.v1"));
@@ -477,15 +478,15 @@ describe("professional interpretation", () => {
   });
 
   it("lists every distinct relation between the preferred pillar pair", () => {
-    const chartWithConcurrentRelations = {
+    const chartWithConcurrentRelations: FourPillarsResult = {
       ...knownChart,
       professional: {
         ...knownChart.professional,
         relations: [
-          { type: "stem-combination" as const, pillars: ["year", "month"] as const, symbols: ["甲", "己"], label: "甲己相合" },
-          { type: "branch-clash" as const, pillars: ["year", "month"] as const, symbols: ["子", "午"], label: "子午相冲" },
-          { type: "branch-break" as const, pillars: ["year", "month"] as const, symbols: ["子", "酉"], label: "子酉相破" },
-          { type: "branch-break" as const, pillars: ["year", "month"] as const, symbols: ["子", "酉"], label: "子酉相破" },
+          { type: "stem-combination", pillars: ["year", "month"], symbols: ["甲", "己"], label: "甲己相合" },
+          { type: "branch-clash", pillars: ["year", "month"], symbols: ["子", "午"], label: "子午相冲" },
+          { type: "branch-break", pillars: ["year", "month"], symbols: ["子", "酉"], label: "子酉相破" },
+          { type: "branch-break", pillars: ["year", "month"], symbols: ["子", "酉"], label: "子酉相破" },
         ],
       },
     };

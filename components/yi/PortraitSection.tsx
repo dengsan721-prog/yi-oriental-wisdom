@@ -1,8 +1,10 @@
 import { matchAnimalArchetype, matchHistoricalMirror } from "../../lib/yi/mirrors";
 import type { FourPillarsResult, InterpretationItem, ProfessionalOverview } from "../../lib/yi/types";
 
-function pick(items: InterpretationItem[], id: string, fallback = 0) {
-  return items.find(item => item.id === id) ?? items[fallback] ?? items[0];
+function pick(items: InterpretationItem[], id: string) {
+  const item = items.find(candidate => candidate.id === id);
+  if (!item) throw new Error(`人生画像缺少必需解读：${id}`);
+  return item;
 }
 
 export function PortraitSection({ chart, overview, items }: { chart: FourPillarsResult; overview: ProfessionalOverview; items: InterpretationItem[] }) {
@@ -10,8 +12,8 @@ export function PortraitSection({ chart, overview, items }: { chart: FourPillars
   const features = [pick(items, "self-support"), pick(items, "self-interface"), pick(items, "career-environment")];
   const outside = pick(items, "talent-public");
   const inside = pick(items, "talent-hidden");
-  const pressure = pick(items, "relationship-boundary");
-  const task = pick(items, "rhythm-long-term");
+  const pressure = pick(items, "relationship-trigger");
+  const task = pick(items, "rhythm-decision");
   const animal = matchAnimalArchetype(chart);
   const person = matchHistoricalMirror(chart);
   const dataBand = [

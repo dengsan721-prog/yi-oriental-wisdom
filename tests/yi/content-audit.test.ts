@@ -131,7 +131,7 @@ describe("independent review regressions", () => {
               : [{ direction: "A→B", basis: "稳定日干证据", theme: "比肩", observation: "十神证据混入高维链接" }],
             combinationsAndClashes: result.combinationsAndClashes.length
               ? result.combinationsAndClashes.map((entry, index) => index === 0 ? { ...entry, observation: "干支证据混入高维链接" } : entry)
-              : [{ symbols: ["甲", "己"], relation: "相合", observation: "干支证据混入高维链接" }],
+              : [{ symbols: ["甲", "己"], relation: "相合", coordinates: ["A年柱", "B年柱"], observation: "干支证据混入高维链接" }],
           };
         },
       };

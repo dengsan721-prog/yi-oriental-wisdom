@@ -30,7 +30,7 @@ export type CompatibilityResult = {
   roleSpecificGuidance: string[];
   elementDynamics: { element: ElementName; first: number; second: number; observation: string }[];
   tenGodDynamics: { direction: "A→B" | "B→A"; basis: string; theme: TenGodName; observation: string }[];
-  combinationsAndClashes: { symbols: [string, string]; relation: string; observation: string }[];
+  combinationsAndClashes: { symbols: string[]; relation: string; coordinates: string[]; observation: string }[];
   communicationScenario: string;
   actionRules: string[];
   limitations: string[];
@@ -59,6 +59,7 @@ type EvidenceProfile = EvidenceProfileBase & (
 
 const elements: ElementName[] = ["木", "火", "土", "金", "水"];
 const pillarKeys: PillarKey[] = ["year", "month", "day", "hour"];
+const pillarLabels: Record<PillarKey, string> = { year: "年柱", month: "月柱", day: "日柱", hour: "时柱" };
 const confidenceLabels: Record<FourPillarsResult["confidence"], string> = {
   high: "高置信",
   medium: "中等置信",
@@ -189,7 +190,15 @@ const relationPairs: [string, string, string][] = [
   ["子", "丑", "合"], ["寅", "亥", "合"], ["卯", "戌", "合"], ["辰", "酉", "合"], ["巳", "申", "合"], ["午", "未", "合"],
   ["子", "未", "害"], ["丑", "午", "害"], ["寅", "巳", "害"], ["卯", "辰", "害"], ["申", "亥", "害"], ["酉", "戌", "害"],
   ["寅", "巳", "刑"], ["巳", "申", "刑"], ["寅", "申", "刑"], ["丑", "戌", "刑"], ["戌", "未", "刑"], ["丑", "未", "刑"], ["子", "卯", "刑"],
+  ["子", "酉", "破"], ["卯", "午", "破"], ["辰", "丑", "破"], ["戌", "未", "破"], ["寅", "亥", "破"], ["巳", "申", "破"],
 ];
+
+const branchTrines = [
+  ["申", "子", "辰", "水"],
+  ["亥", "卯", "未", "木"],
+  ["寅", "午", "戌", "火"],
+  ["巳", "酉", "丑", "金"],
+] as const;
 
 export function classifyBranchRelation(left: string, right: string): string[] {
   return relationPairs
@@ -233,25 +242,62 @@ function buildElementDynamics(first: FourPillarsResult, second: FourPillarsResul
 }
 
 function crossRelations(first: FourPillarsResult, second: FourPillarsResult): CompatibilityResult["combinationsAndClashes"] {
-  const aBranches = stablePillars(first).map(([, pillar]) => pillar.branch);
-  const bBranches = stablePillars(second).map(([, pillar]) => pillar.branch);
+  const aCoordinates = stablePillars(first).map(([key, pillar]) => ({ side: "A" as const, label: `A${pillarLabels[key]}`, branch: pillar.branch }));
+  const bCoordinates = stablePillars(second).map(([key, pillar]) => ({ side: "B" as const, label: `B${pillarLabels[key]}`, branch: pillar.branch }));
+  const allCoordinates = [...aCoordinates, ...bCoordinates];
   const relations: CompatibilityResult["combinationsAndClashes"] = [];
   const observations: Record<string, string> = {
     合: "稳定柱形成合，容易找到协作接口，也要防止默契取代边界与确认。",
     冲: "稳定柱形成冲，节奏与方向容易正面拉扯，适合预设暂停和复盘。",
     害: "稳定柱形成害，误会可能从没有说出的期待累积，适合提早核对事实。",
     刑: "稳定柱形成刑，同一问题可能反复施压，适合拆小议题并限制升级。",
+    破: "稳定柱形成破，原有配合方式容易出现松动或错位，适合及时重订边界与交接。",
   };
   for (const [left, right, relation] of relationPairs) {
-    if ((aBranches.includes(left) && bBranches.includes(right)) || (aBranches.includes(right) && bBranches.includes(left))) {
-      relations.push({ symbols: [left, right], relation, observation: observations[relation] });
+    const matched = aCoordinates.flatMap((a) => bCoordinates.map((b) => ({ a, b })))
+      .find(({ a, b }) => (a.branch === left && b.branch === right) || (a.branch === right && b.branch === left));
+    if (!matched) continue;
+    const coordinates = [matched.a.label, matched.b.label];
+    relations.push({
+      symbols: [left, right],
+      relation,
+      coordinates,
+      observation: `证据坐标：${matched.a.label}${matched.a.branch}、${matched.b.label}${matched.b.branch}。${observations[relation]}`,
+    });
+  }
+  for (const [firstBranch, secondBranch, thirdBranch, element] of branchTrines) {
+    const symbols = [firstBranch, secondBranch, thirdBranch];
+    const candidates = symbols.map((symbol) => allCoordinates.filter((coordinate) => coordinate.branch === symbol));
+    let matched: typeof allCoordinates | undefined;
+    for (const firstCoordinate of candidates[0]) {
+      for (const secondCoordinate of candidates[1]) {
+        for (const thirdCoordinate of candidates[2]) {
+          const group = [firstCoordinate, secondCoordinate, thirdCoordinate];
+          if (new Set(group.map((coordinate) => coordinate.side)).size === 2) {
+            matched = group;
+            break;
+          }
+        }
+        if (matched) break;
+      }
+      if (matched) break;
     }
+    if (!matched) continue;
+    const coordinates = matched.map((coordinate) => coordinate.label);
+    const label = `${symbols.join("")}三合${element}局`;
+    relations.push({
+      symbols,
+      relation: "三合",
+      coordinates,
+      observation: `证据坐标：${matched.map((coordinate) => `${coordinate.label}${coordinate.branch}`).join("、")}。${label}三支齐全，且双方命盘均提供已知柱位；只作为协作接口观察。`,
+    });
   }
   if (relations.length) return relations;
   return [{
-    symbols: [aBranches[0] ?? "待核", bBranches[0] ?? "待核"],
-    relation: "无直接合冲刑害",
-    observation: "双方稳定柱未见直接合冲刑害，不以单一地支关系替代真实互动观察。",
+    symbols: [aCoordinates[0]?.branch ?? "待核", bCoordinates[0]?.branch ?? "待核"],
+    relation: "无直接合冲刑害破或三合",
+    coordinates: [aCoordinates[0]?.label ?? "A待核", bCoordinates[0]?.label ?? "B待核"],
+    observation: "双方稳定柱未见直接合冲刑害破或三合，不以单一地支关系替代真实互动观察。",
   }];
 }
 
@@ -263,9 +309,9 @@ function lowestConfidence(first: FourPillarsResult, second: FourPillarsResult): 
 function buildProfile(first: FourPillarsResult, second: FourPillarsResult): EvidenceProfile {
   const dayPending = hasAmbiguousDay(first) || hasAmbiguousDay(second);
   const cross = crossRelations(first, second);
-  const directRelations = cross.filter((item) => item.relation !== "无直接合冲刑害");
-  const hasSupport = directRelations.some((item) => item.relation === "合");
-  const hasTension = directRelations.some((item) => item.relation !== "合");
+  const directRelations = cross.filter((item) => item.relation !== "无直接合冲刑害破或三合");
+  const hasSupport = directRelations.some((item) => item.relation === "合" || item.relation === "三合");
+  const hasTension = directRelations.some((item) => item.relation !== "合" && item.relation !== "三合");
   const relationMode = hasSupport && hasTension ? "mixed" : hasSupport ? "supportive" : hasTension ? "tense" : "neutral";
   const elementDynamics = buildElementDynamics(first, second);
   const totalGap = elementDynamics.reduce((sum, item) => sum + Math.abs(item.first - item.second), 0);
@@ -300,9 +346,9 @@ function buildProfile(first: FourPillarsResult, second: FourPillarsResult): Evid
 function relationMeaning(profile: EvidenceProfile) {
   const meanings = {
     supportive: "稳定柱以合为主，容易先找到共同接口，但仍需把默认默契说成明确约定",
-    tense: "稳定柱以冲、刑或害的张力为主，差异会较早进入现场，适合先设边界与暂停机制",
-    mixed: "稳定柱同时出现合与冲刑害，靠近和拉扯会并存，需要把合作接口与压力点分别处理",
-    neutral: "稳定柱未见直接合冲刑害，互动质量更依赖真实习惯、请求方式与持续兑现",
+    tense: "稳定柱以冲、刑、害或破的张力为主，差异会较早进入现场，适合先设边界与暂停机制",
+    mixed: "稳定柱同时出现合或三合与冲刑害破，靠近和拉扯会并存，需要把合作接口与压力点分别处理",
+    neutral: "稳定柱未见直接合冲刑害破或三合，互动质量更依赖真实习惯、请求方式与持续兑现",
   } as const;
   return meanings[profile.relationMode];
 }
@@ -354,8 +400,8 @@ function professionalBasis(id: CompatibilityAxisId, profile: EvidenceProfile) {
   const pendingDayBasis = `${dayStatus}；日柱待核期间不生成候选日干十神、日支关系或对应互动风格。`;
   const aBasis = `A日干${first.pillars.day.stem}相对B日干${second.pillars.day.stem}`;
   const bBasis = `B日干${second.pillars.day.stem}相对A日干${first.pillars.day.stem}`;
-  const dayRelation = profile.dayRelations.length ? profile.dayRelations.join("、") : "无直接合冲刑害";
-  const cross = profile.crossRelations.map((item) => `${item.symbols.join("")}${item.relation}`).join("、");
+  const dayRelation = profile.dayRelations.length ? profile.dayRelations.join("、") : "无直接合冲刑害破";
+  const cross = profile.crossRelations.map((item) => `${item.coordinates.join("、")}：${item.symbols.join("")}${item.relation}`).join("、");
   const five = profile.elementDynamics.map((item) => `${item.element}${item.first}/${item.second}`).join("、");
   if (profile.dayPending && ["attraction", "communication", "trigger", "conflict", "decisions", "repair"].includes(id)) {
     return pendingDayBasis;
@@ -364,7 +410,7 @@ function professionalBasis(id: CompatibilityAxisId, profile: EvidenceProfile) {
     case "attraction": return `${aBasis}为${profile.aToB}；${bBasis}为${profile.bToA}，观察双方主动靠近的语言。`;
     case "communication": return `${aBasis}取${profile.aToB}，${bBasis}取${profile.bToA}，比较双向表达与接收顺序。`;
     case "trigger": return `A日支${first.pillars.day.branch}与B日支${second.pillars.day.branch}呈${dayRelation}；只采用稳定日柱观察触发节奏。`;
-    case "trust": return `跨盘稳定关系：${cross}；全部关系并读，不用单一合、冲、刑或害替代信任事实。`;
+    case "trust": return `跨盘稳定关系：${cross}；全部关系并读，不用单一合、三合、冲、刑、害或破替代信任事实。`;
     case "conflict": return `A日支${first.pillars.day.branch}、B日支${second.pillars.day.branch}的日支关系为${dayRelation}；跨盘稳定关系另见${cross}。`;
     case "resources": return `稳定柱五行差异：${five}；以计数落差观察资源分配方式，不据此评价贡献高低。`;
     case "decisions": return `${aBasis}的${profile.aToB}与${bBasis}的${profile.bToA}并读，观察主张、规则与承担方式。`;

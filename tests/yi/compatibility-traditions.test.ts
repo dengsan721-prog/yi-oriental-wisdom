@@ -315,7 +315,12 @@ describe("compatibility", () => {
 
   it("returns the structured no-direct-relation fallback through calculateCompatibility", () => {
     const result = calculateCompatibility(withBranches(first, ["子", "子", "子", "子"]), withBranches(second, ["寅", "寅", "寅", "寅"]), "friend");
-    expect(result.combinationsAndClashes).toEqual([{ symbols: ["子", "寅"], relation: "无直接合冲刑害", observation: expect.any(String) }]);
+    expect(result.combinationsAndClashes).toEqual([{
+      symbols: ["子", "寅"],
+      relation: "无直接合冲刑害破或三合",
+      coordinates: ["A年柱", "B年柱"],
+      observation: expect.any(String),
+    }]);
   });
 });
 

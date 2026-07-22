@@ -154,7 +154,7 @@ describe("professional report model", () => {
     expect(html).toContain('<details class="overview-depth"><summary>展开30秒人生概览</summary>');
     expect(html).toContain('<details class="professional-depth"><summary>查看专业命盘骨架与依据</summary>');
     expect(html).not.toMatch(/<details class="(?:overview-depth|professional-depth)" open/);
-    for (const label of ["人生主调", "核心天赋", "核心张力", "当下课题"]) expect(html).toContain(label);
+    for (const label of ["主调线索", "待验证优势", "核心张力", "当下课题"]) expect(html).toContain(label);
   });
 
   it("styles overview disclosures for touch and single-column mobile reading", () => {
