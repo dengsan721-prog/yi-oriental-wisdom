@@ -75,11 +75,18 @@ describe("content audit rule guards", () => {
   });
 
   it.each([
-    "一定能够治愈疾病并改善婚姻",
-    "肯定带来投资收益和法律胜诉",
-    "必会发财并且婚姻幸福",
-    "这项服务宣传改名改命",
-  ])("rejects clause-level unnegated promotional claim: %s", summary => {
+    ["fate", "一定能改变命运"],
+    ["medical", "确保治疗高血压"],
+    ["legal", "肯定获得有利判决"],
+    ["financial", "保证盈利赚钱"],
+    ["registration", "一定能成功登记姓名"],
+    ["marriage", "一定能够改善婚姻"],
+    ["fertility", "必会怀孕生子"],
+    ["medical-and-marriage", "一定能够治愈疾病并改善婚姻"],
+    ["financial-and-legal", "肯定带来投资收益和法律胜诉"],
+    ["financial-and-marriage", "必会发财并且婚姻幸福"],
+    ["promotional", "这项服务宣传改名改命"],
+  ])("rejects clause-level unnegated %s claim: %s", (_category, summary) => {
     const issues = auditContentItems([{
       ...completeItem,
       itemId: summary,
@@ -90,11 +97,19 @@ describe("content audit rule guards", () => {
   });
 
   it.each([
-    "本产品不保证发财，也不替代现实判断。",
-    "本产品不能向任何用户保证投资收益，请以真实结果为准。",
-    "姓名文化说明不会治愈疾病，身体问题请咨询医生。",
-    "本产品不提供改名改命承诺，只做现实使用核对。",
-  ])("allows a natural explicit boundary: %s", summary => {
+    ["fate", "本产品没有保证改变命运，只核对现实使用。"],
+    ["medical", "本产品未曾保证治疗高血压，身体问题请咨询医生。"],
+    ["legal", "本产品从未保证获得有利判决，法律问题请咨询律师。"],
+    ["financial", "本产品没有保证发财，也不替代现实判断。"],
+    ["financial", "本产品从未保证投资收益，请以真实结果为准。"],
+    ["financial", "本产品不能向任何用户保证投资收益，请以真实结果为准。"],
+    ["registration", "本产品未曾保证成功登记姓名，请以办理机关答复为准。"],
+    ["marriage", "本产品没有保证改善婚姻，只提供沟通核对。"],
+    ["fertility", "本产品从未保证怀孕生子，健康问题请咨询医生。"],
+    ["medical", "姓名文化说明不会治愈疾病，身体问题请咨询医生。"],
+    ["promotional", "这并非必选方案，请根据现实需要决定。"],
+    ["promotional", "本产品不提供改名改命承诺，只做现实使用核对。"],
+  ])("allows a natural explicit %s boundary: %s", (_category, summary) => {
     const issues = auditContentItems([{
       ...completeItem,
       itemId: summary,
