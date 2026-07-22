@@ -149,8 +149,12 @@ describe("independent review regressions", () => {
       const actual = await vi.importActual<typeof import("../../lib/yi/traditional-atlas")>("../../lib/yi/traditional-atlas");
       return {
         ...actual,
+        getAtlasMethods: () => actual.getAtlasMethods().map((method, index) => index === 0
+          ? { ...method, label: "高维链接方法", subtitle: "高维链接方法副标题" }
+          : method),
         getAtlasGroups: (...args: Parameters<typeof actual.getAtlasGroups>) => actual.getAtlasGroups(...args).map((group, groupIndex) => ({
           ...group,
+          title: groupIndex === 0 ? "高维链接分组标题" : group.title,
           options: group.options.map((option, optionIndex) => groupIndex === 0 && optionIndex === 0
             ? { ...option, title: "图谱高维链接标题" }
             : option),
@@ -163,7 +167,7 @@ describe("independent review regressions", () => {
 
     for (const field of [
       "label", "elementDynamics", "tenGodDynamics", "combinationsAndClashes",
-      "professionalTitle", "innovationTitle", "title",
+      "professionalTitle", "innovationTitle", "methodLabel", "methodSubtitle", "groupTitle", "title",
     ]) {
       expect(issues, field).toEqual(expect.arrayContaining([
         expect.objectContaining({ rule: "forbidden", field }),
@@ -181,6 +185,9 @@ describe("independent review regressions", () => {
       { ...completeItem, itemId: "children", unknownHour: true, fields: { summary: "子女发展确定进入艺术创作方向。" } },
       { ...completeItem, itemId: "boundary", unknownHour: true, fields: { summary: "由于时辰未知，当前不讨论时柱、晚年或子女走向。" } },
       { ...completeItem, itemId: "boundary-negated", unknownHour: true, fields: { summary: "子女不会据此确定发展方向，只保留观察。" } },
+      { ...completeItem, itemId: "hour-cannot-assert", unknownHour: true, fields: { summary: "不能断言时柱显示甲子，只能等待出生时间核实。" } },
+      { ...completeItem, itemId: "late-life-not-certain", unknownHour: true, fields: { summary: "晚年方向不一定会进入管理岗位，只保留观察。" } },
+      { ...completeItem, itemId: "children-not-inevitable", unknownHour: true, fields: { summary: "子女发展并非一定会走向艺术领域，需要尊重本人选择。" } },
     ]);
 
     for (const itemId of ["hour-display", "hour-spaced", "hour-stem", "hour-branch", "late-life", "children"]) {
@@ -188,7 +195,10 @@ describe("independent review regressions", () => {
         expect.objectContaining({ itemId, rule: "certainty", field: "summary" }),
       ]));
     }
-    for (const itemId of ["boundary", "boundary-negated"]) {
+    for (const itemId of [
+      "boundary", "boundary-negated", "hour-cannot-assert",
+      "late-life-not-certain", "children-not-inevitable",
+    ]) {
       expect(issues, itemId).not.toEqual(expect.arrayContaining([
         expect.objectContaining({ itemId, rule: "certainty" }),
       ]));
