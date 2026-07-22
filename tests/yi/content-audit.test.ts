@@ -98,6 +98,10 @@ describe("content audit rule guards", () => {
     ["registration-success-predicate", "一定会获准落户"],
     ["marriage-success-predicate", "肯定白头到老"],
     ["fertility-success-predicate", "必定有孩子"],
+    ["fate-improvement", "保证改善命运"],
+    ["fate-improvement-modal-after", "改善运势是必然的"],
+    ["medical-improvement-modal-inside", "病情肯定会好转"],
+    ["medical-cure-modal-after", "治好疾病是肯定的"],
   ])("rejects clause-level unnegated %s claim: %s", (_category, summary) => {
     const issues = auditContentItems([{
       ...completeItem,
@@ -132,6 +136,12 @@ describe("content audit rule guards", () => {
     ["medical-directive", "一定要咨询医生后再决定疾病治疗"],
     ["financial-data-directive", "请确保投资收益数据来自可核验的账户记录"],
     ["marriage-directive", "一定要先确认婚姻状态，再讨论沟通安排"],
+    ["promotional-uncertain", "本方案未必是最吉"],
+    ["promotional-not-necessarily", "本方案不一定是必选"],
+    ["promotional-reversed-not", "最吉并不是本方案的承诺"],
+    ["promotional-reversed-not-belong", "必选不属于我们的建议"],
+    ["financial-evidence-directive", "请确保先核对投资收益达到目标的证据"],
+    ["denied-fate-assertion", "我们不能回答姓名是否一定能改变命运"],
   ])("allows a natural explicit %s boundary: %s", (_category, summary) => {
     const issues = auditContentItems([{
       ...completeItem,

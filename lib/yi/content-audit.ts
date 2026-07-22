@@ -43,16 +43,18 @@ const HARD_FORBIDDEN_JARGON = [
 const PROMOTIONAL_CLAIM = /改名改命|最吉|必选|补足五行|康熙古法|公安保证批准|保证投资收益|保证婚姻|保证生育|注定|必然破财|克夫|克妻|疾病诊断|寿命已定/g;
 const DETERMINISTIC_MODAL = /保证|确保|一定(?!要)(?:能够|能|会)?|肯定(?:会|能)?|必会|必能|必定|必然|注定/g;
 const SUCCESS_PREDICATES = [
-  { category: "fate", pattern: /(?:改变|扭转)(?:运势|命运)|避灾/g },
-  { category: "medical", pattern: /治疗(?:疾病|病情|高血压)|治愈(?:疾病|病情|高血压)?|(?:把)?(?:疾病|病情|高血压|病).{0,6}治好|康复/g },
+  { category: "fate", pattern: /(?:改变|改善|扭转)(?:运势|命运)|避灾/g },
+  { category: "medical", pattern: /治疗(?:疾病|病情|高血压)|治愈(?:疾病|病情|高血压)?|治好(?:疾病|病情|高血压|病)|(?:把)?(?:疾病|病情|高血压|病).{0,6}治好|(?:疾病|病情|高血压).{0,4}好转|康复/g },
   { category: "legal", pattern: /(?:法律)?胜诉|官司.{0,4}获胜|(?:获得)?有利判决/g },
   { category: "financial", pattern: /盈利|赚钱|发财|获得(?:投资)?(?:收益|回报)|带来投资收益|(?:投资)?收益(?:可达|达到|为|增长|增加)/g },
   { category: "registration", pattern: /(?:姓名)?登记成功|成功登记(?:姓名)?|获准(?:落户|登记)|批准登记|获得批准/g },
   { category: "marriage", pattern: /婚姻(?:幸福|美满)|改善婚姻|白头到老|感情(?:圆满|幸福)|改善感情/g },
   { category: "fertility", pattern: /怀孕(?:生子)?|生子|有孩子|得子|成功生育/g },
 ] as const;
-const NEGATED_CLAIM_PREFIX = /(?:没有所谓|没有|从未|并非|未曾|不会|不能|无法|从不|并不|不是|不属于|不表示|不代表|不意味着|不等于|不构成|不保证|不作|不予|不提供|拒绝|禁止|不得|不)(?:向任何用户|对任何用户|向用户|对用户|作出|提供)?\s*$/;
-const SCOPED_NEGATION = /没有所谓|没有|从未|并非|未曾|不会|不能|无法|从不|并不|不是|不属于|不表示|不代表|不意味着|不等于|不构成|不保证|不作|不予|不提供|拒绝|禁止|不得|不/;
+const NEGATED_CLAIM_PREFIX = /(?:未必(?:是|属于)?|不一定(?:是|属于)?|没有所谓|没有|从未|并非|未曾|不会|不能|无法|从不|并不|不是|不属于|不表示|不代表|不意味着|不等于|不构成|不保证|不作|不予|不提供|拒绝|禁止|不得|不)(?:向任何用户|对任何用户|向用户|对用户|作出|提供)?\s*$/;
+const SCOPED_NEGATION = /未必|不一定|没有所谓|没有|从未|并非|未曾|不会|不能|无法|从不|并不|不是|不属于|不表示|不代表|不意味着|不等于|不构成|不保证|不作|不予|不提供|拒绝|禁止|不得|不/;
+const PROMOTIONAL_COMPLEMENT_NEGATION = /^(?:并不是|不是|并非|不属于)[^。！？；，,\n]{0,16}(?:承诺|建议|方案|结论|判断|选择)/;
+const DENIED_ASSERTION_FRAME = /(?:(?:不能|无法)(?:回答|判断|断定|确认|确定|说明)|(?:不确定|难以判断))[^。！？；，,\n]{0,24}是否/;
 const DISPLAY_TITLE_FIELDS = new Set([
   "title", "professionalTitle", "innovationTitle", "label",
   "methodLabel", "methodSubtitle", "groupTitle", "directionTitle",
@@ -179,8 +181,18 @@ function successPredicateSpans(segment: string, modals: readonly ClaimSpan[]): C
 
 function hasScopedNegation(segment: string, modal: ClaimSpan, predicate: ClaimSpan): boolean {
   const claimStart = Math.min(modal.start, predicate.start);
+  const claimEnd = Math.max(modal.end, predicate.end);
+  if (DENIED_ASSERTION_FRAME.test(segment.slice(0, claimEnd))) return true;
+  const modalText = segment.slice(modal.start, modal.end);
+  const modalPrefix = segment.slice(0, modal.start);
+  const modalSuffix = segment.slice(modal.end);
+  if (
+    modalText === "确保"
+    && /(?:请|务必)\s*$/.test(modalPrefix)
+    && /^(?:先)?(?:核对|确认|检查|验证)[^。！？；，,\n]{0,32}(?:证据|数据|记录|来源|账户)/.test(modalSuffix)
+  ) return true;
   if (NEGATED_CLAIM_PREFIX.test(segment.slice(0, claimStart))) return true;
-  if (NEGATED_CLAIM_PREFIX.test(segment.slice(0, modal.start))) return true;
+  if (NEGATED_CLAIM_PREFIX.test(modalPrefix)) return true;
   if (modal.end <= predicate.start) return SCOPED_NEGATION.test(segment.slice(modal.end, predicate.start));
   if (predicate.end <= modal.start) return SCOPED_NEGATION.test(segment.slice(predicate.end, modal.start));
   return false;
@@ -192,7 +204,8 @@ function containsPromotionalClaim(text: string): boolean {
     PROMOTIONAL_CLAIM.lastIndex = 0;
     for (const match of segment.matchAll(PROMOTIONAL_CLAIM)) {
       const prefix = segment.slice(0, match.index);
-      if (!NEGATED_CLAIM_PREFIX.test(prefix)) return true;
+      const suffix = segment.slice((match.index ?? 0) + match[0].length);
+      if (!NEGATED_CLAIM_PREFIX.test(prefix) && !PROMOTIONAL_COMPLEMENT_NEGATION.test(suffix)) return true;
     }
     const modals = modalSpans(segment);
     const predicates = successPredicateSpans(segment, modals);
