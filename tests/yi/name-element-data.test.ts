@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
   REVIEWED_NAME_CHARACTERS,
@@ -62,6 +64,108 @@ const EXPECTED_RECOMMENDATIONS = {
 
 const ELEMENTS = ["木", "火", "土", "金", "水"] as const;
 
+const EXPECTED_CTEXT_SIMPLIFIED_NAMES_1_TO_99 = [
+  "宋江",
+  "卢俊义",
+  "吴用",
+  "公孙胜",
+  "关胜",
+  "林冲",
+  "秦明",
+  "呼延灼",
+  "花荣",
+  "柴进",
+  "李应",
+  "朱仝",
+  "鲁智深",
+  "武松",
+  "董平",
+  "张清",
+  "杨志",
+  "徐宁",
+  "索超",
+  "戴宗",
+  "刘唐",
+  "李逵",
+  "史进",
+  "穆弘",
+  "雷横",
+  "李俊",
+  "阮小二",
+  "张横",
+  "阮小五",
+  "张顺",
+  "阮小七",
+  "杨雄",
+  "石秀",
+  "解珍",
+  "解宝",
+  "燕青",
+  "朱武",
+  "黄信",
+  "孙立",
+  "宣赞",
+  "郝思文",
+  "韩滔",
+  "彭玘",
+  "单廷圭",
+  "魏定国",
+  "萧让",
+  "裴宣",
+  "欧鹏",
+  "邓飞",
+  "燕顺",
+  "杨林",
+  "凌振",
+  "蒋敬",
+  "吕方",
+  "郭盛",
+  "安道全",
+  "皇甫端",
+  "王英",
+  "扈三娘",
+  "鲍旭",
+  "樊瑞",
+  "孔明",
+  "孔亮",
+  "项充",
+  "李衮",
+  "金大坚",
+  "马麟",
+  "童威",
+  "童猛",
+  "孟康",
+  "侯健",
+  "陈达",
+  "杨春",
+  "郑天寿",
+  "陶宗旺",
+  "宋清",
+  "乐和",
+  "龚旺",
+  "丁得孙",
+  "穆春",
+  "曹正",
+  "宋万",
+  "杜迁",
+  "薛永",
+  "施恩",
+  "周通",
+  "李忠",
+  "杜兴",
+  "汤隆",
+  "邹润",
+  "邹渊",
+  "朱富",
+  "朱贵",
+  "蔡福",
+  "蔡庆",
+  "李立",
+  "李云",
+  "焦挺",
+  "石勇",
+] as const;
+
 function codePoints(value: string): string[] {
   return Array.from(
     value,
@@ -75,7 +179,7 @@ function overlap(left: readonly string[], right: readonly string[]): string[] {
 }
 
 describe("reviewed name-element data", () => {
-  it("keeps separate traceable facts and two completed internal audit trails", () => {
+  it("keeps separate traceable facts and distinct internal review trace labels", () => {
     expect(NAME_ELEMENT_COVERAGE_VERSION).toBe("name-element-coverage-v1");
     const sourceIds = new Set(NAME_ELEMENT_SOURCES.map(source => source.id));
     const ruleIds = new Set(NAME_ELEMENT_RULES.map(rule => rule.id));
@@ -101,16 +205,20 @@ describe("reviewed name-element data", () => {
       for (const sourceId of rule.sourceIds) {
         expect(sourceIds.has(sourceId)).toBe(true);
       }
-      expect(rule.primaryReview).toEqual({
+      expect(rule.primaryReview).toMatchObject({
         role: "姓名文化内容复核",
         reviewerId: "yi-name-element-primary-2026-07-23",
         reviewedOn: "2026-07-23",
+        recordEvidenceId: rule.id,
       });
-      expect(rule.secondReview).toEqual({
+      expect(rule.secondReview).toMatchObject({
         role: "姓名文化第二复核",
         reviewerId: "yi-name-element-secondary-2026-07-23",
         reviewedOn: "2026-07-23",
+        recordEvidenceId: rule.id,
       });
+      expect(rule.primaryReview.locator).toContain(rule.id);
+      expect(rule.secondReview.locator).toContain(rule.id);
       expect(rule.primaryReview.reviewerId).not.toBe(
         rule.secondReview.reviewerId,
       );
@@ -129,6 +237,9 @@ describe("reviewed name-element data", () => {
       expect(record.glyphSourceIds.length).toBeGreaterThan(0);
       expect(record.readingSourceIds.length).toBeGreaterThan(0);
       expect(record.meaningSourceIds.length).toBeGreaterThan(0);
+      expect(record.meaningSourceIds).not.toContain(
+        "unicode-unihan-17-kdefinition",
+      );
       expect(overlap(record.glyphSourceIds, record.readingSourceIds)).toEqual([]);
       expect(overlap(record.glyphSourceIds, record.meaningSourceIds)).toEqual([]);
       expect(overlap(record.readingSourceIds, record.meaningSourceIds)).toEqual([]);
@@ -143,16 +254,20 @@ describe("reviewed name-element data", () => {
       expect(record.elementRationale).toContain("内部");
       expect(record.elementRationale).toMatch(/不是古籍逐字|不把古籍当作逐字/);
       expect(record.ruleVersion).toBe(NAME_ELEMENT_COVERAGE_VERSION);
-      expect(record.primaryReview).toEqual({
+      expect(record.primaryReview).toMatchObject({
         role: "姓名文化内容复核",
         reviewerId: "yi-name-element-primary-2026-07-23",
         reviewedOn: "2026-07-23",
+        recordEvidenceId: record.id,
       });
-      expect(record.secondReview).toEqual({
+      expect(record.secondReview).toMatchObject({
         role: "姓名文化第二复核",
         reviewerId: "yi-name-element-secondary-2026-07-23",
         reviewedOn: "2026-07-23",
+        recordEvidenceId: record.id,
       });
+      expect(record.primaryReview.locator).toContain(record.id);
+      expect(record.secondReview.locator).toContain(record.id);
 
       if (record.reviewDecision === "pending") {
         expect(record.element).toBeNull();
@@ -173,6 +288,127 @@ describe("reviewed name-element data", () => {
         expect(record.unresolvedAlternatives).toEqual([]);
       }
     }
+  });
+
+  it("deep-freezes every exported audit object and blocks shared review pollution", () => {
+    expect(Object.isFrozen(NAME_ELEMENT_SOURCES)).toBe(true);
+    expect(Object.isFrozen(NAME_ELEMENT_RULES)).toBe(true);
+    expect(Object.isFrozen(REVIEWED_NAME_ELEMENT_RECORDS)).toBe(true);
+
+    for (const source of NAME_ELEMENT_SOURCES) {
+      expect(Object.isFrozen(source)).toBe(true);
+    }
+    for (const rule of NAME_ELEMENT_RULES) {
+      expect(Object.isFrozen(rule)).toBe(true);
+      expect(Object.isFrozen(rule.sourceIds)).toBe(true);
+      expect(Object.isFrozen(rule.primaryReview)).toBe(true);
+      expect(Object.isFrozen(rule.secondReview)).toBe(true);
+    }
+    for (const record of REVIEWED_NAME_ELEMENT_RECORDS) {
+      expect(Object.isFrozen(record)).toBe(true);
+      expect(Object.isFrozen(record.codePoints)).toBe(true);
+      expect(Object.isFrozen(record.glyphSourceIds)).toBe(true);
+      expect(Object.isFrozen(record.readingSourceIds)).toBe(true);
+      expect(Object.isFrozen(record.meaningSourceIds)).toBe(true);
+      expect(Object.isFrozen(record.unresolvedAlternatives)).toBe(true);
+      expect(Object.isFrozen(record.primaryReview)).toBe(true);
+      expect(Object.isFrozen(record.secondReview)).toBe(true);
+    }
+
+    const recommendations = getReviewedNameElementRecommendations("木");
+    expect(Object.isFrozen(recommendations)).toBe(true);
+    const lin = recommendations.find(record => record.glyph === "林")!;
+    const other = REVIEWED_NAME_ELEMENT_RECORDS.find(
+      record => record.id !== lin.id,
+    )!;
+    expect(lin.primaryReview).not.toBe(other.primaryReview);
+
+    const before = resolveReviewedNameElement({
+      inputGlyph: lin.glyph,
+      adoptedGlyph: lin.glyph,
+      adoptedReading: lin.displayPinyin,
+      adoptedMeaning: lin.adoptedMeaning,
+    });
+    expect(Reflect.set(lin, "element", "火")).toBe(false);
+    expect(Reflect.set(
+      lin.primaryReview,
+      "reviewerId",
+      "polluted-review-id",
+    )).toBe(false);
+    expect(() => Object.defineProperty(lin, "element", {
+      value: "火",
+    })).toThrow();
+    expect(lin.element).toBe("木");
+    expect(other.primaryReview.reviewerId).toBe(
+      "yi-name-element-primary-2026-07-23",
+    );
+    expect(resolveReviewedNameElement({
+      inputGlyph: lin.glyph,
+      adoptedGlyph: lin.glyph,
+      adoptedReading: lin.displayPinyin,
+      adoptedMeaning: lin.adoptedMeaning,
+    })).toEqual(before);
+  });
+
+  it("keeps one canonical record for every exact glyph-reading-meaning key", () => {
+    const exactKeys = REVIEWED_NAME_ELEMENT_RECORDS.map(
+      record => JSON.stringify([
+        record.glyph,
+        record.displayPinyin,
+        record.adoptedMeaning,
+      ]),
+    );
+    expect(new Set(exactKeys).size).toBe(exactKeys.length);
+
+    const source = readFileSync(
+      new URL("../../lib/yi/name-element-data.ts", import.meta.url),
+      "utf8",
+    );
+    expect(source).toContain("Duplicate reviewed name element exact key");
+  });
+
+  it("exports a literal 100-object fixture without factories or call generation", () => {
+    const source = readFileSync(
+      new URL(
+        "../fixtures/yi/name-element-coverage-common-names-v1.ts",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    const file = ts.createSourceFile(
+      "name-element-coverage-common-names-v1.ts",
+      source,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TS,
+    );
+    let initializer: ts.ArrayLiteralExpression | null = null;
+    file.forEachChild(node => {
+      if (!ts.isVariableStatement(node)) return;
+      for (const declaration of node.declarationList.declarations) {
+        if (
+          ts.isIdentifier(declaration.name)
+          && declaration.name.text === "COMMON_NAME_COVERAGE_SAMPLE_V1"
+          && declaration.initializer
+          && ts.isArrayLiteralExpression(declaration.initializer)
+        ) {
+          initializer = declaration.initializer;
+        }
+      }
+    });
+
+    expect(initializer).not.toBeNull();
+    expect(initializer!.elements).toHaveLength(100);
+    expect(initializer!.elements.every(ts.isObjectLiteralExpression)).toBe(true);
+    const calls: string[] = [];
+    function visit(node: ts.Node): void {
+      if (ts.isCallExpression(node)) {
+        calls.push(node.getText(file));
+      }
+      ts.forEachChild(node, visit);
+    }
+    visit(initializer!);
+    expect(calls).toEqual([]);
   });
 
   it("resolves only an exact adopted glyph, reading, meaning, and reviewed decision", () => {
@@ -245,17 +481,88 @@ describe("reviewed name-element data", () => {
     }
 
     for (const pair of REVIEWED_TRADITIONAL_PAIRS) {
-      const resolution = resolveReviewedNameElement({
-        inputGlyph: pair.inputGlyph,
-        adoptedGlyph: pair.adoptedGlyph,
-        adoptedReading: pair.readings[0]!.pinyin,
-        adoptedMeaning: pair.meaning,
-      });
-      expect(resolution.status, pair.adoptedGlyph).toBe("approved");
-      if (resolution.status === "approved") {
-        expect(resolution.record.recommendation).toBe(false);
+      for (const reading of pair.readings) {
+        const resolution = resolveReviewedNameElement({
+          inputGlyph: pair.inputGlyph,
+          adoptedGlyph: pair.adoptedGlyph,
+          adoptedReading: reading.pinyin,
+          adoptedMeaning: pair.meaning,
+        });
+        expect(
+          resolution.status,
+          `${pair.adoptedGlyph} ${reading.pinyin}`,
+        ).toBe("approved");
+        if (resolution.status === "approved") {
+          expect(resolution.record.recommendation).toBe(false);
+        }
       }
     }
+  });
+
+  it("accepts only the same glyph or a reviewed traditional adoption relation", () => {
+    const lin = getReviewedNameElementRecommendations("木").find(
+      record => record.glyph === "林",
+    )!;
+    expect(resolveReviewedNameElement({
+      inputGlyph: "明",
+      adoptedGlyph: "林",
+      adoptedReading: lin.displayPinyin,
+      adoptedMeaning: lin.adoptedMeaning,
+    })).toEqual({
+      status: "pending",
+      reason: "glyph-unconfirmed",
+      glyph: "林",
+    });
+
+    const hair = REVIEWED_TRADITIONAL_PAIRS.find(
+      pair => pair.inputGlyph === "发" && pair.adoptedGlyph === "髮",
+    )!;
+    expect(resolveReviewedNameElement({
+      inputGlyph: "发",
+      adoptedGlyph: "髮",
+      adoptedReading: "fǎ",
+      adoptedMeaning: hair.meaning,
+    }).status).toBe("approved");
+  });
+
+  it("matches the independent CText rank 1-99 oracle and paragraph columns", () => {
+    const simplified = COMMON_NAME_COVERAGE_SAMPLE_V1.filter(
+      sample => sample.orthography === "simplified",
+    );
+    expect(simplified.map(sample => sample.fullName)).toEqual(
+      EXPECTED_CTEXT_SIMPLIFIED_NAMES_1_TO_99,
+    );
+    expect(COMMON_NAME_COVERAGE_SAMPLE_V1[99]!.fullName).toBe("盧俊義");
+
+    for (const [index, sample] of simplified.entries()) {
+      const rank = index + 1;
+      const expectedParagraph = rank <= 36
+        ? 6 + Math.ceil(rank / 2)
+        : 25 + Math.ceil((rank - 36) / 2);
+      const relativeRank = rank <= 36 ? rank : rank - 36;
+      const expectedColumn = relativeRank % 2 === 1 ? "左栏" : "右栏";
+      expect(sample.id).toMatch(
+        new RegExp(`^shuihu-${String(rank).padStart(3, "0")}-`),
+      );
+      const ctextRef = sample.sourceRefs.find(
+        ref => ref.sourceId === "ctext-shuihu-71-stone-tablet-gb",
+      );
+      expect(ctextRef, sample.fullName).toBeDefined();
+      expect(ctextRef!.locator).toContain(`正文段号${expectedParagraph}`);
+      expect(ctextRef!.locator).toContain(expectedColumn);
+      expect(ctextRef!.locator).toContain(`石碣姓名第${rank}项`);
+      expect(ctextRef!.locator).toContain(sample.fullName);
+    }
+
+    const pengQi = simplified[42]!;
+    expect(pengQi.fullName).toBe("彭玘");
+    expect(pengQi.sourceRefs).toContainEqual(expect.objectContaining({
+      sourceId: "ctext-datawiki-peng-qi",
+      attestsExactFullName: true,
+    }));
+    expect(pengQi.sourceRefs[0]!.locator).toContain(
+      "缺字图字形经交叉核对为玘",
+    );
   });
 
   it("freezes 100 independent, traceable complete-name literature cases", () => {
@@ -268,7 +575,9 @@ describe("reviewed name-element data", () => {
       expect(source.title).toMatch(/完整姓名.*文学人物|完整姓名.*文學人物/);
       expect(source.title).not.toMatch(/现代常见|現代常見|真人/);
       expect(source.publisher.trim()).not.toBe("");
-      expect(source.url).toMatch(/^https:\/\/ctext\.org\/wiki\.pl\?/);
+      expect(source.url).toMatch(
+        /^https:\/\/ctext\.org\/(?:wiki|datawiki)\.pl\?/,
+      );
       if (source.publishedOn !== null) {
         expect(source.publishedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       }
@@ -290,15 +599,19 @@ describe("reviewed name-element data", () => {
       sample => sample.expected.status === "pending",
     );
     expect(complete.length).toBeGreaterThanOrEqual(95);
-    expect(pending).toHaveLength(3);
-    expect(Object.fromEntries(pending.map(sample => [
-      sample.fullName,
-      sample.expected.status === "pending" ? sample.expected.reasons : [],
-    ]))).toEqual({
-      解珍: ["reading-unconfirmed"],
-      彭玘: ["element-classification-pending"],
-      盧俊義: ["glyph-unconfirmed"],
-    });
+    expect(complete).toHaveLength(95);
+    expect(pending.map(sample => ({
+      fullName: sample.fullName,
+      reasons: sample.expected.status === "pending"
+        ? sample.expected.reasons
+        : [],
+    }))).toEqual([
+      { fullName: "解珍", reasons: ["reading-unconfirmed"] },
+      { fullName: "解宝", reasons: ["element-classification-pending"] },
+      { fullName: "彭玘", reasons: ["element-classification-pending"] },
+      { fullName: "单廷圭", reasons: ["element-classification-pending"] },
+      { fullName: "盧俊義", reasons: ["glyph-unconfirmed"] },
+    ]);
 
     for (const sample of COMMON_NAME_COVERAGE_SAMPLE_V1) {
       expect(sample.fullName).toBe(`${sample.surname}${sample.givenName}`);
@@ -320,9 +633,7 @@ describe("reviewed name-element data", () => {
       if (sample.expected.status === "complete") {
         expect(actualReasons, sample.fullName).toEqual([]);
       } else {
-        expect([...new Set(actualReasons)].sort(), sample.fullName).toEqual(
-          [...new Set(sample.expected.reasons)].sort(),
-        );
+        expect(actualReasons, sample.fullName).toEqual(sample.expected.reasons);
       }
     }
   });
@@ -359,6 +670,58 @@ describe("reviewed name-element data", () => {
     expect(polyphonic.expected).toEqual({
       status: "pending",
       reasons: ["reading-unconfirmed"],
+    });
+  });
+
+  it("keeps adopted meanings aligned with the independently selected readings", () => {
+    const expected = [
+      ["李应", "应", "yìng", "回应、应允", "complete"],
+      ["燕青", "燕", "yàn", "燕子", "complete"],
+      ["乐和", "乐", "yuè", "音乐", "complete"],
+      ["乐和", "和", "hé", "和谐", "complete"],
+      ["解宝", "解", "xiè", "姓氏用字（读 xiè）", "pending"],
+      ["单廷圭", "单", "shàn", "姓氏用字（读 shàn）", "pending"],
+    ] as const;
+
+    for (const [
+      fullName,
+      glyph,
+      reading,
+      meaning,
+      expectedStatus,
+    ] of expected) {
+      const sample = COMMON_NAME_COVERAGE_SAMPLE_V1.find(
+        candidate => candidate.fullName === fullName,
+      )!;
+      const character = sample.characters.find(
+        candidate => candidate.inputGlyph === glyph,
+      )!;
+      expect(character).toEqual({
+        inputGlyph: glyph,
+        adoptedGlyph: glyph,
+        adoptedReading: reading,
+        adoptedMeaning: meaning,
+      });
+      const resolution = resolveReviewedNameElement(character);
+      if (expectedStatus === "complete") {
+        expect(resolution.status, `${fullName}:${glyph}`).toBe("approved");
+      } else {
+        expect(resolution).toEqual({
+          status: "pending",
+          reason: "element-classification-pending",
+          glyph,
+        });
+      }
+    }
+
+    const xieZhen = COMMON_NAME_COVERAGE_SAMPLE_V1.find(
+      sample => sample.fullName === "解珍",
+    )!;
+    expect(xieZhen.characters[0]).toEqual({
+      inputGlyph: "解",
+      adoptedGlyph: "解",
+      adoptedReading: null,
+      adoptedMeaning: "姓氏用字（读 xiè）",
     });
   });
 
