@@ -495,6 +495,11 @@ function firstSentence(value: string): string {
   return /[。！？]$/u.test(sentence) ? sentence : `${sentence}。`;
 }
 
+function completeSentenceBlock(value: string): string {
+  const text = value.trim();
+  return /[。！？]$/u.test(text) ? text : `${text}。`;
+}
+
 export function buildTraditionalPublicCopy(
   input: TraditionalPublicInput,
 ): TraditionalPublicCopy {
@@ -506,6 +511,9 @@ export function buildTraditionalPublicCopy(
   const sceneSource = isCultureModel
     ? input.lifeScene.split(/\s+(?:朋友关系|工作状态)：/u)[0]
     : input.lifeScene;
+  const sceneExcerpt = isCultureModel
+    ? completeSentenceBlock(sceneSource)
+    : firstSentence(sceneSource);
 
   return {
     lead: isCultureModel
@@ -519,7 +527,7 @@ export function buildTraditionalPublicCopy(
           attribution: "传统观察",
           text: `把${input.title}当作一张自查卡，不把外形或线纹写成结论。`,
         },
-    scene: `${firstSentence(sceneSource)} 你可以把其中一个动作记录下来，再请身边的人回应；这样才知道这张观察卡有没有用。`,
+    scene: `${sceneExcerpt} 你可以把其中一个动作记录下来，再请身边的人回应；这样才知道这张观察卡有没有用。`,
     playfulObservation: `有趣的是，同一个“${input.title}”提示用得刚好像助力，用过头也可能变成阻力。${firstSentence(input.strengthAndPitfall)}`,
     action: firstSentence(input.action),
   };

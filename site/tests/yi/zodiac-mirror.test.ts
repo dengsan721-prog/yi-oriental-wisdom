@@ -166,7 +166,7 @@ describe("complete zodiac mirror", () => {
     expect(baselineHtml).not.toContain("候选日柱与日主未用于互证");
   });
 
-  it("marks the year and month as representative limited candidates at the 2024-02-04 unknown-time boundary", () => {
+  it("keeps the 2024-02-04 unknown-time zodiac visibly unresolved without leaking engine wording", () => {
     const boundaryChart = calculateFourPillars({
       name: "边界样本",
       date: "2024-02-04",
@@ -176,6 +176,7 @@ describe("complete zodiac mirror", () => {
       timeConfidence: "unknown",
     });
     const mirror = buildZodiacMirror(boundaryChart);
+    const publicCard = buildMirrorPublicViews(boundaryChart)[0].cards[0];
     const html = renderToStaticMarkup(createElement(MirrorSection, { chart: boundaryChart }));
 
     expect(boundaryChart.ambiguousPillars).toEqual(expect.arrayContaining(["year", "month"]));
@@ -184,9 +185,19 @@ describe("complete zodiac mirror", () => {
     expect(mirror.chartAgreement).toContain("月令代表候选");
     expect(mirror.chartAgreement).toContain("月令坐标仍待核");
     expect(mirror.chartAgreement).not.toContain("月令主题会");
-    expect(html).toContain(`先认识${mirror.branch}${mirror.zodiac}`);
-    expect(html).not.toContain("代表候选");
-    expect(html).not.toContain("limited");
+    expect(publicCard.name).toBe("生肖待确认");
+    expect(publicCard.introduction).toMatch(/出生日期.*交界.*不足以确定生肖/u);
+    expect(publicCard.takeaway).toMatch(/补充.*出生时间.*重新/u);
+    for (const copy of [
+      publicCard.name,
+      publicCard.introduction,
+      publicCard.matchingScene,
+      publicCard.importantDifference,
+      publicCard.takeaway,
+      publicCard.playfulObservation,
+    ]) expect(html).toContain(copy);
+    expect(html).not.toContain(`先认识${mirror.branch}${mirror.zodiac}`);
+    expect(html).not.toMatch(/代表候选|年柱待核|月令|limited|GB\/T|立春/u);
   });
 
   it("resolves authoritative and contextual source ids to graded https records", () => {

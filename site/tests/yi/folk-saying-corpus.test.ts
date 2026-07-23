@@ -29,6 +29,63 @@ const forbidden = [
   "必定结婚", "必定离婚", "必生子", "绝后", "血光", "灾祸",
 ] as const;
 
+const historicalContextMarkers = {
+  "孔子": ["春秋时期思想家与教育者", "《论语》"],
+  "弗洛伦斯·南丁格尔": ["护理改革者", "医院卫生"],
+  "莫罕达斯·甘地": ["印度独立运动", "非暴力"],
+  "海伦·凯勒": ["作家与残障权利倡导者", "大学"],
+  "李清照": ["宋代词人", "战乱南渡"],
+  "玛丽·居里": ["物理学家与化学家", "镭"],
+  "纳尔逊·曼德拉": ["反种族隔离", "总统"],
+  "司马光": ["北宋史学家", "《资治通鉴》"],
+  "司马迁": ["西汉史学家", "《史记》"],
+  "苏轼": ["北宋文人", "贬谪"],
+  "陶渊明": ["东晋诗人", "辞去彭泽县令"],
+  "王阳明": ["明代思想家与官员", "龙场"],
+  "徐霞客": ["明代旅行家", "《徐霞客游记》"],
+  "玄奘": ["唐代僧人和翻译家", "印度"],
+  "张骞": ["汉代使者", "西域"],
+} as const;
+
+const movieContextMarkers = {
+  "哪吒": ["魔丸", "天劫"],
+  "张麻子": ["县长身份", "黄四郎"],
+  "马有铁": ["贵英", "土屋"],
+  "刘培强": ["空间站", "木星"],
+  "成东青": ["英语培训", "伙伴"],
+  "静秋": ["老三", "病逝"],
+  "贾晓玲": ["母亲年轻时代", "改写"],
+  "程勇": ["仿制药", "患者"],
+  "郎平": ["女排", "教练"],
+  "宋子豪": ["犯罪集团", "警察弟弟"],
+  "陈家驹": ["警察", "冒险追捕"],
+  "旭仔": ["生母", "亲密关系"],
+  "陈永仁": ["卧底", "身份"],
+  "李翘": ["香港", "黎小军"],
+  "苏丽珍": ["配偶背叛", "克制"],
+  "阿星": ["少林功夫", "足球队"],
+  "桃姐": ["中风", "照料"],
+  "罗进二": ["哥哥病逝", "家庭"],
+  "金基宇": ["伪造学历", "暴力"],
+  "柴田治": ["偷窃", "家庭"],
+  "李钟秀": ["海美失踪", "猜疑"],
+  "小林大悟": ["入殓师", "妻子"],
+  "兰彻": ["填鸭教育", "朋友"],
+  "西敏": ["离开伊朗", "女儿"],
+  "荻野千寻": ["父母变成猪", "浴场"],
+  "岛田勘兵卫": ["武士", "农民"],
+  "吉塔·珀尕": ["摔跤", "父亲"],
+  "迈克尔·柯里昂": ["复仇", "家族权力"],
+  "马克西姆斯": ["角斗士", "康茂德"],
+  "弗瑞奥萨": ["五位女性", "堡垒"],
+  "福瑞斯特·甘": ["越战", "珍妮"],
+  "凯瑟琳·约翰逊": ["NASA", "轨道"],
+  "威尔·亨廷": ["麻省理工", "心理咨询"],
+  "安迪·杜弗兰": ["冤狱", "隧道"],
+  "艾琳·布罗克维奇": ["水污染", "居民"],
+  "弗罗多·巴金斯": ["魔戒", "末日火山"],
+} as const;
+
 const firstBirth = {
   name: "甲",
   date: "1990-06-15",
@@ -281,6 +338,105 @@ describe("domain-specific public views", () => {
         expectConcreteScene(card.matchingScene);
         expectSafePublicText(card);
       }
+    }
+  });
+
+  it("introduces every historical figure with an identity and a concrete event or result", async () => {
+    const { getMirrorPublicCatalog } = await import("../../lib/yi/mirrors");
+    const cards = getMirrorPublicCatalog().historical;
+
+    expect(cards).toHaveLength(Object.keys(historicalContextMarkers).length);
+    for (const [name, markers] of Object.entries(historicalContextMarkers)) {
+      const card = cards.find(candidate => candidate.name === name);
+      expect(card, name).toBeDefined();
+      if (!card) continue;
+      expect(card.introduction).toContain(name);
+      for (const marker of markers) {
+        expect(card.introduction, `${name}: ${marker}`).toContain(marker);
+      }
+      expect(
+        card.introduction.slice(card.introduction.indexOf("：") + 1)
+          .match(/[。！？]/gu),
+      ).toHaveLength(1);
+      expect(card.introduction).not.toMatch(
+        /只比较一段可核对的做法|不复制历史处境|不宣称命运相同/u,
+      );
+    }
+  });
+
+  it("introduces every movie character through a concrete choice and consequence", async () => {
+    const { getMirrorPublicCatalog } = await import("../../lib/yi/mirrors");
+    const cards = getMirrorPublicCatalog().movie;
+
+    expect(cards).toHaveLength(Object.keys(movieContextMarkers).length);
+    for (const [name, markers] of Object.entries(movieContextMarkers)) {
+      const card = cards.find(candidate => candidate.name === name);
+      expect(card, name).toBeDefined();
+      if (!card) continue;
+      expect(card.introduction).toContain(name);
+      for (const marker of markers) {
+        expect(card.introduction, `${name}: ${marker}`).toContain(marker);
+      }
+      expect(
+        card.introduction.slice(card.introduction.indexOf("：") + 1)
+          .match(/[。！？]/gu),
+      ).toHaveLength(1);
+      expect(card.introduction).not.toMatch(
+        /只借角色的一次选择照见生活|不把剧情当作你的结局/u,
+      );
+    }
+  });
+
+  it("gives all 66 animal, historical and movie cards object-specific playful observations", async () => {
+    const catalog = (await import("../../lib/yi/mirrors"))
+      .getMirrorPublicCatalog();
+    const cards = [
+      ...catalog.animal,
+      ...catalog.historical,
+      ...catalog.movie,
+    ];
+    const normalizedObservations = cards.map(card => {
+      const withoutName = card.playfulObservation.replaceAll(
+        card.name,
+        "镜中对象",
+      );
+      return card.workTitle
+        ? withoutName.replaceAll(card.workTitle, "作品")
+        : withoutName;
+    });
+
+    expect(cards).toHaveLength(66);
+    expect(new Set(normalizedObservations).size).toBe(66);
+    for (const card of cards) {
+      expect(card.playfulObservation, card.name).toMatch(
+        /如果|若|一旦|当|容易|可能/u,
+      );
+      expect(card.playfulObservation.length).toBeGreaterThanOrEqual(45);
+    }
+  });
+
+  it("keeps both concrete love-style sentences in all twelve constellation scenes", async () => {
+    const { buildAtlasPublicReading } = await import(
+      "../../lib/yi/traditional-atlas"
+    );
+    const starOptions = getAtlasGroups("star")
+      .flatMap(group => group.options);
+
+    expect(starOptions).toHaveLength(12);
+    for (const option of starOptions) {
+      const loveStyle = option.lifeScene.match(
+        /^恋爱方式：(.*?)\s+朋友关系：/u,
+      )?.[1];
+      expect(loveStyle, option.id).toBeDefined();
+      if (!loveStyle) continue;
+      expect(loveStyle.match(/[。！？]/gu), option.id).toHaveLength(2);
+
+      const reading = buildAtlasPublicReading(option);
+      expect(reading.scene, option.id).toContain(`恋爱方式：${loveStyle}`);
+      expect(reading.scene, option.id).not.toContain("朋友关系：");
+      expect(reading.scene, option.id).not.toContain("工作状态：");
+      expect(reading.scene.length, option.id).toBeLessThan(260);
+      expectConcreteScene(reading.scene);
     }
   });
 
