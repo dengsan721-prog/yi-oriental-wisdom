@@ -171,7 +171,7 @@ it("renders three priority cards with four ordered progressive-reading layers", 
 
 it("keeps disclosure targets touch-safe and reading grids single-column on mobile", () => {
   const css = readFileSync(resolve("app/globals.css"), "utf8");
-  expect(css).toMatch(/\.reading-card details>summary\{min-height:44px;display:flex;align-items:center;cursor:pointer;color:#dfca95\}/);
+  expect(css).toMatch(/\.reading-card details>summary\{min-height:44px;display:flex;align-items:center;cursor:pointer;color:var\(--yi-accent-strong\)\}/);
   expect(css).toMatch(/@media\(max-width:700px\)\{\.reading-contrast,\.reading-actions\{grid-template-columns:1fr\}/);
 });
 
@@ -319,16 +319,16 @@ it("executes every mirror tab transition and reveals only the matching panel", (
   }
 });
 
-it("applies responsive black-gold mirror layouts", () => {
+it("applies responsive light mirror layouts", () => {
   const css = readFileSync(resolve("app/globals.css"), "utf8");
 
   expect(css).toMatch(/\.mirror-tabs\{display:grid;grid-template-columns:repeat\(4,1fr\);gap:7px\}/);
   expect(css).toMatch(/\.mirror-tabs button\{[^}]*min-height:44px/);
-  expect(css).toMatch(/\.mirror-tabs button\.active\{border-color:#caa760;color:#e2c77e\}/);
+  expect(css).toMatch(/\.mirror-tabs button\.active\{border-color:var\(--yi-accent\);color:var\(--yi-accent-strong\)\}/);
   expect(css).toMatch(/\.mirror-candidates\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\);gap:12px\}/);
-  expect(css).toMatch(/\.mirror-candidate\{border-radius:18px;background:linear-gradient\(160deg,#101820,#090d10\)\}/);
+  expect(css).toMatch(/\.mirror-candidate\{border-radius:18px;background:var\(--yi-surface-raised\)\}/);
   expect(css).toMatch(/\.mirror-candidate\{[^}]*min-width:0[^}]*overflow-wrap:anywhere/);
-  expect(css).toMatch(/\.mirror-candidate aside\{background:#7d301318\}/);
+  expect(css).toMatch(/\.reading-scene,\.reading-card aside,\.mirror-candidate aside\{[^}]*background:var\(--yi-accent-soft\)/);
   expect(css).toMatch(/@media\(max-width:760px\)\{\.mirror-tabs\{grid-template-columns:repeat\(2,1fr\)\}\.mirror-candidates\{grid-template-columns:1fr\}\}/);
 });
 
@@ -569,10 +569,10 @@ it("styles atlas controls, mirror guidance and constellation metadata for touch 
 
   expect(css).toMatch(/\.atlas-gender-switch\{[^}]*display:inline-grid[^}]*grid-template-columns:1fr 1fr/);
   expect(css).toMatch(/\.atlas-gender-switch button\{[^}]*min-height:44px/);
-  expect(css).toMatch(/\.atlas-gender-switch button\[aria-pressed=true\]\{[^}]*color:#e2c77e/);
-  expect(css).toMatch(/\.mirror-guide\{[^}]*border:1px solid #caa76055/);
+  expect(css).toMatch(/\.atlas-gender-switch button\[aria-pressed=true\]\{[^}]*color:var\(--yi-accent-strong\)/);
+  expect(css).toMatch(/\.mirror-guide\{[^}]*border:1px solid var\(--yi-line\)/);
   expect(css).toMatch(/\.mirror-side-labels\{[^}]*display:flex[^}]*justify-content:space-between/);
   expect(css).toMatch(/\.constellation-meta\{[^}]*display:grid/);
-  expect(css).toMatch(/\.constellation-meta h3\{[^}]*color:#e2c77e/);
+  expect(css).toMatch(/\.constellation-meta h3\{[^}]*color:var\(--yi-accent-strong\)/);
   expect(css).toMatch(/@media\(max-width:760px\)\{\.atlas-gender-switch\{width:100%\}\.constellation-meta\{grid-template-columns:1fr\}/);
 });
