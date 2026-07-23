@@ -41,10 +41,36 @@ describe("reviewed story-mirror projection", () => {
       expect(mirror.takeaway.length, `${candidate.id}:takeaway`)
         .toBeGreaterThanOrEqual(30);
       expect(JSON.stringify(mirror)).not.toMatch(
-        /来源|可靠级|证据等级|匹配分|显式映射/,
+        /来源|材料出处等级|可靠级|可信层次|证据|材料层次|匹配分|显式映射/,
       );
       expect(Object.isFrozen(mirror)).toBe(true);
     }
+  });
+
+  it("uses reviewed natural source-comparison wording for Sima Guang and Xuanzang", () => {
+    const simaGuang = projectStoryMirror(
+      HISTORICAL_MIRRORS.find(candidate =>
+        candidate.id === "historical-sima-guang"
+      )!,
+    );
+    const xuanzang = projectStoryMirror(
+      HISTORICAL_MIRRORS.find(candidate =>
+        candidate.id === "historical-xuanzang"
+      )!,
+    );
+
+    expect(simaGuang.difference).toContain(
+      "编排事实也需要检查材料可能带来的偏向与遗漏",
+    );
+    expect(simaGuang.takeaway).toContain(
+      "逐项注明材料出处与不确定处",
+    );
+    expect(simaGuang.difference).not.toContain("材料出处偏差检查");
+    expect(simaGuang.takeaway).not.toContain("材料出处等级");
+    expect(xuanzang.takeaway).toContain(
+      "找到两份一手文本和一份权威注解",
+    );
+    expect(xuanzang.takeaway).not.toContain("两个一手材料出处");
   });
 
   it("gives all 30 candidates distinct person-action-consequence scenes", () => {

@@ -126,9 +126,26 @@ function deepFreeze<T>(value: T): Readonly<T> {
 
 function publicText(value: string): string {
   return value
+    .replaceAll(
+      "编排事实本身也需要接受来源偏差检查",
+      "编排事实也需要检查材料可能带来的偏向与遗漏",
+    )
+    .replaceAll(
+      "处理争议材料时先列时间线和来源等级",
+      "处理争议材料时先列时间线，逐项注明材料出处与不确定处",
+    )
+    .replaceAll(
+      "找到两个一手来源和一个权威注解",
+      "找到两份一手文本和一份权威注解",
+    )
+    .replaceAll("补充证据", "补充事实")
+    .replaceAll("证据条件", "可核对条件")
+    .replaceAll("证据点", "核对点")
+    .replaceAll("证据日志", "核对日志")
+    .replaceAll("新证据", "新材料")
+    .replaceAll("证据", "材料")
     .replaceAll("来源", "材料出处")
-    .replaceAll("可靠级", "可信层次")
-    .replaceAll("证据等级", "材料层次")
+    .replaceAll("可靠级", "复核层次")
     .replaceAll("匹配分", "比较结果")
     .replaceAll("显式映射", "具体比较");
 }
