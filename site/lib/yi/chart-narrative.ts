@@ -606,6 +606,10 @@ type BeatConfig = {
   signal: string;
 };
 
+function continueSentence(value: string): string {
+  return value.trim().replace(/[。！？；，]+$/u, "");
+}
+
 function buildBeat(
   config: BeatConfig,
   sourceActionIds: readonly DetailActionId[],
@@ -613,7 +617,8 @@ function buildBeat(
 ): NarrativeBeat {
   const consumed = buildActionSequence(sourceActionIds);
   return {
-    situation: `${prefix}${config.scene}人物先寻找一个可控制的入口。`,
+    situation:
+      `${prefix}${continueSentence(config.scene)}，人物先寻找一个可控制的入口。`,
     opportunity: `机会在于${config.aim}，让压力成为可讨论的条件。`,
     firstStrength: `${config.strength}，能让事情启动并给出下一步。`,
     overuseCost: `若用过头，${config.cost}，重要反馈就会被挡在决定之外。`,
@@ -621,8 +626,10 @@ function buildBeat(
     newChoice: consumed
       ? `转折动作是：${config.reset}。${consumed}完成后再看结果。`
       : `转折动作是：${config.reset}，让事实、边界和下一步重新对齐。`,
-    turn: `${config.result}。变化来自反复核对，不是突然逆转。`,
-    observableSignal: `${config.signal}。连续记录两周再判断。`,
+    turn:
+      `${continueSentence(config.result)}，变化来自反复核对，不是突然逆转。`,
+    observableSignal:
+      `${continueSentence(config.signal)}，连续记录两周再判断。`,
     sourceActionIds,
   };
 }
@@ -650,15 +657,18 @@ function buildMicroStory<TScene extends string>(
     id: config.id,
     covers: config.covers,
     title: config.title,
-    trigger: `${config.trigger}。此刻${cue.opening}。`,
+    trigger:
+      `${continueSentence(config.trigger)}时，可以${cue.opening}。`,
     firstReaction: `${config.reaction}，借${cue.strength}暂时稳住局面。`,
     apparentBenefit: `${config.benefit}。`,
     cost: `${config.cost}，也要防${cue.risk}。`,
     turnAction: consumed
       ? `${cue.mature}：${config.turn}。${consumed}`
-      : `${cue.mature}：${config.turn}。还没有足够个人记录时，先把这一段当作一周小实验：记下触发、动作和结果，再决定是否保留。`,
-    example: `${config.example}这会检验“${cue.opening}”。`,
-    observableSignal: `${config.signal}。连续记录后再判断。`,
+      : `${cue.mature}：${continueSentence(config.turn)}；还没有足够个人记录时，先把这一段当作一周小实验，记下触发、动作和结果，再决定是否保留。`,
+    example:
+      `${continueSentence(config.example)}，这会检验“${cue.opening}”。`,
+    observableSignal:
+      `${continueSentence(config.signal)}，连续记录后再判断。`,
     sourceActionIds,
   };
 }
