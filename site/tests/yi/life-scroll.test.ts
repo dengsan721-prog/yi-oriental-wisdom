@@ -343,6 +343,9 @@ describe("deterministic life scroll", () => {
     expect(note?.plainCommentary.storyConnection).not.toMatch(
       /在(?:事业开门|关系修复|转折发生|全卷收束)的.+里/u,
     );
+    expect(note?.plainCommentary.sceneGuidance).not.toMatch(
+      /完成(?:写清|先)|先先/u,
+    );
     if (note) assertDaoNoteBounds(note);
   });
 

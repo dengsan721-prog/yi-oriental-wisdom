@@ -345,7 +345,7 @@ const DAO_FRAMES: Readonly<Record<string, DaoFrame>> = {
     storyConnection: context =>
       `故事走到${context.placement}时，场景是：${context.scene}。人物一度被“${context.tension}”催着立刻下结论。人物停止追加判断、等待事实沉淀；选择${context.turn}后，混乱才逐渐显出可处理的层次。`,
     sceneGuidance: context =>
-      `人物先暂停一个回合，完成${context.action}，并约定下一次核对时间。等待期间只记录新事实，不用焦虑替空白补出答案。`,
+      `人物先暂停一个回合，${context.action}，并约定下一次核对时间。等待期间只记录新事实，不用焦虑替空白补出答案。`,
   },
   "dao-22-whole": {
     storyConnection: context =>
