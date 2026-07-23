@@ -13,11 +13,27 @@ export type StableStoryUncertaintyFlag =
   | "candidate-pillar-excluded"
   | "candidate-professional-field-excluded";
 
+export type SafeStoryInterpretation = Readonly<
+  Pick<
+    InterpretationItem,
+    | "id"
+    | "domain"
+    | "scenario"
+    | "advantageVersion"
+    | "shadowVersion"
+    | "actionNow"
+    | "actionLongTerm"
+    | "priority"
+  > & {
+    pillarDependencies: readonly PillarKey[];
+  }
+>;
+
 export type StableStoryFacts = {
   dayMasterElement: ElementName | null;
   structureBalance: ProfessionalChart["structureBalance"] | null;
   relations: readonly ChartRelation[];
-  interpretations: readonly InterpretationItem[];
+  interpretations: readonly SafeStoryInterpretation[];
   excludedInterpretationIds: readonly string[];
   currentLesson: string | null;
   hourUnknown: boolean;
@@ -26,6 +42,22 @@ export type StableStoryFacts = {
 
 function clone<T>(value: T): T {
   return structuredClone(value);
+}
+
+function projectSafeInterpretation(
+  item: InterpretationItem,
+): SafeStoryInterpretation {
+  return {
+    id: item.id,
+    domain: item.domain,
+    scenario: item.scenario,
+    advantageVersion: item.advantageVersion,
+    shadowVersion: item.shadowVersion,
+    actionNow: item.actionNow,
+    actionLongTerm: item.actionLongTerm,
+    priority: item.priority,
+    pillarDependencies: [...item.pillarDependencies],
+  };
 }
 
 function deepFreeze<T>(value: T): T {
@@ -57,13 +89,13 @@ export function selectStableStoryFacts(
     .filter(relation =>
       relation.pillars.every(key => !ambiguousPillars.has(key)))
     .map(clone);
-  const interpretations: InterpretationItem[] = [];
+  const interpretations: SafeStoryInterpretation[] = [];
   const excludedInterpretationIds: string[] = [];
   for (const item of items) {
     if (item.pillarDependencies.some(key => ambiguousPillars.has(key))) {
       excludedInterpretationIds.push(item.id);
     } else {
-      interpretations.push(clone(item));
+      interpretations.push(projectSafeInterpretation(item));
     }
   }
 

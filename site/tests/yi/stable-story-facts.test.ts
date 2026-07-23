@@ -1,8 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { buildInterpretations } from "../../lib/yi/interpretation";
 import { buildProfessionalReport } from "../../lib/yi/report-model";
-import { selectStableStoryFacts } from "../../lib/yi/stable-story-facts";
+import {
+  selectStableStoryFacts,
+  type SafeStoryInterpretation,
+} from "../../lib/yi/stable-story-facts";
 import type { BirthInput, PillarKey } from "../../lib/yi/types";
 
 const exactBirth: BirthInput = {
@@ -22,6 +25,54 @@ function fixture(birth: BirthInput) {
 }
 
 describe("selectStableStoryFacts", () => {
+  it("projects interpretations to the explicit safe-story whitelist", () => {
+    const { chart, report, items } = fixture(exactBirth);
+    const poisonedChart = structuredClone(chart);
+    const poisonedReport = structuredClone(report);
+    const poisonedItems = structuredClone(items);
+    const sentinel = "专业候选字段不得进入故事网关";
+    poisonedChart.professional.ambiguousFields = ["structureBalance"];
+    poisonedChart.professional.structureBalance = sentinel as never;
+    poisonedReport.currentLesson = sentinel;
+    for (const item of poisonedItems) {
+      item.professionalTitle = sentinel;
+      item.innovationTitle = sentinel;
+      item.basis = sentinel;
+      item.traditionalJudgment = sentinel;
+      item.plainLanguage = sentinel;
+      item.mirror = sentinel;
+      item.action = sentinel;
+      item.caution = sentinel;
+      item.confidence = sentinel as never;
+      item.sourceTradition = sentinel;
+      item.sourceReferences = [sentinel];
+      item.sourceRuleIds = [sentinel];
+    }
+
+    const facts = selectStableStoryFacts(
+      poisonedChart,
+      poisonedReport,
+      poisonedItems,
+    );
+    const safeKeys: Array<keyof SafeStoryInterpretation> = [
+      "id",
+      "domain",
+      "scenario",
+      "advantageVersion",
+      "shadowVersion",
+      "actionNow",
+      "actionLongTerm",
+      "priority",
+      "pillarDependencies",
+    ];
+
+    expect(JSON.stringify(facts)).not.toContain(sentinel);
+    for (const item of facts.interpretations) {
+      expect(Object.keys(item).sort()).toEqual([...safeKeys].sort());
+      expectTypeOf(item).toEqualTypeOf<SafeStoryInterpretation>();
+    }
+  });
+
   it("projects the exact stable field paths without changing their order", () => {
     const { chart, report, items } = fixture(exactBirth);
     const facts = selectStableStoryFacts(chart, report, items);
