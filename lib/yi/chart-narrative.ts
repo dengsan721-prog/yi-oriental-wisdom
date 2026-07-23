@@ -326,19 +326,19 @@ const structureStoryStyles: Readonly<Record<
   StructureStoryStyle
 >> = {
   "support-heavy": {
-    opportunity: "已有资源不少，机会在按时交出第一版",
+    opportunity: "已有资源不少时按时交出第一版",
     overload: "反复准备会挤压行动窗口",
     recovery: "先停新增承诺，再分清可用、可交接与可放下",
     decision: "设资料截止点，用可逆交付检验准备",
   },
   mixed: {
-    opportunity: "多个方向都有理由，机会在先排主次",
+    opportunity: "多个方向都有理由时先排主次",
     overload: "反复平衡会让忙碌失去主线",
     recovery: "先固定一个重点和一个补给窗口",
     decision: "写清主线与复查点，只让新事实改路线",
   },
   "expression-heavy": {
-    opportunity: "行动启动快，机会在确认验收后再加速",
+    opportunity: "行动启动快，但仍要确认验收后再加速",
     overload: "持续输出会挤压理解与恢复",
     recovery: "先降低强度，留出睡眠、反馈与排序窗口",
     decision: "收束目标与退出条件，再推进关键一步",
@@ -346,7 +346,7 @@ const structureStoryStyles: Readonly<Record<
 };
 
 const neutralStructureStyle: StructureStoryStyle = {
-  opportunity: "条件尚未稳定，机会在先做可逆小试验",
+  opportunity: "条件尚未稳定时先做可逆小试验",
   overload: "过早归纳规律会把行动带偏",
   recovery: "先减少一项负荷，再按真实记录调整",
   decision: "保留检查点与停止条件",
@@ -797,7 +797,7 @@ export function buildChartNarrative(
       id: "relationship-approach-misunderstanding",
       covers: ["approach", "misunderstanding"],
       title: "靠近之前先说期待，误会出现先核事实",
-      trigger: `你希望获得陪伴、回应或更明确承诺，而${relation.approach}`,
+      trigger: "你希望获得陪伴、回应或更明确承诺，却还没有把期待说成对方能直接回答的请求",
       reaction: "用暗示、试探或加快安排来确认自己是否被重视",
       benefit: "不用直接暴露需要，短期也能避免听见一个不确定答案",
       cost: `对方只能回应表面动作，${relation.conflict}`,
