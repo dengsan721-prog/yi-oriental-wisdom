@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { formatYiHash, guardYiRoute, parseYiHash, resolveYiHydratedRoute } from "../../lib/yi/hash-router";
 import { buildInterpretations, buildProfessionalOverview } from "../../lib/yi/interpretation";
@@ -12,18 +12,11 @@ import { ResultShell } from "./ResultShell";
 import { LifeHome } from "./LifeHome";
 import { clearLifeProfile, createLifeProfile, getBrowserStorage, loadLifeProfile, saveLifeProfile, type LifeProfile, type StorageResult } from "../../lib/yi/life-profile";
 import { useYiRoute } from "./useYiRoute";
-import { YiLishuGlyph } from "./YiLishuGlyph";
-
-function Mark() {
-  return <div className="yi-brand-orbit yi-mark" role="img" aria-label="艺">
-    <YiLishuGlyph />
-    {Array.from({ length: 5 }, (_, index) => <i className="yi-breath-ring" aria-hidden="true" style={{ "--ring-index": index } as CSSProperties} key={index} />)}
-  </div>;
-}
+import { YiBrandMark } from "./YiBrandMark";
 
 function RitualIntro({ restoring, onStart }: { restoring: boolean; onStart: () => void }) {
   return <section className="ritual" aria-busy={restoring}>
-    <div className="ritual-bg" /><Mark />
+    <div className="ritual-bg" /><YiBrandMark variant="hero" />
     <h1 className="ritual-lines"><span>看见命局</span><span>读懂时运</span></h1>
     <button className="primary" disabled={restoring} onClick={onStart}>开始排盘 <span>→</span></button>
   </section>;
@@ -149,7 +142,7 @@ export function YiExperience() {
       <BirthIntake onSubmit={runBirthSubmission} />
     </section>}
     {hydrated && route.page === "calculating" && <section className="calculating">
-      <Mark /><p>正在建立 {name || "访客"} 的命盘</p>
+      <YiBrandMark variant="hero" /><p>正在建立 {name || "访客"} 的命盘</p>
       <div className="calc-list">{getCalculationSteps().map((item, index) => <div className={index <= calcStep ? "active" : ""} key={item}><span>{index < calcStep ? "✓" : `0${index + 1}`}</span>{item}</div>)}</div>
     </section>}
     {hydrated && route.page === "report" && result && birth && professionalReport && <ResultShell
