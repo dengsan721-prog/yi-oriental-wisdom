@@ -21,6 +21,30 @@ export const DETAIL_ACTION_ID_ALLOWLIST: readonly DetailActionId[] =
     `${id}:actionLongTerm` as const,
   ]));
 
+const actionPairOutcomes: Readonly<Record<InterpretationId, string>> = {
+  "self-day-master": "让判断从当下结论走向持续校准",
+  "self-support": "让承担回到真实容量",
+  "self-interface": "让分歧从立场回到可协商条件",
+  "talent-public": "让表达依据现场理解迭代",
+  "talent-hidden": "让个人熟练变成可交接经验",
+  "talent-output": "让成果随真实用途改进",
+  "career-role": "让角色从名称落到可验收交付",
+  "career-pressure": "让压力经验改进下一次计划",
+  "career-environment": "让环境选择依据长期样本",
+  "wealth-structure": "让新机会不挤压基本盘",
+  "wealth-risk": "让追加资源依赖新证据",
+  "wealth-boundary": "让善意与财务责任同时清楚",
+  "relationship-day-branch": "让期待可以被听见和回应",
+  "relationship-trigger": "让分歧保留暂停与修复入口",
+  "relationship-repair": "让和好落到下一次新规则",
+  "family-year": "让熟悉角色重新接受协商",
+  "family-resource": "让帮助保留双方余力",
+  "family-boundary": "让每个人逐步接回自己的责任",
+  "rhythm-climate": "让加速和降档都有记录依据",
+  "rhythm-recovery": "让恢复按照真实消耗展开",
+  "rhythm-decision": "让把握来自复盘而非等待",
+};
+
 const actionSemanticFrames: Readonly<Record<DetailActionId, string>> = {
   "self-day-master:actionNow": "写下结论、依据和反证",
   "self-day-master:actionLongTerm": "建立决策记录并双周复盘",
@@ -212,6 +236,131 @@ const neutralStyle = {
   mature: "把判断写成可以复查和修改的行动",
 };
 
+type DomainCue = typeof neutralStyle;
+
+const elementDomainCues: Readonly<Record<ElementName, DomainCue>> = {
+  木: {
+    opening: "先搭方向，再用反馈修枝",
+    strength: "把散乱条件接成可生长路径",
+    risk: "方向定得太早会漏掉变化",
+    mature: "给坚持设置复查点",
+  },
+  火: {
+    opening: "先照亮重点，再邀请回应",
+    strength: "迅速聚焦并带动行动",
+    risk: "速度过快会压缩他人准备",
+    mature: "把热度排成可持续节拍",
+  },
+  土: {
+    opening: "先稳住次序，再分配责任",
+    strength: "把零散任务接到可靠坐标",
+    risk: "过度承接会模糊共同责任",
+    mature: "把可靠变成边界清楚的分工",
+  },
+  金: {
+    opening: "先划清标准，再保留解释入口",
+    strength: "迅速分辨关键差异",
+    risk: "标准收得太快会漏掉过渡",
+    mature: "让取舍同时保留修正条件",
+  },
+  水: {
+    opening: "先汇集信号，再收回一条主线",
+    strength: "连接不同位置的信息",
+    risk: "选择过多会冲散长期方向",
+    mature: "给开放设置停止规则",
+  },
+};
+
+const neutralDomainCue: DomainCue = {
+  opening: "先核对事实，再小步试验",
+  strength: "给不同解释留下验证空间",
+  risk: "过早求确定会放大第一种解释",
+  mature: "让行动可以复查和修改",
+};
+
+type StructureStoryStyle = {
+  opportunity: string;
+  overload: string;
+  recovery: string;
+  decision: string;
+};
+
+const structureStoryStyles: Readonly<Record<
+  NonNullable<ReturnType<typeof selectStableStoryFacts>["structureBalance"]>,
+  StructureStoryStyle
+>> = {
+  "support-heavy": {
+    opportunity: "已有资源不少，机会在按时交出第一版",
+    overload: "反复准备会挤压行动窗口",
+    recovery: "先停新增承诺，再分清可用、可交接与可放下",
+    decision: "设资料截止点，用可逆交付检验准备",
+  },
+  mixed: {
+    opportunity: "多个方向都有理由，机会在先排主次",
+    overload: "反复平衡会让忙碌失去主线",
+    recovery: "先固定一个重点和一个补给窗口",
+    decision: "写清主线与复查点，只让新事实改路线",
+  },
+  "expression-heavy": {
+    opportunity: "行动启动快，机会在确认验收后再加速",
+    overload: "持续输出会挤压理解与恢复",
+    recovery: "先降低强度，留出睡眠、反馈与排序窗口",
+    decision: "收束目标与退出条件，再推进关键一步",
+  },
+};
+
+const neutralStructureStyle: StructureStoryStyle = {
+  opportunity: "条件尚未稳定，机会在先做可逆小试验",
+  overload: "过早归纳规律会把行动带偏",
+  recovery: "先减少一项负荷，再按真实记录调整",
+  decision: "保留检查点与停止条件",
+};
+
+type RelationStoryFrame = {
+  situation: string;
+  approach: string;
+  conflict: string;
+  repair: string;
+  signal: string;
+};
+
+function relationStoryFrame(
+  relationType:
+    | FourPillarsResult["professional"]["relations"][number]["type"]
+    | null,
+): RelationStoryFrame {
+  if (relationType === "stem-combination"
+    || relationType === "branch-combination"
+    || relationType === "branch-trine") {
+    return {
+      situation: "彼此容易迅速形成共同方向，也更需要把责任、期限和退出条件补写完整",
+      approach: "把共同意图拆成双方能承担的动作",
+      conflict: "口头一致可能遮住责任与期限错位",
+      repair: "写清负责人、期限与标准，再互相复述",
+      signal: "口头共识开始变成可核对约定",
+    };
+  }
+  if (relationType === "branch-clash"
+    || relationType === "branch-punishment"
+    || relationType === "branch-harm"
+    || relationType === "branch-break") {
+    return {
+      situation: "不同节奏容易在压力里互相放大，先核对事实比立刻解释谁对谁错更重要",
+      approach: "先约定分歧怎样暂停与重谈",
+      conflict: "双方容易把不同节奏解释成否定",
+      repair: "分清事实、影响与需要，再约定新动作",
+      signal: "分歧仍在，双方却能按约定重启",
+    };
+  }
+  return {
+    situation: "现有材料没有给出单一互动结论，因此更适合从真实对话和重复行为开始观察",
+    approach: "先直接说期待，再看真实回应",
+    conflict: "信息不足时，猜测容易变成防御",
+    repair: "回到具体事情，说明事实、影响、需要与下一步",
+    signal: "双方减少猜测，并能复述对方请求",
+  };
+}
+
 function deepFreeze<T>(value: T, seen = new Set<object>()): T {
   if (value !== null && typeof value === "object" && !seen.has(value)) {
     seen.add(value);
@@ -256,33 +405,68 @@ export function listDetailActionIds(
   return actionIdsForIds(canonicalInterpretations(items).map(item => item.id));
 }
 
-const actionOwnerItems: readonly (readonly InterpretationId[])[] = [
-  ["self-day-master", "self-support"],
-  ["career-role", "career-pressure"],
-  ["relationship-day-branch", "relationship-trigger"],
-  ["rhythm-climate", "rhythm-recovery"],
-  ["self-interface", "talent-public"],
-  ["talent-hidden", "talent-output", "career-environment"],
-  ["relationship-repair", "family-resource"],
-  ["family-year", "family-boundary"],
-  ["wealth-structure", "wealth-boundary"],
-  ["wealth-risk", "rhythm-decision"],
+const actionOwnerSequences: readonly {
+  owner: string;
+  items: readonly InterpretationId[];
+}[] = [
+  { owner: "self", items: ["self-day-master", "self-support"] },
+  { owner: "career", items: ["career-role", "career-pressure"] },
+  {
+    owner: "relationship",
+    items: ["relationship-day-branch", "relationship-trigger"],
+  },
+  { owner: "rhythm", items: ["rhythm-climate"] },
+  { owner: "career-entry", items: ["self-interface", "talent-public"] },
+  {
+    owner: "career-choice",
+    items: [
+      "talent-hidden",
+      "talent-output",
+      "career-environment",
+      "wealth-structure",
+      "wealth-risk",
+    ],
+  },
+  {
+    owner: "relationship-approach",
+    items: ["relationship-repair", "family-resource"],
+  },
+  {
+    owner: "relationship-boundary",
+    items: ["family-year", "family-boundary", "wealth-boundary"],
+  },
+  { owner: "rhythm-recovery", items: ["rhythm-recovery"] },
+  { owner: "rhythm-decision", items: ["rhythm-decision"] },
 ];
 
 function buildActionBuckets(
   presentIds: readonly string[],
 ): DetailActionId[][] {
   const present = new Set(presentIds);
-  return actionOwnerItems.map(ids =>
-    actionIdsForIds(ids.filter(id => present.has(id))));
+  return actionOwnerSequences.map(sequence =>
+    sequence.items.flatMap(id => present.has(id)
+      ? [
+          `${id}:actionNow` as DetailActionId,
+          `${id}:actionLongTerm` as DetailActionId,
+        ]
+      : []));
 }
 
-function consumedActionText(
+function buildActionSequence(
   ids: readonly DetailActionId[],
 ): string | null {
-  return ids.length
-    ? ids.map(id => actionSemanticFrames[id]).join("；")
-    : null;
+  if (!ids.length) return null;
+  const pairs: string[] = [];
+  for (let index = 0; index < ids.length; index += 2) {
+    const nowId = ids[index];
+    const longTermId = ids[index + 1];
+    const interpretationId = nowId.split(":")[0] as InterpretationId;
+    const lead = index === 0 ? "先" : "接着";
+    pairs.push(
+      `${lead}${actionSemanticFrames[nowId]}，再${actionSemanticFrames[longTermId]}，${actionPairOutcomes[interpretationId]}`,
+    );
+  }
+  return `${pairs.join("。")}。`;
 }
 
 function sceneFor(
@@ -292,24 +476,6 @@ function sceneFor(
 ): string {
   return items.find(item => ids.includes(item.id as InterpretationId))
     ?.scenario ?? fallback;
-}
-
-function relationSituation(
-  relationType: FourPillarsResult["professional"]["relations"][number]["type"]
-    | null,
-): string {
-  if (relationType === "stem-combination"
-    || relationType === "branch-combination"
-    || relationType === "branch-trine") {
-    return "彼此容易迅速形成共同方向，也更需要把责任、期限和退出条件补写完整";
-  }
-  if (relationType === "branch-clash"
-    || relationType === "branch-punishment"
-    || relationType === "branch-harm"
-    || relationType === "branch-break") {
-    return "不同节奏容易在压力里互相放大，先核对事实比立刻解释谁对谁错更重要";
-  }
-  return "现有材料没有给出单一互动结论，因此更适合从真实对话和重复行为开始观察";
 }
 
 function buildTranslations(
@@ -352,7 +518,7 @@ function buildTranslations(
     },
     {
       sectionId: "missing-elements",
-      whatItMeans: `当前有${facts.absentCount}类方式未直接出现，只表示可确认的信息有限，并不等于人生缺陷，也不自动指向某种补救。${facts.hourUnknown ? "具体时段尚未确认，当前名单仍可能改变。" : "已列时段也只能作为观察起点。"}`,
+      whatItMeans: `当前有${facts.absentCount}类方式在稳定柱中完全未见，只表示可确认的信息有限，并不等于人生缺陷，也不自动指向某种补救。${facts.hourUnknown ? "具体时段尚未确认，当前名单仍可能改变。" : "已列时段也只能作为观察起点。"}`,
       lifeScene: "你发现某类任务总要借助别人才能完成时，先观察是经验不足、资源不到位还是分工本就合理；因此能避免把一次困难变成自我否定，也能找到真正需要调整的环节。",
       practicalGuidance: "用七天记录一次真实卡点，分别写下任务要求、已有资源和可求助对象；只补齐一个现实条件，不购买象征物，也不据此作重大决定。",
     },
@@ -364,6 +530,7 @@ type BeatConfig = {
   aim: string;
   strength: string;
   cost: string;
+  lowPoint: string;
   reset: string;
   result: string;
   signal: string;
@@ -371,22 +538,21 @@ type BeatConfig = {
 
 function buildBeat(
   config: BeatConfig,
-  style: typeof neutralStyle,
   sourceActionIds: readonly DetailActionId[],
   prefix = "",
 ): NarrativeBeat {
-  const consumed = consumedActionText(sourceActionIds);
+  const consumed = buildActionSequence(sourceActionIds);
   return {
-    situation: `${prefix}${config.scene}人物会先寻找一个可控制的入口。`,
-    opportunity: `机会不在证明自己正确，而在看清${config.aim}，把压力改写成可讨论的条件。`,
-    firstStrength: `最先派上用场的是${config.strength}；它能让事情脱离停滞，也让相关的人知道下一步可以从哪里开始。`,
-    overuseCost: `可是同一种力量用得过久，${config.cost}；表面仍在推进，重要反馈却会逐渐失去进入决定的空间。`,
-    lowPoint: "若人物继续只靠原来的速度撑住局面，疲惫、误解和返工可能同时累积，眼前的小问题便容易被解释成无法改变的困境。",
+    situation: `${prefix}${config.scene}人物先寻找一个可控制的入口。`,
+    opportunity: `机会在于${config.aim}，让压力成为可讨论的条件。`,
+    firstStrength: `${config.strength}，能让事情启动并给出下一步。`,
+    overuseCost: `若用过头，${config.cost}，重要反馈就会被挡在决定之外。`,
+    lowPoint: `低点可能是${config.lowPoint}，小问题也会被误作无法改变的困局。`,
     newChoice: consumed
-      ? `转折来自几个可执行动作：${consumed}。先做完再决定是否加大投入。`
-      : `转折来自一个更小也更具体的选择：${config.reset}，先让事实、边界和下一步重新对齐，再决定是否加大投入。`,
-    turn: `这样做之后，${config.result}。变化不是突然逆转，而是每次核对都让人物少一点猜测，多一点可以共同确认的进展。`,
-    observableSignal: `${config.signal}；连续记录两周，若这个信号稳定出现，才把它视为新方法正在发挥作用。`,
+      ? `转折从${config.reset}开始。${consumed}做完再看结果。`
+      : `转折从${config.reset}开始，让事实、边界和下一步重新对齐。`,
+    turn: `${config.result}。变化来自反复核对，不是突然逆转。`,
+    observableSignal: `${config.signal}。连续记录两周再判断。`,
     sourceActionIds,
   };
 }
@@ -407,21 +573,22 @@ type MicroConfig<TScene extends string> = {
 function buildMicroStory<TScene extends string>(
   config: MicroConfig<TScene>,
   sourceActionIds: readonly DetailActionId[],
+  cue: DomainCue,
 ): SceneMicroStory<TScene> {
-  const consumed = consumedActionText(sourceActionIds);
+  const consumed = buildActionSequence(sourceActionIds);
   return {
     id: config.id,
     covers: config.covers,
     title: config.title,
-    trigger: `${config.trigger}时，先分清容量与限制。`,
-    firstReaction: `第一反应往往是${config.reaction}。它能暂时减少不确定，也会延续惯性。`,
-    apparentBenefit: `短期好处是${config.benefit}，身边的人也能看到明确动作。`,
-    cost: `代价在于${config.cost}；没有复查点，解决问题的力量也会变成消耗。`,
+    trigger: `${config.trigger}时，先${cue.opening}。`,
+    firstReaction: `${config.reaction}，借${cue.strength}暂时稳住局面。`,
+    apparentBenefit: `${config.benefit}。`,
+    cost: `${config.cost}，也要防${cue.risk}。`,
     turnAction: consumed
-      ? `转弯动作是：${consumed}。做完再按结果决定继续或暂停。`
-      : `转弯动作是${config.turn}。做完再按结果决定继续或暂停。`,
-    example: `${config.example}这一幕连起行动、反馈与后果。`,
-    observableSignal: `${config.signal}。只看记录，不凭一次结果下结论。`,
+      ? `${cue.mature}：${config.turn}。${consumed}`
+      : `${cue.mature}：${config.turn}。`,
+    example: `${config.example}这会检验“${cue.opening}”。`,
+    observableSignal: `${config.signal}。连续记录后再判断是否${cue.mature}。`,
     sourceActionIds,
   };
 }
@@ -436,12 +603,21 @@ export function buildChartNarrative(
   const style = stable.dayMasterElement
     ? elementStoryStyle[stable.dayMasterElement]
     : neutralStyle;
+  const cue = stable.dayMasterElement
+    ? elementDomainCues[stable.dayMasterElement]
+    : neutralDomainCue;
   const actionIds = actionIdsForIds(interpretations.map(item => item.id));
   const actionBuckets = buildActionBuckets(
     interpretations.map(item => item.id),
   );
-  const relation = relationSituation(stable.relations[0]?.type ?? null);
+  const relation = relationStoryFrame(stable.relations[0]?.type ?? null);
   const visibility = buildChartElementVisibility(chart, report);
+  const structure = stable.structureBalance
+    ? structureStoryStyles[stable.structureBalance]
+    : neutralStructureStyle;
+  const visibilityCue = visibility.hiddenOnlyElements.length
+    ? `${visibility.visibleElements.length}类做法可直接启动，${visibility.hiddenOnlyElements.length}类要在协作或压力后调用`
+    : `${visibility.visibleElements.length}类做法可直接启动，其余路径要靠现实检验`;
   const unknownSentence = stable.hourUnknown
     ? "出生时间没有确认，与具体时段有关的内容暂时留白。"
     : "";
@@ -472,73 +648,77 @@ export function buildChartNarrative(
 
   const self = buildBeat({
     scene: selfScene,
-    aim: "自己真正想守住什么、哪些判断仍需外部校准",
-    strength: style.strength,
-    cost: style.risk,
-    reset: "写下当前事实、第一种解释和一个可能推翻解释的反例",
-    result: "主见仍然保留，却不再需要靠排除不同意见来维持",
-    signal: "重要决定前能说出一条反证，并在听见新事实后主动修正",
-  }, style, actionBuckets[0], `${unknownSentence}${missingSentence}人物通常会${style.opening}。`);
+    aim: `自己想守住什么，以及如何${cue.mature}`,
+    strength: cue.strength,
+    cost: cue.risk,
+    lowPoint: `${cue.risk}，疲惫与误解会放大一次判断`,
+    reset: `${cue.mature}，再核对${visibilityCue}`,
+    result: `${cue.mature}，主见仍保留也能修正`,
+    signal: `能说出反证，并观察“${cue.mature}”后的反馈`,
+  }, actionBuckets[0], `${unknownSentence}${missingSentence}人物通常会${cue.opening}。${visibilityCue}。`);
 
   const career = buildBeat({
     scene: careerScene,
-    aim: "职责、权限、协作对象和完成标准是否真的一致",
-    strength: `${style.opening}，并把散乱任务带回一条可执行主线`,
-    cost: "为了显得可靠而接住过多责任，协作者反而看不见真正的风险与依赖",
-    reset: "把目标、负责人、最晚确认点和停止条件写在同一页上",
-    result: "团队开始围绕同一份现实清单协作，问题也能在最后期限之前暴露",
-    signal: "返工次数下降，关键依赖能在承诺交付前被负责人明确确认",
-  }, style, actionBuckets[1]);
+    aim: `${structure.opportunity}，再确认职责与标准`,
+    strength: `${cue.opening}，把任务带回主线`,
+    cost: `${structure.overload}，而且${cue.risk}`,
+    lowPoint: `${structure.overload}，延期与返工一起累积`,
+    reset: `${cue.mature}，写清目标、负责人和停止条件`,
+    result: `${cue.mature}，团队按同一清单协作`,
+    signal: `返工下降，“${structure.opportunity}”对应一项交付`,
+  }, actionBuckets[1]);
 
   const relationship = buildBeat({
-    scene: `${relationshipScene}${relation}`,
-    aim: "事实、感受、需要与请求是否被双方分别说清",
-    strength: "愿意维持连接，并试着让彼此重新回到同一件具体事情上",
-    cost: "若急着消除不舒服，解释会快过倾听，善意也可能被对方体验成压力",
-    reset: "先暂停评价，轮流复述对方的话，再只确认一个双方同意的新动作",
-    result: "关系不必马上恢复完美，却多了一条可以重复使用的修复路径",
-    signal: "分歧后能在约定时间重启对话，并准确复述对方真正提出的需要",
-  }, style, actionBuckets[2]);
+    scene: `${relationshipScene}${relation.situation}。人物会${cue.opening}。`,
+    aim: `${relation.approach}，同时${cue.mature}`,
+    strength: `${cue.strength}，并把彼此带回具体事情`,
+    cost: `${relation.conflict}。若${cue.risk}，善意也会变成压力`,
+    lowPoint: `${relation.conflict}，双方越想自证，越难听见对方真正要守住的部分`,
+    reset: `${cue.mature}，再按这条路径修复：${relation.repair}`,
+    result: `${relation.repair}，关系不必马上完美，却多了一条可以重复使用的路径`,
+    signal: `${relation.signal}，也能看见人物${cue.mature}`,
+  }, actionBuckets[2]);
 
   const rhythm = buildBeat({
-    scene: rhythmScene,
-    aim: "高质量时段、过载信号和恢复所需的真实时间",
-    strength: "能在重要阶段集中投入，把有限精力压到最关键的任务上",
-    cost: "兴奋或责任感可能掩盖恢复尚未完成，下一轮判断便在疲惫中启动",
-    reset: "减少并行事项，保留一个重点，并为暂停和重新加量预设条件",
-    result: "人物不再用意志硬撑所有阶段，而是开始按记录调整速度",
-    signal: "连续两周能按预定时间结束工作，重点任务完成率上升且恢复时间缩短",
-  }, style, actionBuckets[3]);
+    scene: `${rhythmScene}${structure.recovery}，人物会${cue.opening}。`,
+    aim: `${structure.decision}，并看清高质量时段与过载信号`,
+    strength: `${cue.strength}，把精力留给关键任务`,
+    cost: `${structure.overload}。若${cue.risk}，判断会在疲惫中启动`,
+    lowPoint: `${structure.overload}，专注、耐心和恢复速度可能一起下降`,
+    reset: `${cue.mature}，再从${structure.recovery}开始`,
+    result: `${structure.recovery}，人物开始按记录调速`,
+    signal: `连续两周能按预定时间结束工作，并能用“${structure.decision}”完成一次决定`,
+  }, actionBuckets[3]);
 
   const careerAdvice: ChartNarrative["careerAdvice"] = [
     buildMicroStory({
       id: "career-entry-collaboration",
       covers: ["task-entry", "collaboration-conflict"],
       title: "先把角色说清，再把分歧摆上桌",
-      trigger: "刚接下新角色，或多人对同一任务各有理解",
-      reaction: "先用自己熟悉的方式补上空白，希望以速度换来确定",
-      benefit: "项目很快有了第一版，团队也暂时摆脱没人开头的停滞",
-      cost: "责任、权限和验收口径仍然模糊，后来每次分歧都会重新回到个人身上",
-      turn: "用一页纸确认目标、负责人、权限和验收人，再请持不同意见者补充风险",
+      trigger: "刚接新角色，或多人对任务各有理解",
+      reaction: "先按熟悉方式补空白，以速度换确定",
+      benefit: "项目很快有第一版，暂时摆脱停滞",
+      cost: `责任与验收仍模糊，${structure.overload}`,
+      turn: "写清目标、负责人、权限和验收人",
       example: careerScene,
-      signal: "会议结束后每项任务都有唯一负责人，下一次复盘不再争论谁原本应该知道",
-    }, actionBuckets[4]),
+      signal: "任务有唯一负责人，复盘不再争论谁该知道",
+    }, actionBuckets[4], cue),
     buildMicroStory({
       id: "career-choice-accumulation",
       covers: ["opportunity-choice", "long-accumulation"],
-      title: "机会先小试，能力靠长期留下证据",
-      trigger: "一个新机会很诱人，或长期积累迟迟看不到外部反馈",
-      reaction: "要么立刻投入全部精力，要么继续等待更完整的把握",
-      benefit: "全力投入带来强烈启动感，继续准备也能暂时避开失败风险",
-      cost: "没有试验上限和复盘日期，热情会稀释原有承诺，准备也会变成无限延期",
-      turn: "限定一笔可承受投入，写清成功信号和退出条件，同时保留原有基本盘",
+      title: "机会先小试，能力靠长期留下可以复查的现实证据",
+      trigger: "新机会诱人，或长期积累缺少反馈",
+      reaction: "要么全力投入，要么等待完整把握",
+      benefit: "全力投入带来启动感，等待暂避失败风险",
+      cost: `没有试验上限，${structure.overload}`,
+      turn: `${structure.decision}，再限定试验额度`,
       example: sceneFor(
         interpretations,
         ["career-environment", "wealth-risk", "talent-output"],
         careerScene,
       ),
-      signal: "每次追加投入前都有新的现实证据，三个月后还能清楚说明能力怎样被重复使用",
-    }, actionBuckets[5]),
+      signal: `每次追加投入前都有新证据，并能说明${visibilityCue}`,
+    }, actionBuckets[5], cue),
   ];
 
   const relationshipAdvice: ChartNarrative["relationshipAdvice"] = [
@@ -546,30 +726,30 @@ export function buildChartNarrative(
       id: "relationship-approach-misunderstanding",
       covers: ["approach", "misunderstanding"],
       title: "靠近之前先说期待，误会出现先核事实",
-      trigger: "你希望获得陪伴、回应或更明确承诺",
+      trigger: `你希望获得陪伴、回应或更明确承诺，而${relation.approach}`,
       reaction: "用暗示、试探或加快安排来确认自己是否被重视",
       benefit: "不用直接暴露需要，短期也能避免听见一个不确定答案",
-      cost: "对方只能回应表面动作，期待落空后，普通差异就容易被解释成不在乎",
-      turn: "用四句话依次说明事实、感受、需要和请求，再请对方复述理解",
-      example: relationshipScene,
-      signal: "双方都能说出对方的具体请求，下一次安排不再依靠猜测或临时测试",
-    }, actionBuckets[6]),
+      cost: `对方只能回应表面动作，${relation.conflict}`,
+      turn: `${relation.repair}，再请对方复述理解`,
+      example: `${relationshipScene}${relation.situation}。`,
+      signal: relation.signal,
+    }, actionBuckets[6], cue),
     buildMicroStory({
       id: "relationship-conflict-repair-boundary",
       covers: ["argument", "repair", "boundary"],
       title: "争执可以暂停，修复必须落到新规则",
-      trigger: "同一冲突再次出现，情绪和责任已经纠缠在一起",
+      trigger: `同一冲突再次出现，情绪和责任已经纠缠在一起，此时${relation.conflict}`,
       reaction: "急着证明自己的解释完整，或为了恢复平静先答应以后注意",
       benefit: "争论暂时有了出口，表面关系也可能很快恢复日常",
-      cost: "触发、影响和责任没有被重新安排，同样的问题会换个场景再次回来",
-      turn: "约定暂停信号、恢复时间和一项边界，并在一周后核对是否真正执行",
+      cost: `触发、影响和责任没有重新安排，${relation.conflict}`,
+      turn: `${relation.repair}，再约定暂停信号、恢复时间和一项边界`,
       example: sceneFor(
         interpretations,
         ["relationship-trigger", "relationship-repair", "family-boundary"],
         relationshipScene,
       ),
-      signal: "冲突升级前能主动暂停，重启后只讨论具体行为，并且约定的一项改变能够被看见",
-    }, actionBuckets[7]),
+      signal: relation.signal,
+    }, actionBuckets[7], cue),
   ];
 
   const rhythmAdvice: ChartNarrative["rhythmAdvice"] = [
@@ -577,30 +757,30 @@ export function buildChartNarrative(
       id: "rhythm-window-overload-pause",
       covers: ["productive-window", "overload-signal", "pause"],
       title: "高效留给重点，过载便降档",
-      trigger: "任务变密，而清醒时段变得有限",
-      reaction: "把更多事项塞进高效时段，再延长工作",
-      benefit: "关键进度短期上升，完成数量也带来掌控感",
-      cost: "休息被不断推迟，判断和耐心先于体力下降，返工随后吃掉原本抢出的时间",
-      turn: "连续七天记录专注时段和结束信号，只保留三项承诺，过载时先暂停新增任务",
+      trigger: `任务变密、清醒时段变少，${structure.recovery}`,
+      reaction: "把更多事项塞进高效时段并延长工作",
+      benefit: "关键进度短期上升，数量带来掌控感",
+      cost: `休息被不断推迟，而且${structure.overload}`,
+      turn: `${structure.recovery}，再连续七天记录专注时段和结束信号`,
       example: rhythmScene,
-      signal: "重点任务在固定时段完成，结束工作后仍有稳定恢复，而不是靠第二天继续偿还疲惫",
-    }, actionBuckets[8]),
+      signal: `重点任务在固定时段完成，并能看见${structure.recovery}`,
+    }, actionBuckets[8], cue),
     buildMicroStory({
       id: "rhythm-restart-decision",
       covers: ["restart", "decision-window"],
       title: "小步重启，决定设门槛",
-      trigger: "密集阶段刚结束，或重要决定已有大量信息",
+      trigger: `密集阶段刚结束，或决定已有大量信息，${structure.decision}`,
       reaction: "要么马上恢复强度，要么等待完全有把握",
       benefit: "立即加速能延续成就感，等待也暂时避开选错焦虑",
-      cost: "身体和注意力可能还未归位，新资料也未必继续改变结论，拖延与冒进因而同时出现",
-      turn: "先恢复一个稳定作息，再为决定写下三项必要证据、可逆步骤和复查日期",
+      cost: `身体和注意力可能还未归位，而且${structure.overload}`,
+      turn: `${structure.decision}，再恢复一个稳定作息并写下复查日期`,
       example: sceneFor(
         interpretations,
         ["rhythm-recovery", "rhythm-decision"],
         rhythmScene,
       ),
-      signal: "重新加量后两周仍能保持基本作息，决定也能说明依据、剩余未知和撤回条件",
-    }, actionBuckets[9]),
+      signal: `重新加量后仍能保持基本作息，并能说明${structure.decision}`,
+    }, actionBuckets[9], cue),
   ];
 
   const coveredDetailActionIds = [
@@ -619,7 +799,7 @@ export function buildChartNarrative(
       visibleCount: visibility.visibleElements.length,
       hiddenOnlyCount: visibility.hiddenOnlyElements.length,
       absentCount: visibility.absentInStablePillars.length,
-      relationSituation: relation,
+      relationSituation: relation.situation,
       hourUnknown: visibility.hourUnknown,
     }),
     self,

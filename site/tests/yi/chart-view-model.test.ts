@@ -28,6 +28,15 @@ const exactBirth: BirthInput = {
   timeConfidence: "exact",
 };
 
+const alternateBirth: BirthInput = {
+  name: "顾临川",
+  date: "1992-11-03",
+  time: "18:20",
+  location: "北京市",
+  gender: "male",
+  timeConfidence: "exact",
+};
+
 const pillarKeys: PillarKey[] = ["year", "month", "day", "hour"];
 const rowIds = [
   "stem",
@@ -216,6 +225,28 @@ describe("four-pillar by seven-row professional grid", () => {
     expect(html).not.toContain(
       `${report.monthCommand.branch}月令以${report.monthCommand.hiddenStem}为本气，相对日干呈${report.monthCommand.tenGod}`,
     );
+  });
+
+  it("fails closed before rendering when chart and report come from different fixtures", () => {
+    const chart = calculateFourPillars(exactBirth);
+    const alternateChart = calculateFourPillars(alternateBirth);
+    const alternateReport = buildProfessionalReport(
+      alternateChart,
+      alternateBirth,
+    );
+    const renderMismatched = () => renderToStaticMarkup(createElement(
+      ChartSection,
+      {
+        chart,
+        report: alternateReport,
+        items: buildInterpretations(chart),
+      },
+    ));
+
+    expect(() => buildProfessionalChartGrid(chart, alternateReport))
+      .toThrowError("命盘与专业报告不一致：四柱坐标不匹配");
+    expect(renderMismatched)
+      .toThrowError("命盘与专业报告不一致：四柱坐标不匹配");
   });
 });
 
