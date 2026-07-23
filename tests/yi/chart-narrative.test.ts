@@ -276,6 +276,21 @@ function assertCompleteNarrative(narrative: ChartNarrative): void {
 }
 
 describe("deterministic chart narrative", () => {
+  it("fails closed when the chart and professional report snapshots do not match", () => {
+    const primary = fixture();
+    const alternate = fixture(alternateBirth);
+
+    expect(() => buildChartNarrative(
+      primary.chart,
+      alternate.report,
+      primary.items,
+    )).toThrow(/命盘与专业报告不一致/u);
+    expect(() => buildChartElementVisibility(
+      primary.chart,
+      alternate.report,
+    )).toThrow(/命盘与专业报告不一致/u);
+  });
+
   it("builds the complete bounded reading without leaking professional or source language", () => {
     const { chart, report, items } = fixture();
     const before = JSON.stringify({ chart, report, items });
