@@ -6,6 +6,7 @@ import {
   inspectRawNameInput,
   loadTghCoreData,
 } from "./name-data";
+import { findUniqueReviewedAdoptedMeaning } from "./name-element-data";
 import {
   scoreNameRealityTest,
   type NameRealityScore,
@@ -21,6 +22,7 @@ import type {
   NameChartInteraction,
   NameChartInteractionInput,
   NameDirection,
+  NameMeaningProvenance,
   NameSemanticSummary,
   NameSurname,
   ReviewedFullNameRecord,
@@ -296,6 +298,7 @@ function characterSources(character: NameCharacterRecord): string[] {
     ...(character.totalStrokeRecord ? [character.totalStrokeRecord.sourceId] : []),
     ...(character.inputTghFacts?.sourceIds ?? []),
     ...character.variantCandidates.flatMap(item => item.sourceIds),
+    ...(character.meaningProvenance?.sourceIds ?? []),
     ...(character.semantic?.sourceIds ?? []),
   ]);
 }
@@ -329,7 +332,10 @@ export async function analyzeName(
     const reviewedPair = selectedCandidate
       ? findReviewedTraditionalPair(grapheme.rawCluster, selectedCandidate.glyph)
       : null;
-    const reviewed = reviewedPair ?? (adoptedGlyph ? findReviewedNameCharacter(adoptedGlyph) : null);
+    const reviewedCharacter = !reviewedPair && adoptedGlyph
+      ? findReviewedNameCharacter(adoptedGlyph)
+      : null;
+    const reviewed = reviewedPair ?? reviewedCharacter;
     const selectedReadings = reviewedPair?.readings ?? coreRecord?.readings ?? [];
     const blockers: AnalysisBlocker[] = [];
     if (needsTraditionalSelection && !selectedCandidate) addBlocker(blockers, {
@@ -366,11 +372,44 @@ export async function analyzeName(
           ? `“${adoptedGlyph}”有多个读音候选，请确认姓名中的实际读音。`
           : `“${adoptedGlyph}”缺少可采用的实际读音记录。`,
       });
-      if (!reviewed) addBlocker(blockers, {
-        id: "key-meaning-unreviewed",
-        evidence: `“${adoptedGlyph}”的姓名采用义项尚未进入有限人工审校集。`,
-      });
     }
+
+    const reviewedCorpusMeaning = !reviewed
+      && adoptedGlyph !== null
+      && adoptedReading !== null
+      && !blockers.some(blocker => blocker.id === "unsupported-input")
+      ? findUniqueReviewedAdoptedMeaning({ adoptedGlyph, adoptedReading })
+      : null;
+    const meaning = reviewed?.meaning ?? reviewedCorpusMeaning?.adoptedMeaning ?? null;
+    const meaningProvenance: NameMeaningProvenance | null = reviewedPair
+      ? {
+          origin: "legacy-reviewed-traditional-pair",
+          recordIds: [reviewedPair.id],
+          sourceIds: unique([
+            ...reviewedPair.sourceIds,
+            ...reviewedPair.semantic.sourceIds,
+          ]),
+        }
+      : reviewedCharacter
+        ? {
+            origin: "legacy-reviewed-character",
+            recordIds: [reviewedCharacter.id],
+            sourceIds: unique([
+              ...reviewedCharacter.coverageSourceIds,
+              ...reviewedCharacter.semantic.sourceIds,
+            ]),
+          }
+        : reviewedCorpusMeaning
+          ? {
+              origin: "reviewed-name-element-corpus",
+              recordIds: [...reviewedCorpusMeaning.recordIds],
+              sourceIds: [...reviewedCorpusMeaning.meaningSourceIds],
+            }
+          : null;
+    if (adoptedGlyph && meaning === null) addBlocker(blockers, {
+      id: "key-meaning-unreviewed",
+      evidence: `“${adoptedGlyph}”的姓名采用义项尚未进入有限人工审校集。`,
+    });
 
     return {
       rawCluster: grapheme.rawCluster,
@@ -399,7 +438,8 @@ export async function analyzeName(
         totalStrokeRecord: { ...inputRecord.totalStrokeRecord },
         sourceIds: ["standard.tgh-table", "unicode.unihan-17.data"],
       } : null,
-      meaning: reviewed?.meaning ?? null,
+      meaning,
+      meaningProvenance,
       semantic: reviewed ? { ...reviewed.semantic, vector: { ...reviewed.semantic.vector }, sourceIds: [...reviewed.semantic.sourceIds] } : null,
       analysisBlockers: blockers,
       confirmedUsageRisks: (request.usageRisks ?? [])

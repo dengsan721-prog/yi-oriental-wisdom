@@ -305,6 +305,7 @@ function characterSourceIds(character: NameCharacterRecord): string[] {
       character.inputTghFacts.totalStrokeRecord.sourceId,
     ] : []),
     ...character.variantCandidates.flatMap(candidate => candidate.sourceIds),
+    ...(character.meaningProvenance?.sourceIds ?? []),
     ...(character.semantic ? [character.semantic.methodId] : []),
     ...(character.semantic?.sourceIds ?? []),
   ]);
@@ -386,6 +387,8 @@ export function nameAnalysisToAuditableItems(result: NameAnalysisResult): Audita
           : "当前没有需要与采用字形分开保存的原始输入通用规范汉字表事实。",
         meaningAndSemantic: character.semantic
           ? `人工审校字义为${character.meaning}；方法${character.semantic.methodId}@${character.semantic.version}；可信状态${character.semantic.confidence}；向量${vectorText(vector)}；未知比例${character.semantic.unknownShare}；依据${character.semantic.basisText}`
+          : character.meaning && character.meaningProvenance?.origin === "reviewed-name-element-corpus"
+            ? `内部审校采用义项为${character.meaning}；记录${character.meaningProvenance.recordIds.join("、")}；未生成旧版概率语义向量。`
           : "采用字义与姓名文化向量尚未进入有限人工审校集，当前不作推断。",
         variantCandidates: character.variantCandidates.length
           ? `可能关联字为${character.variantCandidates.map(candidate => `${candidate.glyph}（${candidate.variantRelation}；${candidate.meaningHint}）`).join("；")}；候选不会默认采用。`

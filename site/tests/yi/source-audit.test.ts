@@ -7,6 +7,7 @@ import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { auditSourceReferences, getAllSources, type UnifiedSource } from "../../lib/yi/source-audit";
 import { YI_REFERENCE_SOURCES, YI_RULE_SOURCES } from "../../lib/yi/sources";
 import { TRADITIONAL_SOURCE_CATALOG } from "../../lib/yi/traditional-sources";
+import { NAME_ELEMENT_SOURCES } from "../../lib/yi/name-element-data";
 
 const chart = calculateFourPillars({
   name: "",
@@ -75,6 +76,18 @@ const expectedMovieUrls: Record<string, string> = {
 };
 
 describe("unified Yi source registry", () => {
+  it("registers every reviewed name-element source with its conservative boundary", () => {
+    const registry = new Map(getAllSources().map(source => [source.id, source]));
+
+    for (const source of NAME_ELEMENT_SOURCES) {
+      const registered = registry.get(source.id);
+      expect(registered, source.id).toBeDefined();
+      expect(registered?.role).toContain(source.useBasis);
+      expect(registered?.editionNote).toContain(source.locator);
+      expect(registered?.boundary.length).toBeGreaterThanOrEqual(12);
+    }
+  });
+
   it("registers every name-data source with a distinct role, boundary, edition and access date", () => {
     const requiredNameSourceIds = [
       "standard.tgh-table",
@@ -130,6 +143,10 @@ describe("unified Yi source registry", () => {
       ...Object.keys(YI_RULE_SOURCES),
       ...Object.keys(YI_REFERENCE_SOURCES),
       ...Object.keys(TRADITIONAL_SOURCE_CATALOG).filter(id => !(id in YI_REFERENCE_SOURCES)),
+      ...NAME_ELEMENT_SOURCES.map(source => source.id).filter(id =>
+        !(id in YI_RULE_SOURCES)
+        && !(id in YI_REFERENCE_SOURCES)
+        && !(id in TRADITIONAL_SOURCE_CATALOG)),
       ...ANIMAL_MIRRORS.map(candidate => candidate.id),
       ...HISTORICAL_MIRRORS.map(candidate => candidate.id),
       ...MOVIE_CHARACTERS.map(candidate => candidate.id),

@@ -319,6 +319,20 @@ describe("name analysis audit conversion", () => {
     ]));
   });
 
+  it("audits reviewed corpus meaning provenance without claiming a legacy probability vector", async () => {
+    const result = await analyzeName({ rawInput: "宋江" });
+    const characterItems = nameAnalysisToAuditableItems(result!)
+      .filter(item => item.module === "name-analysis:character");
+
+    expect(auditNameAnalysis(result!)).toEqual([]);
+    expect(characterItems.every(item =>
+      item.fields.meaningAndSemantic.includes("内部审校采用义项")
+      && item.fields.meaningAndSemantic.includes("未生成旧版概率语义向量"))).toBe(true);
+    expect(characterItems.flatMap(item => item.sourceIds)).toContain(
+      "yi-name-adopted-meaning-v1",
+    );
+  });
+
   it("scans aggregate risk evidence and exact reviewed full-name metadata", async () => {
     const result = await analyzeName({
       rawInput: "林知远",

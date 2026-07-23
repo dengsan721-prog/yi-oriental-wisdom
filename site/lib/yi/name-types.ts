@@ -171,6 +171,15 @@ export type ConfirmedUsageRisk = {
   userConfirmed: true;
 };
 
+export type NameMeaningProvenance = {
+  origin:
+    | "legacy-reviewed-character"
+    | "legacy-reviewed-traditional-pair"
+    | "reviewed-name-element-corpus";
+  recordIds: readonly string[];
+  sourceIds: readonly string[];
+};
+
 export type NameCharacterRecord = {
   rawCluster: string;
   nfcLookup: string | null;
@@ -188,6 +197,7 @@ export type NameCharacterRecord = {
   totalStrokeRecord: TotalStrokeRecord | null;
   inputTghFacts: NameInputTghFacts | null;
   meaning: string | null;
+  meaningProvenance: NameMeaningProvenance | null;
   semantic: CharacterMethodEvidence | null;
   analysisBlockers: AnalysisBlocker[];
   confirmedUsageRisks: ConfirmedUsageRisk[];

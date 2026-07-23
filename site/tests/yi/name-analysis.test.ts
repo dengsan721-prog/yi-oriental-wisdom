@@ -6,6 +6,7 @@ import {
   type UsageRiskInput,
 } from "../../lib/yi/name-analysis";
 import { findReviewedNameCharacter } from "../../lib/yi/name-data";
+import { resolveReviewedNameElement } from "../../lib/yi/name-element-data";
 import * as nameDataModule from "../../lib/yi/name-data";
 import {
   NAME_REALITY_SCORE_VERSION,
@@ -14,6 +15,7 @@ import {
 } from "../../lib/yi/name-score-contract";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { buildProfessionalReport } from "../../lib/yi/report-model";
+import type { TghCoreData } from "../../lib/yi/name-types";
 import type { BirthInput } from "../../lib/yi/types";
 
 const allVerified: NameRealityTestAnswers = {
@@ -284,6 +286,151 @@ describe("name analysis input and glyph adoption", () => {
 });
 
 describe("reviewed semantics, blockers, risks, and advice", () => {
+  it("keeps legacy reviewed meanings and vectors unchanged with explicit provenance", async () => {
+    const result = await analyzeReviewed();
+    const legacy = [
+      findReviewedNameCharacter("林"),
+      findReviewedNameCharacter("知"),
+      findReviewedNameCharacter("远"),
+    ];
+
+    expect(result?.characters.map(character => ({
+      meaning: character.meaning,
+      semantic: character.semantic,
+    }))).toEqual(legacy.map(record => ({
+      meaning: record!.meaning,
+      semantic: record!.semantic,
+    })));
+    expect(result?.characters.map(character => character.meaningProvenance?.origin)).toEqual([
+      "legacy-reviewed-character",
+      "legacy-reviewed-character",
+      "legacy-reviewed-character",
+    ]);
+    expect(result?.semanticSummary).toMatchObject({
+      reviewedCount: 3,
+      totalCount: 3,
+      vector: expect.any(Object),
+    });
+  });
+
+  it("bridges unique reviewed corpus meanings without creating legacy semantic vectors", async () => {
+    const [songJiang, luJunYi] = await Promise.all([
+      analyzeName({ rawInput: "宋江" }),
+      analyzeName({ rawInput: "卢俊义" }),
+    ]);
+
+    for (const result of [songJiang, luJunYi]) {
+      expect(result?.characters.every(character =>
+        character.meaning !== null
+        && character.meaningProvenance?.origin === "reviewed-name-element-corpus"
+        && character.semantic === null)).toBe(true);
+      expect(result?.blockers).toEqual([]);
+      expect(result?.semanticSummary).toMatchObject({
+        vector: null,
+        reviewedCount: 0,
+      });
+      expect(result?.fullNameReviewStatus).toBe("待人工复核");
+    }
+  });
+
+  it("waits for actual readings before bridging polyphonic corpus meanings", async () => {
+    const [jiePending, jieConfirmed, shanConfirmed, qiConfirmed] = await Promise.all([
+      analyzeName({ rawInput: "解珍" }),
+      analyzeName({ rawInput: "解宝", actualReadings: { 0: "xiè" } }),
+      analyzeName({ rawInput: "单廷圭", actualReadings: { 0: "shàn" } }),
+      analyzeName({ rawInput: "彭玘" }),
+    ]);
+
+    expect(jiePending?.characters[0]).toMatchObject({
+      adoptedReading: null,
+      meaning: null,
+      meaningProvenance: null,
+      semantic: null,
+      analysisBlockers: expect.arrayContaining([
+        expect.objectContaining({ id: "actual-reading-unconfirmed" }),
+        expect.objectContaining({ id: "key-meaning-unreviewed" }),
+      ]),
+    });
+    for (const [result, characterIndex] of [
+      [jieConfirmed, 0],
+      [shanConfirmed, 0],
+      [qiConfirmed, 1],
+    ] as const) {
+      expect(result?.characters[characterIndex]).toMatchObject({
+        meaning: expect.any(String),
+        meaningProvenance: {
+          origin: "reviewed-name-element-corpus",
+          recordIds: expect.any(Array),
+          sourceIds: expect.any(Array),
+        },
+        semantic: null,
+      });
+      expect(result?.characters[characterIndex].analysisBlockers).not.toEqual(
+        expect.arrayContaining([expect.objectContaining({ id: "key-meaning-unreviewed" })]),
+      );
+      const character = result!.characters[characterIndex];
+      expect(resolveReviewedNameElement({
+        inputGlyph: character.inputGlyph,
+        adoptedGlyph: character.adoptedGlyph,
+        adoptedReading: character.adoptedReading,
+        adoptedMeaning: character.meaning,
+      })).toEqual({
+        status: "pending",
+        reason: "element-classification-pending",
+        glyph: character.adoptedGlyph,
+      });
+    }
+  });
+
+  it("does not bridge corpus meanings for unsupported engineering input", async () => {
+    const unsupportedCore = {
+      lookupByGlyph: () => null,
+    } as unknown as TghCoreData;
+    const result = await analyzeName(
+      { rawInput: "宋" },
+      { loadCore: async () => unsupportedCore },
+    );
+
+    expect(result?.characters[0]).toMatchObject({
+      meaning: null,
+      meaningProvenance: null,
+      semantic: null,
+      analysisBlockers: expect.arrayContaining([
+        expect.objectContaining({ id: "unsupported-input" }),
+        expect.objectContaining({ id: "key-meaning-unreviewed" }),
+      ]),
+    });
+  });
+
+  it("keeps reviewed traditional-pair provenance and semantic vectors across reading confirmation", async () => {
+    const [pending, confirmed] = await Promise.all([
+      analyzeName({
+        rawInput: "发",
+        mode: "traditional-reference",
+        traditionalSelections: { 0: "髮" },
+      }),
+      analyzeName({
+        rawInput: "发",
+        mode: "traditional-reference",
+        traditionalSelections: { 0: "髮" },
+        actualReadings: { 0: "fà" },
+      }),
+    ]);
+
+    expect(pending?.characters[0]).toMatchObject({
+      adoptedReading: null,
+      meaning: expect.any(String),
+      meaningProvenance: { origin: "legacy-reviewed-traditional-pair" },
+      semantic: expect.objectContaining({ vector: expect.any(Object) }),
+    });
+    expect(confirmed?.characters[0]).toMatchObject({
+      adoptedReading: "fà",
+      meaning: pending?.characters[0].meaning,
+      meaningProvenance: pending?.characters[0].meaningProvenance,
+      semantic: pending?.characters[0].semantic,
+    });
+  });
+
   it("aggregates only reviewed semantic vectors, normalizes them, and exposes coverage and methods", async () => {
     const reviewed = await analyzeReviewed();
     const mixed = await analyzeName({ rawInput: "林行", actualReadings: { 1: "xíng" } });
