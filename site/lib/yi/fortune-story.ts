@@ -66,8 +66,12 @@ type PeriodStoryFrame = Readonly<{
   actions: readonly [string, string, string];
 }>;
 
-type YearStoryFrame = Readonly<{
+type AnnualStoryFrame = Readonly<{
   title: string;
+  firstMove: string;
+  benefit: string;
+  risk: string;
+  turn: string;
 }>;
 
 const PERIOD_STORY_FRAMES: Readonly<
@@ -128,7 +132,7 @@ const PERIOD_STORY_FRAMES: Readonly<
     familyScene:
       "家庭安排把长期固定成本与临时需求分开商量，避免一个人长期默默兜底。",
     rhythmScene:
-      "每接受一项新机会，同步减少或暂停另一项占用，为恢复保留真实预算。",
+      "每接受一项新机会，同步减少或暂停另一项占用，为恢复保留真实时间。",
     favorableCurrent:
       "顺风处在于能看见现实机会，也能守住核心承诺，让资源持续流动。",
     likelyCost:
@@ -142,7 +146,7 @@ const PERIOD_STORY_FRAMES: Readonly<
   authority: {
     title: "在责任加重时保留判断余地",
     careerScene:
-      "工作开始前先确认权限、验收标准和升级路径，再决定能够承担多大范围的结果。",
+      "工作开始前先确认权限、验收标准和升级路径，再决定能够承担到哪一步以及何时求助。",
     resourceScene:
       "资源安排以风险上限和责任归属为先，不用个人长期硬扛替代正式支持。",
     relationshipScene:
@@ -185,68 +189,91 @@ const PERIOD_STORY_FRAMES: Readonly<
   },
 };
 
-const YEAR_STORY_FRAMES: Readonly<Record<StoryCategory, YearStoryFrame>> = {
-  peer: {
-    title: "把合作方式重新说清",
-  },
-  expression: {
-    title: "让一个想法完成小规模试用",
-  },
-  resource: {
-    title: "给新机会设好容量上限",
-  },
-  authority: {
-    title: "先把责任边界和求助通道写清",
-  },
-  learning: {
-    title: "用一次实践检验新知识",
-  },
-};
-
-type CategoryStoryCue = Readonly<{
-  firstMove: string;
-  benefit: string;
-  risk: string;
-  turn: string;
-}>;
-
-const CATEGORY_STORY_CUES: Readonly<
-  Record<StoryCategory, CategoryStoryCue>
+const ANNUAL_STORY_FRAMES: Readonly<
+  Record<TenGodName, AnnualStoryFrame>
 > = {
-  peer: {
-    firstMove: "先看谁愿意一起做，再确认各自负责哪一步",
-    benefit: "合作很快有了起点",
-    risk: "急着比较、抢先或替别人作主",
-    turn: "把分工、轮换和复查时间说清",
+  比肩: {
+    title: "自己的那一步先站稳",
+    firstMove: "先说出自己愿意负责的一步，再邀请同伴补上另一块",
+    benefit: "个人主张和共同任务同时有了位置",
+    risk: "只顾证明自己能做，忽略别人已经承担的部分",
+    turn: "保留自己的责任，也把需要协作的环节说清",
   },
-  expression: {
-    firstMove: "先把一个想法做成别人能看见的小版本",
-    benefit: "讨论从猜测落到了真实作品",
-    risk: "只顾说得快，或一直修改却不肯完成",
-    turn: "先听一条具体反馈，再完成一个可以收尾的版本",
+  劫财: {
+    title: "一起做，也把边界说清",
+    firstMove: "先把大家共同使用的部分摆出来，再确认哪些仍由各自决定",
+    benefit: "热闹的合作开始有了清楚边界",
+    risk: "把熟悉当成默认同意，拿走了别人选择的空间",
+    turn: "先问一句是否愿意，再约定轮换和归还",
   },
-  resource: {
-    firstMove: "先数清手边已有的时间、物品和支持",
-    benefit: "选择不再挤在同一时刻",
-    risk: "什么都舍不得放下，又不断接受新安排",
-    turn: "排出先后次序，只保留当前真正能承担的一项",
+  食神: {
+    title: "让一个小作品慢慢成形",
+    firstMove: "先做一个别人能看懂的小样，再问对方哪一步最有用",
+    benefit: "想法有了可以触摸和回应的形状",
+    risk: "只享受开始的新鲜感，到了收尾就换下一件事",
+    turn: "先完成一个小版本，再用一条反馈修改",
   },
-  authority: {
-    firstMove: "先问清要求、可以决定的范围和可求助对象",
-    benefit: "责任终于有了可以执行的边界",
-    risk: "为了证明可靠而把所有压力都接在自己身上",
-    turn: "把标准、检查点和求助时机写清",
+  伤官: {
+    title: "把不同意见说成新办法",
+    firstMove: "先说自己看见的差异，再给出一个可以试的新办法",
+    benefit: "分歧不再只是顶嘴，而变成了可比较的选择",
+    risk: "话说得太快，只留下输赢，没有留下理解",
+    turn: "把判断改成事实、影响和一个请求",
   },
-  learning: {
-    firstMove: "先选一个问题亲手试一次，再回头整理方法",
-    benefit: "知识开始与现实结果连在一起",
-    risk: "不断收集新方法，却没有完成一次实践",
-    turn: "用一次实践留下结果，再决定下一步学什么",
+  偏财: {
+    title: "新选择先小试",
+    firstMove: "先挑一个新选项试一小步，不一次把所有东西都拿上",
+    benefit: "好奇心有了空间，原来的主线也没有被挤走",
+    risk: "每个新鲜选项都想抓住，最后没有一件真正完成",
+    turn: "只试一项，并提前说好什么时候停下来看看",
+  },
+  正财: {
+    title: "手边资源排好次序",
+    firstMove: "先把手边的时间、物品和帮助排好，完成一件再拿下一件",
+    benefit: "日常安排变得安稳，也更容易看见余量",
+    risk: "为了不出错把每一步抓得太紧，忘了变化已经出现",
+    turn: "保留基本次序，也留一个可以调整的位置",
+  },
+  七杀: {
+    title: "压力来到时先找暂停点",
+    firstMove: "先看哪里可以停一下、谁能帮忙，再把难题拆成小步",
+    benefit: "紧张局面有了可以下手的第一步",
+    risk: "为了赶快证明勇敢，把害怕和求助都藏起来",
+    turn: "先说出最担心的一点，再选择一项安全的小动作",
+  },
+  正官: {
+    title: "责任与要求重新对齐",
+    firstMove: "先问清要做到什么、自己能决定什么，以及何时请人检查",
+    benefit: "责任不再是一句重话，而变成了能完成的步骤",
+    risk: "只记住别人期待，却没有确认自己是否真正理解",
+    turn: "复述要求、确认一步，再约好检查时间",
+  },
+  偏印: {
+    title: "换个角度试一条新路",
+    firstMove: "先从不熟悉的角度看一遍，再用一个小动作验证",
+    benefit: "原来卡住的地方出现了新的入口",
+    risk: "不停换方法，反而没有留下任何可比较的结果",
+    turn: "只保留一个新办法，和原来的做法各试一次",
+  },
+  正印: {
+    title: "把可靠示范练成自己的步骤",
+    firstMove: "先跟着一个可靠示范做一遍，再说出自己学会了哪一步",
+    benefit: "支持不再只是被照顾，而变成了可以重复的能力",
+    risk: "一直等别人给完整答案，不敢开始自己的尝试",
+    turn: "请人示范一次，自己完成一次，再一起看哪里要改",
   },
 };
 
 type LifeStageContext = Readonly<{
-  id: "child" | "teen" | "launch" | "building" | "steward" | "later";
+  id:
+    | "preschool"
+    | "child"
+    | "teen"
+    | "launch"
+    | "building"
+    | "steward"
+    | "later"
+    | "transition";
   label: string;
   metaphor: string;
   events: readonly [string, string, string];
@@ -262,10 +289,24 @@ type LifeStageContext = Readonly<{
 
 const LIFE_STAGE_CONTEXTS: readonly LifeStageContext[] = [
   {
+    id: "preschool",
+    label: "幼年启蒙期",
+    metaphor: "一间由玩具、画纸、故事和家人陪伴组成的小屋",
+    events: ["一次一起搭积木", "一次收拾玩具", "一次轮流画画或玩游戏"],
+    career: "“事业”在幼年只表示愿意尝试、完成一个小动作并学会求助；大人把任务说成孩子能听懂的一步",
+    resource: "资源是玩具、画笔、点心、时间和家人陪伴；一次只拿需要的一份，用完再放回原处",
+    relationship: "和小伙伴相处先练习轮流、等待和说“我还想玩”；大人帮助孩子把抢夺改成请求",
+    family: "家人用简短、稳定的生活约定带孩子参与收拾、洗手或准备出门，不让孩子承担成人责任",
+    rhythm: "玩耍、吃饭和休息要有清楚转换；累了先停下，由照顾者帮助恢复",
+    consequence: "孩子便可能用哭闹或躲开表达超出能力的压力",
+    reviewPartner: "家人或照顾者",
+    youth: true,
+  },
+  {
     id: "child",
     label: "童年学习期",
     metaphor: "一座由课堂、家庭和同伴游戏连成的小院",
-    events: ["课堂小组分工", "放学后的家务安排", "同伴游戏临时改约定"],
+    events: ["课堂小组的一次分工", "放学后的一次家务安排", "同伴游戏中的一次约定变化"],
     career: "“事业”在童年只表示学习、兴趣和承担小任务；一次课堂合作里，先说清自己愿意做哪一步",
     resource: "资源是放学后的时间、文具、零花钱和家人支持；拿取和分享之前先问清用途",
     relationship: "同伴之间会遇到轮流、等待和被误会；先复述对方的话，再说明自己的需要",
@@ -279,7 +320,7 @@ const LIFE_STAGE_CONTEXTS: readonly LifeStageContext[] = [
     id: "teen",
     label: "少年探索期",
     metaphor: "一条连接课堂、社团、朋友和家庭期待的长廊",
-    events: ["课程小组交作业", "社团活动分配任务", "朋友之间重新约定计划"],
+    events: ["课程小组的一次交作业", "社团活动的一次任务分配", "朋友之间的一次计划调整"],
     career: "“事业”在少年阶段先理解为学习、兴趣与集体任务；把目标和完成标准问清，再开始投入",
     resource: "资源包括时间、精力、学习材料和可获得的帮助；先保住作息与主课，再安排新兴趣",
     relationship: "朋友和家人的期待可能同时出现；把事实、感受和请求分开说，误会才有机会停下",
@@ -293,7 +334,7 @@ const LIFE_STAGE_CONTEXTS: readonly LifeStageContext[] = [
     id: "launch",
     label: "独立起步期",
     metaphor: "一座从学习通向独立生活与第一份正式责任的车站",
-    events: ["独立完成一项课程、实习或工作任务", "与室友或伙伴商量共同开支", "在新团队里提出不同意见"],
+    events: ["一项独立完成的课程、实习或工作任务", "一次与室友或伙伴的共同开支商量", "一次在新团队里的不同意见讨论"],
     career: "面对第一次独立交付时，先确认目标、可用支持和完成标准，再决定投入多大力气",
     resource: "收入、时间和学习投入刚开始需要自己安排；先保住基本生活与储备，再做小规模试验",
     relationship: "靠近新伙伴时，把期待说成可回答的请求，不用试探代替真正的对话",
@@ -307,7 +348,7 @@ const LIFE_STAGE_CONTEXTS: readonly LifeStageContext[] = [
     id: "building",
     label: "主线建设期",
     metaphor: "一座同时铺设事业、关系与生活基础的工地",
-    events: ["把长期项目从启动带到交付", "与伴侣或家人安排一项共同责任", "为新机会重新分配时间和资源"],
+    events: ["一项从启动走到交付的长期项目", "一次与伴侣或家人的共同责任安排", "一次为新机会进行的时间与资源重排"],
     career: "长期项目要经得住交付与复盘；先看职责、关键节点和退出标准是否清楚",
     resource: "把日常支出、储备和试验分开安排，让新机会不挤掉已有承诺",
     relationship: "共同生活需要把时间、照顾和决定权说清，和好之后还要留下新约定",
@@ -321,7 +362,7 @@ const LIFE_STAGE_CONTEXTS: readonly LifeStageContext[] = [
     id: "steward",
     label: "责任整合期",
     metaphor: "一座需要同时照看团队、家庭与个人主线的调度台",
-    events: ["在团队里交接一项关键责任", "和家人重新安排长期照顾", "从多个重要选择中保留一条主线"],
+    events: ["团队里的一次关键责任交接", "一次与家人的长期照顾重排", "一次重要选择中的主线取舍"],
     career: "经验开始影响更多人时，把判断依据、授权范围和接班路径一起交代清楚",
     resource: "资源不只看增加，也看哪些承诺该交接、暂停或结束，给长期主线留出余地",
     relationship: "少替别人预设答案，多问一句对方真正需要什么，再决定怎样支持",
@@ -335,7 +376,7 @@ const LIFE_STAGE_CONTEXTS: readonly LifeStageContext[] = [
     id: "later",
     label: "经验传承期",
     metaphor: "一间既保存旧地图、也欢迎年轻人画新路线的会客厅",
-    events: ["把一段经验讲给年轻同伴", "与家人调整日常分工", "为自己重新选择一项愿意长期投入的事情"],
+    events: ["一次向年轻同伴讲经验的谈话", "一次与家人的日常分工调整", "一项重新选择的长期投入"],
     career: "把“事业”理解为经验如何继续被使用；留下步骤和判断条件，不要求后来者完全照做",
     resource: "时间与精力优先给真正重要的人和事，减少长期占用却没有回应的安排",
     relationship: "允许彼此用不同节奏生活，用清楚请求代替反复提醒或默默失望",
@@ -348,16 +389,35 @@ const LIFE_STAGE_CONTEXTS: readonly LifeStageContext[] = [
 ];
 
 function lifeStageForAge(age: number): LifeStageContext {
-  if (age <= 11) return LIFE_STAGE_CONTEXTS[0];
-  if (age <= 17) return LIFE_STAGE_CONTEXTS[1];
-  if (age <= 24) return LIFE_STAGE_CONTEXTS[2];
-  if (age <= 39) return LIFE_STAGE_CONTEXTS[3];
-  if (age <= 59) return LIFE_STAGE_CONTEXTS[4];
-  return LIFE_STAGE_CONTEXTS[5];
+  if (age <= 6) return LIFE_STAGE_CONTEXTS[0];
+  if (age <= 11) return LIFE_STAGE_CONTEXTS[1];
+  if (age <= 17) return LIFE_STAGE_CONTEXTS[2];
+  if (age <= 24) return LIFE_STAGE_CONTEXTS[3];
+  if (age <= 39) return LIFE_STAGE_CONTEXTS[4];
+  if (age <= 59) return LIFE_STAGE_CONTEXTS[5];
+  return LIFE_STAGE_CONTEXTS[6];
 }
 
 function lifeStageForPeriod(period: FortunePeriod): LifeStageContext {
-  return lifeStageForAge(Math.floor((period.startAge + period.endAge) / 2));
+  const start = lifeStageForAge(period.startAge);
+  const end = lifeStageForAge(period.endAge);
+  if (start.id === end.id) return start;
+  const startLabel = start.label.replace(/期$/u, "");
+  const endLabel = end.label.replace(/期$/u, "");
+  return {
+    id: "transition",
+    label: `${startLabel}到${endLabel}的过渡期`,
+    metaphor: `一条从${startLabel}走向${endLabel}的过渡长廊`,
+    events: [start.events[0], end.events[1], end.events[2]],
+    career: `前半程，${start.career}；随着年龄与责任变化，${end.career}`,
+    resource: `前半程，${start.resource}；进入后半程，${end.resource}`,
+    relationship: `前半程，${start.relationship}；进入后半程，${end.relationship}`,
+    family: `前半程，${start.family}；进入后半程，${end.family}`,
+    rhythm: `前半程，${start.rhythm}；进入后半程，${end.rhythm}`,
+    consequence: `${start.consequence}；责任变化后，${end.consequence}`,
+    reviewPartner: "家人、同伴或其他可信任的人",
+    youth: start.youth && end.youth,
+  };
 }
 
 function deepFreeze<T>(value: T, seen = new Set<object>()): Readonly<T> {
@@ -386,23 +446,23 @@ function buildFortuneStoryYear(
     chart.pillars.day.stem,
     year.stemBranch[0],
   );
-  const category = storyCategory(annualGod);
-  const frame = YEAR_STORY_FRAMES[category];
-  const cue = CATEGORY_STORY_CUES[category];
+  const annualFrame = ANNUAL_STORY_FRAMES[annualGod];
   const lifeStage = lifeStageForAge(year.age);
   const variant = Math.abs(year.year + year.age) % lifeStage.events.length;
   const event = lifeStage.events[variant];
   const scene = [
-    `把${year.year}年（${year.age}岁）当作一页生活观察，可以从一次${event}开始：你${cue.firstMove}，于是${cue.benefit}。`,
-    `如果${cue.risk}，${lifeStage.consequence}；这时要${cue.turn}，再看事情的结果是否真的改变。`,
+    `把${year.year}年（${year.age}岁）当作一页生活观察，可以从${event}开始：你${annualFrame.firstMove}，于是${annualFrame.benefit}。`,
+    `如果${annualFrame.risk}，${lifeStage.consequence}；这时可以${annualFrame.turn}，再看事情的结果是否真的改变。`,
   ].join("");
-  const action = lifeStage.youth
-    ? `下一次${event}时，${cue.turn}；结束后请${lifeStage.reviewPartner}一起记下发生了什么、哪一步有效，以及下次怎样调整。`
-    : `下一次${event}时，${cue.turn}；结束后记下触发、动作与结果，七天后只保留真正改善局面的做法。`;
+  const action = lifeStage.id === "preschool"
+    ? `再遇到类似场景时，${annualFrame.turn}；结束后请家人或照顾者用一句话或一个贴纸，记下孩子做到了哪一步。`
+    : lifeStage.youth
+    ? `再遇到类似场景时，${annualFrame.turn}；结束后请${lifeStage.reviewPartner}一起记下发生了什么、哪一步有效，以及下次怎样调整。`
+    : `再遇到类似场景时，${annualFrame.turn}；结束后记下触发、动作与结果，七天后只保留真正改善局面的做法。`;
   return {
     age: year.age,
     year: year.year,
-    title: `${lifeStage.label} · ${frame.title}`,
+    title: `${lifeStage.label} · ${annualFrame.title}`,
     scene,
     action,
   };
@@ -419,15 +479,15 @@ function buildFortuneStoryPeriod(
   }
   const category = storyCategory(period.tenGod);
   const frame = PERIOD_STORY_FRAMES[category];
-  const cue = CATEGORY_STORY_CUES[category];
+  const periodFlavor = ANNUAL_STORY_FRAMES[period.tenGod];
   const lifeStage = lifeStageForPeriod(period);
   const event = lifeStage.events[
     Math.abs(period.startYear + period.startAge) % lifeStage.events.length
   ];
   const openingScene = [
     `在${period.startAge}–${period.endAge}岁这段路上，可以把你想成走进${lifeStage.metaphor}。`,
-    `拿一次${event}作例子：你${cue.firstMove}，于是${cue.benefit}。`,
-    `若${cue.risk}，${lifeStage.consequence}；真正的转折是${cue.turn}，让下一步留下可以复查的结果。`,
+    `拿${event}作例子：你${periodFlavor.firstMove}，于是${periodFlavor.benefit}。`,
+    `若${periodFlavor.risk}，${lifeStage.consequence}；真正的转折是${periodFlavor.turn}，让下一步留下可以复查的结果。`,
   ].join("");
   const contextOnly = lifeStage.youth || lifeStage.id === "later";
   const careerScene = contextOnly
@@ -447,9 +507,9 @@ function buildFortuneStoryPeriod(
     : `${lifeStage.rhythm}。${frame.rhythmScene}`;
   const actions: readonly [string, string, string] = contextOnly
     ? [
-        `在一次${lifeStage.events[0]}里，${cue.turn}；结束后请${lifeStage.reviewPartner}一起复盘。`,
-        `遇到${lifeStage.events[1]}时，先说出自己能完成的一步，再看结果是否需要调整。`,
-        `下一次${lifeStage.events[2]}后，记下触发、动作和结果，不用一次经历给自己下结论。`,
+        `在${lifeStage.events[0]}中，${periodFlavor.turn}；结束后请${lifeStage.reviewPartner}一起复盘。`,
+        `面对${lifeStage.events[1]}时，先说出自己能完成的一步，再看结果是否需要调整。`,
+        `完成${lifeStage.events[2]}后，记下触发、动作和结果，不用一次经历给自己下结论。`,
       ]
     : frame.actions.map(action =>
         `${action}完成后与${lifeStage.reviewPartner}核对一次结果，再决定是否继续。`
@@ -461,7 +521,7 @@ function buildFortuneStoryPeriod(
     id: period.id,
     ageRange: `${period.startAge}–${period.endAge}岁`,
     yearRange: `${period.startYear}–${period.endYear}`,
-    title: `${lifeStage.label} · ${frame.title}`,
+    title: `${lifeStage.label} · ${periodFlavor.title}`,
     openingScene,
     careerScene,
     resourceScene,
@@ -469,10 +529,10 @@ function buildFortuneStoryPeriod(
     familyScene,
     rhythmScene,
     favorableCurrent: contextOnly
-      ? `顺风处在于${cue.benefit}，而且${lifeStage.reviewPartner}能一起看见过程。`
+      ? `顺风处在于${periodFlavor.benefit}，而且${lifeStage.reviewPartner}能一起看见过程。`
       : `${frame.favorableCurrent}在${lifeStage.label}里，这份优势要由真实结果继续确认。`,
     likelyCost: contextOnly
-      ? `最容易吃亏的地方是${cue.risk}，结果把一次小事变成对自己的总判断。`
+      ? `最容易吃亏的地方是${periodFlavor.risk}，结果把一次小事变成对自己的总判断。`
       : `${frame.likelyCost}一旦出现“${lifeStage.consequence}”这类信号，就先减量并重新安排边界。`,
     actions,
     years,
