@@ -1,4 +1,9 @@
 import { calculateTenGod } from "./fortune";
+import {
+  getPublicSayingLead,
+  type PublicSayingLead,
+  type SayingReviewId,
+} from "./folk-saying-corpus";
 import type { AmbiguousProfessionalField, ElementName, FourPillarsResult, Pillar, PillarKey, TenGodName } from "./types";
 
 export type RelationshipType = "partner" | "parent-child" | "business" | "friend";
@@ -35,6 +40,19 @@ export type CompatibilityResult = {
   actionRules: string[];
   limitations: string[];
 };
+
+export type CompatibilityPublicRole = "caregiver" | "child";
+
+export type CompatibilityPublicView = Readonly<{
+  teamStyle: string;
+  attractionScene: string;
+  misunderstandingScene: string;
+  conflictScene: string;
+  repairLine: string;
+  smallAction: string;
+  playfulObservation: string;
+  lead: PublicSayingLead;
+}>;
 
 type AxisCopy = { plain: string; scene: string; action: string };
 type GodStyle = { contact: string; speech: string; pressure: string; decision: string; repair: string };
@@ -559,5 +577,122 @@ export function calculateCompatibility(
     communicationScenario: scenarios[relationship],
     actionRules: actionRulesByRole[relationship],
     limitations: limitationsFor(relationship, profile),
+  };
+}
+
+type CompatibilityPublicCopy = Omit<CompatibilityPublicView, "lead">;
+
+const compatibilityPublicCopy: Readonly<
+  Record<string, CompatibilityPublicCopy>
+> = {
+  partner: {
+    teamStyle: "你们像一组需要边走边对齐节奏的生活搭档。",
+    attractionScene:
+      "你们一起安排周末时，一方先把路线订好，另一方补上休息和独处，于是计划既能出发，也给两个人留了余地。",
+    misunderstandingScene:
+      "一方下班后马上给建议，对方其实只想先被听见；两个人都在关心，结果一句好意反而让谈话卡住。",
+    conflictScene:
+      "你们讨论探望家人时，一方说公平，另一方说当下需要；如果开始翻旧账，最后连这周怎么安排也说不清。",
+    repairLine:
+      "可以把话说回来：“刚才我急着证明自己，没先听完你。我们只重说这件事，你先讲，我来复述。”",
+    smallAction:
+      "今晚各写一件希望一起做的事和一个需要保留的空间，再只选一项安排进日历。",
+    playfulObservation:
+      "好感像把两把椅子搬近，真正舒服还要看谁愿意在对方起身时留出通道。",
+  },
+  "parent-child-caregiver": {
+    teamStyle: "你们像一组由照顾者守底线、孩子练习选择的成长搭档。",
+    attractionScene:
+      "孩子放学回家时，照顾者先递水并等一会儿再问，于是孩子不用马上解释，也更愿意稍后开口。",
+    misunderstandingScene:
+      "照顾者连续提醒作业，孩子只听见自己又做不好；大人想帮忙，结果孩子把门关得更紧。",
+    conflictScene:
+      "孩子不愿交回设备，照顾者临时追加惩罚；双方越说越大声，最后原本的时间约定变成了力量对抗。",
+    repairLine:
+      "照顾者可以先说：“刚才我提高音量让你很难受，这是我的责任。规则还在，我们等平静后一起重说执行办法。”",
+    smallAction:
+      "今天把一条家规写成保护什么、何时结束、孩子可选哪两种做法，再请孩子复述。",
+    playfulObservation:
+      "成长像学骑车：大人扶住危险处，也要慢慢松手，孩子才知道自己真的能掌握方向。",
+  },
+  "parent-child-child": {
+    teamStyle: "你们像一组由照顾者说明边界、报告主人练习表达的成长搭档。",
+    attractionScene:
+      "你回家后先说需要十分钟安静，照顾者答应稍后再问，于是你有时间整理，家人也不用靠追问猜测。",
+    misunderstandingScene:
+      "你不说话来表示累了，照顾者却以为你在拒绝沟通；双方都想保护自己，结果距离反而拉大。",
+    conflictScene:
+      "你想退出一项活动，照顾者只听见半途而废；如果双方马上争输赢，最后真正的困难仍没人说清。",
+    repairLine:
+      "你可以说：“我刚才关门不是不要你管，我是需要先平静。十分钟后我愿意说发生了什么。”",
+    smallAction:
+      "今天挑一件需要家人帮助的事，用事情、感受、请求三句话说完，并允许对方再问一个问题。",
+    playfulObservation:
+      "长大像调一盏灯：不是一下全开或全关，而是一起找到既能看清又不刺眼的亮度。",
+  },
+  business: {
+    teamStyle: "你们像一组把不同本领放进同一张任务表的项目搭档。",
+    attractionScene:
+      "两位伙伴讨论新项目时，一方找到客户入口，另一方写出成本和交付，于是好点子有了可以试的小版本。",
+    misunderstandingScene:
+      "一方在客户面前先答应追加内容，另一方当场否定；两个人都想保护项目，结果客户先看见了内部混乱。",
+    conflictScene:
+      "项目没有达到目标，一方想继续投入，另一方想先停；如果只争谁眼光更准，最后现金和时间都会继续流走。",
+    repairLine:
+      "可以把话说回来：“先暂停新增承诺。我们各写共同事实、分歧假设和可逆方案，再按权限决定下一步。”",
+    smallAction:
+      "为下一项合作写一页纸：谁决定、谁执行、花费上限、何时复盘，以及什么情况先停。",
+    playfulObservation:
+      "合作像一起抬桌子：喊口号不会让桌子变轻，先说清谁抬哪一角，才不容易把重量全压给一个人。",
+  },
+  friend: {
+    teamStyle: "你们像一组可以并肩走，也允许各自绕路的朋友搭档。",
+    attractionScene:
+      "朋友碰到难题时，一方约出来散步，另一方把真实顾虑说出来，于是陪伴没有变成替对方做决定。",
+    misunderstandingScene:
+      "一方没有及时回消息，对方把沉默理解成疏远；两个人都没有开口问，结果一个忙碌的晚上被想成关系变化。",
+    conflictScene:
+      "朋友临时取消约定，一方说没关系却越想越委屈；如果继续用玩笑带过，最后真正的失望仍留在原地。",
+    repairLine:
+      "可以把话说回来：“那次临时取消让我有些失落，我不想猜原因。你愿意说说当时发生了什么吗？”",
+    smallAction:
+      "这周发一条清楚邀请：想做什么、什么时候、对方可以怎样拒绝，让友情不用靠猜。",
+    playfulObservation:
+      "朋友像两只各有时区的钟，不必每秒一致；愿意偶尔对表，才不会把忙碌误听成告别。",
+  },
+};
+
+function selectCompatibilityReviewId(
+  result: CompatibilityResult,
+  relationship: RelationshipType,
+): SayingReviewId {
+  if (relationship === "business") return "folk-review-many-hands";
+  const hasTension = result.combinationsAndClashes.some(
+    item => !["合", "三合", "无直接合冲刑害破或三合"].includes(item.relation),
+  );
+  return hasTension
+    ? "classical-review-listen-widely"
+    : "folk-review-long-road";
+}
+
+export function buildCompatibilityPublicView(
+  first: FourPillarsResult,
+  second: FourPillarsResult,
+  relationship: RelationshipType,
+  primaryRole: CompatibilityPublicRole = "caregiver",
+): CompatibilityPublicView {
+  const result = calculateCompatibility(first, second, relationship);
+  const copyKey = relationship === "parent-child"
+    ? `${relationship}-${primaryRole}`
+    : relationship;
+  const copy = compatibilityPublicCopy[copyKey];
+  if (!copy) {
+    throw new Error(`Compatibility public copy does not exist: ${copyKey}`);
+  }
+  return {
+    ...copy,
+    lead: getPublicSayingLead(
+      selectCompatibilityReviewId(result, relationship),
+    ),
   };
 }

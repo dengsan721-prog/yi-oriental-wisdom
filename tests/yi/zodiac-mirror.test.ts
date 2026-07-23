@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { MirrorSection } from "../../components/yi/MirrorSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
+import { buildMirrorPublicViews } from "../../lib/yi/mirrors";
 import { YI_REFERENCE_SOURCES, YI_RULE_SOURCES } from "../../lib/yi/sources";
 import { branchElements } from "../../lib/yi/stems-branches";
 import type { FourPillarsResult, TenGodName } from "../../lib/yi/types";
@@ -160,7 +161,9 @@ describe("complete zodiac mirror", () => {
     expect(comparison).not.toContain(`日主${candidateDayMaster.stem}${candidateDayMaster.element}`);
     expect(comparison).not.toContain(`${candidateDayPillar.stem}${candidateDayPillar.branch}`);
     for (const tenGod of tenGodNames) expect(comparison).not.toContain(tenGod);
-    expect(baselineHtml).toContain("日主待核，候选日柱与日主未用于互证");
+    expect(baselineHtml).toContain("先认识");
+    expect(baselineHtml).not.toContain("日主待核");
+    expect(baselineHtml).not.toContain("候选日柱与日主未用于互证");
   });
 
   it("marks the year and month as representative limited candidates at the 2024-02-04 unknown-time boundary", () => {
@@ -181,8 +184,9 @@ describe("complete zodiac mirror", () => {
     expect(mirror.chartAgreement).toContain("月令代表候选");
     expect(mirror.chartAgreement).toContain("月令坐标仍待核");
     expect(mirror.chartAgreement).not.toContain("月令主题会");
-    expect(html).toContain(`代表候选：${mirror.branch}${mirror.zodiac}`);
-    expect(html).toContain("limited");
+    expect(html).toContain(`先认识${mirror.branch}${mirror.zodiac}`);
+    expect(html).not.toContain("代表候选");
+    expect(html).not.toContain("limited");
   });
 
   it("resolves authoritative and contextual source ids to graded https records", () => {
@@ -205,28 +209,31 @@ describe("complete zodiac mirror", () => {
     expect(appliesWhen).toMatch(/自刑.*同一地支.*两处已知坐标/);
   });
 
-  it("renders zodiac before other mirrors with scenes, comparison, actions, caution and linked sources", () => {
-    const mirror = buildZodiacMirror(chart);
+  it("renders the safe zodiac action card before the other mirror tabs", () => {
+    const publicCard = buildMirrorPublicViews(chart)[0].cards[0];
     const html = renderToStaticMarkup(createElement(MirrorSection, { chart }));
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+    const navigation = html.slice(
+      html.indexOf('<nav class="mirror-tabs"'),
+      html.indexOf("</nav>") + "</nav>".length,
+    );
 
-    expect(html.indexOf("生肖镜像")).toBeGreaterThan(-1);
-    expect(html.indexOf("生肖镜像")).toBeLessThan(html.indexOf("动物原型"));
-    expect(html.indexOf("动物原型")).toBeLessThan(html.indexOf("历史人物"));
-    for (const label of ["工作现场", "关系现场", "家庭现场", "与八字主盘互证", "此刻可做", "长期练习", "使用边界"]) expect(html).toContain(label);
-    for (const value of [mirror.workScene, mirror.relationshipScene, mirror.familyScene, mirror.immediateAction, mirror.longTermPractice, mirror.caution]) expect(html).toContain(value);
-    for (const id of mirror.sources) {
-      const source = YI_REFERENCE_SOURCES[id];
-      expect(html).toContain(`href="${source.url}"`);
-      expect(html).toContain(source.title);
-      expect(html).toContain(source.role);
-      expect(html).toContain(source.boundary);
+    expect(navigation.indexOf("生肖镜像")).toBeGreaterThan(-1);
+    expect(navigation.indexOf("生肖镜像")).toBeLessThan(navigation.indexOf("动物镜像"));
+    expect(navigation.indexOf("动物镜像")).toBeLessThan(navigation.indexOf("历史人物"));
+    for (const label of ["先认识", "像你的一个现场", "最重要的不同", "可以带走的动作", "有趣的一面"]) {
+      expect(html).toContain(label);
     }
-    expect(html).toContain("生活场景、信任方式与行动建议属于产品观察模型和生活化转译，不是古籍原文");
-    expect(css).toMatch(/\.zodiac-scenes\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
-    expect(css).toMatch(/\.zodiac-evidence summary\{[^}]*min-height:44px/);
-    expect(css).toMatch(/@media\(max-width:760px\)\{[^}]*\.zodiac-scenes\{grid-template-columns:1fr\}/);
-    expect(css).toMatch(/\.zodiac-mirror[^}]*overflow-wrap:anywhere/);
-    expect(css).toMatch(/\.zodiac-sources a\{[^}]*min-height:44px/);
+    for (const value of [
+      publicCard.introduction,
+      publicCard.matchingScene,
+      publicCard.importantDifference,
+      publicCard.takeaway,
+      publicCard.playfulObservation,
+    ]) expect(html).toContain(value);
+    expect(html).not.toMatch(/与八字主盘互证|理论与文化来源|href=|<details/u);
+    expect(css).toMatch(/\.mirror-public-cards\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+    expect(css).toMatch(/\.mirror-public-card\{[^}]*overflow-wrap:anywhere/);
+    expect(css).toMatch(/@media\(max-width:420px\)\{\.compatibility-public-grid,\.mirror-public-cards,\.atlas-public-reading\{grid-template-columns:1fr\}/);
   });
 });

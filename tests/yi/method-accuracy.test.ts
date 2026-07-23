@@ -269,12 +269,15 @@ describe("5. atlas source resolution and labels", () => {
     expect(buildAtlasReading(face, chart).layers.slice(0, 2).map((layer) => layer.label)).toEqual(["传统结果", "传统依据"]);
   });
 
-  it("resolves atlas sources through the unified registry and labels the combined system truthfully", () => {
+  it("keeps atlas sources in the registry while the public renderer receives only safe copy", () => {
     const source = readFileSync(new URL("../../components/yi/ReferenceAtlasSection.tsx", import.meta.url), "utf8");
     const chart = calculateFourPillars(exactBirth);
     const html = renderToStaticMarkup(createElement(ReferenceAtlasSection, { chart, birth: exactBirth }));
-    expect(source).toContain("getAllSources");
+    expect(source).not.toContain("getAllSources");
     expect(source).not.toContain("getTraditionalSource");
+    expect(source).toContain("buildAtlasPublicReading");
+    expect(source).toContain("AtlasPublicReading");
+    expect(html).not.toMatch(/理论依据与版本边界|专业到生活的七层翻译/u);
     expect(html).toContain('aria-label="传统图谱与星座文化模型"');
 
     const model = getAllSources().find((item) => item.id === "model.western-astrology-element-modality");

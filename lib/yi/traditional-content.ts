@@ -1,3 +1,5 @@
+import { getPublicSayingLead, type PublicSayingLead } from "./folk-saying-corpus";
+
 export type TraditionalContentRecord = {
   id: string;
   professionalResult: string;
@@ -435,4 +437,100 @@ export function getTraditionalContent(id: string): TraditionalContentRecord {
   const record = TRADITIONAL_CONTENT[id];
   if (!record) throw new Error("传统内容不存在：" + id);
   return record;
+}
+
+export type TraditionalDisplayLead =
+  | Readonly<{
+      kind: "traditional-paraphrase";
+      attribution: "传统观察";
+      text: string;
+    }>
+  | Readonly<{
+      kind: "culture-model";
+      attribution: "文化模型";
+      text: string;
+    }>;
+
+export type TraditionalPublicCopy = Readonly<{
+  lead: TraditionalDisplayLead;
+  scene: string;
+  playfulObservation: string;
+  action: string;
+}>;
+
+export type TraditionPublicIntro = Readonly<{
+  title: string;
+  lead: PublicSayingLead;
+  scene: string;
+  playfulObservation: string;
+  action: string;
+}>;
+
+type TraditionalPublicInput = Readonly<{
+  id: string;
+  title: string;
+  lifeScene: string;
+  strengthAndPitfall: string;
+  action: string;
+}>;
+
+const STAR_PUBLIC_IDS = new Set([
+  "star-aries",
+  "star-taurus",
+  "star-gemini",
+  "star-cancer",
+  "star-leo",
+  "star-virgo",
+  "star-libra",
+  "star-scorpio",
+  "star-sagittarius",
+  "star-capricorn",
+  "star-aquarius",
+  "star-pisces",
+]);
+
+function firstSentence(value: string): string {
+  const text = value.trim();
+  const sentence = text.match(/^.*?[。！？]/u)?.[0] ?? text;
+  return /[。！？]$/u.test(sentence) ? sentence : `${sentence}。`;
+}
+
+export function buildTraditionalPublicCopy(
+  input: TraditionalPublicInput,
+): TraditionalPublicCopy {
+  const isCultureModel = input.id.startsWith("star-");
+  if (isCultureModel && !STAR_PUBLIC_IDS.has(input.id)) {
+    throw new Error(`文化模型不存在：${input.id}`);
+  }
+  if (!isCultureModel) getTraditionalContent(input.id);
+  const sceneSource = isCultureModel
+    ? input.lifeScene.split(/\s+(?:朋友关系|工作状态)：/u)[0]
+    : input.lifeScene;
+
+  return {
+    lead: isCultureModel
+      ? {
+          kind: "culture-model",
+          attribution: "文化模型",
+          text: `把${input.title}当作一张现代文化分类卡，不把它写成完整人格。`,
+        }
+      : {
+          kind: "traditional-paraphrase",
+          attribution: "传统观察",
+          text: `把${input.title}当作一张自查卡，不把外形或线纹写成结论。`,
+        },
+    scene: `${firstSentence(sceneSource)} 你可以把其中一个动作记录下来，再请身边的人回应；这样才知道这张观察卡有没有用。`,
+    playfulObservation: `有趣的是，同一个“${input.title}”提示用得刚好像助力，用过头也可能变成阻力。${firstSentence(input.strengthAndPitfall)}`,
+    action: firstSentence(input.action),
+  };
+}
+
+export function buildTraditionPublicIntro(): TraditionPublicIntro {
+  return {
+    title: "把传统观察放回日常小事",
+    lead: getPublicSayingLead("folk-review-long-road"),
+    scene: "家人商量周末安排时，你先问每个人最在意什么，再写下一个都能做到的小安排，最后用真实回应判断这次商量是否有效。",
+    playfulObservation: "图谱像一张聊天卡：照见一个习惯就够了，不必把整个人装进一个格子。",
+    action: "先选最接近的一项，只试一个小动作，再用现实反馈决定要不要保留。",
+  };
 }
