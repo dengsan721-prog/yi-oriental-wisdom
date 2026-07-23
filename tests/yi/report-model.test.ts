@@ -280,13 +280,24 @@ describe("professional report model", () => {
     "dayMaster",
     "dayPillar",
   ] satisfies readonly AmbiguousProfessionalField[])(
-    "treats professional %s ambiguity as day ambiguity for every twelve-growth value",
+    "treats professional %s ambiguity as both a day dependency and an ambiguous day target",
     (field) => {
       const chart = cloneChart();
       chart.professional.ambiguousFields = [field];
       const report = buildProfessionalReport(chart, birth);
 
-      for (const key of pillarKeys) {
+      expect(report.pillarCoordinates.day.naYin).toMatchObject({
+        status: "candidate",
+        reasons: ["target-pillar-ambiguous"],
+      });
+      expect(report.pillarCoordinates.day.twelveGrowth).toMatchObject({
+        status: "candidate",
+        reasons: [
+          "day-pillar-ambiguous",
+          "target-pillar-ambiguous",
+        ],
+      });
+      for (const key of ["year", "month", "hour"] as const) {
         expect(report.pillarCoordinates[key].naYin.status, key).toBe("stable");
         expect(report.pillarCoordinates[key].twelveGrowth, key).toMatchObject({
           status: "candidate",

@@ -135,7 +135,8 @@ function buildPillarCoordinate(
   if (naYin === null || twelveGrowth === null) {
     throw new Error(`命盘干支坐标无效：${key}`);
   }
-  const targetAmbiguous = chart.ambiguousPillars.includes(key);
+  const targetAmbiguous = chart.ambiguousPillars.includes(key)
+    || (key === "day" && dayAmbiguous);
   const targetReasons: ChartCoordinateReason[] = targetAmbiguous
     ? ["target-pillar-ambiguous"]
     : [];
