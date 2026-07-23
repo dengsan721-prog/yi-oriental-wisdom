@@ -120,6 +120,7 @@ describe("result navigation", () => {
     expect(css).toMatch(/@media\(max-width:520px\)\{\.result-head>\.result-head-actions\{[^}]*\}\.result-head-actions button\{[^}]*width:100%/);
     expect(css).toMatch(/\.report-owner-name\{[^}]*overflow-wrap:anywhere/);
     expect(css).toMatch(/\.report-title-region\{[^}]*min-width:0/);
+    expect(css).not.toMatch(/\.mini-mark\b|\.result-head-main\b/);
   });
 
   it("shows the adopted report facts and unknown-time scope in the header", () => {
