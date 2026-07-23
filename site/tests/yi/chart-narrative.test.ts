@@ -568,7 +568,7 @@ describe("deterministic chart narrative", () => {
       const visible = publicNarrativeText(narrative);
 
       expect(visible).not.toMatch(
-        /先先|开始开始|再从先|此时[^。]{0,80}时，|先冲突后|再考虑追加后再追加|并建立支持台账并在过载时减量|让表达依据现场理解迭代/u,
+        /先先|开始开始|再从先|此时[^。]{0,80}时，|先冲突后|再考虑追加后再追加|并建立支持台账并在过载时减量|让表达依据现场理解迭代|机会在于[^。]{0,80}机会在|，而先约定/u,
       );
       for (const story of [
         ...narrative.careerAdvice,
@@ -605,7 +605,7 @@ describe("deterministic chart narrative", () => {
       [],
     );
     expect(publicNarrativeText(noMaterialNarrative)).not.toMatch(
-      /先先|开始开始|再从先|此时[^。]{0,80}时，|先冲突后|再考虑追加后再追加|并建立支持台账并在过载时减量|让表达依据现场理解迭代/u,
+      /先先|开始开始|再从先|此时[^。]{0,80}时，|先冲突后|再考虑追加后再追加|并建立支持台账并在过载时减量|让表达依据现场理解迭代|机会在于[^。]{0,80}机会在|，而先约定/u,
     );
   });
 
