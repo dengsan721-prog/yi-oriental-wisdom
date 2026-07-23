@@ -150,6 +150,9 @@ describe("light five-element CSS contract", () => {
       [".name-character-evidence>div", "border-color:var(--yi-line)", "background:var(--yi-surface)"],
       [".name-source-links li", "border-color:var(--yi-line)", "background:var(--yi-surface)"],
       [".name-source-links a", "color:var(--yi-accent-strong)", "min-height:44px"],
+      [".same-name-exit button", "background:var(--yi-surface-raised)", "color:var(--yi-accent-strong)"],
+      [".name-summary-boundary", "border-color:var(--yi-line)", "color:var(--yi-text-muted)"],
+      [".name-analysis-depth[open]>summary", "border-color:var(--yi-line)", "color:var(--yi-accent-strong)"],
     ];
 
     for (const [selector, first, second] of foregrounds) {
@@ -158,6 +161,8 @@ describe("light five-element CSS contract", () => {
       expect(declaration, selector).toContain(second);
       expect(declaration, selector).not.toMatch(/#(?:d9c693|eadcad|bdc8cc|8298a2|ffffff0)/i);
     }
+
+    expect(rule(".same-name-exit button")).toContain("border-color:var(--yi-accent)");
   });
 
   it("keeps text, button, focus, and accent boundaries accessible", () => {
