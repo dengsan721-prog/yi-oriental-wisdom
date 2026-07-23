@@ -5,10 +5,12 @@ import { describe, expect, it } from "vitest";
 import {
   CurrentNameContent,
   NameCandidateComparison,
+  NameConfirmationControls,
   NameCoverageCard,
   NameSection,
   buildCandidateAnalysisRequest,
   composeCandidateFullName,
+  createNameSectionOwnerKey,
   createLatestNameRequestGuard,
   formatNameCoverageScore,
   getCurrentNameLoadStatus,
@@ -480,9 +482,10 @@ describe("candidate analysis request", () => {
     });
 
     expect(request).toEqual({
-      mode: "candidate",
+      mode: "traditional-reference",
       traditionalSelections: candidateState.traditionalSelections,
       actualReadings: candidateState.actualReadings,
+      requestFreshDirection: true,
       chart,
       professionalReport,
     });
@@ -490,6 +493,57 @@ describe("candidate analysis request", () => {
     expect(request.professionalReport).toBe(professionalReport);
     expect(request).not.toHaveProperty("realityTest");
     expect(request).not.toHaveProperty("usageRisks");
+  });
+
+  it("keeps default candidate mode and carries fresh direction explicitly", () => {
+    const viewState = createNameAnalysisViewState("林清禾");
+
+    expect(buildCandidateAnalysisRequest({
+      viewState,
+      chart,
+      professionalReport,
+    })).toMatchObject({
+      mode: "candidate",
+      requestFreshDirection: true,
+    });
+  });
+
+  it("preserves a real traditional candidate glyph and reading through the loader", async () => {
+    let viewState = createNameAnalysisViewState("发");
+    viewState = nameAnalysisViewReducer(viewState, {
+      type: "set-mode",
+      mode: "traditional-reference",
+    });
+    viewState = nameAnalysisViewReducer(viewState, {
+      type: "select-traditional",
+      characterIndex: 0,
+      glyph: "髮",
+    });
+    viewState = nameAnalysisViewReducer(viewState, {
+      type: "select-reading",
+      characterIndex: 0,
+      reading: "fà",
+    });
+    const request = buildCandidateAnalysisRequest({
+      viewState,
+      chart,
+      professionalReport,
+    });
+    const analysis = await loadNameAnalysisForView("发", request);
+    if (!analysis) throw new Error("Traditional candidate fixture is required");
+
+    expect(analysis.characters[0]).toMatchObject({
+      adoptedGlyph: "髮",
+      adoptedReading: "fà",
+    });
+    const coverage = calculateNameElementCoverage({
+      chart,
+      characters: toNameElementCoverageCharacters(analysis.characters),
+    });
+    if (coverage.status === "pending") {
+      expect(coverage.reasons).not.toContain("glyph-unconfirmed");
+      expect(coverage.reasons).not.toContain("reading-unconfirmed");
+    }
   });
 
   it("resets only candidate confirmations when the candidate full name changes", () => {
@@ -523,6 +577,98 @@ describe("candidate analysis request", () => {
       actualReadings: {},
     });
     expect(currentState).toEqual(currentSnapshot);
+  });
+});
+
+describe("candidate owner isolation", () => {
+  it("uses stable content and changes for any name, chart, or report owner change", () => {
+    const base = createNameSectionOwnerKey({
+      name: birth.name,
+      chart,
+      professionalReport,
+    });
+    expect(createNameSectionOwnerKey({
+      name: birth.name,
+      chart: structuredClone(chart),
+      professionalReport: structuredClone(professionalReport),
+    })).toBe(base);
+    expect(createNameSectionOwnerKey({
+      name: `${birth.name}新`,
+      chart,
+      professionalReport,
+    })).not.toBe(base);
+    expect(createNameSectionOwnerKey({
+      name: birth.name,
+      chart: {
+        ...chart,
+        pillars: {
+          ...chart.pillars,
+          year: {
+            ...chart.pillars.year,
+            element: chart.pillars.year.element === "木" ? "火" : "木",
+          },
+        },
+      },
+      professionalReport,
+    })).not.toBe(base);
+    expect(createNameSectionOwnerKey({
+      name: birth.name,
+      chart,
+      professionalReport: {
+        ...professionalReport,
+        summary: `${professionalReport.summary}变更`,
+      },
+    })).not.toBe(base);
+  });
+});
+
+describe("confirmation group isolation", () => {
+  it("renders distinct current and candidate radio groups in the same markup", async () => {
+    const analysis = await loadNameAnalysisForView("发", {
+      mode: "current",
+      chart,
+      professionalReport,
+    });
+    if (!analysis) throw new Error("发 confirmation fixture is required");
+    let state = createNameAnalysisViewState("发");
+    state = nameAnalysisViewReducer(state, {
+      type: "set-mode",
+      mode: "traditional-reference",
+    });
+    const controls = {
+      analysis,
+      state,
+      onModeChange: () => undefined,
+      onReadingSelection: () => undefined,
+      onTraditionalSelection: () => undefined,
+    };
+    const html = renderToStaticMarkup(createElement("div", null,
+      createElement(NameConfirmationControls, {
+        ...controls,
+        groupPrefix: "current",
+      }),
+      createElement(NameConfirmationControls, {
+        ...controls,
+        groupPrefix: "candidate",
+      }),
+    ));
+    const names = [...html.matchAll(/name="([^"]+)"/g)]
+      .map(match => match[1]);
+
+    expect(names).toContain("current-traditional-0");
+    expect(names).toContain("candidate-traditional-0");
+    expect(names).toContain("current-reading-0");
+    expect(names).toContain("candidate-reading-0");
+    const currentGroups = new Set(
+      names.filter(name => name.startsWith("current-")),
+    );
+    const candidateGroups = new Set(
+      names.filter(name => name.startsWith("candidate-")),
+    );
+    expect(currentGroups.size).toBe(2);
+    expect(candidateGroups.size).toBe(2);
+    expect([...currentGroups].some(group => candidateGroups.has(group)))
+      .toBe(false);
   });
 });
 
@@ -674,6 +820,14 @@ describe("candidate production wiring and persistence boundary", () => {
     expect(source.indexOf("candidateGuard.current.invalidate()")).toBeLessThan(
       source.indexOf("composeCandidateFullName({"),
     );
+    expect(source).toContain("createNameSectionOwnerKey({");
+    expect(source).toContain("candidateLoad.ownerKey === ownerKey");
+    expect(source).toContain("const guard = candidateGuard.current");
+    expect(source).toMatch(
+      /useEffect\(\(\) => \{[\s\S]*guard\.invalidate\(\)[\s\S]*setCandidateInput\(""\)/,
+    );
+    expect(source).toContain('groupPrefix="current"');
+    expect(source).toContain('groupPrefix="candidate"');
   });
 
   it("does not write candidate state outside the component session", () => {
