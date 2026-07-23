@@ -6,6 +6,7 @@ import {
   REVIEWED_TRADITIONAL_PAIRS,
 } from "../../lib/yi/name-data";
 import {
+  findUniqueReviewedAdoptedMeaning,
   NAME_ELEMENT_COVERAGE_VERSION,
   NAME_ELEMENT_RULES,
   NAME_ELEMENT_SOURCES,
@@ -179,6 +180,61 @@ function overlap(left: readonly string[], right: readonly string[]): string[] {
 }
 
 describe("reviewed name-element data", () => {
+  it("returns only a unique reviewed adopted meaning without exposing an element decision", () => {
+    expect(findUniqueReviewedAdoptedMeaning({
+      adoptedGlyph: "宋",
+      adoptedReading: "sòng",
+    })).toEqual({
+      adoptedMeaning: "宋代；姓氏",
+      recordIds: ["coverage-char-宋"],
+      meaningSourceIds: ["yi-name-adopted-meaning-v1"],
+    });
+    const song = findUniqueReviewedAdoptedMeaning({
+      adoptedGlyph: "宋",
+      adoptedReading: "sòng",
+    });
+    expect(Object.isFrozen(song)).toBe(true);
+    expect(Object.isFrozen(song?.recordIds)).toBe(true);
+    expect(Object.isFrozen(song?.meaningSourceIds)).toBe(true);
+    expect(findUniqueReviewedAdoptedMeaning({
+      adoptedGlyph: "安",
+      adoptedReading: "ān",
+    })?.adoptedMeaning).toBe("安定安稳，取有所安处之义");
+
+    for (const [adoptedGlyph, adoptedReading] of [
+      ["玘", "qǐ"],
+      ["解", "xiè"],
+      ["单", "shàn"],
+    ] as const) {
+      const result = findUniqueReviewedAdoptedMeaning({
+        adoptedGlyph,
+        adoptedReading,
+      });
+      expect(result?.adoptedMeaning).toEqual(expect.any(String));
+      expect(result).not.toHaveProperty("element");
+      expect(result).not.toHaveProperty("reviewDecision");
+    }
+  });
+
+  it("refuses unknown coordinates and a glyph-reading pair with conflicting adopted meanings", () => {
+    expect(findUniqueReviewedAdoptedMeaning({
+      adoptedGlyph: null,
+      adoptedReading: "sòng",
+    })).toBeNull();
+    expect(findUniqueReviewedAdoptedMeaning({
+      adoptedGlyph: "宋",
+      adoptedReading: null,
+    })).toBeNull();
+    expect(findUniqueReviewedAdoptedMeaning({
+      adoptedGlyph: "未",
+      adoptedReading: "wèi",
+    })).toBeNull();
+    expect(findUniqueReviewedAdoptedMeaning({
+      adoptedGlyph: "林",
+      adoptedReading: "lín",
+    })).toBeNull();
+  });
+
   it("keeps separate traceable facts and distinct internal review trace labels", () => {
     expect(NAME_ELEMENT_COVERAGE_VERSION).toBe("name-element-coverage-v1");
     const sourceIds = new Set(NAME_ELEMENT_SOURCES.map(source => source.id));

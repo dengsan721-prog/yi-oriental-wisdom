@@ -2,6 +2,10 @@ import { ANIMAL_MIRRORS } from "./animal-mirrors";
 import { HISTORICAL_MIRRORS } from "./historical-mirrors";
 import { MOVIE_CHARACTERS } from "./movie-characters";
 import { TRADITIONAL_SOURCE_CATALOG } from "./traditional-sources";
+import {
+  NAME_ELEMENT_SOURCES,
+  type NameElementSource,
+} from "./name-element-data";
 
 export type RuleSource = {
   ruleId: string;
@@ -426,6 +430,23 @@ function referenceSource(source: ReferenceSource): UnifiedSource {
   };
 }
 
+function nameElementSource(source: NameElementSource): UnifiedSource {
+  const internal = source.url === null;
+  return {
+    id: source.id,
+    title: `${source.title}（${source.publisher}）`,
+    category: internal ? "产品方法" : "公开参考",
+    grade: internal ? "产品方法" : source.id.startsWith("classic-") ? "A/B" : "A",
+    url: source.url ?? "",
+    role: source.useBasis,
+    editionNote: `${internal ? "产品自有采用定位" : "公开资料采用定位"}：${source.locator}；姓名覆盖数据版本 name-element-coverage-v1。`,
+    boundary: internal
+      ? "内部审校采用义项只用于有限姓名语料互操作，不冒充外部专家背书，不生成旧版概率语义向量或出生盘结论。"
+      : "公开资料只支持来源记录中明确列出的字形、读音或释义范围，不自动证明姓名五行、人格、命运或人生结果。",
+    accessDate: "2026-07-23",
+  };
+}
+
 export function getAllSources(): UnifiedSource[] {
   const registry = new Map<string, UnifiedSource>();
   const add = (source: UnifiedSource, replace = false) => {
@@ -435,6 +456,7 @@ export function getAllSources(): UnifiedSource[] {
   Object.values(YI_RULE_SOURCES).forEach(rule => add(ruleSource(rule)));
   Object.values(YI_REFERENCE_SOURCES).forEach(source => add(referenceSource(source)));
   Object.values(TRADITIONAL_SOURCE_CATALOG).forEach(source => add(traditionalSource(source), true));
+  NAME_ELEMENT_SOURCES.forEach(source => add(nameElementSource(source)));
   ANIMAL_MIRRORS.forEach(candidate => add(animalIdentitySource(candidate)));
   HISTORICAL_MIRRORS.forEach(candidate => add(identitySource(candidate, "历史人物镜像")));
   MOVIE_CHARACTERS.forEach(candidate => add(identitySource(candidate, "电影角色镜像")));

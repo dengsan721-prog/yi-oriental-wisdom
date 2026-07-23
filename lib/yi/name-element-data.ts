@@ -98,6 +98,12 @@ export type NameElementResolution =
       readonly glyph: string | null;
     };
 
+export type ReviewedAdoptedNameMeaning = {
+  readonly adoptedMeaning: string;
+  readonly recordIds: readonly string[];
+  readonly meaningSourceIds: readonly string[];
+};
+
 function deepFreeze<T>(value: T): T {
   if (
     value !== null
@@ -638,6 +644,25 @@ for (const record of REVIEWED_NAME_ELEMENT_RECORDS) {
   recordsByExactKey.set(key, record);
   reviewedReadings.add(JSON.stringify([record.glyph, record.displayPinyin]));
   reviewedGlyphs.add(record.glyph);
+}
+
+export function findUniqueReviewedAdoptedMeaning(input: {
+  readonly adoptedGlyph: string | null;
+  readonly adoptedReading: string | null;
+}): ReviewedAdoptedNameMeaning | null {
+  if (input.adoptedGlyph === null || input.adoptedReading === null) return null;
+  const matches = REVIEWED_NAME_ELEMENT_RECORDS.filter(record =>
+    record.glyph === input.adoptedGlyph
+    && record.displayPinyin === input.adoptedReading);
+  const meanings = new Set(matches.map(record => record.adoptedMeaning));
+  if (meanings.size !== 1) return null;
+  return deepFreeze({
+    adoptedMeaning: meanings.values().next().value!,
+    recordIds: [...new Set(matches.map(record => record.id))],
+    meaningSourceIds: [
+      ...new Set(matches.flatMap(record => record.meaningSourceIds)),
+    ],
+  });
 }
 
 const reviewedInputGlyphRelations = new Set(
