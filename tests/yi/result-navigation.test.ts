@@ -7,6 +7,7 @@ import { ResultShell } from "../../components/yi/ResultShell";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { buildInterpretations, buildProfessionalOverview } from "../../lib/yi/interpretation";
 import { buildProfessionalReport } from "../../lib/yi/report-model";
+import { deriveYiThemeElement } from "../../lib/yi/theme";
 import type { BirthInput } from "../../lib/yi/types";
 
 const exactBirth: BirthInput = {
@@ -18,8 +19,12 @@ const exactBirth: BirthInput = {
   timeConfidence: "exact" as const,
 };
 
-function renderResult(birth: BirthInput = exactBirth) {
+function renderResult(birth: BirthInput = exactBirth, options: {
+  ambiguousDay?: boolean;
+  storageError?: string;
+} = {}) {
   const chart = calculateFourPillars(birth);
+  if (options.ambiguousDay) chart.ambiguousPillars = [...chart.ambiguousPillars, "day"];
   const report = buildProfessionalReport(chart, birth);
   return { report, html: renderToStaticMarkup(createElement(ResultShell, {
     name: birth.name,
@@ -32,22 +37,75 @@ function renderResult(birth: BirthInput = exactBirth) {
     onSectionChange: () => {},
     onRestart: () => {},
     onSaveHome: () => {},
+    storageError: options.storageError,
+    themeElement: deriveYiThemeElement(chart),
   })) };
 }
 
 describe("result navigation", () => {
+  it("introduces the report owner before the independent document title", () => {
+    const { html } = renderResult({ ...exactBirth, name: "林知夏" });
+    const owner = html.indexOf('data-testid="report-owner-ritual"');
+    const reportTitle = html.indexOf('data-testid="report-document-title"');
+    const facts = html.indexOf('data-testid="adopted-birth-facts"');
+    const actions = html.indexOf('data-testid="report-save-actions"');
+    const titleRegion = html.slice(
+      html.indexOf('data-testid="report-title-region"'),
+      html.indexOf("</header>"),
+    );
+
+    expect(html).toContain("本卷主人");
+    expect(html).toContain('class="report-owner-name">林知夏<');
+    expect(html).toContain('data-testid="report-document-title"');
+    expect(html).toContain("<h1>个人命运全景报告</h1>");
+    expect(html).toContain('class="yi-brand-mark yi-brand-mark--compact"');
+    expect(html).toContain('aria-label="命"');
+    expect(html).toContain('data-code-point="U+547D"');
+    expect(html).not.toContain("访客的人生报告");
+    expect(titleRegion.match(/<h1>/g)).toHaveLength(1);
+    expect(owner).toBeGreaterThan(-1);
+    expect(reportTitle).toBeGreaterThan(owner);
+    expect(facts).toBeGreaterThan(reportTitle);
+    expect(actions).toBeGreaterThan(facts);
+  });
+
+  it("uses a clear fallback for an empty report owner and wraps long names", () => {
+    const empty = renderResult({ ...exactBirth, name: "" });
+    const long = renderResult({ ...exactBirth, name: "欧阳司徒上官诸葛林知夏" });
+
+    expect(empty.html).toContain('class="report-owner-name">未填写姓名<');
+    expect(long.html).toContain('class="report-owner-name">欧阳司徒上官诸葛林知夏<');
+  });
+
+  it("keeps neutral evidence neutral in the owner seal", () => {
+    const { html } = renderResult(exactBirth, { ambiguousDay: true });
+
+    expect(html).toContain('<span class="report-owner-seal">待定命印</span>');
+    expect(html).not.toMatch(/[木火土金水]命印/);
+  });
+
+  it("reuses the compact audited mark on life home and passes the derived theme", () => {
+    const lifeHomeSource = readFileSync(new URL("../../components/yi/LifeHome.tsx", import.meta.url), "utf8");
+    const experienceSource = readFileSync(new URL("../../components/yi/YiExperience.tsx", import.meta.url), "utf8");
+
+    expect(lifeHomeSource).toContain('<YiBrandMark variant="compact" />');
+    expect(lifeHomeSource).not.toContain('className="mini-mark"');
+    expect(experienceSource).toContain("themeElement={themeElement}");
+  });
+
   it("places save and restart actions after the adopted facts, outside the title row", () => {
     const { html } = renderResult();
-    const titleStart = html.indexOf('class="result-head-main"');
-    const factsStart = html.indexOf('class="adopted-facts"');
-    const actionsStart = html.indexOf('class="result-head-actions"');
-    const headerEnd = html.indexOf("</header>");
+    const titleStart = html.indexOf('data-testid="report-title-region"');
+    const factsStart = html.indexOf('data-testid="adopted-birth-facts"');
+    const actionsStart = html.indexOf('data-testid="report-save-actions"');
+    const titleEnd = html.indexOf("</header>");
 
     expect(titleStart).toBeGreaterThan(-1);
     expect(factsStart).toBeGreaterThan(titleStart);
-    expect(html.slice(titleStart, factsStart)).not.toContain("<button");
+    expect(titleEnd).toBeGreaterThan(titleStart);
+    expect(factsStart).toBeGreaterThan(titleEnd);
+    expect(html.slice(titleStart, titleEnd)).not.toContain("<button");
     expect(actionsStart).toBeGreaterThan(factsStart);
-    expect(actionsStart).toBeLessThan(headerEnd);
     expect(html).toContain('<button class="primary">保存并进入人生首页</button>');
     expect(html).toContain("<button>修改出生资料</button>");
     expect(html).not.toContain("保存到本机");
@@ -60,9 +118,8 @@ describe("result navigation", () => {
     expect(css).toMatch(/\.result-head-actions button\{[^}]*min-width:0[^}]*min-height:44px/);
     expect(css).toMatch(/@media\(max-width:520px\)\{\.result-head>\.result-head-actions\{[^}]*display:grid[^}]*grid-template-columns:1fr/);
     expect(css).toMatch(/@media\(max-width:520px\)\{\.result-head>\.result-head-actions\{[^}]*\}\.result-head-actions button\{[^}]*width:100%/);
-    expect(css).toMatch(/\.result-head-main>div:first-child\{[^}]*min-width:0/);
-    expect(css).toMatch(/\.result-head-main>div:first-child b\{[^}]*overflow-wrap:anywhere/);
-    expect(css).not.toContain(".result-head-main>div:last-child");
+    expect(css).toMatch(/\.report-owner-name\{[^}]*overflow-wrap:anywhere/);
+    expect(css).toMatch(/\.report-title-region\{[^}]*min-width:0/);
   });
 
   it("shows the adopted report facts and unknown-time scope in the header", () => {
@@ -140,9 +197,17 @@ describe("result navigation", () => {
     expect(source).toContain('aria-modal="true"');
     expect(source).toContain('aria-labelledby="save-home-title"');
     expect(source).toContain('aria-describedby="save-home-description"');
+    expect(source).toContain('querySelector<HTMLElement>("button")?.focus()');
     expect(source).toMatch(/event\.key === "Escape"/);
     expect(source).toMatch(/event\.key === "Tab"/);
     expect(source).toContain("saveTriggerRef.current?.focus()");
+    expect(source).toContain("onConfirm={() => { closeSaveDialog(); onSaveHome?.(); }}");
+  });
+
+  it("keeps save failure feedback visible without changing the confirmation callback", () => {
+    const { html } = renderResult(exactBirth, { storageError: "本机档案保存失败，请重试。" });
+
+    expect(html).toContain('<p class="storage-error" role="alert">本机档案保存失败，请重试。</p>');
   });
 
   it("delegates section changes while keeping reusable scroll positions", () => {

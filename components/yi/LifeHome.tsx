@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { buildLifeHome, exportLifeProfile, lifeProfileReducer, type LifeProfile, type StorageResult } from "../../lib/yi/life-profile";
+import { YiBrandMark } from "./YiBrandMark";
 
 type HomeSection = "overview" | "annual" | "monthly" | "events" | "relations";
 
@@ -43,7 +44,7 @@ export function LifeHome({ profile, onChange, onViewReport, onClear }: {
   }
 
   return <section className="life-home">
-    <header className="life-head"><div><span className="mini-mark">艺</span><div><small>人生首页</small><b>{home.name}，欢迎回来</b></div></div><button onClick={onViewReport}>查看命盘报告</button></header>
+    <header className="life-head"><div><YiBrandMark variant="compact" /><div><small>人生首页</small><b>{home.name}，欢迎回来</b></div></div><button onClick={onViewReport}>查看命盘报告</button></header>
     <nav className="life-nav" aria-label="人生首页入口">
       {([ ["overview", "首页"], ["annual", "年度"], ["monthly", "月度"], ["events", "事件"], ["relations", "关系"] ] as const).map(([id, label]) => <button key={id} className={section === id ? "active" : ""} onClick={() => setSection(id)}>{label}</button>)}
     </nav>

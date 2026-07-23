@@ -184,3 +184,16 @@ main[data-element] .name-analysis-section :focus-visible{outline:3px solid var(-
 .same-name-exit button{border-color:var(--yi-accent);background:var(--yi-surface-raised);color:var(--yi-accent-strong)}
 .name-summary-boundary{border-color:var(--yi-line);color:var(--yi-text-muted)}
 .name-analysis-depth[open]>summary{border-color:var(--yi-line);color:var(--yi-accent-strong)}
+
+/* Report owner ritual */
+.report-title-region{min-width:0;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:18px 32px;align-items:center}
+.report-owner-ritual{width:fit-content;max-width:100%;min-width:0;display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--yi-line);border-radius:14px;background:var(--yi-surface-raised)}
+.report-owner-lockup{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 10px;align-items:end}
+.report-owner-kicker{grid-column:1/-1;color:var(--yi-text-muted);font-size:11px;letter-spacing:.14em}
+.report-owner-name{min-width:0;color:var(--yi-text);font:600 clamp(20px,2.5vw,28px)/1.25 serif;overflow-wrap:anywhere}
+.report-owner-seal{align-self:center;padding:4px 8px;border:1px solid var(--yi-accent);border-radius:999px;background:var(--yi-accent-soft);color:var(--yi-accent-strong);font-size:11px;white-space:nowrap}
+.report-document-title{min-width:0}
+.report-document-title small{display:block;color:var(--yi-accent-strong);font-size:11px;letter-spacing:.12em}
+.report-document-title h1{margin:5px 0 0;color:var(--yi-text);font:600 clamp(28px,4vw,42px)/1.16 serif;letter-spacing:.02em}
+.life-head .yi-brand-mark--compact{color:var(--yi-accent)}
+@media(max-width:700px){.report-title-region{grid-template-columns:1fr;gap:14px}.report-owner-ritual{padding:9px 12px}.report-document-title h1{font-size:clamp(27px,9vw,36px)}}

@@ -14,6 +14,8 @@ import { MirrorSection } from "./MirrorSection";
 import { CompatibilitySection } from "./CompatibilitySection";
 import type { ParentChildPrimaryRole } from "./CompatibilitySection";
 import { TraditionSection } from "./TraditionSection";
+import type { YiThemeElement } from "../../lib/yi/theme";
+import { YiBrandMark } from "./YiBrandMark";
 
 export const getResultSections = () => [
   ["portrait", "画像"], ["chart", "命盘"], ["detail", "详批"],
@@ -74,16 +76,18 @@ function SaveHomeDialog({ onConfirm, onClose }: { onConfirm: () => void; onClose
   </div>;
 }
 
-export function ResultShell({ name, chart, birth, report, overview, interpretations, activeSection, onSectionChange, onRestart, onSaveHome, storageError }: {
+export function ResultShell({ name, chart, birth, report, overview, interpretations, themeElement, activeSection, onSectionChange, onRestart, onSaveHome, storageError }: {
   name: string; chart: FourPillarsResult; overview: ProfessionalOverview;
   birth: BirthInput; report: ProfessionalReport; interpretations: InterpretationItem[]; activeSection: ReportSectionId; onSectionChange: (section: ReportSectionId) => void;
-  onRestart: () => void; onSaveHome?: () => void; storageError?: string;
+  themeElement: YiThemeElement; onRestart: () => void; onSaveHome?: () => void; storageError?: string;
 }) {
   const [state, dispatch] = useReducer(resultShellReducer, undefined, createInitialResultShellState);
   const [scrollPositions] = useState(createResultScrollPositions);
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
   const saveTriggerRef = useRef<HTMLButtonElement>(null);
   const availableSections = getAvailableSections(true);
+  const displayName = name.trim() || "未填写姓名";
+  const ownerSeal = themeElement === "neutral" ? "待定命印" : `${themeElement}命印`;
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollTop(scrollPositions, activeSection) }));
     return () => {
@@ -99,11 +103,24 @@ export function ResultShell({ name, chart, birth, report, overview, interpretati
     window.requestAnimationFrame(() => saveTriggerRef.current?.focus());
   }
   return <section className="result-shell">
-    <header className="result-head">
-      <div className="result-head-main"><div><span className="mini-mark">艺</span><b>{name || "访客"}的人生报告</b></div></div>
-      <aside className="adopted-facts" aria-label="本次采用出生事实"><b>本次采用</b><span>{report.birthFacts.solar}</span><span>{report.birthFacts.timeConfidence}</span><span>{report.birthFacts.location}</span><span>{report.birthFacts.timezone}</span>{report.birthFacts.timeConfidence === "时辰不详" && <small>已关闭：时柱、时柱派生判断与精确大运年份。</small>}</aside>
-      <div className="result-head-actions">{onSaveHome && <button className="primary" ref={saveTriggerRef} onClick={() => setSaveConfirmOpen(true)}>保存并进入人生首页</button>}<button onClick={onRestart}>修改出生资料</button></div>
-    </header>
+    <div className="result-head">
+      <header className="report-title-region" data-testid="report-title-region">
+        <div className="report-owner-ritual" data-testid="report-owner-ritual">
+          <YiBrandMark variant="compact" />
+          <div className="report-owner-lockup">
+            <span className="report-owner-kicker">本卷主人</span>
+            <strong className="report-owner-name">{displayName}</strong>
+            <span className="report-owner-seal">{ownerSeal}</span>
+          </div>
+        </div>
+        <div className="report-document-title" data-testid="report-document-title">
+          <small>艺｜东方人生智慧</small>
+          <h1>个人命运全景报告</h1>
+        </div>
+      </header>
+      <aside className="adopted-facts" data-testid="adopted-birth-facts" aria-label="本次采用出生事实"><b>本次采用</b><span>{report.birthFacts.solar}</span><span>{report.birthFacts.timeConfidence}</span><span>{report.birthFacts.location}</span><span>{report.birthFacts.timezone}</span>{report.birthFacts.timeConfidence === "时辰不详" && <small>已关闭：时柱、时柱派生判断与精确大运年份。</small>}</aside>
+      <div className="result-head-actions" data-testid="report-save-actions">{onSaveHome && <button className="primary" ref={saveTriggerRef} onClick={() => setSaveConfirmOpen(true)}>保存并进入人生首页</button>}<button onClick={onRestart}>修改出生资料</button></div>
+    </div>
     {saveConfirmOpen && <SaveHomeDialog onClose={closeSaveDialog} onConfirm={() => { closeSaveDialog(); onSaveHome?.(); }} />}
     {storageError && <p className="storage-error" role="alert">{storageError}</p>}
     <nav className="result-tabs" aria-label="人生报告章节">
