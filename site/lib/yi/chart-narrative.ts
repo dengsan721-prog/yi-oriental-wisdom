@@ -492,17 +492,51 @@ function buildActionSequence(
   ids: readonly DetailActionId[],
 ): string | null {
   if (!ids.length) return null;
-  const pairs: string[] = [];
+  const pairs: {
+    id: InterpretationId;
+    now: string;
+    longTerm: string;
+    outcome: string;
+  }[] = [];
   for (let index = 0; index < ids.length; index += 2) {
     const nowId = ids[index];
     const longTermId = ids[index + 1];
     const interpretationId = nowId.split(":")[0] as InterpretationId;
-    const lead = index === 0 ? "先" : "接着";
-    pairs.push(
-      `${lead}${actionSemanticFrames[nowId]}，再${actionSemanticFrames[longTermId]}，${actionPairOutcomes[interpretationId]}`,
-    );
+    pairs.push({
+      id: interpretationId,
+      now: actionSemanticFrames[nowId],
+      longTerm: actionSemanticFrames[longTermId],
+      outcome: actionPairOutcomes[interpretationId],
+    });
   }
-  return `${pairs.join("。")}。`;
+  const careerChoiceIds = new Set<InterpretationId>([
+    "talent-hidden",
+    "talent-output",
+    "career-environment",
+    "wealth-structure",
+    "wealth-risk",
+  ]);
+  if (pairs.length >= 3 && pairs.every(pair => careerChoiceIds.has(pair.id))) {
+    return pairs.map(pair => {
+      if (pair.id === "talent-hidden") {
+        return `先把方法变成可交接成果：${pair.now}，再${pair.longTerm}。`;
+      }
+      if (pair.id === "talent-output") {
+        return `有了底稿，${pair.now}，并${pair.longTerm}，让成果随用途改进。`;
+      }
+      if (pair.id === "career-environment") {
+        return `接下来${pair.now}，再${pair.longTerm}，用长期样本选择环境。`;
+      }
+      if (pair.id === "wealth-structure") {
+        return `准备投入时，${pair.now}，按${pair.longTerm}守住基本盘。`;
+      }
+      return `最后${pair.now}，等${pair.longTerm}后再追加资源。`;
+    }).join("");
+  }
+  return pairs.map((pair, index) => index === 0
+    ? `先处理眼前一步：${pair.now}，再${pair.longTerm}，${pair.outcome}。`
+    : `有了反馈，${pair.now}，并${pair.longTerm}，${pair.outcome}。`
+  ).join("");
 }
 
 function sceneFor(
@@ -585,8 +619,8 @@ function buildBeat(
     overuseCost: `若用过头，${config.cost}，重要反馈就会被挡在决定之外。`,
     lowPoint: `低点可能是${config.lowPoint}，小问题也会被误作无法改变的困局。`,
     newChoice: consumed
-      ? `转折从${config.reset}开始。${consumed}做完再看结果。`
-      : `转折从${config.reset}开始，让事实、边界和下一步重新对齐。`,
+      ? `转折动作是：${config.reset}。${consumed}完成后再看结果。`
+      : `转折动作是：${config.reset}，让事实、边界和下一步重新对齐。`,
     turn: `${config.result}。变化来自反复核对，不是突然逆转。`,
     observableSignal: `${config.signal}。连续记录两周再判断。`,
     sourceActionIds,
@@ -616,15 +650,15 @@ function buildMicroStory<TScene extends string>(
     id: config.id,
     covers: config.covers,
     title: config.title,
-    trigger: `${config.trigger}时，先${cue.opening}。`,
+    trigger: `${config.trigger}。此刻${cue.opening}。`,
     firstReaction: `${config.reaction}，借${cue.strength}暂时稳住局面。`,
     apparentBenefit: `${config.benefit}。`,
     cost: `${config.cost}，也要防${cue.risk}。`,
     turnAction: consumed
       ? `${cue.mature}：${config.turn}。${consumed}`
-      : `${cue.mature}：${config.turn}。`,
+      : `${cue.mature}：${config.turn}。还没有足够个人记录时，先把这一段当作一周小实验：记下触发、动作和结果，再决定是否保留。`,
     example: `${config.example}这会检验“${cue.opening}”。`,
-    observableSignal: `${config.signal}。连续记录后再判断是否${cue.mature}。`,
+    observableSignal: `${config.signal}。连续记录后再判断。`,
     sourceActionIds,
   };
 }
@@ -722,7 +756,7 @@ export function buildChartNarrative(
     strength: `${cue.strength}，把精力留给关键任务`,
     cost: `${structure.overload}。若${cue.risk}，判断会在疲惫中启动`,
     lowPoint: `${structure.overload}，专注、耐心和恢复速度可能一起下降`,
-    reset: `${cue.mature}，再从${structure.recovery}开始`,
+    reset: `${cue.mature}，并按这条恢复顺序行动：${structure.recovery}`,
     result: `${structure.recovery}，人物开始按记录调速`,
     signal: `连续两周能按预定时间结束工作，并能用“${structure.decision}”完成一次决定`,
   }, actionBuckets[3]);
@@ -775,7 +809,7 @@ export function buildChartNarrative(
       id: "relationship-conflict-repair-boundary",
       covers: ["argument", "repair", "boundary"],
       title: "争执可以暂停，修复必须落到新规则",
-      trigger: `同一冲突再次出现，情绪和责任已经纠缠在一起，此时${relation.conflict}`,
+      trigger: `同一冲突再次出现，情绪和责任已经纠缠在一起，${relation.conflict}`,
       reaction: "急着证明自己的解释完整，或为了恢复平静先答应以后注意",
       benefit: "争论暂时有了出口，表面关系也可能很快恢复日常",
       cost: `触发、影响和责任没有重新安排，${relation.conflict}`,
