@@ -85,10 +85,12 @@ export function selectStableStoryFacts(
   const nonHourPillarAmbiguous = [...ambiguousPillars]
     .some(key => key !== "hour");
 
-  const relations = report.relations
-    .filter(relation =>
-      relation.pillars.every(key => !ambiguousPillars.has(key)))
-    .map(clone);
+  const relations = ambiguousFields.has("relationSummary")
+    ? []
+    : report.relations
+      .filter(relation =>
+        relation.pillars.every(key => !ambiguousPillars.has(key)))
+      .map(clone);
   const interpretations: SafeStoryInterpretation[] = [];
   const excludedInterpretationIds: string[] = [];
   for (const item of items) {

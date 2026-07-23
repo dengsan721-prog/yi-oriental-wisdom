@@ -54,6 +54,25 @@ function countHan(text: string): number {
   return [...text].filter(character => /\p{Script=Han}/u.test(character)).length;
 }
 
+function assertDaoNoteBounds(
+  note: LifeScrollNarrative["daoNotes"][number],
+): void {
+  const { traditionalMeaning, storyConnection, sceneGuidance } =
+    note.plainCommentary;
+  expect(countHan(traditionalMeaning)).toBeGreaterThanOrEqual(45);
+  expect(countHan(traditionalMeaning)).toBeLessThanOrEqual(90);
+  expect(countHan(storyConnection)).toBeGreaterThanOrEqual(55);
+  expect(countHan(storyConnection)).toBeLessThanOrEqual(110);
+  expect(countHan(sceneGuidance)).toBeGreaterThanOrEqual(45);
+  expect(countHan(sceneGuidance)).toBeLessThanOrEqual(90);
+  expect(countHan(
+    `${traditionalMeaning}${storyConnection}${sceneGuidance}`,
+  )).toBeGreaterThanOrEqual(160);
+  expect(countHan(
+    `${traditionalMeaning}${storyConnection}${sceneGuidance}`,
+  )).toBeLessThanOrEqual(260);
+}
+
 function visibleParts(narrative: LifeScrollNarrative): string[] {
   return [
     narrative.oneLineTheme,
@@ -250,18 +269,7 @@ describe("deterministic life scroll", () => {
     for (const note of narrative.daoNotes) {
       const { traditionalMeaning, storyConnection, sceneGuidance } =
         note.plainCommentary;
-      expect(countHan(traditionalMeaning)).toBeGreaterThanOrEqual(45);
-      expect(countHan(traditionalMeaning)).toBeLessThanOrEqual(90);
-      expect(countHan(storyConnection)).toBeGreaterThanOrEqual(55);
-      expect(countHan(storyConnection)).toBeLessThanOrEqual(110);
-      expect(countHan(sceneGuidance)).toBeGreaterThanOrEqual(45);
-      expect(countHan(sceneGuidance)).toBeLessThanOrEqual(90);
-      expect(countHan(
-        `${traditionalMeaning}${storyConnection}${sceneGuidance}`,
-      )).toBeGreaterThanOrEqual(160);
-      expect(countHan(
-        `${traditionalMeaning}${storyConnection}${sceneGuidance}`,
-      )).toBeLessThanOrEqual(260);
+      assertDaoNoteBounds(note);
       expect(new Set([
         traditionalMeaning,
         storyConnection,
@@ -284,6 +292,58 @@ describe("deterministic life scroll", () => {
     expect(narrative.daoNotes.find(note =>
       note.internalSourceId === "dao-64-road"
     )?.plainCommentary.storyConnection).toMatch(/起步|第一步|接续/u);
+  });
+
+  it("keeps Dao bounds for accepted long context fragments", () => {
+    const result = buildDaoStoryNotes(
+      ["self-knowledge", "long-road"],
+      {
+        tension:
+          "团队反复补充任务却没有重新确认容量边界和停止条件",
+        turn:
+          "把所有新增请求放回共同目标并重新确认能够承担的范围",
+        scene:
+          "多人项目进入最后冲刺但责任期限和验收方式仍未对齐",
+        action:
+          "先请每位参与者说明事实需要边界以及下一步能够承担什么",
+      },
+    );
+
+    expect(result.daoNotes).toHaveLength(2);
+    for (const note of result.daoNotes) {
+      assertDaoNoteBounds(note);
+    }
+  });
+
+  it.each([
+    ["service", "dao-08-water"],
+    ["patience", "dao-15-clear"],
+    ["bend", "dao-22-whole"],
+    ["self-knowledge", "dao-33-self"],
+    ["reversal", "dao-40-return"],
+    ["small-steps", "dao-63-small"],
+    ["long-road", "dao-64-road"],
+    ["flexibility", "dao-76-soft"],
+    ["completion", "dao-81-no-strife"],
+  ] as const)("uses natural Dao scene grammar for %s", (theme, sourceId) => {
+    const result = buildDaoStoryNotes([theme], {
+      tension: "共同任务的责任与容量没有重新确认",
+      turn: "完成一项可以核对的小改变",
+      scene: "时间表与立场发生正面对撞",
+      action: "先分列双方事实与不能让渡的条件",
+    });
+    const note = result.daoNotes.find(item =>
+      item.internalSourceId === sourceId
+    );
+
+    expect(note).toBeDefined();
+    expect(note?.plainCommentary.storyConnection).toMatch(
+      /^故事走到.+时，场景是：.+。人物/u,
+    );
+    expect(note?.plainCommentary.storyConnection).not.toMatch(
+      /在(?:事业开门|关系修复|转折发生|全卷收束)的.+里/u,
+    );
+    if (note) assertDaoNoteBounds(note);
   });
 
   it("replaces the chapter-66 null commentary with reviewed stable fallbacks", () => {
@@ -444,6 +504,44 @@ describe("deterministic life scroll", () => {
     );
   });
 
+  it("uses neutral relation prose when relationSummary alone is ambiguous", () => {
+    const original = fixture();
+    const chart = structuredClone(original.chart);
+    const report = structuredClone(original.report);
+    const sentinel = "候选关系摘要不得进入人生长卷";
+    chart.ambiguousPillars = [];
+    chart.professional.ambiguousFields = ["relationSummary"];
+    chart.professional.relations = [{
+      type: "branch-clash",
+      pillars: ["year", "month"],
+      symbols: [sentinel, sentinel],
+      label: sentinel,
+    }];
+    report.relations = [{
+      type: "branch-clash",
+      pillars: ["year", "month"],
+      symbols: [sentinel, sentinel],
+      label: sentinel,
+    }];
+
+    const narrative = buildLifeScrollNarrative(
+      chart,
+      report,
+      original.items,
+    );
+    const visible = visibleParts(narrative).join("");
+
+    assertCompleteNarrative(narrative);
+    expect(JSON.stringify(narrative)).not.toContain(sentinel);
+    expect(visible).not.toContain(sentinel);
+    expect(narrative.relationshipArc.join(""))
+      .toContain("关系材料不足时");
+    expect(narrative.relationshipArc.join(""))
+      .not.toContain("正面对撞");
+    expect(narrative.uncertaintyFlags)
+      .toContain("candidate-professional-field-excluded");
+  });
+
   it("keeps public prose free of chart terms, evidence labels, and event promises", () => {
     const { chart, report, items } = fixture();
     const visible = visibleParts(
@@ -486,7 +584,7 @@ describe("deterministic life scroll", () => {
     for (const sentence of sentences) {
       expect(sentence.trim()).toMatch(/[。！？]$/u);
       expect(sentence).not.toMatch(
-        /而；|和，再|你里|环境变化，找(?:。|；)|若急于显示能力而/u,
+        /而；|和，再|你里|环境变化，找(?:。|；)|若急于显示能力而|发生把|入口这卷|力量这卷|负重这卷/u,
       );
     }
     const normalized = normalizedSentences(mainArcParts(narrative));
