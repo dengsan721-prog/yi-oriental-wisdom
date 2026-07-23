@@ -150,7 +150,6 @@ export function YiExperience() {
       chart={result}
       birth={birth}
       report={professionalReport}
-      overview={buildProfessionalOverview(result)}
       interpretations={buildInterpretations(result)}
       themeElement={themeElement}
       activeSection={route.section}

@@ -1,68 +1,117 @@
-import { matchAnimalArchetype, matchHistoricalMirror } from "../../lib/yi/mirrors";
-import type { FourPillarsResult, InterpretationItem, ProfessionalOverview } from "../../lib/yi/types";
-import { ChapterSources } from "./ChapterSources";
+import {
+  buildLifeScrollNarrative,
+  type DaoStoryNote,
+} from "../../lib/yi/life-scroll";
+import type { StoryMirror } from "../../lib/yi/story-mirrors";
+import type {
+  FourPillarsResult,
+  InterpretationItem,
+  ProfessionalReport,
+} from "../../lib/yi/types";
 
-function pick(items: InterpretationItem[], id: string) {
-  const item = items.find(candidate => candidate.id === id);
-  if (!item) throw new Error(`人生画像缺少必需解读：${id}`);
-  return item;
+function DaoNote({ note }: { note: DaoStoryNote }) {
+  return <aside className="dao-story-note">
+    <small>《道德经》小注 · 第{note.chapter}章</small>
+    <blockquote>{note.excerpt}</blockquote>
+    <p><strong>这句话原本在说：</strong>{note.plainCommentary.traditionalMeaning}</p>
+    <p><strong>放进你这一卷：</strong>{note.plainCommentary.storyConnection}</p>
+    <p><strong>落到眼前一幕：</strong>{note.plainCommentary.sceneGuidance}</p>
+  </aside>;
 }
 
-export function PortraitSection({ chart, overview, items }: { chart: FourPillarsResult; overview: ProfessionalOverview; items: InterpretationItem[] }) {
-  const lead = pick(items, "self-day-master");
-  const features = [pick(items, "self-support"), pick(items, "self-interface"), pick(items, "career-environment")];
-  const outside = pick(items, "talent-public");
-  const inside = pick(items, "talent-hidden");
-  const pressure = pick(items, "relationship-trigger");
-  const task = pick(items, "rhythm-decision");
-  const animal = matchAnimalArchetype(chart);
-  const person = matchHistoricalMirror(chart);
-  const dataBand = [
-    { label: "别人眼中的我", item: outside, text: outside.plainLanguage },
-    { label: "真实的我", item: inside, text: inside.plainLanguage },
-    { label: "天赋怎么用", item: inside, text: inside.action },
-    { label: "压力下的反应", item: pressure, text: pressure.scenario },
-    { label: "当前人生主线", item: task, text: task.action },
-  ];
+function PlacedDaoNotes({
+  notes,
+  placement,
+}: {
+  notes: readonly DaoStoryNote[];
+  placement: DaoStoryNote["placement"];
+}) {
+  return notes
+    .filter(note => note.placement === placement)
+    .map(note => <DaoNote key={note.internalSourceId} note={note} />);
+}
+
+function MirrorInterlude({
+  kind,
+  mirror,
+}: {
+  kind: "动物镜像" | "历史镜像";
+  mirror: StoryMirror;
+}) {
+  return <article className="life-scroll-part life-scroll-interlude">
+    <header>
+      <small>{kind}</small>
+      <h2>{mirror.name}</h2>
+    </header>
+    <div className="life-scroll-mirror">
+      <p><strong>{kind === "动物镜像" ? "它是谁" : "这位人物是谁"}</strong>{mirror.introduction}</p>
+      <p><strong>相像的一幕</strong>{mirror.matchingScene}</p>
+      <p><strong>重要区别</strong>{mirror.difference}</p>
+      <p><strong>带走的方法</strong>{mirror.takeaway}</p>
+    </div>
+  </article>;
+}
+
+export function PortraitSection({
+  chart,
+  report,
+  items,
+}: {
+  chart: FourPillarsResult;
+  report: ProfessionalReport;
+  items: InterpretationItem[];
+}) {
+  const narrative = buildLifeScrollNarrative(chart, report, items);
 
   return <section className="report-section portrait-report">
-    <header><small>人生画像</small><h1>{overview.dayMaster} · 人生观察</h1><p>{overview.pattern}</p></header>
-    <article className="portrait-lead">
-      <span>一句话看懂</span>
-      <h2>{lead.professionalTitle}</h2>
-      <p>{lead.plainLanguage}</p>
-      <small><b>专业依据</b>{lead.basis}</small>
-    </article>
-    <div className="portrait-feature-grid">
-      {features.map((item, index) => <article key={item.id}>
-        <span>核心特征 0{index + 1}</span>
-        <h2>{item.professionalTitle}</h2>
-        <p>{item.plainLanguage}</p>
-        <small><b>专业依据</b>{item.basis}</small>
-      </article>)}
-    </div>
-    <dl className="portrait-data-band">
-      {dataBand.map(({ label, item, text }) => <div key={label}><dt>{label} · {item.professionalTitle}</dt><dd>{text}</dd></div>)}
-    </dl>
-    <div className="portrait-mirrors">
-      <article>
-        <span>自然动物原型 · 行为隐喻</span>
-        <h2>{animal.name}</h2>
-        <p>{animal.basis}</p>
-        <b>现在可做</b><p>{animal.action}</p>
-        <small>{animal.caution}</small>
+    <header className="life-scroll-heading">
+      <small>第一章 · 先读故事</small>
+      <h1>人生画卷</h1>
+      <p>从眼前处境读起，看见事业、关系与节奏怎样彼此牵动，再把今天能做的一步留下来。</p>
+    </header>
+    <div className="life-scroll-reading">
+      <article className="life-scroll-part life-scroll-opening">
+        <header><small>01</small><h2>人生一句话</h2></header>
+        <blockquote>{narrative.oneLineTheme}</blockquote>
+        {narrative.openingScene.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
       </article>
-      <article>
-        <span>历史人物维度 · {person.reliability} 可靠级</span>
-        <h2>{person.person} · {person.dimension}</h2>
-        <p>{person.basis}</p>
-        <b>资料来源</b><p>{person.source}</p>
-        <small>{person.caution}</small>
+
+      <MirrorInterlude kind="动物镜像" mirror={narrative.animalInterlude} />
+
+      <article className="life-scroll-part">
+        <header><small>02</small><h2>事业线</h2></header>
+        {narrative.careerArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+        <PlacedDaoNotes notes={narrative.daoNotes} placement="career" />
+      </article>
+
+      <article className="life-scroll-part">
+        <header><small>03</small><h2>婚姻与关系线</h2></header>
+        {narrative.relationshipArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+        <PlacedDaoNotes notes={narrative.daoNotes} placement="relationship" />
+      </article>
+
+      <article className="life-scroll-part">
+        <header><small>04</small><h2>命运转折线</h2></header>
+        {narrative.turningPointArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+        <PlacedDaoNotes notes={narrative.daoNotes} placement="turning-point" />
+      </article>
+
+      <MirrorInterlude kind="历史镜像" mirror={narrative.historicalInterlude} />
+
+      <article className="life-scroll-part">
+        <header><small>05</small><h2>中后程</h2></header>
+        {narrative.matureArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+      </article>
+
+      <article className="life-scroll-part life-scroll-closing">
+        <header><small>写在卷尾</small><h2>收束</h2></header>
+        <p>{narrative.closingLine}</p>
+        <aside className="life-scroll-action">
+          <strong>当下行动</strong>
+          <p>{narrative.actionNow}</p>
+        </aside>
+        <PlacedDaoNotes notes={narrative.daoNotes} placement="closing" />
       </article>
     </div>
-    <ChapterSources
-      note="本章以稳定命盘坐标和产品生活化转译组织画像；动物与人物只作单维镜像，不等于人格诊断或命运相同。"
-      sourceIds={items.flatMap(item => item.sourceRuleIds)}
-    />
   </section>;
 }

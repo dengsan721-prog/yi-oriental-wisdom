@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createInitialResultShellState, createResultScrollPositions, getAvailableSections, getResultSections, resultShellReducer, restoreScrollTop, selectResultSection } from "../../components/yi/ResultShell";
 import { ResultShell } from "../../components/yi/ResultShell";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
-import { buildInterpretations, buildProfessionalOverview } from "../../lib/yi/interpretation";
+import { buildInterpretations } from "../../lib/yi/interpretation";
 import { buildProfessionalReport } from "../../lib/yi/report-model";
 import { deriveYiThemeElement } from "../../lib/yi/theme";
 import type { BirthInput } from "../../lib/yi/types";
@@ -31,7 +31,6 @@ function renderResult(birth: BirthInput = exactBirth, options: {
     chart,
     birth,
     report,
-    overview: buildProfessionalOverview(chart),
     interpretations: buildInterpretations(chart),
     activeSection: "portrait",
     onSectionChange: () => {},
@@ -91,6 +90,8 @@ describe("result navigation", () => {
     expect(lifeHomeSource).toContain('<YiBrandMark variant="compact" />');
     expect(lifeHomeSource).not.toContain('className="mini-mark"');
     expect(experienceSource).toContain("themeElement={themeElement}");
+    expect(experienceSource).not.toContain("overview={buildProfessionalOverview(result)}");
+    expect(experienceSource).toContain("overview: buildProfessionalOverview(result)");
   });
 
   it("places save and restart actions after the adopted facts, outside the title row", () => {
@@ -141,6 +142,7 @@ describe("result navigation", () => {
     expect(getResultSections().map(([id]) => id)).toEqual([
       "portrait", "chart", "detail", "fortune", "compatibility", "mirror", "tradition",
     ]);
+    expect(getResultSections()[0]).toEqual(["portrait", "人生画卷"]);
   });
 
   it("exposes all seven production sections", () => {

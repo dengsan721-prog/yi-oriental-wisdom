@@ -4,7 +4,7 @@ import { useEffect, useReducer, useRef, useState } from "react";
 import type { RelationshipType } from "../../lib/yi/compatibility";
 import type { ReportSectionId } from "../../lib/yi/hash-router";
 import type { BirthSubmission } from "./BirthIntake";
-import type { BirthInput, FourPillarsResult, InterpretationItem, ProfessionalOverview, ProfessionalReport } from "../../lib/yi/types";
+import type { BirthInput, FourPillarsResult, InterpretationItem, ProfessionalReport } from "../../lib/yi/types";
 import { PortraitSection } from "./PortraitSection";
 import { ChartSection } from "./ChartSection";
 import { DetailSection } from "./DetailSection";
@@ -18,7 +18,7 @@ import type { YiThemeElement } from "../../lib/yi/theme";
 import { YiBrandMark } from "./YiBrandMark";
 
 export const getResultSections = () => [
-  ["portrait", "画像"], ["chart", "命盘"], ["detail", "详批"],
+  ["portrait", "人生画卷"], ["chart", "命盘"], ["detail", "详批"],
   ["fortune", "大运"], ["compatibility", "合盘"], ["mirror", "镜像"],
   ["tradition", "传统"],
 ] as const;
@@ -76,8 +76,8 @@ function SaveHomeDialog({ onConfirm, onClose }: { onConfirm: () => void; onClose
   </div>;
 }
 
-export function ResultShell({ name, chart, birth, report, overview, interpretations, themeElement, activeSection, onSectionChange, onRestart, onSaveHome, storageError }: {
-  name: string; chart: FourPillarsResult; overview: ProfessionalOverview;
+export function ResultShell({ name, chart, birth, report, interpretations, themeElement, activeSection, onSectionChange, onRestart, onSaveHome, storageError }: {
+  name: string; chart: FourPillarsResult;
   birth: BirthInput; report: ProfessionalReport; interpretations: InterpretationItem[]; activeSection: ReportSectionId; onSectionChange: (section: ReportSectionId) => void;
   themeElement: YiThemeElement; onRestart: () => void; onSaveHome?: () => void; storageError?: string;
 }) {
@@ -127,7 +127,7 @@ export function ResultShell({ name, chart, birth, report, overview, interpretati
       {getResultSections().filter(([id]) => availableSections.includes(id)).map(([id, label]) => <button key={id} className={activeSection === id ? "active" : ""} aria-current={activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>{label}</button>)}
     </nav>
     <div className="result-content">
-      <div hidden={activeSection !== "portrait"}><PortraitSection chart={chart} overview={overview} items={interpretations} /></div>
+      <div hidden={activeSection !== "portrait"}><PortraitSection chart={chart} report={report} items={interpretations} /></div>
       <div hidden={activeSection !== "chart"}><ChartSection chart={chart} name={name} report={report} /></div>
       <div hidden={activeSection !== "detail"}><DetailSection items={interpretations} /></div>
       <div hidden={activeSection !== "fortune"}><FortuneSection chart={chart} birth={birth} /></div>
