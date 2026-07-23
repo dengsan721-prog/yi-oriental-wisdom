@@ -5,6 +5,7 @@ import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { formatYiHash, guardYiRoute, parseYiHash, resolveYiHydratedRoute } from "../../lib/yi/hash-router";
 import { buildInterpretations, buildProfessionalOverview } from "../../lib/yi/interpretation";
 import { buildProfessionalReport } from "../../lib/yi/report-model";
+import { deriveYiThemeElement } from "../../lib/yi/theme";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 import { BirthIntake, type BirthSubmission } from "./BirthIntake";
 import { ResultShell } from "./ResultShell";
@@ -43,6 +44,7 @@ export function YiExperience() {
     () => result && birth ? buildProfessionalReport(result, birth) : null,
     [birth, result],
   );
+  const themeElement = deriveYiThemeElement(result);
 
   useEffect(() => {
     const restoreTimer = window.setTimeout(() => {
@@ -139,7 +141,7 @@ export function YiExperience() {
     return cleared;
   }
 
-  return <main>
+  return <main data-element={themeElement}>
     {hydrated && route.page === "home" && profile && <LifeHome profile={profile} onChange={updateProfile} onClear={removeProfile} onViewReport={() => push({ page: "report", section: "portrait" })} />}
     {(!hydrated || route.page === "intro") && <RitualIntro restoring={!hydrated} onStart={() => push({ page: "birth" })} />}
     {hydrated && route.page === "birth" && <section className="intake">
