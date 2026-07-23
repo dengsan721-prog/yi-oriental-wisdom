@@ -8,12 +8,13 @@ import type {
   NameChartInteraction,
   NameDirection,
   NameSemanticSummary,
+  NameSurname,
 } from "../../lib/yi/name-types";
 import type { NameRealityScore, NameRealityTestAnswers } from "../../lib/yi/name-score-contract";
 import type { UsageRiskInput } from "../../lib/yi/name-analysis";
 import type { FourPillarsResult, ProfessionalReport } from "../../lib/yi/types";
 
-type NameAnalysisMode = "current" | "traditional-reference" | "candidate";
+export type NameAnalysisMode = "current" | "traditional-reference" | "candidate";
 type RealityDimension = keyof NameRealityTestAnswers;
 type RealityAnswer = NameRealityTestAnswers[RealityDimension];
 type UsageRiskId = UsageRiskInput["id"];
@@ -21,6 +22,7 @@ type UsageRiskId = UsageRiskInput["id"];
 export type NameAnalysisViewResult = {
   rawInput: string;
   mode: NameAnalysisMode;
+  surname: NameSurname;
   characters: NameCharacterRecord[];
   blockers: NameBlockerOccurrence[];
   semanticSummary: NameSemanticSummary;
@@ -37,7 +39,7 @@ export type NameAnalysisViewResult = {
   sourceIds: string[];
 };
 
-type NameAnalysisRequest = {
+export type NameAnalysisRequest = {
   mode: NameAnalysisMode;
   traditionalSelections: Readonly<Record<number, string | undefined>>;
   actualReadings: Readonly<Record<number, string | undefined>>;
