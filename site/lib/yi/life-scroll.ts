@@ -316,7 +316,7 @@ const NEUTRAL_RELATION: RelationFrame = {
   repair:
     "通用修复从复述事实、提出具体请求和约定重谈时间开始，不预设谁应该让步。",
   visibleTurn:
-    "可见转折是一项新的回应真正发生，并被相关的人共同确认。",
+    "只有当相关的人都能观察并确认一项新的回应时，才把它视为可见转折。",
   daoScene: "双方需要重新核对事实、影响和可以承担的下一步",
   daoAction: "复述事实并提出一项可以回应的具体请求",
 };
@@ -389,6 +389,33 @@ const DAO_FRAMES: Readonly<Record<string, DaoFrame>> = {
       `故事走到${context.placement}时，场景是：${context.scene}。人物完成工作后仍被“${context.tension}”拉回比较。人物让成果回到真实受益者；${context.turn}之后，行动不再依赖争夺位置来确认价值。`,
     sceneGuidance: context =>
       `人物先${context.action}，再核对成果是否真的被使用，并清楚记录各方贡献。不争不是抹去责任，而是不让功劳竞争破坏已经完成的工作。`,
+  },
+};
+
+const NEUTRAL_DAO_FRAMES: Readonly<Record<string, DaoFrame>> = {
+  "dao-15-clear": {
+    storyConnection: context =>
+      `故事走到${context.placement}时，场景是：${context.scene}。若${context.tension}，可以先暂停追加判断，${context.action}并等待新材料；只有事实层次变得更清楚，才继续决定下一步。`,
+    sceneGuidance: context =>
+      `若新事实仍然不足，先保留一个观察回合，再${context.turn}并约定核对时间。等待不是拖延，而是不给空白补出未经确认的答案。`,
+  },
+  "dao-33-self": {
+    storyConnection: context =>
+      `故事走到${context.placement}时，场景是：${context.scene}。若${context.tension}且解释仍混在其中，可以先分开记录外部事实与自动解释，再核对自己的容量与偏差；只有可修改的回应变得清楚，才安排下一步。`,
+    sceneGuidance: context =>
+      `若仍分不清事实与解释，先${context.action}，再请相关的人补充不同观察。看清自己不是自责，而是为后续修正保留入口。`,
+  },
+  "dao-63-small": {
+    storyConnection: context =>
+      `故事走到${context.placement}时，场景是：${context.scene}。若${context.tension}且问题还不能整体处理，可以在容易核对的细处先作安排，再${context.turn}；只有反馈支持继续推进，才接上下一步。`,
+    sceneGuidance: context =>
+      `若目标仍然过大，先${context.action}，再选一项二十分钟内能够完成的细节。小步不轻看困难，只避免问题继续累积。`,
+  },
+  "dao-81-no-strife": {
+    storyConnection: context =>
+      `故事走到${context.placement}时，场景是：${context.scene}。若${context.tension}且成果归属仍不清楚，可以先核对成果是否真的被使用，再清楚记录各方贡献；只有行动回到真实受益者，才放下功劳竞争。`,
+    sceneGuidance: context =>
+      `若贡献边界仍不清楚，先${context.action}，再确认谁实际受益、谁仍需回应。不争不抹去责任，只避免功劳竞争破坏工作。`,
   },
 };
 
@@ -469,8 +496,9 @@ function buildDaoNote(
   note: UsableDaoNote,
   context: DaoStoryContext,
   placement: DaoPlacement,
+  frames: Readonly<Record<string, DaoFrame>> = DAO_FRAMES,
 ): DaoStoryNote {
-  const frame = DAO_FRAMES[note.id];
+  const frame = frames[note.id];
   const safeContext: DaoFrameContext = {
     tension: conciseCompleteThought(
       context.tension,
@@ -519,9 +547,10 @@ function buildDaoNote(
   };
 }
 
-export function buildDaoStoryNotes(
+function buildDaoStoryNotesWithFrames(
   themes: readonly DaoNoteTheme[],
   context: DaoStoryContext,
+  frames: Readonly<Record<string, DaoFrame>>,
 ): DaoStoryNoteResult {
   const selected = selectReviewedDaoNotes(themes, { min: 2, max: 4 });
   const usable: UsableDaoNote[] = selected.filter(isUsableDaoNote);
@@ -554,9 +583,21 @@ export function buildDaoStoryNotes(
   }
 
   const daoNotes = usable.slice(0, 4).map((note, index) =>
-    buildDaoNote(note, context, DAO_PLACEMENTS[index] ?? "closing")
+    buildDaoNote(
+      note,
+      context,
+      DAO_PLACEMENTS[index] ?? "closing",
+      frames,
+    )
   );
   return deepFreeze({ daoNotes, uncertaintyFlags });
+}
+
+export function buildDaoStoryNotes(
+  themes: readonly DaoNoteTheme[],
+  context: DaoStoryContext,
+): DaoStoryNoteResult {
+  return buildDaoStoryNotesWithFrames(themes, context, DAO_FRAMES);
 }
 
 function selectNarrativeDaoThemes(
@@ -681,7 +722,7 @@ export function buildLifeScrollNarrative(
 
   const selfScenario = safeStoryField(
     self?.scenario ?? "",
-    "眼前同时有几项责任需要处理，事实、容量和优先顺序尚未放到一起核对。",
+    "当需要同时处理几项责任时，先把事实、容量和优先顺序放在一起核对。",
   );
   const talentAdvantage = safeStoryField(
     talent?.advantageVersion ?? "",
@@ -803,7 +844,7 @@ export function buildLifeScrollNarrative(
     turn,
     matureMethod,
   ];
-  const daoResult = buildDaoStoryNotes(
+  const daoResult = buildDaoStoryNotesWithFrames(
     selectNarrativeDaoThemes(
       stable.structureBalance,
       stable.relations,
@@ -819,11 +860,12 @@ export function buildLifeScrollNarrative(
           action: relation.daoAction,
         }
       : {
-          tension: "急于获得确定感的冲动",
+          tension: "信息尚未充分核对",
           turn: "完成一项可核对的改变",
           scene: "只保留通用观察的时刻",
           action: "写清已知事实和下一步",
         },
+    hasAnyMaterial ? DAO_FRAMES : NEUTRAL_DAO_FRAMES,
   );
   const mirrors = buildStoryMirrors(chart);
   const missingDomains = ([
