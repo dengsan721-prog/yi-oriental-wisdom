@@ -807,7 +807,8 @@ export function buildChartNarrative(
     scene: `${relationshipScene}${relation.situation}。人物先停下解释，确认对方真正听见了什么。`,
     aim: `${relation.approach}，也把“${style.mature}”带进相处`,
     strength: `${style.strength}，同时暂停自证，把彼此带回具体事情`,
-    cost: `${relation.conflict}。${style.risk}时，善意也会变成压力`,
+    cost:
+      `${relation.conflict}。误会继续累积时，也要留意这项旧代价：${style.risk}`,
     lowPoint: "双方越想证明自己没有错，越难听见对方真正要守住的部分",
     reset: `核对事实、请求与回应，再按这条路径修复：${relation.repair}`,
     result: "双方先复述对方请求，再执行一项新约定；关系不必马上完美，却多了一条可以重复使用的路径",
@@ -902,7 +903,8 @@ export function buildChartNarrative(
       reaction:
         `急着证明自己的解释完整，或为了恢复平静先答应以后注意，再用“${cue.strength}”维持表面秩序`,
       benefit: "争论暂时有了出口，表面关系也可能很快恢复日常",
-      cost: `触发、影响和责任没有重新安排；${style.risk}时，同一争执仍会沿旧路径回来`,
+      cost:
+        `触发、影响和责任未重排，同一争执仍会回来；旧代价也会重现：${style.risk}`,
       turn:
         `分开事实、影响和各自责任，再把“${relationshipReviewTexture}”落实成暂停信号、恢复时间和一项边界`,
       example: sceneFor(
