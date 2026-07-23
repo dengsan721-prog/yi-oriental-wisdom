@@ -107,6 +107,16 @@ function poisonLegacyProse(period: FortunePeriod): FortunePeriod {
   };
 }
 
+function countHan(value: string): number {
+  return value.match(/\p{Script=Han}/gu)?.length ?? 0;
+}
+
+function normalizeYearStory(value: string): string {
+  return value
+    .replace(/\d{4}年|\d+岁/gu, "")
+    .replace(/[，。；：“”、《》\s]/gu, "");
+}
+
 beforeEach(() => {
   vi.mocked(buildFortuneTimeline).mockClear();
 });
@@ -178,6 +188,96 @@ describe("fortune stage story projection", () => {
       .not.toContain("旧大运说明不得进入公开阶段故事");
   });
 
+  it("varies stage and year stories beyond dates while avoiding adjacent repeats", () => {
+    const chart = calculateFourPillars(exactMale);
+    const projected = buildFortuneStoryTimeline(chart, exactMale);
+    expectAvailable(projected);
+
+    const periodStories = projected.periods.map(period => [
+      period.openingScene,
+      period.careerScene,
+      period.resourceScene,
+      period.relationshipScene,
+      period.familyScene,
+      period.rhythmScene,
+    ].join(""));
+    expect(new Set(periodStories).size).toBe(projected.periods.length);
+
+    const yearStories = projected.periods.flatMap(period =>
+      period.years.map(year => `${year.title}${year.scene}${year.action}`)
+    );
+    const normalized = yearStories.map(normalizeYearStory);
+    expect(new Set(normalized).size).toBeGreaterThanOrEqual(20);
+    expect(yearStories.filter((story, index) =>
+      index > 0 && story === yearStories[index - 1]
+    )).toHaveLength(0);
+  });
+
+  it("uses age-appropriate scenes and actions for childhood stages", () => {
+    const childBirth: BirthInput = {
+      name: "林小满",
+      date: "2001-11-08",
+      time: "07:10",
+      location: "北京市",
+      gender: "male",
+      timeConfidence: "approximate",
+    };
+    const projected = buildFortuneStoryTimeline(
+      calculateFourPillars(childBirth),
+      childBirth,
+    );
+    expectAvailable(projected);
+
+    const childhood = projected.periods.find(period =>
+      period.years.every(year => year.age <= 11)
+    );
+    expect(childhood).toBeDefined();
+    if (!childhood) throw new Error("Expected a childhood fortune stage");
+
+    const visible = [
+      childhood.openingScene,
+      childhood.careerScene,
+      childhood.resourceScene,
+      childhood.relationshipScene,
+      childhood.familyScene,
+      childhood.rhythmScene,
+      ...childhood.actions,
+      ...childhood.years.flatMap(year => [year.scene, year.action]),
+    ].join("");
+    expect(visible).toMatch(/课堂|学习|家务|同伴|家人/u);
+    expect(visible).not.toMatch(
+      /工作选择|交付容量|预算|现金流|公开责任|高压任务|负责人|退出条件|金额上限/u,
+    );
+  });
+
+  it("writes stage and year scenes with a person, event, action, and consequence", () => {
+    const chart = calculateFourPillars(exactMale);
+    const projected = buildFortuneStoryTimeline(chart, exactMale);
+    expectAvailable(projected);
+
+    for (const period of projected.periods) {
+      expect(countHan(period.openingScene), period.ageRange)
+        .toBeGreaterThanOrEqual(70);
+      expect(period.openingScene, period.ageRange)
+        .toMatch(/你|一个人/u);
+      expect(period.openingScene, period.ageRange)
+        .toMatch(/一次|一天|当|来到|走进/u);
+      expect(period.openingScene, period.ageRange)
+        .toMatch(/于是|结果|否则|从而|便/u);
+
+      for (const year of period.years) {
+        expect(countHan(year.scene), `${year.year}:scene`)
+          .toBeGreaterThanOrEqual(45);
+        expect(year.scene, `${year.year}:scene`)
+          .toMatch(/你|家人|同伴|老师|伙伴/u);
+        expect(year.scene, `${year.year}:scene`)
+          .toMatch(/于是|结果|否则|从而|便/u);
+        expect(countHan(year.action), `${year.year}:action`)
+          .toBeGreaterThanOrEqual(18);
+      }
+    }
+  });
+
   it("keeps internal method IDs out of every visible string", () => {
     const chart = calculateFourPillars(exactMale);
     const projected = buildFortuneStoryTimeline(chart, exactMale);
@@ -202,6 +302,9 @@ describe("fortune stage story projection", () => {
     );
     expect(visible).not.toMatch(
       /注定|必然|一定会|将会|保证|预示|发财|结婚|离婚|患病|灾难|寿命/u,
+    );
+    expect(visible).not.toMatch(
+      /先先|若若|若如果|一次第一次/u,
     );
   });
 
