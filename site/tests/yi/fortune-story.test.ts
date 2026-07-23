@@ -248,6 +248,9 @@ describe("fortune stage story projection", () => {
     expect(visible).not.toMatch(
       /工作选择|交付容量|预算|现金流|公开责任|高压任务|负责人|退出条件|金额上限/u,
     );
+    expect(visible).not.toMatch(
+      /在一次一起|完成同伴游戏中的一次/u,
+    );
 
     const ageTwo = childhood.years.find(year => year.age === 2);
     expect(ageTwo).toBeDefined();
@@ -296,6 +299,34 @@ describe("fortune stage story projection", () => {
     )).toHaveLength(0);
   });
 
+  it("keeps every preschool year concrete and child-sized", () => {
+    const birth: BirthInput = {
+      ...exactMale,
+      date: "2001-11-08",
+      time: "07:10",
+      timeConfidence: "approximate",
+    };
+    const projected = buildFortuneStoryTimeline(
+      calculateFourPillars(birth),
+      birth,
+    );
+    expectAvailable(projected);
+
+    const preschoolYears = projected.periods
+      .flatMap(period => period.years)
+      .filter(year => year.age <= 6);
+    expect(preschoolYears.length).toBeGreaterThan(0);
+    for (const year of preschoolYears) {
+      const visible = `${year.title}${year.scene}${year.action}`;
+      expect(visible, `${year.age}岁`).toMatch(
+        /玩具|画画|游戏|家人|照顾者|轮流|收拾|一起/u,
+      );
+      expect(visible, `${year.age}岁`).not.toMatch(
+        /验证|可比较的结果|个人主张|共同任务|协作环节|事实、影响|默认同意|复述要求|检查时间/u,
+      );
+    }
+  });
+
   it("keeps internal method IDs out of every visible string", () => {
     const chart = calculateFourPillars(exactMale);
     const projected = buildFortuneStoryTimeline(chart, exactMale);
@@ -323,6 +354,9 @@ describe("fortune stage story projection", () => {
     );
     expect(visible).not.toMatch(
       /先先|若若|若如果|一次第一次|从一次从|在一次把|遇到与|承担多大范围的结果|为恢复保留真实预算/u,
+    );
+    expect(visible).not.toMatch(
+      /在一次一起|完成同伴游戏中的一次/u,
     );
   });
 

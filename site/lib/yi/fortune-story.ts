@@ -264,6 +264,81 @@ const ANNUAL_STORY_FRAMES: Readonly<
   },
 };
 
+const PRESCHOOL_STORY_FRAMES: Readonly<
+  Record<TenGodName, AnnualStoryFrame>
+> = {
+  比肩: {
+    title: "我来做这一步",
+    firstMove: "先选一块自己来搭，再请家人帮忙扶住另一边",
+    benefit: "孩子看见自己能完成一小步，也愿意和别人一起",
+    risk: "只想把玩具全拿在自己手里，不让别人碰",
+    turn: "说“这块我来，那块一起做”，再轮流一次",
+  },
+  劫财: {
+    title: "轮到谁，先说清",
+    firstMove: "先问小伙伴想玩哪一个，再商量一人玩一会儿",
+    benefit: "大家都等得到自己的回合，游戏能继续",
+    risk: "一着急就去抢玩具，忘了先开口问",
+    turn: "把玩具放回中间，说“轮到你，再轮到我”",
+  },
+  食神: {
+    title: "小作品做完给家人看",
+    firstMove: "先把一幅画或一座积木搭完，再请家人看看",
+    benefit: "孩子的小想法有了能看见的样子",
+    risk: "刚玩一会儿就换下一样，地上留下许多没收好的玩具",
+    turn: "先收好手上这一样，再选下一样",
+  },
+  伤官: {
+    title: "不一样，也能好好说",
+    firstMove: "先指给家人看哪里不一样，再说自己想怎么改",
+    benefit: "闹别扭变成了一句能听懂的话",
+    risk: "不高兴时只喊“不要”，别人不知道发生了什么",
+    turn: "说“我不喜欢这里，我想这样”，再请大人听一遍",
+  },
+  偏财: {
+    title: "新玩具先玩一个",
+    firstMove: "先从新玩具里挑一个，玩一会儿再换",
+    benefit: "新鲜感有了位置，手边也没有乱成一团",
+    risk: "每样都想马上拿到，最后哪个也没玩明白",
+    turn: "把没玩的先放回盒子，只留一个在手边",
+  },
+  正财: {
+    title: "玩过的东西送回家",
+    firstMove: "先把画笔、积木和故事书各自放回原位",
+    benefit: "孩子知道下一次去哪里找到它们",
+    risk: "怕别人弄乱，什么都紧紧抱着不肯分享",
+    turn: "留下正在用的一样，其他玩具先回到盒子",
+  },
+  七杀: {
+    title: "害怕时先找大人",
+    firstMove: "先告诉家人“我有点怕”，再一起做最小的一步",
+    benefit: "紧张的时候也有人陪着，孩子不必一个人硬撑",
+    risk: "为了显得勇敢，哭了也不肯让人靠近",
+    turn: "停一下、牵住照顾者的手，再试一小步",
+  },
+  正官: {
+    title: "小约定变成小动作",
+    firstMove: "先听清“收一盒积木”这样的一个小约定，再开始做",
+    benefit: "大人的话变成孩子做得到的一步",
+    risk: "一次听到太多要求，只记得自己又做错了",
+    turn: "请家人只说一件事，做完再说下一件",
+  },
+  偏印: {
+    title: "换一种玩法看看",
+    firstMove: "先把积木换个方向，或给画添一种新颜色",
+    benefit: "卡住的游戏又有了好玩的入口",
+    risk: "不停换玩法，刚开始就把手上的东西丢开",
+    turn: "新玩法和原玩法各玩一回，再挑更喜欢的",
+  },
+  正印: {
+    title: "跟着做一次，再自己来",
+    firstMove: "先看家人示范怎样收玩具，再自己做一遍",
+    benefit: "被帮助的一步慢慢变成孩子会做的事",
+    risk: "总等着大人代劳，自己不肯伸手试",
+    turn: "请照顾者做第一步，孩子接着完成第二步",
+  },
+};
+
 type LifeStageContext = Readonly<{
   id:
     | "preschool"
@@ -292,7 +367,7 @@ const LIFE_STAGE_CONTEXTS: readonly LifeStageContext[] = [
     id: "preschool",
     label: "幼年启蒙期",
     metaphor: "一间由玩具、画纸、故事和家人陪伴组成的小屋",
-    events: ["一次一起搭积木", "一次收拾玩具", "一次轮流画画或玩游戏"],
+    events: ["和家人一起搭积木", "收拾玩具", "与小伙伴轮流画画或玩游戏"],
     career: "“事业”在幼年只表示愿意尝试、完成一个小动作并学会求助；大人把任务说成孩子能听懂的一步",
     resource: "资源是玩具、画笔、点心、时间和家人陪伴；一次只拿需要的一份，用完再放回原处",
     relationship: "和小伙伴相处先练习轮流、等待和说“我还想玩”；大人帮助孩子把抢夺改成请求",
@@ -446,12 +521,14 @@ function buildFortuneStoryYear(
     chart.pillars.day.stem,
     year.stemBranch[0],
   );
-  const annualFrame = ANNUAL_STORY_FRAMES[annualGod];
   const lifeStage = lifeStageForAge(year.age);
+  const annualFrame = lifeStage.id === "preschool"
+    ? PRESCHOOL_STORY_FRAMES[annualGod]
+    : ANNUAL_STORY_FRAMES[annualGod];
   const variant = Math.abs(year.year + year.age) % lifeStage.events.length;
   const event = lifeStage.events[variant];
   const scene = [
-    `把${year.year}年（${year.age}岁）当作一页生活观察，可以从${event}开始：你${annualFrame.firstMove}，于是${annualFrame.benefit}。`,
+    `把${year.year}年（${year.age}岁）当作一页生活观察，可以从“${event}”这个场景开始：你${annualFrame.firstMove}，于是${annualFrame.benefit}。`,
     `如果${annualFrame.risk}，${lifeStage.consequence}；这时可以${annualFrame.turn}，再看事情的结果是否真的改变。`,
   ].join("");
   const action = lifeStage.id === "preschool"
@@ -479,14 +556,16 @@ function buildFortuneStoryPeriod(
   }
   const category = storyCategory(period.tenGod);
   const frame = PERIOD_STORY_FRAMES[category];
-  const periodFlavor = ANNUAL_STORY_FRAMES[period.tenGod];
   const lifeStage = lifeStageForPeriod(period);
+  const periodFlavor = period.startAge <= 6
+    ? PRESCHOOL_STORY_FRAMES[period.tenGod]
+    : ANNUAL_STORY_FRAMES[period.tenGod];
   const event = lifeStage.events[
     Math.abs(period.startYear + period.startAge) % lifeStage.events.length
   ];
   const openingScene = [
     `在${period.startAge}–${period.endAge}岁这段路上，可以把你想成走进${lifeStage.metaphor}。`,
-    `拿${event}作例子：你${periodFlavor.firstMove}，于是${periodFlavor.benefit}。`,
+    `拿“${event}”这个场景作例子：你${periodFlavor.firstMove}，于是${periodFlavor.benefit}。`,
     `若${periodFlavor.risk}，${lifeStage.consequence}；真正的转折是${periodFlavor.turn}，让下一步留下可以复查的结果。`,
   ].join("");
   const contextOnly = lifeStage.youth || lifeStage.id === "later";
@@ -507,9 +586,9 @@ function buildFortuneStoryPeriod(
     : `${lifeStage.rhythm}。${frame.rhythmScene}`;
   const actions: readonly [string, string, string] = contextOnly
     ? [
-        `在${lifeStage.events[0]}中，${periodFlavor.turn}；结束后请${lifeStage.reviewPartner}一起复盘。`,
-        `面对${lifeStage.events[1]}时，先说出自己能完成的一步，再看结果是否需要调整。`,
-        `完成${lifeStage.events[2]}后，记下触发、动作和结果，不用一次经历给自己下结论。`,
+        `在“${lifeStage.events[0]}”这个场景中，${periodFlavor.turn}；结束后请${lifeStage.reviewPartner}一起复盘。`,
+        `面对“${lifeStage.events[1]}”这件事时，先说出自己能完成的一步，再看结果是否需要调整。`,
+        `经历“${lifeStage.events[2]}”这个场景后，记下触发、动作和结果，不用一次经历给自己下结论。`,
       ]
     : frame.actions.map(action =>
         `${action}完成后与${lifeStage.reviewPartner}核对一次结果，再决定是否继续。`
