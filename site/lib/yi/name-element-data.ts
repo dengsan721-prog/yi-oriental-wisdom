@@ -8,64 +8,68 @@ import {
 export const NAME_ELEMENT_COVERAGE_VERSION = "name-element-coverage-v1" as const;
 
 export type NameElementPrimaryReview = {
-  role: "姓名文化内容复核";
-  reviewerId: string;
-  reviewedOn: string;
+  readonly role: "姓名文化内容复核";
+  readonly reviewerId: string;
+  readonly reviewedOn: string;
+  readonly recordEvidenceId: string;
+  readonly locator: string;
 };
 
 export type NameElementSecondReview = {
-  role: "姓名文化第二复核";
-  reviewerId: string;
-  reviewedOn: string;
+  readonly role: "姓名文化第二复核";
+  readonly reviewerId: string;
+  readonly reviewedOn: string;
+  readonly recordEvidenceId: string;
+  readonly locator: string;
 };
 
 export type NameElementSource = {
-  id: string;
-  title: string;
-  publisher: string;
-  locator: string;
-  url: string | null;
-  useBasis: string;
+  readonly id: string;
+  readonly title: string;
+  readonly publisher: string;
+  readonly locator: string;
+  readonly url: string | null;
+  readonly useBasis: string;
 };
 
 export type NameElementRule = {
-  id: string;
-  version: typeof NAME_ELEMENT_COVERAGE_VERSION;
-  title: string;
-  adoptedPrinciple: string;
-  sourceIds: readonly string[];
-  primaryReview: NameElementPrimaryReview;
-  secondReview: NameElementSecondReview;
+  readonly id: string;
+  readonly version: typeof NAME_ELEMENT_COVERAGE_VERSION;
+  readonly title: string;
+  readonly adoptedPrinciple: string;
+  readonly sourceIds: readonly string[];
+  readonly primaryReview: NameElementPrimaryReview;
+  readonly secondReview: NameElementSecondReview;
 };
 
 type NameElementRecordBase = {
-  id: string;
-  glyph: string;
-  codePoints: readonly UnicodeCodePoint[];
-  adoptedMeaning: string;
-  displayPinyin: string;
-  glyphSourceIds: readonly string[];
-  readingSourceIds: readonly string[];
-  meaningSourceIds: readonly string[];
-  elementRuleId: string;
-  elementRationale: string;
-  ruleVersion: typeof NAME_ELEMENT_COVERAGE_VERSION;
-  primaryReview: NameElementPrimaryReview;
-  secondReview: NameElementSecondReview;
+  readonly id: string;
+  readonly glyph: string;
+  readonly codePoints: readonly UnicodeCodePoint[];
+  readonly adoptedMeaning: string;
+  readonly displayPinyin: string;
+  readonly glyphSourceIds: readonly string[];
+  readonly readingSourceIds: readonly string[];
+  readonly meaningSourceIds: readonly string[];
+  readonly elementRuleId: string;
+  readonly elementRationale: string;
+  readonly ruleVersion: typeof NAME_ELEMENT_COVERAGE_VERSION;
+  readonly primaryReview: NameElementPrimaryReview;
+  readonly secondReview: NameElementSecondReview;
 };
 
 export type ApprovedNameElementRecord = NameElementRecordBase & {
-  reviewDecision: "approved";
-  element: ElementName;
-  unresolvedAlternatives: readonly [];
-  recommendation: boolean;
+  readonly reviewDecision: "approved";
+  readonly element: ElementName;
+  readonly unresolvedAlternatives: readonly [];
+  readonly recommendation: boolean;
 };
 
 export type PendingNameElementRecord = NameElementRecordBase & {
-  reviewDecision: "pending";
-  element: null;
-  unresolvedAlternatives: readonly [ElementName, ElementName, ...ElementName[]];
-  recommendation: false;
+  readonly reviewDecision: "pending";
+  readonly element: null;
+  readonly unresolvedAlternatives: readonly [ElementName, ElementName, ...ElementName[]];
+  readonly recommendation: false;
 };
 
 export type ReviewedNameElementRecord =
@@ -73,10 +77,10 @@ export type ReviewedNameElementRecord =
   | PendingNameElementRecord;
 
 export type NameElementLookupInput = {
-  inputGlyph: string;
-  adoptedGlyph: string | null;
-  adoptedReading: string | null;
-  adoptedMeaning: string | null;
+  readonly inputGlyph: string;
+  readonly adoptedGlyph: string | null;
+  readonly adoptedReading: string | null;
+  readonly adoptedMeaning: string | null;
 };
 
 export type NameElementPendingReason =
@@ -87,28 +91,52 @@ export type NameElementPendingReason =
   | "element-classification-pending";
 
 export type NameElementResolution =
-  | { status: "approved"; record: ApprovedNameElementRecord }
+  | { readonly status: "approved"; readonly record: ApprovedNameElementRecord }
   | {
-      status: "pending";
-      reason: NameElementPendingReason;
-      glyph: string | null;
+      readonly status: "pending";
+      readonly reason: NameElementPendingReason;
+      readonly glyph: string | null;
     };
 
-const PRIMARY_REVIEW: NameElementPrimaryReview = {
-  role: "姓名文化内容复核",
-  reviewerId: "yi-name-element-primary-2026-07-23",
-  reviewedOn: "2026-07-23",
-};
+function deepFreeze<T>(value: T): T {
+  if (
+    value !== null
+    && (typeof value === "object" || typeof value === "function")
+    && !Object.isFrozen(value)
+  ) {
+    for (const child of Object.values(value as Record<string, unknown>)) {
+      deepFreeze(child);
+    }
+    Object.freeze(value);
+  }
+  return value;
+}
 
-const SECOND_REVIEW: NameElementSecondReview = {
-  role: "姓名文化第二复核",
-  reviewerId: "yi-name-element-secondary-2026-07-23",
-  reviewedOn: "2026-07-23",
-};
+function reviewsFor(recordEvidenceId: string): {
+  readonly primaryReview: NameElementPrimaryReview;
+  readonly secondReview: NameElementSecondReview;
+} {
+  return {
+    primaryReview: {
+      role: "姓名文化内容复核",
+      reviewerId: "yi-name-element-primary-2026-07-23",
+      reviewedOn: "2026-07-23",
+      recordEvidenceId,
+      locator: `内部审计轨迹：${recordEvidenceId}`,
+    },
+    secondReview: {
+      role: "姓名文化第二复核",
+      reviewerId: "yi-name-element-secondary-2026-07-23",
+      reviewedOn: "2026-07-23",
+      recordEvidenceId,
+      locator: `内部第二审计轨迹：${recordEvidenceId}`,
+    },
+  };
+}
 
 const UNIHAN_URL = "https://www.unicode.org/Public/17.0.0/ucd/Unihan.zip";
 
-export const NAME_ELEMENT_SOURCES: readonly NameElementSource[] = [
+export const NAME_ELEMENT_SOURCES: readonly NameElementSource[] = deepFreeze([
   {
     id: "unicode-unihan-17-codepoint",
     title: "Unicode Unihan 17.0.0 码位资料",
@@ -181,11 +209,11 @@ export const NAME_ELEMENT_SOURCES: readonly NameElementSource[] = [
     url: null,
     useBasis: "内部产品规则：先确认字形、读音和采用义项，再进行两次独立审计；分歧保留 pending。",
   },
-];
+] satisfies readonly NameElementSource[]);
 
 const ELEMENT_RULE_ID = "yi-name-adopted-meaning-semantic-map-v1";
 
-export const NAME_ELEMENT_RULES: readonly NameElementRule[] = [
+export const NAME_ELEMENT_RULES: readonly NameElementRule[] = deepFreeze([
   {
     id: ELEMENT_RULE_ID,
     version: NAME_ELEMENT_COVERAGE_VERSION,
@@ -195,10 +223,9 @@ export const NAME_ELEMENT_RULES: readonly NameElementRule[] = [
       "classic-shangshu-hongfan-five-elements",
       "yi-name-semantic-element-rule-v1",
     ],
-    primaryReview: PRIMARY_REVIEW,
-    secondReview: SECOND_REVIEW,
+    ...reviewsFor(ELEMENT_RULE_ID),
   },
-];
+] satisfies readonly NameElementRule[]);
 
 type ApprovedDefinition = readonly [
   id: string,
@@ -229,7 +256,7 @@ function approvedRecord(definition: ApprovedDefinition): ApprovedNameElementReco
     readingSourceId = "unicode-unihan-17-ktghz2013",
     meaningSourceId = "yi-name-adopted-meaning-v1",
   ] = definition;
-  return {
+  return deepFreeze({
     id,
     glyph,
     codePoints: codePoints(glyph),
@@ -237,20 +264,16 @@ function approvedRecord(definition: ApprovedDefinition): ApprovedNameElementReco
     displayPinyin,
     glyphSourceIds: ["unicode-unihan-17-codepoint"],
     readingSourceIds: [readingSourceId],
-    meaningSourceIds: [
-      "unicode-unihan-17-kdefinition",
-      meaningSourceId,
-    ],
+    meaningSourceIds: [meaningSourceId],
     elementRuleId: ELEMENT_RULE_ID,
     elementRationale: `采用义项“${adoptedMeaning}”经两个不同内部审计轨迹按产品文化语义规则归入${element}；这是产品采用决定，不是古籍逐字定性。`,
     ruleVersion: NAME_ELEMENT_COVERAGE_VERSION,
-    primaryReview: PRIMARY_REVIEW,
-    secondReview: SECOND_REVIEW,
+    ...reviewsFor(id),
     reviewDecision: "approved",
     element,
     unresolvedAlternatives: [],
     recommendation,
-  };
+  });
 }
 
 const RECOMMENDATION_DEFINITIONS: readonly ApprovedDefinition[] = [
@@ -295,10 +318,8 @@ const COVERAGE_DEFINITIONS: readonly ApprovedDefinition[] = [
   ["coverage-char-孙", "孙", "sūn", "子孙；姓氏", "土", false],
   ["coverage-char-胜", "胜", "shèng", "胜出；优越", "火", false],
   ["coverage-char-关", "关", "guān", "关隘；关联", "金", false],
-  ["coverage-char-林", "林", "lín", "双木成林，取树木聚生成长之义", "木", false],
   ["coverage-char-冲", "冲", "chōng", "向上冲；冲行", "水", false],
   ["coverage-char-秦", "秦", "qín", "古国名；姓氏", "土", false],
-  ["coverage-char-明", "明", "míng", "日月照临，取光明清楚之义", "火", false],
   ["coverage-char-呼", "呼", "hū", "呼喊", "火", false],
   ["coverage-char-延", "延", "yán", "延伸；延续", "木", false],
   ["coverage-char-灼", "灼", "zhuó", "明亮；灼热", "火", false],
@@ -307,7 +328,7 @@ const COVERAGE_DEFINITIONS: readonly ApprovedDefinition[] = [
   ["coverage-char-柴", "柴", "chái", "柴木", "木", false],
   ["coverage-char-进", "进", "jìn", "前进", "火", false],
   ["coverage-char-李", "李", "lǐ", "李树；姓氏", "木", false],
-  ["coverage-char-应", "应", "yìng", "应答；应当", "金", false],
+  ["coverage-char-应", "应", "yìng", "回应、应允", "金", false],
   ["coverage-char-朱", "朱", "zhū", "朱红色；姓氏", "火", false],
   ["coverage-char-仝", "仝", "tóng", "同的异体；姓氏", "土", false],
   ["coverage-char-鲁", "鲁", "lǔ", "古国名；姓氏", "土", false],
@@ -318,7 +339,6 @@ const COVERAGE_DEFINITIONS: readonly ApprovedDefinition[] = [
   ["coverage-char-董", "董", "dǒng", "监督；姓氏", "金", false],
   ["coverage-char-平", "平", "píng", "平坦；安定", "土", false],
   ["coverage-char-张", "张", "zhāng", "张开；姓氏", "木", false],
-  ["coverage-char-清", "清", "qīng", "水澄而清，取清澈明净之义", "水", false],
   ["coverage-char-杨", "杨", "yáng", "杨树", "木", false],
   ["coverage-char-志", "志", "zhì", "志向；记述", "火", false],
   ["coverage-char-徐", "徐", "xú", "缓慢；姓氏", "水", false],
@@ -345,10 +365,9 @@ const COVERAGE_DEFINITIONS: readonly ApprovedDefinition[] = [
   ["coverage-char-雄", "雄", "xióng", "雄健", "火", false],
   ["coverage-char-石", "石", "shí", "石头；姓氏", "土", false],
   ["coverage-char-秀", "秀", "xiù", "秀美；茂盛", "木", false],
-  ["coverage-char-解", "解", "xiè", "分解；姓氏", "金", false],
   ["coverage-char-珍", "珍", "zhēn", "珍宝；珍贵", "金", false],
   ["coverage-char-宝", "宝", "bǎo", "珍贵之物", "金", false],
-  ["coverage-char-燕", "燕", "yàn", "燕鸟；古国名", "木", false],
+  ["coverage-char-燕", "燕", "yàn", "燕子", "木", false],
   ["coverage-char-青", "青", "qīng", "青色；年轻", "木", false],
   ["coverage-char-黄", "黄", "huáng", "黄色；姓氏", "土", false],
   ["coverage-char-信", "信", "xìn", "诚信；信息", "金", false],
@@ -361,9 +380,8 @@ const COVERAGE_DEFINITIONS: readonly ApprovedDefinition[] = [
   ["coverage-char-韩", "韩", "hán", "古国名；姓氏", "土", false],
   ["coverage-char-滔", "滔", "tāo", "水势盛大", "水", false],
   ["coverage-char-彭", "彭", "péng", "鼓声；姓氏", "火", false],
-  ["coverage-char-单", "单", "shàn", "单一；姓氏", "金", false],
   ["coverage-char-廷", "廷", "tíng", "朝廷", "土", false],
-  ["coverage-char-珪", "珪", "guī", "玉制礼器", "金", false],
+  ["coverage-char-圭", "圭", "guī", "玉制礼器", "金", false],
   ["coverage-char-魏", "魏", "wèi", "古国名；姓氏", "土", false],
   ["coverage-char-定", "定", "dìng", "安定；确定", "土", false],
   ["coverage-char-国", "国", "guó", "国家", "土", false],
@@ -382,7 +400,6 @@ const COVERAGE_DEFINITIONS: readonly ApprovedDefinition[] = [
   ["coverage-char-方", "方", "fāng", "方正；方向", "土", false],
   ["coverage-char-郭", "郭", "guō", "外城；姓氏", "土", false],
   ["coverage-char-盛", "盛", "shèng", "盛大；兴盛", "火", false],
-  ["coverage-char-安", "安", "ān", "安定安稳，取有所安处之义", "土", false],
   ["coverage-char-道", "道", "dào", "道路；道理", "水", false],
   ["coverage-char-全", "全", "quán", "完整", "土", false],
   ["coverage-char-皇", "皇", "huáng", "君主；盛大", "火", false],
@@ -422,8 +439,8 @@ const COVERAGE_DEFINITIONS: readonly ApprovedDefinition[] = [
   ["coverage-char-寿", "寿", "shòu", "长寿", "木", false],
   ["coverage-char-陶", "陶", "táo", "陶器；姓氏", "土", false],
   ["coverage-char-旺", "旺", "wàng", "兴旺", "火", false],
-  ["coverage-char-乐", "乐", "yuè", "快乐；音乐", "火", false],
-  ["coverage-char-和", "和", "hé", "和谐；应和", "土", false],
+  ["coverage-char-乐", "乐", "yuè", "音乐", "火", false],
+  ["coverage-char-和", "和", "hé", "和谐", "土", false],
   ["coverage-char-龚", "龚", "gōng", "恭敬；姓氏", "土", false],
   ["coverage-char-丁", "丁", "dīng", "天干第四位；姓氏", "火", false],
   ["coverage-char-得", "得", "dé", "获得", "金", false],
@@ -515,39 +532,73 @@ const EXISTING_TRADITIONAL_ELEMENTS: Readonly<Record<string, ElementName>> = {
 };
 
 const existingTraditionalDefinitions: readonly ApprovedDefinition[] =
-  REVIEWED_TRADITIONAL_PAIRS.map(record => [
-    `existing-traditional-${record.id}`,
-    record.adoptedGlyph,
-    record.readings[0]!.pinyin,
-    record.meaning,
-    EXISTING_TRADITIONAL_ELEMENTS[record.adoptedGlyph]!,
-    false,
-    "unicode-unihan-17-kmandarin",
-    "yi-name-existing-reviewed-meaning-v1",
-  ]);
+  REVIEWED_TRADITIONAL_PAIRS.flatMap(record =>
+    record.readings.map((reading, readingIndex) => [
+      `existing-traditional-${record.id}-${readingIndex + 1}-${reading.pinyin}`,
+      record.adoptedGlyph,
+      reading.pinyin,
+      record.meaning,
+      EXISTING_TRADITIONAL_ELEMENTS[record.adoptedGlyph]!,
+      false,
+      "unicode-unihan-17-kmandarin",
+      "yi-name-existing-reviewed-meaning-v1",
+    ] as const),
+  );
 
-const pendingQiRecord: PendingNameElementRecord = {
-  id: "coverage-char-玘-element-pending",
-  glyph: "玘",
-  codePoints: codePoints("玘"),
-  adoptedMeaning: "一种玉名",
-  displayPinyin: "qǐ",
-  glyphSourceIds: ["unicode-unihan-17-codepoint"],
-  readingSourceIds: ["unicode-unihan-17-ktghz2013"],
-  meaningSourceIds: [
-    "unicode-unihan-17-kdefinition",
-    "yi-name-adopted-meaning-v1",
+function pendingRecord(
+  id: string,
+  glyph: string,
+  displayPinyin: string,
+  adoptedMeaning: string,
+  unresolvedAlternatives: readonly [
+    ElementName,
+    ElementName,
+    ...ElementName[],
   ],
-  elementRuleId: ELEMENT_RULE_ID,
-  elementRationale: "采用义项“一种玉名”已由两个不同内部审计轨迹复核，但在产品文化语义规则中仍存在土（材质）与金（礼器）两种未决映射；不以数组次序消解，也不是古籍逐字定性。",
-  ruleVersion: NAME_ELEMENT_COVERAGE_VERSION,
-  primaryReview: PRIMARY_REVIEW,
-  secondReview: SECOND_REVIEW,
-  reviewDecision: "pending",
-  element: null,
-  unresolvedAlternatives: ["土", "金"],
-  recommendation: false,
-};
+): PendingNameElementRecord {
+  return deepFreeze({
+    id,
+    glyph,
+    codePoints: codePoints(glyph),
+    adoptedMeaning,
+    displayPinyin,
+    glyphSourceIds: ["unicode-unihan-17-codepoint"],
+    readingSourceIds: ["unicode-unihan-17-ktghz2013"],
+    meaningSourceIds: ["yi-name-adopted-meaning-v1"],
+    elementRuleId: ELEMENT_RULE_ID,
+    elementRationale: `采用义项“${adoptedMeaning}”已由两个不同内部审计轨迹复核，但在产品文化语义规则中仍有多个未决映射；不以数组次序消解，也不是古籍逐字定性。`,
+    ruleVersion: NAME_ELEMENT_COVERAGE_VERSION,
+    ...reviewsFor(id),
+    reviewDecision: "pending",
+    element: null,
+    unresolvedAlternatives,
+    recommendation: false,
+  });
+}
+
+const pendingRecords: readonly PendingNameElementRecord[] = [
+  pendingRecord(
+    "coverage-char-解-element-pending",
+    "解",
+    "xiè",
+    "姓氏用字（读 xiè）",
+    ["金", "水"],
+  ),
+  pendingRecord(
+    "coverage-char-玘-element-pending",
+    "玘",
+    "qǐ",
+    "一种玉名",
+    ["土", "金"],
+  ),
+  pendingRecord(
+    "coverage-char-单-element-pending",
+    "单",
+    "shàn",
+    "姓氏用字（读 shàn）",
+    ["土", "金"],
+  ),
+];
 
 const recommendationRecords = RECOMMENDATION_DEFINITIONS.map(approvedRecord);
 const coverageRecords = COVERAGE_DEFINITIONS.map(approvedRecord);
@@ -556,23 +607,44 @@ const existingTraditionalRecords =
   existingTraditionalDefinitions.map(approvedRecord);
 
 export const REVIEWED_NAME_ELEMENT_RECORDS:
-  readonly ReviewedNameElementRecord[] = [
+  readonly ReviewedNameElementRecord[] = deepFreeze([
     ...recommendationRecords,
     ...coverageRecords,
     ...existingReviewRecords,
     ...existingTraditionalRecords,
-    pendingQiRecord,
-  ];
+    ...pendingRecords,
+  ]);
 
-const recordsByGlyph = new Map<string, ReviewedNameElementRecord[]>();
-for (const record of REVIEWED_NAME_ELEMENT_RECORDS) {
-  const records = recordsByGlyph.get(record.glyph);
-  if (records === undefined) {
-    recordsByGlyph.set(record.glyph, [record]);
-  } else {
-    records.push(record);
-  }
+function exactRecordKey(
+  glyph: string,
+  displayPinyin: string,
+  adoptedMeaning: string,
+): string {
+  return JSON.stringify([glyph, displayPinyin, adoptedMeaning]);
 }
+
+const recordsByExactKey = new Map<string, ReviewedNameElementRecord>();
+const reviewedReadings = new Set<string>();
+const reviewedGlyphs = new Set<string>();
+for (const record of REVIEWED_NAME_ELEMENT_RECORDS) {
+  const key = exactRecordKey(
+    record.glyph,
+    record.displayPinyin,
+    record.adoptedMeaning,
+  );
+  if (recordsByExactKey.has(key)) {
+    throw new Error(`Duplicate reviewed name element exact key: ${key}`);
+  }
+  recordsByExactKey.set(key, record);
+  reviewedReadings.add(JSON.stringify([record.glyph, record.displayPinyin]));
+  reviewedGlyphs.add(record.glyph);
+}
+
+const reviewedInputGlyphRelations = new Set(
+  REVIEWED_TRADITIONAL_PAIRS.map(
+    pair => JSON.stringify([pair.inputGlyph, pair.adoptedGlyph]),
+  ),
+);
 
 export function resolveReviewedNameElement(
   input: Readonly<NameElementLookupInput>,
@@ -581,8 +653,21 @@ export function resolveReviewedNameElement(
     return { status: "pending", reason: "glyph-unconfirmed", glyph: null };
   }
 
-  const glyphRecords = recordsByGlyph.get(input.adoptedGlyph);
-  if (glyphRecords === undefined) {
+  if (
+    input.inputGlyph !== input.adoptedGlyph
+    && !reviewedInputGlyphRelations.has(JSON.stringify([
+      input.inputGlyph,
+      input.adoptedGlyph,
+    ]))
+  ) {
+    return {
+      status: "pending",
+      reason: "glyph-unconfirmed",
+      glyph: input.adoptedGlyph,
+    };
+  }
+
+  if (!reviewedGlyphs.has(input.adoptedGlyph)) {
     return {
       status: "pending",
       reason: "unreviewed-character",
@@ -597,10 +682,10 @@ export function resolveReviewedNameElement(
       glyph: input.adoptedGlyph,
     };
   }
-  const readingMatches = glyphRecords.filter(
-    record => record.displayPinyin === input.adoptedReading,
-  );
-  if (readingMatches.length === 0) {
+  if (!reviewedReadings.has(JSON.stringify([
+    input.adoptedGlyph,
+    input.adoptedReading,
+  ]))) {
     return {
       status: "pending",
       reason: "reading-unconfirmed",
@@ -615,8 +700,12 @@ export function resolveReviewedNameElement(
       glyph: input.adoptedGlyph,
     };
   }
-  const record = readingMatches.find(
-    candidate => candidate.adoptedMeaning === input.adoptedMeaning,
+  const record = recordsByExactKey.get(
+    exactRecordKey(
+      input.adoptedGlyph,
+      input.adoptedReading,
+      input.adoptedMeaning,
+    ),
   );
   if (record === undefined) {
     return {
@@ -639,5 +728,15 @@ export function resolveReviewedNameElement(
 export function getReviewedNameElementRecommendations(
   element: ElementName,
 ): readonly ApprovedNameElementRecord[] {
-  return recommendationRecords.filter(record => record.element === element);
+  return recommendationsByElement[element];
 }
+
+const recommendationsByElement: Readonly<
+  Record<ElementName, readonly ApprovedNameElementRecord[]>
+> = deepFreeze({
+  木: recommendationRecords.filter(record => record.element === "木"),
+  火: recommendationRecords.filter(record => record.element === "火"),
+  土: recommendationRecords.filter(record => record.element === "土"),
+  金: recommendationRecords.filter(record => record.element === "金"),
+  水: recommendationRecords.filter(record => record.element === "水"),
+});
