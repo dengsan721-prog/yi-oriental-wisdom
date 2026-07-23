@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { REVIEWED_DAO_NOTES } from "../../lib/yi/dao-note-corpus";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { buildInterpretations } from "../../lib/yi/interpretation";
 import {
@@ -42,6 +43,9 @@ const BEAT_IDS = [
   "turn",
   "mature-method",
 ] as const;
+const REVIEWED_CHAPTERS = new Map(
+  REVIEWED_DAO_NOTES.map(note => [note.id, note.chapter]),
+);
 
 function fixture(birth: BirthInput = exactBirth) {
   const chart = calculateFourPillars(birth);
@@ -59,6 +63,8 @@ function assertDaoNoteBounds(
 ): void {
   const { traditionalMeaning, storyConnection, sceneGuidance } =
     note.plainCommentary;
+  expect(Number.isInteger(note.chapter)).toBe(true);
+  expect(note.chapter).toBe(REVIEWED_CHAPTERS.get(note.internalSourceId));
   expect(countHan(traditionalMeaning)).toBeGreaterThanOrEqual(45);
   expect(countHan(traditionalMeaning)).toBeLessThanOrEqual(90);
   expect(countHan(storyConnection)).toBeGreaterThanOrEqual(55);
@@ -139,9 +145,11 @@ function assertCompleteNarrative(narrative: LifeScrollNarrative): void {
   }
   expect(narrative.closingLine.trim()).not.toBe("");
   expect(narrative.actionNow.trim()).not.toBe("");
-  const visibleHan = countHan(visibleParts(narrative).join(""));
+  const visible = visibleParts(narrative).join("");
+  const visibleHan = countHan(visible);
   expect(visibleHan).toBeGreaterThanOrEqual(1600);
   expect(visibleHan).toBeLessThanOrEqual(2600);
+  expect(visible).not.toMatch(/命盘|证据|工作文本/u);
   expect(narrative.daoNotes.length).toBeGreaterThanOrEqual(2);
   expect(narrative.daoNotes.length).toBeLessThanOrEqual(4);
 }
@@ -211,6 +219,48 @@ describe("deterministic life scroll", () => {
     expect(beatHan / countHan(mainText)).toBeGreaterThan(0.55);
   });
 
+  it("keeps the relationship low point conditional and bridges rhythm back to relation facts", () => {
+    const { chart, report, items } = fixture();
+    const narrative = buildLifeScrollNarrative(chart, report, items);
+    const relationship = narrative.relationshipArc.join("");
+    const turning = narrative.turningPointArc[0];
+
+    expect(relationship).not.toMatch(/于是.*开始影响|低点出现在/u);
+    expect(relationship).toMatch(/当任务压力被带进关系时|若解释快过事实/u);
+    expect(turning).not.toContain("。可见转折是");
+    expect(turning).toContain(
+      "节奏稍稍恢复后，人物才有余地回到关系事实，再核对可调整与不可调整的条件",
+    );
+    expect(turning).toMatch(
+      /节奏.+(?:余地|空间).+(?:再|随后).+(?:事实|条件|协商)/u,
+    );
+  });
+
+  it.each([
+    exactBirth,
+    alternateBirth,
+    {
+      ...exactBirth,
+      date: "2024-02-04",
+      time: null,
+      timeConfidence: "unknown" as const,
+    },
+  ])("rewrites the four-sentence relationship action as one complete clause", (birth) => {
+    const { chart, report, items } = fixture(birth);
+    const relationship = buildLifeScrollNarrative(
+      chart,
+      report,
+      items,
+    ).relationshipArc.join("");
+
+    expect(relationship).toContain(
+      "依次用四句话说明事实、感受、需要与具体请求",
+    );
+    expect(relationship).not.toContain(
+      "依次说明事实、感受、需要与具体请求四句话表达",
+    );
+  });
+
   it("responds substantively to two different stable charts", () => {
     const primary = fixture(exactBirth);
     const alternate = fixture(alternateBirth);
@@ -234,7 +284,15 @@ describe("deterministic life scroll", () => {
       alternate.report,
       alternate.items,
     );
+    const primaryIds = primaryNarrative.daoNotes.map(note =>
+      note.internalSourceId
+    );
+    const alternateIds = alternateNarrative.daoNotes.map(note =>
+      note.internalSourceId
+    );
 
+    assertCompleteNarrative(primaryNarrative);
+    assertCompleteNarrative(alternateNarrative);
     expect({
       dayMasterElement: primaryFacts.dayMasterElement,
       structureBalance: primaryFacts.structureBalance,
@@ -258,6 +316,20 @@ describe("deterministic life scroll", () => {
       expect(primaryNarrative[key].join(""))
         .not.toBe(alternateNarrative[key].join(""));
     }
+    expect(primaryIds).toEqual(expect.arrayContaining([
+      "dao-76-soft",
+      "dao-33-self",
+    ]));
+    expect(alternateIds).toEqual(expect.arrayContaining([
+      "dao-63-small",
+      "dao-64-road",
+    ]));
+    expect(primaryIds).not.toEqual(alternateIds);
+    for (const ids of [primaryIds, alternateIds]) {
+      expect(ids.length).toBeGreaterThanOrEqual(2);
+      expect(ids.length).toBeLessThanOrEqual(4);
+      expect(new Set(ids).size).toBe(ids.length);
+    }
   });
 
   it("keeps every Dao note complete, distinct, and inside the reviewed length gates", () => {
@@ -276,9 +348,10 @@ describe("deterministic life scroll", () => {
         sceneGuidance,
       ]).size).toBe(3);
       expect(storyConnection).not.toContain("证明");
-      expect(
-        `${traditionalMeaning}${storyConnection}${sceneGuidance}`,
-      ).toContain("不是命盘证据");
+      expect(traditionalMeaning).toContain("王弼");
+      expect(traditionalMeaning).toContain("只帮助理解行动分寸");
+      expect(traditionalMeaning).toContain("不替现实选择预告结果");
+      expect(traditionalMeaning).not.toMatch(/命盘|证据|工作文本/u);
     }
     expect(new Set(narrative.daoNotes.map(note =>
       note.plainCommentary.storyConnection)).size)
@@ -289,9 +362,6 @@ describe("deterministic life scroll", () => {
     expect(narrative.daoNotes.find(note =>
       note.internalSourceId === "dao-33-self"
     )?.plainCommentary.storyConnection).toMatch(/自知|看清自己/u);
-    expect(narrative.daoNotes.find(note =>
-      note.internalSourceId === "dao-64-road"
-    )?.plainCommentary.storyConnection).toMatch(/起步|第一步|接续/u);
   });
 
   it("keeps Dao bounds for accepted long context fragments", () => {
@@ -326,27 +396,38 @@ describe("deterministic life scroll", () => {
     ["flexibility", "dao-76-soft"],
     ["completion", "dao-81-no-strife"],
   ] as const)("uses natural Dao scene grammar for %s", (theme, sourceId) => {
-    const result = buildDaoStoryNotes([theme], {
-      tension: "共同任务的责任与容量没有重新确认",
-      turn: "完成一项可以核对的小改变",
-      scene: "时间表与立场发生正面对撞",
-      action: "先分列双方事实与不能让渡的条件",
-    });
-    const note = result.daoNotes.find(item =>
-      item.internalSourceId === sourceId
-    );
+    for (const [turn, action] of [
+      [
+        "完成一项可以核对的小改变",
+        "先分列双方事实与不能让渡的条件",
+      ],
+      ["开始核对新事实", "写清事实和边界"],
+    ] as const) {
+      const result = buildDaoStoryNotes([theme], {
+        tension: "共同任务的责任与容量没有重新确认",
+        turn,
+        scene: "时间表与立场发生正面对撞",
+        action,
+      });
+      const note = result.daoNotes.find(item =>
+        item.internalSourceId === sourceId
+      );
 
-    expect(note).toBeDefined();
-    expect(note?.plainCommentary.storyConnection).toMatch(
-      /^故事走到.+时，场景是：.+。人物/u,
-    );
-    expect(note?.plainCommentary.storyConnection).not.toMatch(
-      /在(?:事业开门|关系修复|转折发生|全卷收束)的.+里/u,
-    );
-    expect(note?.plainCommentary.sceneGuidance).not.toMatch(
-      /完成(?:写清|先)|先先/u,
-    );
-    if (note) assertDaoNoteBounds(note);
+      expect(note).toBeDefined();
+      expect(note?.plainCommentary.storyConnection).toMatch(
+        /^故事走到.+时，场景是：.+。人物/u,
+      );
+      expect(note?.plainCommentary.storyConnection).not.toMatch(
+        /在(?:事业开门|关系修复|转折发生|全卷收束)的.+里/u,
+      );
+      expect(note?.plainCommentary.storyConnection).not.toMatch(
+        /开始(?:完成|开始)|采取开始|愿意完成|选择完成/u,
+      );
+      expect(note?.plainCommentary.sceneGuidance).not.toMatch(
+        /完成(?:写清|先)|先先/u,
+      );
+      if (note) assertDaoNoteBounds(note);
+    }
   });
 
   it("replaces the chapter-66 null commentary with reviewed stable fallbacks", () => {
@@ -423,9 +504,26 @@ describe("deterministic life scroll", () => {
       expect(domainArc[domain].join("")).toContain(domainCopy[domain]);
     }
     if (removed.length === 0) {
+      const daoCopy = narrative.daoNotes.flatMap(note => [
+        note.plainCommentary.storyConnection,
+        note.plainCommentary.sceneGuidance,
+      ]).join("");
       expect(narrative.oneLineTheme).toContain("稳定材料不足");
       expect(mainArcParts(narrative).join(""))
         .not.toMatch(/你就是|你天生|你必然/u);
+      expect(narrative.daoNotes.map(note => note.internalSourceId)).toEqual([
+        "dao-15-clear",
+        "dao-33-self",
+        "dao-63-small",
+        "dao-81-no-strife",
+      ]);
+      expect(daoCopy).toContain("通用观察");
+      expect(daoCopy).toContain("只保留通用观察的时刻");
+      expect(daoCopy).toContain("急于获得确定感的冲动");
+      expect(daoCopy).toContain("写清已知事实和下一步");
+      expect(daoCopy).not.toMatch(
+        /输出速度不断上升|时间表与立场正面对撞|暂停即时结论/u,
+      );
     }
   });
 
@@ -552,10 +650,10 @@ describe("deterministic life scroll", () => {
     ).join("");
 
     expect(visible).not.toMatch(
-      /四柱|日主|十神|月令|旺衰|藏干|纳音|十二长生|干支关系|命理/,
+      /四柱|日主|十神|月令|旺衰|藏干|纳音|十二长生|干支关系|命理|命盘/,
     );
     expect(visible).not.toMatch(
-      /专业依据|本章来源|可靠级|证据等级|计算规则|规则 ID|数据来源清单/,
+      /专业依据|本章来源|可靠级|证据|工作文本|计算规则|规则 ID|数据来源清单/,
     );
     expect(visible).not.toMatch(
       /你(?:已经|曾经|注定|必然|一定会).{0,16}(?:成功|离职|结婚|离婚|患病|发财)/,

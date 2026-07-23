@@ -46,6 +46,7 @@ export type DaoStoryContext = Readonly<{
 
 export type DaoStoryNote = Readonly<{
   internalSourceId: string;
+  chapter: number;
   excerpt: string;
   placement: "career" | "relationship" | "turning-point" | "closing";
   plainCommentary: Readonly<{
@@ -337,13 +338,13 @@ const DAO_PLACEMENT_LABELS: Readonly<Record<DaoPlacement, string>> = {
 const DAO_FRAMES: Readonly<Record<string, DaoFrame>> = {
   "dao-08-water": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物面对“${context.tension}”，先把共同需要放到位置和功劳之前。当人物愿意${context.turn}，局面便有重新流动的空间，但结果仍由现实回应决定。`,
+      `故事走到${context.placement}时，场景是：${context.scene}。人物面对“${context.tension}”，先把共同需要放到位置和功劳之前。当人物${context.turn}后，局面便有重新流动的空间，但结果仍由现实回应决定。`,
     sceneGuidance: context =>
       `人物先${context.action}，再确认谁真正受益、谁仍有异议以及何时复查。服务不是讨好，也不要求任何人放弃自己的边界。`,
   },
   "dao-15-clear": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物一度被“${context.tension}”催着立刻下结论。人物停止追加判断、等待事实沉淀；选择${context.turn}后，混乱才逐渐显出可处理的层次。`,
+      `故事走到${context.placement}时，场景是：${context.scene}。人物一度被“${context.tension}”催着立刻下结论。人物停止追加判断、等待事实沉淀；人物${context.turn}后，混乱才逐渐显出可处理的层次。`,
     sceneGuidance: context =>
       `人物先暂停一个回合，${context.action}，并约定下一次核对时间。等待期间只记录新事实，不用焦虑替空白补出答案。`,
   },
@@ -355,7 +356,7 @@ const DAO_FRAMES: Readonly<Record<string, DaoFrame>> = {
   },
   "dao-33-self": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物原本被“${context.tension}”牵着走。人物不急着赢过别人，先看清自己的反应、容量与偏差；选择${context.turn}后，下一步才成为可以修正的行动。`,
+      `故事走到${context.placement}时，场景是：${context.scene}。人物原本被“${context.tension}”牵着走。人物不急着赢过别人，先看清自己的反应、容量与偏差；人物${context.turn}后，下一步才成为可以修正的行动。`,
     sceneGuidance: context =>
       `人物先${context.action}，随后分别写下外部事实和自己的自动解释。看清自己不是自责，而是找到哪一处回应仍能由自己改变。`,
   },
@@ -367,7 +368,7 @@ const DAO_FRAMES: Readonly<Record<string, DaoFrame>> = {
   },
   "dao-63-small": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物被“${context.tension}”压得只看见整块难题。人物在问题尚小时先作安排；开始${context.turn}后，困难便被拆成今天能够核对的部分。`,
+      `故事走到${context.placement}时，场景是：${context.scene}。人物被“${context.tension}”压得只看见整块难题。人物在问题尚小时先作安排；人物${context.turn}后，困难便被拆成今天能够核对的部分。`,
     sceneGuidance: context =>
       `人物先${context.action}，再选一项二十分钟内能够完成的细节，并留下下一步接口。小步不是轻看困难，而是阻止问题继续累积。`,
   },
@@ -379,7 +380,7 @@ const DAO_FRAMES: Readonly<Record<string, DaoFrame>> = {
   },
   "dao-76-soft": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物因“${context.tension}”把强硬误当成稳定。人物松开已经僵住的方法并保留调整能力；愿意${context.turn}后，新路径才有进入空间。`,
+      `故事走到${context.placement}时，场景是：${context.scene}。人物因“${context.tension}”把强硬误当成稳定。人物松开已经僵住的方法并保留调整能力；人物${context.turn}后，新路径才有进入空间。`,
     sceneGuidance: context =>
       `人物先${context.action}，再说明可以调整与不能退让的边界。柔软不是屈从，而是让行动在现实变化中仍有转向余地。`,
   },
@@ -420,6 +421,10 @@ function rewriteReviewedStoryText(value: string): string {
     .replaceAll("命理线索", "现有线索")
     .replaceAll("把所有波动都解释成命理", "把所有波动都归入单一解释")
     .replaceAll("不用命理判断", "不用抽象判断")
+    .replaceAll(
+      "用事实、感受、需要和具体请求四句话表达",
+      "依次用四句话说明事实、感受、需要与具体请求",
+    )
     .replaceAll(
       "用事实、感受、需要和具体请求",
       "依次说明事实、感受、需要与具体请求",
@@ -499,11 +504,15 @@ function buildDaoNote(
 
   return {
     internalSourceId: note.id,
+    chapter: note.chapter,
     excerpt: note.displayTextSimplified,
     placement,
     plainCommentary: {
       traditionalMeaning:
-        `${note.traditionalCommentarySummary}这段解释只帮助理解行动分寸，不是命盘证据，也不替现实选择预告结果。`,
+        `${note.traditionalCommentarySummary.replaceAll(
+          "王弼工作文本",
+          "王弼的解释",
+        )}这段解释只帮助理解行动分寸，也不替现实选择预告结果。`,
       storyConnection: selectedFrame.storyConnection(safeContext),
       sceneGuidance: selectedFrame.sceneGuidance(safeContext),
     },
@@ -548,6 +557,62 @@ export function buildDaoStoryNotes(
     buildDaoNote(note, context, DAO_PLACEMENTS[index] ?? "closing")
   );
   return deepFreeze({ daoNotes, uncertaintyFlags });
+}
+
+function selectNarrativeDaoThemes(
+  structureBalance: ReturnType<
+    typeof selectStableStoryFacts
+  >["structureBalance"],
+  relations: readonly ChartRelation[],
+  hasAnyMaterial: boolean,
+  hasCareerMaterial: boolean,
+  hasRhythmMaterial: boolean,
+): readonly DaoNoteTheme[] {
+  if (!hasAnyMaterial) {
+    return [
+      "patience",
+      "self-knowledge",
+      "small-steps",
+      "completion",
+    ];
+  }
+
+  const themes: DaoNoteTheme[] = [];
+  const add = (theme: DaoNoteTheme): void => {
+    if (themes.length < 4 && !themes.includes(theme)) themes.push(theme);
+  };
+
+  if (structureBalance === "expression-heavy") {
+    add("flexibility");
+    add("self-knowledge");
+  } else if (structureBalance === "support-heavy") {
+    add("small-steps");
+    add("long-road");
+  } else {
+    add("patience");
+    add("self-knowledge");
+  }
+
+  if (relations.some(relation =>
+    relation.type === "stem-combination"
+    || relation.type === "branch-combination"
+    || relation.type === "branch-trine")) {
+    add("service");
+  }
+  if (relations.some(relation =>
+    relation.type === "branch-clash"
+    || relation.type === "branch-punishment"
+    || relation.type === "branch-harm"
+    || relation.type === "branch-break")) {
+    add("bend");
+  }
+  if (hasCareerMaterial && hasRhythmMaterial) {
+    add("small-steps");
+    add("long-road");
+  }
+  add("completion");
+
+  return themes;
 }
 
 function selectDomainItem(
@@ -686,7 +751,7 @@ export function buildLifeScrollNarrative(
   const lowPoint = relationship
     ? storyBeat(
         "low-point",
-        `于是任务里的代价开始影响关系，低点出现在解释快过事实的时候。${relationshipShadow}${relation.conflict}`,
+        `当任务压力被带进关系时，需要先留意解释是否快过事实。${relationshipShadow}${relation.conflict}`,
         relationship,
       )
     : storyBeat(
@@ -708,7 +773,7 @@ export function buildLifeScrollNarrative(
   const turn = rhythm
     ? storyBeat(
         "turn",
-        `随后，节奏上的调整开始让转折可见。${rhythmAction}${relation.visibleTurn}${texture.transition}`,
+        `随后，节奏上的调整开始让转折可见。${rhythmAction}节奏稍稍恢复后，人物才有余地回到关系事实，再核对可调整与不可调整的条件。${relation.visibleTurn.replace(/^可见转折是/u, "这时，")}${texture.transition}`,
         rhythm,
       )
     : storyBeat(
@@ -739,13 +804,26 @@ export function buildLifeScrollNarrative(
     matureMethod,
   ];
   const daoResult = buildDaoStoryNotes(
-    ["self-knowledge", "long-road"],
-    {
-      tension: structure.daoTension,
-      turn: lessonIntent,
-      scene: relation.daoScene,
-      action: relation.daoAction,
-    },
+    selectNarrativeDaoThemes(
+      stable.structureBalance,
+      stable.relations,
+      hasAnyMaterial,
+      career !== undefined,
+      rhythm !== undefined,
+    ),
+    hasAnyMaterial
+      ? {
+          tension: structure.daoTension,
+          turn: lessonIntent,
+          scene: relation.daoScene,
+          action: relation.daoAction,
+        }
+      : {
+          tension: "急于获得确定感的冲动",
+          turn: "完成一项可核对的改变",
+          scene: "只保留通用观察的时刻",
+          action: "写清已知事实和下一步",
+        },
   );
   const mirrors = buildStoryMirrors(chart);
   const missingDomains = ([
