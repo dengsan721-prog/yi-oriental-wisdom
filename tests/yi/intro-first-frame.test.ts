@@ -49,6 +49,8 @@ describe("public intro first frame", () => {
     expect(reducedMotion).toContain(".mark-ring{animation:none");
     expect(reducedMotion).toContain(".mark-ring.r3,.mark-ring.r4,.mark-ring.r5{display:none}");
     expect(reducedMotion).toMatch(/\.mark-ring\.r1,.mark-ring\.r2\{[^}]*display:block[^}]*opacity:\.[12][^}]*\}/);
+    expect(reducedMotion).toMatch(/\.mark-ring\.r1\{[^}]*transform:scale\(1\)[^}]*\}/);
+    expect(reducedMotion).toMatch(/\.mark-ring\.r2\{[^}]*transform:scale\(1\.42\)[^}]*opacity:\.1[^}]*\}/);
     expect(reducedMotion).not.toMatch(/rotate|flash/i);
     expect(css).not.toContain("yi-breathe");
     expect(css).not.toContain(".yi-breath-ring");
@@ -90,6 +92,7 @@ describe("public intro first frame", () => {
         commit: string;
         archiveUrl: string;
         archiveSha256: string;
+        templateProjectSha256: string;
         license: string;
         licenseFile: string;
         licenseSha256: string;
@@ -119,6 +122,11 @@ describe("public intro first frame", () => {
         textCount: number;
         rawExportSha256: string;
         glyphPathSha256: string;
+        rawArtifact: {
+          fileName: string;
+          disposition: string;
+          reviewLocation: string;
+        };
       };
       review: {
         reviewerRole: string;
@@ -186,6 +194,7 @@ describe("public intro first frame", () => {
     expect(normalizedOutlineHash).toBe(audit.output.glyphPathSha256);
     expect(audit.source.commit).toMatch(/^[a-f0-9]{40}$/);
     expect(audit.source.archiveUrl).toBe("https://github.com/HiToysMaker/fontplayer/releases/download/v0.4.1/template.zip");
+    expect(audit.source.templateProjectSha256).toBe("c823dfac480479c79e3232439c80bd5c11014ee5136656daac9349c9f7d58b4a");
     expect(audit.source.license).toMatch(/SIL Open Font License 1\.1/i);
     expect(audit.source.licenseFile).toBe("OFL-1.1.rtf");
     expect(audit.source.licenseSha256).toBe("b3131d001ec1c5b140a7e065dc9d7ad0b7cb68e1414db7eb60277bdb5191d7a4");
@@ -195,6 +204,11 @@ describe("public intro first frame", () => {
     expect(audit.generation.exportWorkflow.join("\n")).toContain("ming-u547d-fontplayer-raw.svg");
     expect(audit.output.rawExportSha256).toMatch(/^[a-f0-9]{64}$/);
     expect(audit.output.glyphPathSha256).toMatch(/^[a-f0-9]{64}$/);
+    expect(audit.output.rawArtifact).toEqual({
+      fileName: "ming-u547d-fontplayer-raw.svg",
+      disposition: "preserved outside repository; not shipped",
+      reviewLocation: "verified v0.4.1 external audit directory",
+    });
     expect(audit.review.reviewerRole).not.toBe("");
     expect(audit.review.reviewerDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(audit.review.renderingNote).toMatch(/desktop/i);
