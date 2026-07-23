@@ -248,6 +248,14 @@ describe("fortune stage story projection", () => {
     expect(visible).not.toMatch(
       /工作选择|交付容量|预算|现金流|公开责任|高压任务|负责人|退出条件|金额上限/u,
     );
+
+    const ageTwo = childhood.years.find(year => year.age === 2);
+    expect(ageTwo).toBeDefined();
+    if (!ageTwo) throw new Error("Expected an age-two story");
+    expect(`${ageTwo.title}${ageTwo.scene}${ageTwo.action}`)
+      .toMatch(/玩具|画画|家人|照顾者/u);
+    expect(`${ageTwo.title}${ageTwo.scene}${ageTwo.action}`)
+      .not.toMatch(/课堂|老师|课程|亲手试一次|写下适用/u);
   });
 
   it("writes stage and year scenes with a person, event, action, and consequence", () => {
@@ -276,6 +284,16 @@ describe("fortune stage story projection", () => {
           .toBeGreaterThanOrEqual(18);
       }
     }
+
+    const firstPeriod = projected.periods[0];
+    expect(firstPeriod.ageRange).toBe("8–17岁");
+    expect(firstPeriod.title).toMatch(/童年.*少年/u);
+    const yearTitles = projected.periods.flatMap(period =>
+      period.years.map(year => year.title)
+    );
+    expect(yearTitles.filter((title, index) =>
+      index > 0 && title === yearTitles[index - 1]
+    )).toHaveLength(0);
   });
 
   it("keeps internal method IDs out of every visible string", () => {
@@ -304,7 +322,7 @@ describe("fortune stage story projection", () => {
       /注定|必然|一定会|将会|保证|预示|发财|结婚|离婚|患病|灾难|寿命/u,
     );
     expect(visible).not.toMatch(
-      /先先|若若|若如果|一次第一次/u,
+      /先先|若若|若如果|一次第一次|从一次从|在一次把|遇到与|承担多大范围的结果|为恢复保留真实预算/u,
     );
   });
 
