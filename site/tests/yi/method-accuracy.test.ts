@@ -360,13 +360,21 @@ describe("7. content-audit blind spots", () => {
     ]));
   });
 
-  it("uses observation labels in the 30-second overview", () => {
+  it("shows only verified professional coordinates and never revives unsupported overview conclusions", () => {
     const chart = calculateFourPillars(exactBirth);
     const report = buildProfessionalReport(chart, exactBirth);
-    const html = renderToStaticMarkup(createElement(ChartSection, { chart, report }));
-    expect(html).toContain("主调线索");
-    expect(html).toContain("待验证优势");
+    const html = renderToStaticMarkup(createElement(ChartSection, {
+      chart,
+      report,
+      items: buildInterpretations(chart),
+    }));
+
+    expect(html).toContain("生辰八字专业排盘");
+    expect(html).toContain(report.dayMaster);
+    expect(html).toContain(report.monthCommand.branch);
     expect([report.lifeTheme, ...report.coreTalents].join(" ")).not.toMatch(/人生主调|核心天赋/);
-    expect(html).not.toMatch(/<small>人生主调<\/small>|<h2[^>]*>核心天赋<\/h2>/);
+    expect(html).not.toMatch(
+      /主调线索|待验证优势|观察置信度|格局|喜用神|神煞|空亡|调候/u,
+    );
   });
 });

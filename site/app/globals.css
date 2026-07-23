@@ -254,3 +254,36 @@ main[data-element] .name-analysis-section :focus-visible{outline:3px solid var(-
 .life-scroll-action>strong{color:var(--yi-accent-strong)}
 .life-scroll-action p{color:var(--yi-text)}
 @media(max-width:390px){.life-scroll-reading{width:100%;gap:18px}.life-scroll-part,.dao-story-note{padding:16px}.life-scroll-mirror{grid-template-columns:1fr}.life-scroll-reading p{line-height:1.8}}
+
+/* Professional chart and scene-based reading */
+.professional-pillar-table-section,.professional-reading-sections,.chart-detailed-reading{min-width:0;display:grid;gap:16px}
+.professional-pillar-table-section>header,.chart-detailed-reading>header{min-width:0}
+.professional-pillar-table-section>header small,.chart-detailed-reading>header small{color:var(--yi-accent-strong);letter-spacing:.1em}
+.professional-pillar-table-section>header h2,.chart-detailed-reading>header h2{margin:5px 0;color:var(--yi-text)}
+.professional-pillar-table-section>header p,.chart-detailed-reading>header p{margin:0;color:var(--yi-text-muted);line-height:1.7}
+.professional-pillar-table-wrap{min-width:0;overflow:hidden;border:1px solid var(--yi-line);border-radius:16px;background:var(--yi-surface-raised)}
+.professional-pillar-table{width:100%;table-layout:fixed;border-collapse:collapse;color:var(--yi-text)}
+.professional-pillar-table :is(th,td){min-width:0;padding:11px 8px;border-right:1px solid var(--yi-line);border-bottom:1px solid var(--yi-line);vertical-align:top;text-align:center;overflow-wrap:anywhere}
+.professional-pillar-table :is(th,td):last-child{border-right:0}.professional-pillar-table tbody tr:last-child :is(th,td){border-bottom:0}
+.professional-pillar-table thead th{background:var(--yi-surface);color:var(--yi-accent-strong);font-size:12px}
+.professional-pillar-table thead th:first-child,.professional-pillar-table tbody th{width:18%}
+.professional-pillar-table tbody th{background:var(--yi-surface);color:var(--yi-text-muted);font-size:11px;font-weight:600}
+.professional-pillar-table td>span{display:block;line-height:1.45}.professional-pillar-table td>span+span{margin-top:3px}
+.professional-pillar-table :is(th,td)>small{display:block;margin-top:4px;color:var(--yi-accent-strong);font-size:9px;line-height:1.3}
+.professional-pillar-table [data-cell-status=candidate]{background:var(--yi-accent-soft)}.professional-pillar-table [data-cell-status=unavailable]{color:var(--yi-text-muted)}
+.professional-reading-sections{grid-template-columns:repeat(2,minmax(0,1fr))}
+.professional-reading-section{min-width:0;padding:20px;border:1px solid var(--yi-line);border-radius:16px;background:var(--yi-surface-raised)}
+.professional-reading-section:first-child{grid-column:1/-1}.professional-reading-section h2{margin:0 0 9px;color:var(--yi-text)}
+.professional-reading-copy{margin:0;color:var(--yi-text);line-height:1.75}
+.plain-translation{min-width:0;display:grid;gap:8px;margin-top:15px;padding-top:14px;border-top:1px solid var(--yi-line)}
+.plain-translation p{min-width:0;margin:0;color:var(--yi-text-muted);line-height:1.7;overflow-wrap:anywhere}.plain-translation strong{display:block;color:var(--yi-accent-strong);font-size:11px}
+.chart-detailed-reading{margin-top:8px}
+.chart-narrative-grid{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.chart-narrative-beat,.chart-micro-story{min-width:0;padding:20px;border:1px solid var(--yi-line);border-radius:16px;background:var(--yi-surface-raised)}
+.chart-narrative-beat h3,.chart-micro-story h3{margin:0 0 12px;color:var(--yi-text)}
+.chart-narrative-beat p,.chart-micro-story p{min-width:0;margin:9px 0 0;color:var(--yi-text-muted);line-height:1.75;overflow-wrap:anywhere}
+.chart-narrative-beat p strong,.chart-micro-story p strong{display:block;color:var(--yi-accent-strong);font-size:11px;letter-spacing:.04em}
+.chart-scene-group{min-width:0;display:grid;gap:12px}.chart-scene-group>h2{margin:8px 0 0;color:var(--yi-text)}
+.chart-scene-group>div{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media(max-width:700px){.professional-reading-sections,.chart-narrative-grid,.chart-scene-group>div{grid-template-columns:1fr}.professional-reading-section:first-child{grid-column:auto}}
+@media(max-width:520px){.professional-pillar-table{font-size:11px}.professional-pillar-table :is(th,td){padding:9px 3px}.professional-pillar-table thead th:first-child,.professional-pillar-table tbody th{width:19%}.professional-pillar-table-section>header p{font-size:12px}.professional-reading-section,.chart-narrative-beat,.chart-micro-story{padding:16px}}

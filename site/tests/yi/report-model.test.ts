@@ -4,6 +4,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ChartSection } from "../../components/yi/ChartSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
+import { buildInterpretations } from "../../lib/yi/interpretation";
 import { getNaYin } from "../../lib/yi/na-yin";
 import { buildLifeOverview, type ReportCopyContext } from "../../lib/yi/report-copy";
 import { buildProfessionalReport } from "../../lib/yi/report-model";
@@ -155,22 +156,30 @@ describe("professional report model", () => {
     }
   });
 
-  it("renders a visible life theme followed by two default-closed reading depths", () => {
+  it("renders the professional chart before its plain reading and removes the old depth disclosures", () => {
     const chart = calculateFourPillars(birth);
     const report = buildProfessionalReport(chart, birth);
-    const html = renderToStaticMarkup(createElement(ChartSection, { chart, report }));
-    const orderedValues = [report.lifeTheme, "展开30秒人生概览", ...report.coreTalents, ...report.centralTensions, report.currentLesson, "查看专业命盘骨架与依据", report.summary, "完整命盘骨架"];
+    const html = renderToStaticMarkup(createElement(ChartSection, {
+      chart,
+      report,
+      items: buildInterpretations(chart),
+    }));
+    const orderedValues = [
+      "生辰八字专业排盘",
+      "命局总论",
+      "月令与旺衰观察",
+      "五行气势与显隐",
+      "天干地支关系",
+      "五行缺失说明",
+      "详细通俗解读",
+    ];
     const positions = orderedValues.map((value) => html.indexOf(value));
 
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((left, right) => left - right));
-    expect(html.indexOf(report.lifeTheme)).toBeLessThan(html.indexOf(report.summary));
-    expect(html).toContain('<details class="overview-depth"><summary>展开30秒人生概览</summary>');
-    expect(html).toContain('<details class="professional-depth"><summary>查看专业命盘骨架与依据</summary>');
-    expect(html).not.toMatch(/<details class="(?:overview-depth|professional-depth)" open/);
-    for (const label of ["主调线索", "待验证优势", "核心张力", "当下课题"]) expect(html).toContain(label);
-    expect(html).toContain("本章依据与使用边界");
-    expect(html).toContain("标准八字历法");
+    expect(html).not.toMatch(
+      /展开30秒人生概览|查看专业命盘骨架与依据|主调线索|待验证优势|本章依据与使用边界|标准八字历法/u,
+    );
   });
 
   it("styles overview disclosures for touch and single-column mobile reading", () => {
