@@ -159,6 +159,40 @@ function attachedActionIds(narrative: ChartNarrative): DetailActionId[] {
   ].flatMap(entry => [...entry.sourceActionIds]);
 }
 
+function beatValues(beat: ChartNarrative["self"]): string[] {
+  return BEAT_FIELDS.map(field => beat[field]);
+}
+
+function microValues(
+  story:
+    | ChartNarrative["careerAdvice"][number]
+    | ChartNarrative["relationshipAdvice"][number]
+    | ChartNarrative["rhythmAdvice"][number],
+): string[] {
+  return MICRO_FIELDS.map(field => story[field]);
+}
+
+function changedFieldCount(left: readonly string[], right: readonly string[]) {
+  return left.filter((value, index) => value !== right[index]).length;
+}
+
+function allVisibleFields(narrative: ChartNarrative): string[] {
+  return [
+    ...narrative.professionalTranslations.flatMap(item => [
+      item.whatItMeans,
+      item.lifeScene,
+      item.practicalGuidance,
+    ]),
+    ...beatValues(narrative.self),
+    ...beatValues(narrative.career),
+    ...beatValues(narrative.relationship),
+    ...beatValues(narrative.rhythm),
+    ...narrative.careerAdvice.flatMap(microValues),
+    ...narrative.relationshipAdvice.flatMap(microValues),
+    ...narrative.rhythmAdvice.flatMap(microValues),
+  ];
+}
+
 function assertDeepFrozen(value: unknown, seen = new Set<object>()): void {
   if (value === null || typeof value !== "object" || seen.has(value)) return;
   seen.add(value);
@@ -287,6 +321,90 @@ describe("deterministic chart narrative", () => {
       .not.toBe(primaryNarrative.careerAdvice[0].example);
   });
 
+  it("changes multiple domain fields per owner and keeps cross-chart sameness at or below sixty percent", () => {
+    const primary = fixture();
+    const alternate = fixture(alternateBirth);
+    const left = buildChartNarrative(
+      primary.chart,
+      primary.report,
+      primary.items,
+    );
+    const right = buildChartNarrative(
+      alternate.chart,
+      alternate.report,
+      alternate.items,
+    );
+    const ownerPairs = [
+      ["self", beatValues(left.self), beatValues(right.self)],
+      ["career", beatValues(left.career), beatValues(right.career)],
+      [
+        "relationship",
+        beatValues(left.relationship),
+        beatValues(right.relationship),
+      ],
+      ["rhythm", beatValues(left.rhythm), beatValues(right.rhythm)],
+      [
+        "career-entry",
+        microValues(left.careerAdvice[0]),
+        microValues(right.careerAdvice[0]),
+      ],
+      [
+        "career-choice",
+        microValues(left.careerAdvice[1]),
+        microValues(right.careerAdvice[1]),
+      ],
+      [
+        "relationship-approach",
+        microValues(left.relationshipAdvice[0]),
+        microValues(right.relationshipAdvice[0]),
+      ],
+      [
+        "relationship-boundary",
+        microValues(left.relationshipAdvice[1]),
+        microValues(right.relationshipAdvice[1]),
+      ],
+      [
+        "rhythm-recovery",
+        microValues(left.rhythmAdvice[0]),
+        microValues(right.rhythmAdvice[0]),
+      ],
+      [
+        "rhythm-decision",
+        microValues(left.rhythmAdvice[1]),
+        microValues(right.rhythmAdvice[1]),
+      ],
+    ] as const;
+
+    for (const [owner, leftFields, rightFields] of ownerPairs) {
+      expect.soft(
+        changedFieldCount(leftFields, rightFields),
+        owner,
+      ).toBeGreaterThanOrEqual(3);
+    }
+    const relationshipLeft = ownerPairs
+      .slice(2, 3)
+      .concat(ownerPairs.slice(6, 8))
+      .flatMap(([, fields]) => [...fields]);
+    const relationshipRight = ownerPairs
+      .slice(2, 3)
+      .concat(ownerPairs.slice(6, 8))
+      .flatMap(([, , fields]) => [...fields]);
+    const rhythmLeft = [ownerPairs[3], ...ownerPairs.slice(8, 10)]
+      .flatMap(([, fields]) => [...fields]);
+    const rhythmRight = [ownerPairs[3], ...ownerPairs.slice(8, 10)]
+      .flatMap(([, , fields]) => [...fields]);
+    expect(changedFieldCount(relationshipLeft, relationshipRight))
+      .toBeGreaterThan(relationshipLeft.length / 2);
+    expect(changedFieldCount(rhythmLeft, rhythmRight))
+      .toBeGreaterThan(rhythmLeft.length / 2);
+
+    const visibleLeft = allVisibleFields(left);
+    const visibleRight = allVisibleFields(right);
+    const identical = visibleLeft
+      .filter((value, index) => value === visibleRight[index]).length;
+    expect(identical / visibleLeft.length).toBeLessThanOrEqual(0.6);
+  });
+
   it("covers every legacy detail action exactly once in canonical order", () => {
     const { chart, report, items } = fixture();
     const narrative = buildChartNarrative(chart, report, items);
@@ -342,6 +460,87 @@ describe("deterministic chart narrative", () => {
     expect(publicNarrativeText(narrative)).not.toContain("actionLongTerm");
   });
 
+  it("keeps each action in its permitted domain owner and renders a causal transition instead of a semicolon list", () => {
+    const { chart, report, items } = fixture();
+    const narrative = buildChartNarrative(chart, report, items);
+    const owners = [
+      ["self", narrative.self.sourceActionIds, narrative.self.newChoice],
+      ["career", narrative.career.sourceActionIds, narrative.career.newChoice],
+      [
+        "relationship",
+        narrative.relationship.sourceActionIds,
+        narrative.relationship.newChoice,
+      ],
+      ["rhythm", narrative.rhythm.sourceActionIds, narrative.rhythm.newChoice],
+      [
+        "career-entry",
+        narrative.careerAdvice[0].sourceActionIds,
+        narrative.careerAdvice[0].turnAction,
+      ],
+      [
+        "career-choice",
+        narrative.careerAdvice[1].sourceActionIds,
+        narrative.careerAdvice[1].turnAction,
+      ],
+      [
+        "relationship-approach",
+        narrative.relationshipAdvice[0].sourceActionIds,
+        narrative.relationshipAdvice[0].turnAction,
+      ],
+      [
+        "relationship-boundary",
+        narrative.relationshipAdvice[1].sourceActionIds,
+        narrative.relationshipAdvice[1].turnAction,
+      ],
+      [
+        "rhythm-recovery",
+        narrative.rhythmAdvice[0].sourceActionIds,
+        narrative.rhythmAdvice[0].turnAction,
+      ],
+      [
+        "rhythm-decision",
+        narrative.rhythmAdvice[1].sourceActionIds,
+        narrative.rhythmAdvice[1].turnAction,
+      ],
+    ] as const;
+    const expectedItems = [
+      ["self-day-master", "self-support"],
+      ["career-role", "career-pressure"],
+      ["relationship-day-branch", "relationship-trigger"],
+      ["rhythm-climate"],
+      ["self-interface", "talent-public"],
+      [
+        "talent-hidden",
+        "talent-output",
+        "career-environment",
+        "wealth-structure",
+        "wealth-risk",
+      ],
+      ["relationship-repair", "family-resource"],
+      ["family-year", "family-boundary", "wealth-boundary"],
+      ["rhythm-recovery"],
+      ["rhythm-decision"],
+    ] as const;
+
+    owners.forEach(([owner, actual, visibleTurn], index) => {
+      const expected = expectedItems[index].flatMap(id => [
+        `${id}:actionNow`,
+        `${id}:actionLongTerm`,
+      ]) as DetailActionId[];
+      expect(actual, owner).toEqual(expected);
+      expect(visibleTurn, owner).not.toContain("；");
+      for (const actionId of expected) {
+        expect(visibleTurn, `${owner}:${actionId}`)
+          .toContain(EXPECTED_ACTION_FRAMES[actionId]);
+      }
+    });
+    const rhythmActions = [
+      ...narrative.rhythm.sourceActionIds,
+      ...narrative.rhythmAdvice.flatMap(story => story.sourceActionIds),
+    ];
+    expect(rhythmActions.some(id => id.startsWith("wealth-"))).toBe(false);
+  });
+
   it("makes each plain translation respond to its matching stable fact family", () => {
     const exact = fixture();
     const exactNarrative = buildChartNarrative(
@@ -379,6 +578,17 @@ describe("deterministic chart narrative", () => {
     ] as const) {
       expect(boundaryById.get(id), id).not.toEqual(exactById.get(id));
     }
+  });
+
+  it("describes absent elements as completely unseen in stable pillars", () => {
+    const { chart, report, items } = fixture();
+    const narrative = buildChartNarrative(chart, report, items);
+    const missing = narrative.professionalTranslations.find(
+      item => item.sectionId === "missing-elements",
+    );
+
+    expect(missing?.whatItMeans).toContain("稳定柱中完全未见");
+    expect(missing?.whatItMeans).not.toContain("未直接出现");
   });
 
   it("covers every required career, relationship and rhythm scene exactly once", () => {
