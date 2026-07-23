@@ -1,93 +1,181 @@
 "use client";
+
 import { useState } from "react";
-import { buildFortuneTimeline, type FortuneReading } from "../../lib/yi/fortune";
-import { getAllSources } from "../../lib/yi/sources";
+import {
+  buildFortuneStoryTimeline,
+  type FortuneStoryPeriod,
+} from "../../lib/yi/fortune-story";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 
-const readingLabels: ReadonlyArray<[keyof FortuneReading, string]> = [
-  ["climate", "阶段气候"],
-  ["originalInteraction", "原局互动"],
-  ["opportunity", "机会来源"],
-  ["pressure", "压力来源"],
-  ["career", "工作推进"],
-  ["resources", "资源配置"],
-  ["relationship", "关系沟通"],
-  ["wellbeing", "身心边界"],
-  ["strategy", "阶段策略"],
-];
+type AvailableFortuneStoryProps = Readonly<{
+  periods: readonly [FortuneStoryPeriod, ...FortuneStoryPeriod[]];
+  timingNote: string;
+}>;
 
-const lifeAreaLabels = {
-  career: "事业",
-  wealth: "财富",
-  relationship: "关系",
-  family: "家庭",
-  rhythm: "身心节奏",
-} as const;
-
-const confidenceLabels: Record<FourPillarsResult["confidence"], string> = {
-  high: "高置信",
-  medium: "中等置信",
-  limited: "有限置信",
-};
-
-export function FortuneSection({ chart, birth }: { chart: FourPillarsResult; birth: BirthInput }) {
-  const timeline = buildFortuneTimeline(chart, birth);
+function AvailableFortuneStory({
+  periods,
+  timingNote,
+}: AvailableFortuneStoryProps) {
   const [periodIndex, setPeriodIndex] = useState(0);
   const [yearIndex, setYearIndex] = useState(0);
-  if (!timeline.length) return <section className="report-section"><header><small>阶段节律</small><h1>大运时间线待确认</h1><p>{birth.timeConfidence === "unknown" ? "出生时辰未知会影响起运时刻、起运年龄与阶段年份，当前不生成精确大运或流年时间线；补充可靠时辰后再查看。" : "顺逆排需要出生性别。当前未指定，因此不生成可能误导的起运年份；补全资料后再查看。"}</p></header></section>;
-  const period = timeline[Math.min(periodIndex, timeline.length - 1)];
+  const period = periods[Math.min(periodIndex, periods.length - 1)];
   const year = period.years[Math.min(yearIndex, period.years.length - 1)];
-  const sourceRegistry = new Map(getAllSources().map((source) => [source.id, source]));
-  const methodSources = period.method.sourceIds
-    .map((id) => sourceRegistry.get(id))
-    .filter((source): source is NonNullable<typeof source> => Boolean(source));
-  return <section className="report-section fortune-report">
-    <header><small>大运流年</small><h1>把阶段主题落到一年</h1><p>{period.method.disclaimer}</p></header>
 
-    <div className="choice-row" role="group" aria-label="选择大运">
-      {timeline.map((item, index) => <button key={item.id} className={periodIndex === index ? "active" : ""} aria-pressed={periodIndex === index} onClick={() => { setPeriodIndex(index); setYearIndex(0); }}>
-        {item.stemBranch}<small>{item.startYear}–{item.endYear}</small>
-      </button>)}
-    </div>
+  return (
+    <section className="report-section fortune-report">
+      <header>
+        <small>大运阶段</small>
+        <h1>看见这一程的生活主题</h1>
+        <p>{timingNote}</p>
+      </header>
 
-    <article className="fortune-period-card">
-      <header><div><span>{period.stemBranch}大运 · {period.tenGod}</span><h2>{period.theme}</h2></div><small>{period.startAge}–{period.endAge} 岁 · {period.startYear}–{period.endYear} · {confidenceLabels[period.confidence]}</small></header>
-      <details className="fortune-stage-depth"><summary>展开阶段故事与行动</summary>
-        <section className="fortune-stage-story"><b>阶段故事</b><p>{period.stageStory}</p></section>
-        <dl className="fortune-life-areas">
-          {(Object.keys(lifeAreaLabels) as Array<keyof typeof lifeAreaLabels>).map(key => <div key={key}><dt>{lifeAreaLabels[key]}</dt><dd>{period.lifeAreas[key]}</dd></div>)}
-        </dl>
-        <div className="fortune-stage-states">
-          <section><b>顺势状态</b><p>{period.alignedState}</p></section>
-          <section><b>吃力状态</b><p>{period.strainedState}</p></section>
+      <div
+        className="fortune-stage-selector"
+        role="group"
+        aria-label="选择大运阶段"
+      >
+        {periods.map((item, index) => (
+          <button
+            key={item.id}
+            type="button"
+            className={periodIndex === index ? "active" : ""}
+            aria-pressed={periodIndex === index}
+            onClick={() => {
+              setPeriodIndex(index);
+              setYearIndex(0);
+            }}
+          >
+            {item.title}
+            <small>{item.ageRange} · {item.yearRange}</small>
+          </button>
+        ))}
+      </div>
+
+      <article className="fortune-period-card fortune-story-card">
+        <header>
+          <div>
+            <small>{period.ageRange} · {period.yearRange}</small>
+            <h2>{period.title}</h2>
+          </div>
+        </header>
+
+        <section className="fortune-stage-story">
+          <b>阶段故事</b>
+          <p>{period.openingScene}</p>
+        </section>
+
+        <div className="fortune-story-grid">
+          <section>
+            <b>事业</b>
+            <p>{period.careerScene}</p>
+          </section>
+          <section>
+            <b>资源</b>
+            <p>{period.resourceScene}</p>
+          </section>
+          <section>
+            <b>关系</b>
+            <p>{period.relationshipScene}</p>
+          </section>
+          <section>
+            <b>家庭</b>
+            <p>{period.familyScene}</p>
+          </section>
+          <section>
+            <b>身心节奏</b>
+            <p>{period.rhythmScene}</p>
+          </section>
         </div>
-        <section className="fortune-stage-actions"><b>三项阶段行动</b><ol>{period.actions.map((action, index) => <li key={action}><span>0{index + 1}</span>{action}</li>)}</ol></section>
-      </details>
-      <details className="fortune-professional-depth"><summary>查看九项专业依据</summary>
-        <dl className="fortune-reading">
-          {readingLabels.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{period.reading[key]}</dd></div>)}
-        </dl>
-        <details className="fortune-method"><summary>查看排运方法与起运依据</summary><p>{period.method.basis}</p><small>规则版本：{period.method.ruleVersion}</small><ul>{methodSources.map((source) => <li key={source.id}><b>{source.title}</b><span>{source.grade} · {source.role}</span></li>)}</ul></details>
-      </details>
-    </article>
 
-    <div className="choice-row year-row" role="group" aria-label="选择流年">
-      {period.years.map((item, index) => <button key={item.year} className={yearIndex === index ? "active" : ""} aria-pressed={yearIndex === index} onClick={() => setYearIndex(index)}>
-        {item.year}<small>{item.stemBranch} · {item.age}岁</small>
-      </button>)}
-    </div>
-
-    <article className="fortune-year-card">
-      <header><span>{year.year} · {year.stemBranch}</span><h2>{year.theme}</h2></header>
-      <section className="fortune-weather"><b>年度天气</b><p>{year.weatherMetaphor}</p></section>
-      <details className="fortune-year-evidence"><summary>查看年度依据、场景与行动</summary>
-        <p className="fortune-year-basis">{year.basis}</p>
-        <div className="fortune-year-layers">
-          <section><b>岁运关系</b><p>{year.interaction}</p></section>
-          <section><b>典型场景</b><p>{year.scenario}</p></section>
-          <section><b>年度动作</b><p>{year.action}</p></section>
+        <div className="fortune-state-grid">
+          <section>
+            <b>顺风处</b>
+            <p>{period.favorableCurrent}</p>
+          </section>
+          <section>
+            <b>最容易吃亏的地方</b>
+            <p>{period.likelyCost}</p>
+          </section>
         </div>
-      </details>
-    </article>
-  </section>;
+
+        <section className="fortune-stage-actions">
+          <b>这一程最值得做的三件事</b>
+          <ol>
+            {period.actions.map((action, index) => (
+              <li key={action}>
+                <span>0{index + 1}</span>
+                {action}
+              </li>
+            ))}
+          </ol>
+        </section>
+      </article>
+
+      <div
+        className="fortune-year-selector"
+        role="group"
+        aria-label="选择阶段年份"
+      >
+        {period.years.map((item, index) => (
+          <button
+            key={item.year}
+            type="button"
+            className={yearIndex === index ? "active" : ""}
+            aria-pressed={yearIndex === index}
+            onClick={() => setYearIndex(index)}
+          >
+            {item.year}
+            <small>{item.age}岁</small>
+          </button>
+        ))}
+      </div>
+
+      <article className="fortune-year-card fortune-story-card fortune-story-year">
+        <header>
+          <div>
+            <small>{year.year}年 · {year.age}岁</small>
+            <h2>{year.title}</h2>
+          </div>
+        </header>
+        <div className="fortune-year-story">
+          <section>
+            <b>这一年的场景</b>
+            <p>{year.scene}</p>
+          </section>
+          <section>
+            <b>可以先做</b>
+            <p>{year.action}</p>
+          </section>
+        </div>
+      </article>
+    </section>
+  );
+}
+
+export function FortuneSection({
+  chart,
+  birth,
+}: {
+  chart: FourPillarsResult;
+  birth: BirthInput;
+}) {
+  const timeline = buildFortuneStoryTimeline(chart, birth);
+  if (timeline.status === "unavailable") {
+    return (
+      <section className="report-section fortune-report">
+        <header>
+          <small>大运阶段</small>
+          <h1>阶段故事暂未生成</h1>
+          <p>{timeline.explanation}</p>
+        </header>
+      </section>
+    );
+  }
+
+  return (
+    <AvailableFortuneStory
+      periods={timeline.periods}
+      timingNote={timeline.timingNote}
+    />
+  );
 }

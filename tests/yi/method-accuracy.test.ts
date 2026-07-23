@@ -300,11 +300,12 @@ describe("6. fortune translation provenance", () => {
     ]));
   });
 
-  it("shows the fortune translation source in the displayed method path", () => {
+  it("keeps the fortune translation source out of the public stage story", () => {
     const chart = calculateFourPillars(exactBirth);
     const html = renderToStaticMarkup(createElement(FortuneSection, { chart, birth: exactBirth }));
-    expect(html).toContain("岁运生活领域、故事与行动转译");
-    expect(html).toContain("产品方法");
+    expect(html).not.toContain("岁运生活领域、故事与行动转译");
+    expect(html).not.toContain("产品方法");
+    expect(html).not.toContain("九项专业依据");
   });
 });
 

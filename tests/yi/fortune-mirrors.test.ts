@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { FortuneSection } from "../../components/yi/FortuneSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { analyzeFortuneRelations, buildFortuneGuidance, buildFortuneTimeline, buildFortuneYearReading, calculateTenGod } from "../../lib/yi/fortune";
+import { buildFortuneStoryTimeline } from "../../lib/yi/fortune-story";
 import { extractMirrorFeatures } from "../../lib/yi/mirror-features";
 import { matchAnimalArchetype, matchHistoricalMirror, matchLifeMirrors } from "../../lib/yi/mirrors";
 import { branchElements, stemElements } from "../../lib/yi/stems-branches";
@@ -299,34 +300,73 @@ describe("fortune timeline", () => {
     expect(JSON.stringify(timeline)).not.toMatch(/保证收益|必然发财|注定离婚|克夫|克妻|克子|必有疾病|灾难|寿命/);
   });
 
-  it("renders default-closed stage, professional and annual evidence layers", () => {
+  it("renders the selected stage and year directly without method prose", () => {
     const html = renderToStaticMarkup(createElement(FortuneSection, { chart, birth: input }));
+    const source = readFileSync(new URL("../../components/yi/FortuneSection.tsx", import.meta.url), "utf8");
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+    const timeline = buildFortuneStoryTimeline(chart, input);
+    expect(timeline.status).toBe("available");
+    if (timeline.status !== "available") throw new Error("测试需要可用的大运阶段故事");
+    const period = timeline.periods[0];
+    const year = period.years[0];
+
     for (const label of [
-      "阶段故事", "事业", "财富", "关系", "家庭", "身心节奏", "顺势状态", "吃力状态", "三项阶段行动",
-      "阶段气候", "原局互动", "机会来源", "压力来源", "工作推进",
-      "资源配置", "关系沟通", "身心边界", "阶段策略",
-      "岁运关系", "典型场景", "年度动作",
+      "阶段故事", "事业", "资源", "关系", "家庭", "身心节奏",
+      "顺风处", "最容易吃亏的地方", "这一程最值得做的三件事",
+      "这一年的场景", "可以先做",
     ]) expect(html).toContain(label);
-    const renderedPeriod = buildFortuneTimeline(chart, input)[0];
-    expect(html).toContain('<details class="fortune-stage-depth"><summary>展开阶段故事与行动</summary>');
-    expect(html).toContain('<details class="fortune-professional-depth"><summary>查看九项专业依据</summary>');
-    expect(html).toContain('<details class="fortune-year-evidence"><summary>查看年度依据、场景与行动</summary>');
-    expect(html).not.toMatch(/<details class="(?:fortune-stage-depth|fortune-professional-depth|fortune-year-evidence)" open/);
-    expect(html.indexOf(renderedPeriod.theme)).toBeLessThan(html.indexOf("展开阶段故事与行动"));
-    expect(html.indexOf("展开阶段故事与行动")).toBeLessThan(html.indexOf(renderedPeriod.stageStory));
-    expect(html.indexOf(renderedPeriod.stageStory)).toBeLessThan(html.indexOf("查看九项专业依据"));
-    expect(html.indexOf("查看九项专业依据")).toBeLessThan(html.indexOf("阶段气候"));
-    expect(html.indexOf(renderedPeriod.years[0].weatherMetaphor)).toBeLessThan(html.indexOf(renderedPeriod.years[0].basis));
-    expect(html.indexOf(renderedPeriod.years[0].weatherMetaphor)).toBeLessThan(html.indexOf(renderedPeriod.years[0].interaction));
-    expect(html).toContain("<dl");
-    expect(css).toMatch(/\.choice-row\{[^}]*overflow-x:auto[^}]*scrollbar-width:none/);
-    expect(css).toMatch(/\.choice-row::?-webkit-scrollbar\{[^}]*display:none/);
-    expect(css).toMatch(/\.choice-row button\{[^}]*min-height:(?:44|5[2-9])px/);
-    expect(css).toMatch(/\.fortune-stage-depth>summary[^}]*min-height:44px[^}]*display:flex[^}]*align-items:center/);
-    expect(css).toMatch(/\.fortune-stage-depth[^}]*min-width:0[^}]*overflow-wrap:anywhere/);
-    expect(css).toMatch(/\.fortune-life-areas\{[^}]*display:grid[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
-    expect(css).toMatch(/@media\(max-width:700px\)\{[^}]*\.fortune-life-areas,\.fortune-stage-states[^}]*grid-template-columns:1fr/);
+    expect(html).toContain(period.title);
+    expect(html).toContain(period.openingScene);
+    expect(html).toContain(period.resourceScene);
+    expect(html).toContain(period.rhythmScene);
+    expect(html).toContain(year.title);
+    expect(html).toContain(year.scene);
+    expect(html).toContain(year.action);
+    expect(html).toContain('aria-label="选择大运阶段"');
+    expect(html).toContain('aria-label="选择阶段年份"');
+    expect(html).not.toContain("<details");
+    expect(html).not.toMatch(
+      /九项专业依据|规则版本|来源|置信|四柱|日柱|十神|月令|干支/u,
+    );
+    expect(html).not.toContain(buildFortuneTimeline(chart, input)[0].stageStory);
+    expect(source).toMatch(
+      /function AvailableFortuneStory[\s\S]*useState/u,
+    );
+    expect(source).toContain('timeline.status === "unavailable"');
+    expect(css).toMatch(
+      /\.fortune-report\{[^}]*min-width:0[^}]*max-width:100%[^}]*overflow-x:hidden/u,
+    );
+    expect(css).toMatch(
+      /\.fortune-stage-selector,\.fortune-year-selector\{[^}]*overflow-x:auto/u,
+    );
+    expect(css).toMatch(
+      /\.fortune-stage-selector button,\.fortune-year-selector button\{[^}]*min-height:44px/u,
+    );
+    expect(css).toMatch(
+      /@media\(max-width:390px\)\{[^}]*\.fortune-story-grid,\.fortune-state-grid\{grid-template-columns:1fr/u,
+    );
+  });
+
+  it("renders the unknown-time explanation once when gender is also unspecified", () => {
+    const birth = {
+      ...input,
+      gender: "unspecified",
+      time: null,
+      timeConfidence: "unknown",
+    } as const;
+    const candidate = calculateFourPillars(birth);
+    const timeline = buildFortuneStoryTimeline(candidate, birth);
+    expect(timeline.status).toBe("unavailable");
+    if (timeline.status !== "unavailable") throw new Error("测试需要不可用说明");
+
+    const html = renderToStaticMarkup(createElement(FortuneSection, {
+      chart: candidate,
+      birth,
+    }));
+    expect(timeline.reason).toBe("unknown-time");
+    expect(html.split(timeline.explanation)).toHaveLength(2);
+    expect(html).not.toContain('aria-label="选择大运阶段"');
+    expect(html).not.toContain("出生性别尚未选择");
   });
 
   it("does not manufacture an exact fortune timeline when time is unknown", () => {
