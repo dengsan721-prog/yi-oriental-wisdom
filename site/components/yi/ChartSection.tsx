@@ -1,4 +1,5 @@
 import {
+  assertMatchingChartReport,
   buildChartElementVisibility,
   buildChartNarrative,
   type ChartNarrative,
@@ -77,26 +78,6 @@ function coordinateStatus(
 ): ProfessionalChartCellStatus {
   if (status === "unavailable") return "unavailable";
   return targetCandidate || status === "candidate" ? "candidate" : "stable";
-}
-
-function assertMatchingChartReport(
-  chart: Readonly<FourPillarsResult>,
-  report: Readonly<ProfessionalReport>,
-): void {
-  const factByKey = new Map(report.pillarFacts.map(fact => [fact.key, fact]));
-  const mismatched = report.dayMaster !== chart.professional.dayMaster.stem
-    || pillarOrder.some(key => {
-      const pillar = chart.pillars[key];
-      const fact = factByKey.get(key);
-      return pillar === null
-        ? fact !== undefined
-        : fact === undefined
-          || fact.stem !== pillar.stem
-          || fact.branch !== pillar.branch;
-    });
-  if (mismatched) {
-    throw new Error("命盘与专业报告不一致：四柱坐标不匹配");
-  }
 }
 
 export function buildProfessionalChartGrid(

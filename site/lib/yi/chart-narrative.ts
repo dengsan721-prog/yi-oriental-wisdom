@@ -21,6 +21,42 @@ export const DETAIL_ACTION_ID_ALLOWLIST: readonly DetailActionId[] =
     `${id}:actionLongTerm` as const,
   ]));
 
+const chartPillarKeys: readonly PillarKey[] = [
+  "year",
+  "month",
+  "day",
+  "hour",
+];
+
+export function assertMatchingChartReport(
+  chart: Readonly<FourPillarsResult>,
+  report: Readonly<ProfessionalReport>,
+): void {
+  const factByKey = new Map(report.pillarFacts.map(fact => [fact.key, fact]));
+  const ambiguous = new Set<PillarKey>(chart.ambiguousPillars);
+  if (chart.professional.ambiguousFields.includes("dayMaster")
+    || chart.professional.ambiguousFields.includes("dayPillar")) {
+    ambiguous.add("day");
+  }
+  const dayAxisMismatched = !ambiguous.has("day")
+    && report.dayMaster !== chart.professional.dayMaster.stem;
+  const mismatched = dayAxisMismatched
+    || chartPillarKeys.some(key => {
+      const pillar = chart.pillars[key];
+      const fact = factByKey.get(key);
+      return pillar === null
+        ? fact !== undefined
+        : !ambiguous.has(key) && (
+          fact === undefined
+          || fact.stem !== pillar.stem
+          || fact.branch !== pillar.branch
+        );
+    });
+  if (mismatched) {
+    throw new Error("命盘与专业报告不一致：四柱坐标不匹配");
+  }
+}
+
 const actionPairOutcomes: Readonly<Record<InterpretationId, string>> = {
   "self-day-master": "让判断从当下结论走向持续校准",
   "self-support": "让承担回到真实容量",
@@ -598,6 +634,7 @@ export function buildChartNarrative(
   report: Readonly<ProfessionalReport>,
   items: readonly InterpretationItem[],
 ): ChartNarrative {
+  assertMatchingChartReport(chart, report);
   const stable = selectStableStoryFacts(chart, report, items);
   const interpretations = canonicalInterpretations(stable.interpretations);
   const style = stable.dayMasterElement
@@ -826,6 +863,7 @@ export function buildChartElementVisibility(
   chart: Readonly<FourPillarsResult>,
   report: Readonly<ProfessionalReport>,
 ): ChartElementVisibility {
+  assertMatchingChartReport(chart, report);
   const excluded = new Set<PillarKey>(chart.ambiguousPillars);
   if (chart.professional.ambiguousFields.includes("dayMaster")
     || chart.professional.ambiguousFields.includes("dayPillar")) {
