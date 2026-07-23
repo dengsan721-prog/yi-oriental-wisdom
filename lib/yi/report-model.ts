@@ -1,13 +1,18 @@
 import { Solar } from "lunar-typescript";
+import { getNaYin } from "./na-yin";
 import { buildKeyJudgments, buildLifeOverview, buildReportActions, buildReportSummary, type ReportCopyContext } from "./report-copy";
 import { stemElements } from "./stems-branches";
+import { getTwelveGrowthStage } from "./twelve-growth";
 import type {
   BirthInput,
+  ChartCoordinateReason,
+  ChartCoordinateValue,
   ElementDiagnostic,
   ElementName,
   FourPillarsResult,
   HiddenStemFact,
   MonthCommandFact,
+  PillarCoordinateFact,
   PillarFact,
   PillarKey,
   ProfessionalReport,
@@ -90,6 +95,76 @@ function buildPillarFacts(chart: FourPillarsResult): PillarFact[] {
   });
 }
 
+function availableCoordinate<T>(
+  value: T,
+  reasons: readonly ChartCoordinateReason[],
+): ChartCoordinateValue<T> {
+  return reasons.length
+    ? { status: "candidate", value, reasons }
+    : { status: "stable", value };
+}
+
+function unavailableCoordinate<T>(
+  reasons: readonly ChartCoordinateReason[],
+): ChartCoordinateValue<T> {
+  return { status: "unavailable", reasons };
+}
+
+function buildPillarCoordinate(
+  chart: FourPillarsResult,
+  key: PillarKey,
+  dayAmbiguous: boolean,
+): PillarCoordinateFact {
+  const pillar = chart.pillars[key];
+  if (!pillar) {
+    return {
+      key,
+      naYin: unavailableCoordinate(["target-pillar-unavailable"]),
+      twelveGrowth: unavailableCoordinate([
+        ...(dayAmbiguous ? ["day-pillar-ambiguous" as const] : []),
+        "target-pillar-unavailable",
+      ]),
+    };
+  }
+
+  const naYin = getNaYin(pillar.stem, pillar.branch);
+  const twelveGrowth = getTwelveGrowthStage(
+    chart.pillars.day.stem,
+    pillar.branch,
+  );
+  if (naYin === null || twelveGrowth === null) {
+    throw new Error(`命盘干支坐标无效：${key}`);
+  }
+  const targetAmbiguous = chart.ambiguousPillars.includes(key);
+  const targetReasons: ChartCoordinateReason[] = targetAmbiguous
+    ? ["target-pillar-ambiguous"]
+    : [];
+  const twelveGrowthReasons: ChartCoordinateReason[] = [
+    ...(dayAmbiguous ? ["day-pillar-ambiguous" as const] : []),
+    ...targetReasons,
+  ];
+  return {
+    key,
+    naYin: availableCoordinate(naYin, targetReasons),
+    twelveGrowth: availableCoordinate(twelveGrowth, twelveGrowthReasons),
+  };
+}
+
+function buildPillarCoordinates(
+  chart: FourPillarsResult,
+): Readonly<Record<PillarKey, PillarCoordinateFact>> {
+  const ambiguousFields = new Set(chart.professional.ambiguousFields);
+  const dayAmbiguous = chart.ambiguousPillars.includes("day")
+    || ambiguousFields.has("dayMaster")
+    || ambiguousFields.has("dayPillar");
+  return {
+    year: buildPillarCoordinate(chart, "year", dayAmbiguous),
+    month: buildPillarCoordinate(chart, "month", dayAmbiguous),
+    day: buildPillarCoordinate(chart, "day", dayAmbiguous),
+    hour: buildPillarCoordinate(chart, "hour", dayAmbiguous),
+  };
+}
+
 function exposedClue(pillar: PillarFact): string {
   return `${pillarNames[pillar.key]}干${pillar.stem}${pillar.stemElement}（${pillar.stemTenGod}）`;
 }
@@ -138,6 +213,7 @@ function buildElementDiagnostics(chart: FourPillarsResult, pillarFacts: PillarFa
 
 export function buildProfessionalReport(chart: FourPillarsResult, birth: BirthInput): ProfessionalReport {
   const pillarFacts = buildPillarFacts(chart);
+  const pillarCoordinates = buildPillarCoordinates(chart);
   const monthFact = pillarFacts.find((pillar) => pillar.key === "month");
   const monthHidden = monthFact?.hiddenStems[0];
   if (!monthFact || !monthHidden) throw new Error("月令藏干资料不完整");
@@ -170,6 +246,7 @@ export function buildProfessionalReport(chart: FourPillarsResult, birth: BirthIn
   return {
     birthFacts: formatBirthFacts(chart, birth),
     pillarFacts,
+    pillarCoordinates,
     dayMaster,
     monthCommand,
     exposedStems,
