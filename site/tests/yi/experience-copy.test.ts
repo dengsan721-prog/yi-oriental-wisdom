@@ -8,17 +8,15 @@ import { DetailSection } from "../../components/yi/DetailSection";
 import { MirrorSection, MirrorSectionView } from "../../components/yi/MirrorSection";
 import { ReferenceAtlasSection } from "../../components/yi/ReferenceAtlasSection";
 import { getCalculationSteps } from "../../components/yi/YiExperience";
-import { calculateCompatibility } from "../../lib/yi/compatibility";
+import { buildCompatibilityPublicView } from "../../lib/yi/compatibility";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
-import { matchLifeMirrors, type MirrorCandidate } from "../../lib/yi/mirrors";
-import type { MovieCharacterRecord } from "../../lib/yi/movie-characters";
-import { buildZodiacMirror } from "../../lib/yi/zodiac-mirror";
+import { buildMirrorPublicViews } from "../../lib/yi/mirrors";
 import type { BirthSubmission } from "../../components/yi/BirthIntake";
 import type { InterpretationItem } from "../../lib/yi/types";
 
 const priorities: InterpretationItem["priority"][] = ["core", "important", "supporting"];
 
-type MirrorView = "zodiac" | "animals" | "historical" | "movies";
+type MirrorView = "zodiac" | "animal" | "historical" | "movie";
 type HostElementProps = { children?: ReactNode; [key: string]: unknown };
 
 function makeReading(priority: InterpretationItem["priority"]): InterpretationItem {
@@ -86,10 +84,6 @@ function expectStrictOrder(markup: string, markers: string[]) {
 
 function occurrences(markup: string, marker: string) {
   return markup.split(marker).length - 1;
-}
-
-function isMovieCandidate(candidate: MirrorCandidate): candidate is MovieCharacterRecord {
-  return candidate.kind === "movie" && "characterName" in candidate;
 }
 
 function findHostElements(root: ReactNode, type: string): ReactElement<HostElementProps>[] {
@@ -175,9 +169,9 @@ it("keeps disclosure targets touch-safe and reading grids single-column on mobil
   expect(css).toMatch(/@media\(max-width:700px\)\{\.reading-contrast,\.reading-actions\{grid-template-columns:1fr\}/);
 });
 
-it("renders four mirror entrances with the complete zodiac record selected by default", () => {
+it("renders four safe mirror entrances with the zodiac action card selected by default", () => {
   const chart = calculateFourPillars({ name: "甲", date: "1990-06-15", time: "09:30", location: "杭州", gender: "unspecified", timeConfidence: "exact" });
-  const zodiac = buildZodiacMirror(chart);
+  const zodiac = buildMirrorPublicViews(chart)[0].cards[0];
   const html = renderToStaticMarkup(createElement(MirrorSection, { chart }));
   const navStart = html.indexOf('<nav class="mirror-tabs"');
   expect(navStart, "mirror navigation").toBeGreaterThan(-1);
@@ -190,90 +184,85 @@ it("renders four mirror entrances with the complete zodiac record selected by de
     expect(nav).toContain(`<button type="button" aria-pressed="false" class="">${label}</button>`);
   }
 
-  const zodiacStart = html.indexOf('<div class="mirror-view" data-mirror-view="zodiac">');
-  const zodiacView = extractBalancedElement(html, "div", zodiacStart);
-  expect(zodiacView).toContain('<article class="reading-card zodiac-mirror">');
-  expect(zodiacView).not.toMatch(/^<div[^>]* hidden/);
-  expect(html).toContain('<div class="mirror-view" data-mirror-view="animals" hidden="">');
-  expect(html).toContain('<div class="mirror-view" data-mirror-view="historical" hidden="">');
-  expect(html).toContain('<div class="mirror-view" data-mirror-view="movies" hidden="">');
+  const zodiacStart = html.indexOf('<section class="mirror-view" aria-label="生肖镜像内容">');
+  const zodiacView = extractBalancedElement(html, "section", zodiacStart);
+  expect(zodiacView).toContain('<article class="mirror-public-card">');
+  expect(zodiacView).not.toMatch(/^<section[^>]* hidden/u);
+  expect(html).toContain('<section class="mirror-view" aria-label="动物镜像内容" hidden="">');
+  expect(html).toContain('<section class="mirror-view" aria-label="历史人物内容" hidden="">');
+  expect(html).toContain('<section class="mirror-view" aria-label="电影角色内容" hidden="">');
   expectStrictOrder(html, ["<h1>", "<h2>"]);
 
   for (const marker of [
-    zodiac.firstImpression,
-    zodiac.culturalSource,
-    zodiac.trustStyle,
-    zodiac.strengthPattern,
-    zodiac.pressurePattern,
-    zodiac.workScene,
-    zodiac.relationshipScene,
-    zodiac.familyScene,
-    zodiac.chartAgreement,
-    zodiac.chartDifference,
-    zodiac.immediateAction,
-    zodiac.longTermPractice,
-    zodiac.caution,
-    "与八字主盘互证",
-    "理论与文化来源",
-    "产品观察模型",
-    "查看来源用途与边界",
+    zodiac.name,
+    zodiac.introduction,
+    zodiac.matchingScene,
+    zodiac.importantDifference,
+    zodiac.takeaway,
+    zodiac.playfulObservation,
+    "先认识",
+    "像你的一个现场",
+    "最重要的不同",
+    "可以带走的动作",
+    "有趣的一面",
   ]) expect(zodiacView, marker).toContain(marker);
-  expect(zodiac.sources.every(id => zodiacView.includes(id) === false)).toBe(true);
-  expect(zodiacView.match(/<a /g)).toHaveLength(zodiac.sources.length);
-  expect(zodiacView).not.toMatch(/<details[^>]*\sopen(?:=|>)/);
-  expect(html).toContain("镜像提供观察语言，不宣称人与人的命运相同");
+  expect(zodiacView).not.toContain("<details");
+  expect(zodiacView).not.toContain("<a ");
+  expect(html).toContain("先认识镜中对象");
   expect(html).not.toMatch(/\d+(?:\.\d+)?\s*[%％]/);
   expect(html).not.toContain("匹配度");
-  expect(html).toContain("本章依据与使用边界");
+  expect(html).not.toMatch(/本章依据与使用边界|来源与使用边界/u);
 });
 
-it("renders three semantically owned candidate cards in every non-zodiac mirror view", () => {
+it("renders three semantically owned public cards in every non-zodiac mirror view", () => {
   const chart = calculateFourPillars({ name: "甲", date: "1990-06-15", time: "09:30", location: "杭州", gender: "unspecified", timeConfidence: "exact" });
-  const groups = matchLifeMirrors(chart);
+  const views = buildMirrorPublicViews(chart).slice(1);
   const html = renderToStaticMarkup(createElement(MirrorSection, { chart }));
 
-  for (const [view, candidates] of Object.entries(groups) as [keyof typeof groups, (typeof groups)[keyof typeof groups]][]) {
-    const viewStart = html.indexOf(`<div class="mirror-view" data-mirror-view="${view}" hidden="">`);
-    expect(viewStart, `${view} mirror view`).toBeGreaterThan(-1);
-    const mirrorView = extractBalancedElement(html, "div", viewStart);
-    const cardStarts = [...mirrorView.matchAll(/<article class="mirror-candidate">/g)].map(match => match.index);
+  for (const view of views) {
+    const viewStart = html.indexOf(`<section class="mirror-view" aria-label="${view.label}内容" hidden="">`);
+    expect(viewStart, `${view.label} mirror view`).toBeGreaterThan(-1);
+    const mirrorView = extractBalancedElement(html, "section", viewStart);
+    const cardStarts = [...mirrorView.matchAll(/<article class="mirror-public-card">/g)].map(match => match.index);
     const cards = cardStarts.map(start => extractBalancedElement(mirrorView, "article", start));
 
-    expect(cards, view).toHaveLength(3);
-    candidates.forEach((candidate, index) => {
-      const card = cards[index];
-      const headerStart = card.indexOf("<header>");
-      const header = extractBalancedElement(card, "header", headerStart);
-      const movie = isMovieCandidate(candidate) ? candidate : null;
-      const identity = movie ? movie.characterName : candidate.name;
-
-      expect(header).toContain(`<h2>${identity}</h2>`);
-      if (movie) {
-        expect(header).toContain(`<p class="mirror-film-title">《${movie.filmTitle}》</p>`);
-        expect(header).not.toContain(candidate.name);
-      } else {
-        expect(header).not.toContain("mirror-film-title");
+    expect(cards, view.label).toHaveLength(3);
+    view.cards.forEach((publicCard, index) => {
+      const cardMarkup = cards[index];
+      expect(cardMarkup).toContain(`<h2>${publicCard.name}</h2>`);
+      if (publicCard.workTitle) {
+        expect(cardMarkup).toContain(`<p>${publicCard.workTitle}</p>`);
       }
-      expectStrictOrder(card, [
+      expectStrictOrder(cardMarkup, [
         "<header>",
-        "为什么相似",
-        "哪里不同",
-        "可以借鉴",
-        "需要避开的阴影",
-        "<details>",
-        "来源与使用边界",
+        publicCard.introduction,
+        "像你的一个现场",
+        publicCard.matchingScene,
+        "最重要的不同",
+        publicCard.importantDifference,
+        "可以带走的动作",
+        publicCard.takeaway,
+        "有趣的一面",
+        publicCard.playfulObservation,
       ]);
-      for (const field of ["similar", "different", "lesson", "shadow"] as const) {
-        const owners = candidates.filter(item => item[field] === candidate[field]).length;
-        expect(occurrences(mirrorView, candidate[field]), `${view}.${candidate.id}.${field} view ownership`).toBe(owners);
+      for (const field of ["introduction", "matchingScene", "importantDifference", "takeaway", "playfulObservation"] as const) {
+        const owners = view.cards.filter(
+          item => item[field] === publicCard[field],
+        ).length;
+        expect(
+          occurrences(mirrorView, publicCard[field]),
+          `${view.label}.${publicCard.name}.${field} view ownership`,
+        ).toBe(owners);
         cards.forEach((owner, ownerIndex) => {
-          const expected = candidates[ownerIndex][field] === candidate[field] ? 1 : 0;
-          expect(occurrences(owner, candidate[field]), `${view}.${candidate.id}.${field} card ${ownerIndex}`).toBe(expected);
+          const expected =
+            view.cards[ownerIndex][field] === publicCard[field] ? 1 : 0;
+          expect(
+            occurrences(owner, publicCard[field]),
+            `${view.label}.${publicCard.name}.${field} card ${ownerIndex}`,
+          ).toBe(expected);
         });
       }
-      const sources = renderToStaticMarkup(createElement("p", null, candidate.sourceReferences.join("｜")));
-      expect(card).toContain(`<details><summary>来源与使用边界</summary>${sources}</details>`);
-      expect(card).not.toMatch(/<details[^>]*\sopen(?:=|>)/);
+      expect(cardMarkup).not.toContain("<details");
     });
   }
 });
@@ -284,9 +273,9 @@ it("executes every mirror tab transition and reveals only the matching panel", (
   const render = () => MirrorSectionView({ chart, activeView, onSelectView: view => { activeView = view; } });
   const expectedViews: [label: string, view: MirrorView][] = [
     ["生肖镜像", "zodiac"],
-    ["动物镜像", "animals"],
+    ["动物镜像", "animal"],
     ["历史人物", "historical"],
-    ["电影角色", "movies"],
+    ["电影角色", "movie"],
   ];
 
   for (const [label, view] of expectedViews) {
@@ -301,8 +290,8 @@ it("executes every mirror tab transition and reveals only the matching panel", (
 
     const updated = render();
     const updatedHtml = renderToStaticMarkup(updated);
-    expect(updatedHtml).toContain("本章依据与使用边界");
-    if (view === "animals") expect(updatedHtml).toContain("动物行为镜像");
+    expect(updatedHtml).not.toContain("<details");
+    expect(updatedHtml).toContain("先认识");
     const buttons = findHostElements(updated, "button");
     expect(buttons).toHaveLength(4);
     for (const [candidateLabel, candidateView] of expectedViews) {
@@ -310,11 +299,16 @@ it("executes every mirror tab transition and reveals only the matching panel", (
       expect(candidateButton?.props["aria-pressed"], `${candidateLabel} aria-pressed`).toBe(candidateView === view);
     }
 
-    const panels = findHostElements(updated, "div").filter(element => typeof element.props["data-mirror-view"] === "string");
+    const panels = findHostElements(updated, "section").filter(
+      element => element.props.className === "mirror-view",
+    );
     expect(panels).toHaveLength(4);
-    for (const panel of panels) {
-      const panelView = panel.props["data-mirror-view"] as MirrorView;
-      expect(panel.props.hidden, `${panelView} visibility after ${label}`).toBe(panelView !== view);
+    for (const [index, panel] of panels.entries()) {
+      const panelView = expectedViews[index][1];
+      expect(
+        panel.props.hidden,
+        `${panelView} visibility after ${label}`,
+      ).toBe(panelView !== view);
     }
   }
 });
@@ -325,20 +319,23 @@ it("applies responsive light mirror layouts", () => {
   expect(css).toMatch(/\.mirror-tabs\{display:grid;grid-template-columns:repeat\(4,1fr\);gap:7px\}/);
   expect(css).toMatch(/\.mirror-tabs button\{[^}]*min-height:44px/);
   expect(css).toMatch(/\.mirror-tabs button\.active\{border-color:var\(--yi-accent\);color:var\(--yi-accent-strong\)\}/);
-  expect(css).toMatch(/\.mirror-candidates\{display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\);gap:12px\}/);
-  expect(css).toMatch(/\.mirror-candidate\{border-radius:18px;background:var\(--yi-surface-raised\)\}/);
-  expect(css).toMatch(/\.mirror-candidate\{[^}]*min-width:0[^}]*overflow-wrap:anywhere/);
-  expect(css).toMatch(/\.reading-scene,\.reading-card aside,\.mirror-candidate aside\{[^}]*background:var\(--yi-accent-soft\)/);
-  expect(css).toMatch(/@media\(max-width:760px\)\{\.mirror-tabs\{grid-template-columns:repeat\(2,1fr\)\}\.mirror-candidates\{grid-template-columns:1fr\}\}/);
+  expect(css).toMatch(/\.mirror-public-cards\{min-width:0;display:grid;grid-template-columns:repeat\(3,minmax\(0,1fr\)\);gap:12px\}/);
+  expect(css).toMatch(/\.mirror-public-card\{[^}]*min-width:0[^}]*border-radius:18px[^}]*overflow-wrap:anywhere/);
+  expect(css).toMatch(/\.mirror-public-card aside\{[^}]*background:var\(--yi-accent-soft\)/);
+  expect(css).toMatch(/@media\(max-width:420px\)\{\.compatibility-public-grid,\.mirror-public-cards,\.atlas-public-reading\{grid-template-columns:1fr\}/);
 });
 
-it("renders the complete relationship manual in progressive disclosure order", () => {
+it("renders the six-part relationship guide without exposing engine evidence", () => {
   const chart = calculateFourPillars({ name: "甲", date: "1990-06-15", time: "09:30", location: "杭州", gender: "unspecified", timeConfidence: "exact" });
   const secondBirth: BirthSubmission = {
     name: "乙", date: "1992-11-03", time: "18:20", location: "上海", gender: "unspecified", timeConfidence: "exact",
     birthDate: { mode: "solar", year: 1992, month: 11, day: 3, isLeapMonth: false }, timeMode: "exact",
   };
-  const result = calculateCompatibility(chart, calculateFourPillars(secondBirth), "partner");
+  const view = buildCompatibilityPublicView(
+    chart,
+    calculateFourPillars(secondBirth),
+    "partner",
+  );
   const participants = getCompatibilityParticipants("甲", "乙", "partner", "caregiver");
   const format = (copy: string) => formatCompatibilityCopy(copy, participants);
   const html = renderToStaticMarkup(createElement(CompatibilitySection, {
@@ -354,90 +351,42 @@ it("renders the complete relationship manual in progressive disclosure order", (
 
   expect(html).toContain("第二份出生资料只在本次报告浏览期间保留");
   expect(html).not.toContain("会随报告保留");
-  expect(html).toContain("本章依据与使用边界");
-  expect(html).toContain("干支关系结构规则");
-
   expect(html).toContain('<form class="intake-card wheel-intake">');
-  const manualStart = html.indexOf('<div class="compatibility-manual">');
-  expect(manualStart, "relationship manual").toBeGreaterThan(-1);
-  const manual = extractBalancedElement(html, "div", manualStart);
-
-  const summaryStart = manual.indexOf('<header class="compatibility-summary">');
-  const summary = extractBalancedElement(manual, "header", summaryStart);
-  const axesStart = manual.indexOf('<div class="compatibility-axes">');
-  const axes = extractBalancedElement(manual, "div", axesStart);
-  const guidanceStart = manual.indexOf('<section class="role-guidance">');
-  const guidance = extractBalancedElement(manual, "section", guidanceStart);
-  const legacyEvidenceStart = manual.indexOf('<details class="compatibility-evidence">');
-  const legacyEvidence = extractBalancedElement(manual, "details", legacyEvidenceStart);
-
-  expectStrictOrder(manual, [
-    '<header class="compatibility-summary">',
-    '<div class="compatibility-axes">',
-    '<section class="role-guidance">',
-    '<details class="compatibility-evidence">',
-  ]);
-  expect(manual).toBe(`<div class="compatibility-manual">${summary}${axes}${guidance}${legacyEvidence}</div>`);
-  expect(occurrences(summary, format(result.summary))).toBe(1);
-  expect(manual.slice(0, summaryStart) + manual.slice(summaryStart + summary.length)).not.toContain(format(result.summary));
-
-  const cardStarts = [...axes.matchAll(/<article class="compatibility-axis-card">/g)].map((match) => match.index);
-  const articles = cardStarts.map((start) => extractBalancedElement(axes, "article", start));
-  expect(articles).toHaveLength(9);
-  expect(axes).toBe(`<div class="compatibility-axes">${articles.join("")}</div>`);
-  expectStrictOrder(manual, result.axes.map((axis) => format(axis.label)));
-
-  result.axes.forEach((axis, index) => {
-    const article = articles[index];
-    const evidenceStart = article.indexOf('<details class="compatibility-axis-evidence">');
-    expect(evidenceStart, `${axis.id} evidence`).toBeGreaterThan(-1);
-    const evidence = extractBalancedElement(article, "details", evidenceStart);
-    expect(evidence.slice(0, evidence.indexOf(">") + 1)).toBe('<details class="compatibility-axis-evidence">');
-    const visible = article.slice(0, evidenceStart) + article.slice(evidenceStart + evidence.length);
-
-    expect(article).toContain(`<h2>${format(axis.label)}</h2>`);
-    expectStrictOrder(visible, [format(axis.label), format(axis.plainLanguage), format(axis.scene), "可以这样做", format(axis.action)]);
-    expectStrictOrder(evidence, ["专业依据与边界", format(axis.professionalBasis), format(axis.caution)]);
-    for (const field of ["label", "plainLanguage", "scene", "action", "professionalBasis", "caution"] as const) {
-      const rawValue = axis[field];
-      const value = format(rawValue);
-      const owners = result.axes.filter((candidate) => candidate[field] === rawValue).length;
-      expect(occurrences(manual, value), `${axis.id}.${field} manual ownership`).toBe(owners);
-      articles.forEach((candidate, candidateIndex) => {
-        const expected = result.axes[candidateIndex][field] === rawValue ? 1 : 0;
-        expect(occurrences(candidate, value), `${axis.id}.${field} in card ${candidateIndex}`).toBe(expected);
-      });
-      expect(summary, `${axis.id}.${field} summary`).not.toContain(value);
-      expect(guidance, `${axis.id}.${field} guidance`).not.toContain(value);
-      expect(legacyEvidence, `${axis.id}.${field} legacy evidence`).not.toContain(value);
-    }
-    expect(visible).not.toContain(format(axis.professionalBasis));
-    expect(visible).not.toContain(format(axis.caution));
-  });
-
-  expect(guidance).toContain("伴侣关系说明书");
-  expectStrictOrder(guidance, result.roleSpecificGuidance.map(format));
-  for (const item of result.roleSpecificGuidance) expect(occurrences(guidance, format(item)), item).toBe(1);
-
-  expect(legacyEvidence.slice(0, legacyEvidence.indexOf(">") + 1)).toBe('<details class="compatibility-evidence">');
-  expectStrictOrder(legacyEvidence, ["<h2>沟通场景</h2>", "<h2>五行互动</h2>", "<h2>双向十神</h2>", "<h2>合、冲、刑、害、破与三合观察</h2>", "<h2>行动规则</h2>"]);
-
-  const legacyMarkers = [
-    format(result.communicationScenario),
-    ...result.elementDynamics.map((item) => `${item.element} ${participants.first}：${item.first}；${participants.second}：${item.second}`),
-    ...result.tenGodDynamics.map((item) => `${format(item.direction)} · ${item.theme}`),
-    ...result.combinationsAndClashes.map((item) => `${item.symbols.join("·")} · ${item.relation}`),
-    ...result.actionRules.map(format),
-    ...result.limitations.map(format),
+  const guideStart = html.indexOf(
+    '<div class="compatibility-public-reading">',
+  );
+  expect(guideStart, "relationship guide").toBeGreaterThan(-1);
+  const guide = extractBalancedElement(html, "div", guideStart);
+  const labels = [
+    "你们更像哪一种搭档",
+    "最容易产生好感的地方",
+    "最容易误会的场景",
+    "一次争执可能怎样发生",
+    "怎样把话说回来",
+    "下次可以一起试的小动作",
   ];
-  const outsideLegacyEvidence = manual.slice(0, legacyEvidenceStart) + manual.slice(legacyEvidenceStart + legacyEvidence.length);
-  for (const marker of legacyMarkers) {
-    expect(occurrences(legacyEvidence, marker), marker).toBe(1);
-    expect(outsideLegacyEvidence, marker).not.toContain(marker);
+  expectStrictOrder(guide, labels);
+  expect(guide.match(/<article>/gu)).toHaveLength(6);
+  for (const copy of [
+    view.teamStyle,
+    view.attractionScene,
+    view.misunderstandingScene,
+    view.conflictScene,
+    view.repairLine,
+    view.smallAction,
+    view.playfulObservation,
+  ]) {
+    expect(guide).toContain(format(copy));
   }
+  expect(guide).toContain(view.lead.attribution);
+  expect(guide).toContain(view.lead.saying);
+  expect(guide).not.toContain("<details");
+  expect(guide).not.toMatch(
+    /专业依据|干支关系结构规则|双向十神|来源与使用边界/u,
+  );
 });
 
-it("names submitted parent-child participants without changing the A/B calculation order", () => {
+it("names both parent-child roles while keeping engine markers out of public copy", () => {
   const chart = calculateFourPillars({ name: "顾临川", date: "1990-06-15", time: "09:30", location: "杭州", gender: "unspecified", timeConfidence: "exact" });
   const secondBirth: BirthSubmission = {
     name: "小满", date: "2012-11-03", time: "18:20", location: "上海", gender: "unspecified", timeConfidence: "exact",
@@ -486,19 +435,35 @@ it("names submitted parent-child participants without changing the A/B calculati
 
   const unexplainedMarkers = /(?:A→B|B→A|A对B|B对A|A先|B先|A再|B再|A侧|B侧|A注意|B注意|A从|B从|A会|B会|A该|B该|A(?:年|月|日|时)(?:柱|干|支)?|B(?:年|月|日|时)(?:柱|干|支)?|A待核|B待核|A长期|B长期|A完整|B用)/;
   expect(html).not.toMatch(unexplainedMarkers);
-  expect(html).toContain("顾临川（照顾者）→小满（孩子）");
-  expect(html).toContain("顾临川（照顾者）：");
-  expect(html).toMatch(/顾临川（照顾者）(?:年|月|日|时)柱/);
-  expect(html).toMatch(/<small>坐标：顾临川（照顾者）(?:年|月|日|时)柱/);
+  expect(childHtml).not.toMatch(unexplainedMarkers);
+  const secondChart = calculateFourPillars(secondBirth);
+  const caregiverView = buildCompatibilityPublicView(
+    chart,
+    secondChart,
+    "parent-child",
+    "caregiver",
+  );
+  const childView = buildCompatibilityPublicView(
+    chart,
+    secondChart,
+    "parent-child",
+    "child",
+  );
+  expect(html).toContain(caregiverView.teamStyle);
+  expect(html).toContain(caregiverView.repairLine);
+  expect(childHtml).toContain(childView.teamStyle);
+  expect(childHtml).toContain(childView.repairLine);
+  expect(html + childHtml).not.toMatch(
+    /坐标：|专业依据|双向十神|<details/u,
+  );
 });
 
-it("keeps relationship disclosures touch-safe and axes single-column without horizontal overflow on mobile", () => {
+it("keeps the six relationship cards single-column without horizontal overflow on mobile", () => {
   const css = readFileSync(resolve("app/globals.css"), "utf8");
-  expect(css).toMatch(/\.compatibility-manual\{min-width:0;overflow-wrap:anywhere\}/);
-  expect(css).toMatch(/\.compatibility-axes\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\);/);
-  expect(css).toMatch(/\.compatibility-axis-card>h2,\.compatibility-axis-card>b\{color:var\(--gold\)\}/);
-  expect(css).toMatch(/\.compatibility-axis-evidence>summary,\.compatibility-evidence>summary\{min-height:44px;display:flex;align-items:center;/);
-  expect(css).toMatch(/@media\(max-width:720px\)\{\.compatibility-axes\{grid-template-columns:1fr\}/);
+  expect(css).toMatch(/\.compatibility-public-reading\{min-width:0;display:grid;gap:14px\}/);
+  expect(css).toMatch(/\.compatibility-public-grid\{min-width:0;display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+  expect(css).toMatch(/\.compatibility-public-grid article\{[^}]*min-width:0[^}]*border-radius:15px/);
+  expect(css).toMatch(/@media\(max-width:420px\)\{\.compatibility-public-grid,\.mirror-public-cards,\.atlas-public-reading\{grid-template-columns:1fr\}/);
 });
 
 it("renders birth-owned atlas gender and a local unspecified-only reference switch", () => {
@@ -553,7 +518,10 @@ it("integrates constellation maps and mole user-side copy without a second mirro
   expect(source).toContain('import { ConstellationMap } from "./ConstellationMap"');
   expect(source).toContain("<ConstellationMap sign={starSign}");
   expect(source).toContain("CONSTELLATIONS[starSign]");
-  expect(source).toContain("getZodiacProfile(starSign)");
+  expect(source).toContain("buildAtlasPublicReading");
+  expect(source).toContain("AtlasPublicReadingCard");
+  expect(source).not.toContain("getZodiacProfile");
+  expect(source).not.toContain("getAllSources");
   expect(source).not.toContain("starSymbols");
   expect(source).not.toContain("star-reference");
   expect(css).not.toContain(".star-reference");

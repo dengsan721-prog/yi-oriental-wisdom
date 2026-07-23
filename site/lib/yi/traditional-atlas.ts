@@ -1,7 +1,11 @@
 import type { BirthInput, FourPillarsResult } from "./types";
 import type { UserFaceSide } from "./atlas-orientation";
 import type { ZodiacSign } from "./constellations";
-import { getTraditionalContent } from "./traditional-content";
+import {
+  buildTraditionalPublicCopy,
+  getTraditionalContent,
+  type TraditionalDisplayLead,
+} from "./traditional-content";
 import { getZodiacProfile } from "./zodiac-profiles";
 
 export type AtlasMethodId = "face" | "mole" | "palm" | "star";
@@ -60,6 +64,14 @@ type Seed = {
   userSide?: UserFaceSide;
   landmark?: string;
 };
+
+export type AtlasPublicReading = Readonly<{
+  title: string;
+  lead: TraditionalDisplayLead;
+  scene: string;
+  playfulObservation: string;
+  action: string;
+}>;
 
 const METHODS: AtlasMethod[] = [
   { id: "face", label: "相面", subtitle: "面型与五官标准参考" },
@@ -308,5 +320,14 @@ export function buildAtlasReading(option: AtlasOption, chart: FourPillarsResult)
       { label: "行动建议", text: option.action },
       { label: "主盘对照", text: `${option.chartComparison} 你的主盘以${chart.professional.dayMaster.stem}${chart.professional.dayMaster.element}日主为观察轴，结构显示${structure}；${confidence}。` },
     ],
+  };
+}
+
+export function buildAtlasPublicReading(
+  option: AtlasOption,
+): AtlasPublicReading {
+  return {
+    title: option.title,
+    ...buildTraditionalPublicCopy(option),
   };
 }
