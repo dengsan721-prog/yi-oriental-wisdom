@@ -253,7 +253,6 @@ main[data-element] .name-analysis-section :focus-visible{outline:3px solid var(-
 .life-scroll-action{margin-top:18px;padding:16px 18px;border:1px solid var(--yi-accent);border-radius:14px;background:var(--yi-surface)}
 .life-scroll-action>strong{color:var(--yi-accent-strong)}
 .life-scroll-action p{color:var(--yi-text)}
-@media(max-width:390px){.life-scroll-reading{width:100%;gap:18px}.life-scroll-part,.dao-story-note{padding:16px}.life-scroll-mirror{grid-template-columns:1fr}.life-scroll-reading p{line-height:1.8}}
 
 /* Professional chart and scene-based reading */
 .professional-pillar-table-section,.professional-reading-sections,.chart-detailed-reading{min-width:0;display:grid;gap:16px}
@@ -287,3 +286,27 @@ main[data-element] .name-analysis-section :focus-visible{outline:3px solid var(-
 .chart-scene-group>div{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 @media(max-width:700px){.professional-reading-sections,.chart-narrative-grid,.chart-scene-group>div{grid-template-columns:1fr}.professional-reading-section:first-child{grid-column:auto}}
 @media(max-width:520px){.professional-pillar-table{font-size:11px}.professional-pillar-table :is(th,td){padding:9px 3px}.professional-pillar-table thead th:first-child,.professional-pillar-table tbody th{width:19%}.professional-pillar-table-section>header p{font-size:12px}.professional-reading-section,.chart-narrative-beat,.chart-micro-story{padding:16px}}
+
+/* Story-first fortune stages */
+.fortune-report{min-width:0;max-width:100%;overflow-x:hidden}
+.fortune-stage-selector,.fortune-year-selector{min-width:0;max-width:100%;display:flex;gap:8px;overflow-x:auto;overscroll-behavior-inline:contain;scrollbar-width:none;padding:4px 0 16px}
+.fortune-stage-selector::-webkit-scrollbar,.fortune-year-selector::-webkit-scrollbar{display:none}
+.fortune-stage-selector button,.fortune-year-selector button{flex:0 0 auto;min-height:44px;padding:9px 12px;border:1px solid var(--yi-line);border-radius:11px;background:var(--yi-surface);color:var(--yi-text);text-align:left}
+.fortune-stage-selector button{width:min(240px,72vw);white-space:normal}
+.fortune-year-selector button{min-width:82px;text-align:center}
+.fortune-stage-selector button.active,.fortune-year-selector button.active{border-color:var(--yi-accent);background:var(--yi-accent-soft);color:var(--yi-accent-strong)}
+.fortune-stage-selector button small,.fortune-year-selector button small{display:block;margin-top:4px;color:var(--yi-text-muted);font-size:11px}
+.fortune-story-card{min-width:0;max-width:100%;overflow-wrap:anywhere}
+.fortune-story-card>header{min-width:0;align-items:start}
+.fortune-story-card>header small{color:var(--yi-text-muted);font-size:12px}
+.fortune-story-card>header h2{color:var(--yi-text)}
+.fortune-story-grid,.fortune-state-grid{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.fortune-story-grid section,.fortune-state-grid section,.fortune-year-story section{min-width:0;padding:16px 20px;border-top:1px solid var(--yi-line)}
+.fortune-story-grid section:nth-child(even),.fortune-state-grid section+section{border-left:1px solid var(--yi-line)}
+.fortune-story-grid b,.fortune-state-grid b,.fortune-year-story b{display:block;color:var(--yi-accent-strong);font-size:11px;letter-spacing:.04em}
+.fortune-story-grid p,.fortune-state-grid p,.fortune-year-story p{min-width:0;margin:6px 0 0;color:var(--yi-text-muted);font-size:13px;line-height:1.7;overflow-wrap:anywhere}
+.fortune-stage-story{border-color:var(--yi-line)}
+.fortune-stage-actions{border-color:var(--yi-line)}
+.fortune-year-story{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.fortune-year-story section+section{border-left:1px solid var(--yi-line)}
+@media(max-width:390px){.fortune-story-grid,.fortune-state-grid{grid-template-columns:1fr}.fortune-year-story{grid-template-columns:1fr}.fortune-story-grid section:nth-child(even),.fortune-state-grid section+section,.fortune-year-story section+section{border-left:0}.fortune-stage-story,.fortune-stage-actions,.fortune-story-grid section,.fortune-state-grid section,.fortune-year-story section{padding:14px}.fortune-stage-selector button{width:min(220px,78vw)}.life-scroll-reading{width:100%;gap:18px}.life-scroll-part,.dao-story-note{padding:16px}.life-scroll-mirror{grid-template-columns:1fr}.life-scroll-reading p{line-height:1.8}}
