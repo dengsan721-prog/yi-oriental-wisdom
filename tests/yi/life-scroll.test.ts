@@ -519,11 +519,55 @@ describe("deterministic life scroll", () => {
       ]);
       expect(daoCopy).toContain("通用观察");
       expect(daoCopy).toContain("只保留通用观察的时刻");
-      expect(daoCopy).toContain("急于获得确定感的冲动");
+      expect(daoCopy).toContain("信息尚未充分核对");
       expect(daoCopy).toContain("写清已知事实和下一步");
       expect(daoCopy).not.toMatch(
         /输出速度不断上升|时间表与立场正面对撞|暂停即时结论/u,
       );
+    }
+  });
+
+  it("keeps the empty-material opening conditional", () => {
+    const { chart, report } = fixture();
+    const narrative = buildLifeScrollNarrative(chart, report, []);
+    const opening = narrative.openingScene.join("");
+
+    assertCompleteNarrative(narrative);
+    expect(opening).toContain("当需要同时处理几项责任时");
+    expect(opening).not.toContain("眼前同时有几项责任需要处理");
+  });
+
+  it("keeps every empty-material Dao scene conditional", () => {
+    const { chart, report } = fixture();
+    const narrative = buildLifeScrollNarrative(chart, report, []);
+    const daoCopy = narrative.daoNotes.flatMap(note => [
+      note.excerpt,
+      note.plainCommentary.traditionalMeaning,
+      note.plainCommentary.storyConnection,
+      note.plainCommentary.sceneGuidance,
+    ]).join("");
+
+    assertCompleteNarrative(narrative);
+    expect(daoCopy).not.toContain("急于获得确定感的冲动");
+    expect(daoCopy).not.toMatch(
+      /人物(?:一度|原本|被|完成工作后)|仍被“[^”]+”拉回/u,
+    );
+    const chapterSemantics = {
+      "dao-15-clear": /暂停|等待/u,
+      "dao-33-self": /事实与解释|看清自己/u,
+      "dao-63-small": /细处|小步/u,
+      "dao-81-no-strife": /功劳|受益/u,
+    };
+    for (const note of narrative.daoNotes) {
+      expect(note.plainCommentary.storyConnection).toMatch(
+        /若|如果|只有当/u,
+      );
+      expect(note.plainCommentary.sceneGuidance).toMatch(/若|如果/u);
+      expect(
+        `${note.plainCommentary.storyConnection}${note.plainCommentary.sceneGuidance}`,
+      ).toMatch(chapterSemantics[
+        note.internalSourceId as keyof typeof chapterSemantics
+      ]);
     }
   });
 
@@ -639,6 +683,12 @@ describe("deterministic life scroll", () => {
       .toContain("关系材料不足时");
     expect(narrative.relationshipArc.join(""))
       .not.toContain("正面对撞");
+    expect(narrative.turningPointArc[0]).not.toMatch(
+      /新的回应真正发生|被相关的人共同确认/u,
+    );
+    expect(narrative.turningPointArc[0]).toMatch(
+      /只有当.+(?:观察|核对).+确认.+才/u,
+    );
     expect(narrative.uncertaintyFlags)
       .toContain("candidate-professional-field-excluded");
   });
