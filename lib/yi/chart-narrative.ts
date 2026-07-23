@@ -314,11 +314,26 @@ const neutralDomainCue: DomainCue = {
   mature: "让行动可以复查和修改",
 };
 
+const relationshipReviewTextures: Readonly<Record<ElementName, string>> = {
+  木: "方向与成长是否都被听见",
+  火: "热度是否留出了回应时间",
+  土: "可靠是否变成了共同承担",
+  金: "标准是否留下了解释入口",
+  水: "变化是否仍有复查坐标",
+};
+
 type StructureStoryStyle = {
   opportunity: string;
   overload: string;
   recovery: string;
   decision: string;
+  rhythmWarning: string;
+  recoveryExperiment: string;
+  decisionExperiment: string;
+  decisionProof: string;
+  rhythmReview: string;
+  recoveryReview: string;
+  decisionReview: string;
 };
 
 const structureStoryStyles: Readonly<Record<
@@ -330,18 +345,39 @@ const structureStoryStyles: Readonly<Record<
     overload: "反复准备会挤压行动窗口",
     recovery: "先停新增承诺，再分清可用、可交接与可放下",
     decision: "设资料截止点，用可逆交付检验准备",
+    rhythmWarning: "准备与承诺同时堆高时，结束工作会比启动更困难",
+    recoveryExperiment: "从已承接事项里移出一项，观察腾出的时间是否真正用于恢复",
+    decisionExperiment: "给资料收集设截止日，用一份可修改的初稿替代继续等待",
+    decisionProof: "能按截止日交出可修改版本，追加准备只因为出现了新证据",
+    rhythmReview: "复盘时确认结束时间是否提前，未完成事项是否已经交接或放下",
+    recoveryReview: "七天后比较新增承诺、交接数量与可用精力，不因一天轻松就宣布恢复",
+    decisionReview: "到截止日比较初稿、遗漏条件与新增证据，再决定补充还是提交",
   },
   mixed: {
     opportunity: "多个方向都有理由时先排主次",
     overload: "反复平衡会让忙碌失去主线",
     recovery: "先固定一个重点和一个补给窗口",
     decision: "写清主线与复查点，只让新事实改路线",
+    rhythmWarning: "反复权衡会占满清醒时段，真正的主线却没有获得连续时间",
+    recoveryExperiment: "固定一项重点和一段补给时间，其他请求延后到复查点",
+    decisionExperiment: "先写一条主线与复查日期，新增信息只有改变关键条件时才改路线",
+    decisionProof: "新信息没有改变关键条件时，原定主线仍按复查日期推进",
+    rhythmReview: "复盘时看唯一重点是否得到连续时间，补给窗口是否真的被保留",
+    recoveryReview: "七天后比较主线进度与休息质量，若两者都未改善就重新减项",
+    decisionReview: "到复查日只问新事实是否改变关键条件，不为普通噪声改路线",
   },
   "expression-heavy": {
     opportunity: "行动启动快，但仍要确认验收后再加速",
     overload: "持续输出会挤压理解与恢复",
     recovery: "先降低强度，留出睡眠、反馈与排序窗口",
     decision: "收束目标与退出条件，再推进关键一步",
+    rhythmWarning: "连续启动新任务会挤掉理解与休息，下一轮速度开始借用未来精力",
+    recoveryExperiment: "先降一档任务强度，把睡眠、反馈和排序各留出固定窗口",
+    decisionExperiment: "删去次要目标并写明退出条件，只推进一项可以检验的关键动作",
+    decisionProof: "删去次要目标后，关键动作会按退出条件完成或停止",
+    rhythmReview: "复盘时比较启动数量、完成数量和睡眠，不把忙碌直接当成进展",
+    recoveryReview: "七天后看输出是否回到可理解、可回应并且能够按时结束的速度",
+    decisionReview: "到退出点检查关键动作是否产生反馈，没有反馈便停止追加目标",
   },
 };
 
@@ -350,6 +386,13 @@ const neutralStructureStyle: StructureStoryStyle = {
   overload: "过早归纳规律会把行动带偏",
   recovery: "先减少一项负荷，再按真实记录调整",
   decision: "保留检查点与停止条件",
+  rhythmWarning: "条件未稳时继续加量，会让一次偶然反馈被误当成长期规律",
+  recoveryExperiment: "先移出一项负荷，再按七天记录决定是否恢复",
+  decisionExperiment: "保留一个检查点和停止条件，用小步结果补齐未知",
+  decisionProof: "小步结果可以复核，未知项没有被包装成确定结论",
+  rhythmReview: "复盘时分别核对任务量、结束时间与恢复感，不从单日波动推断长期规律",
+  recoveryReview: "七天后只比较一项负荷变化与实际结果，资料不足就继续保持小步",
+  decisionReview: "到检查点核对已知、未知与可撤回程度，再决定继续还是停止",
 };
 
 type RelationStoryFrame = {
@@ -604,10 +647,13 @@ type BeatConfig = {
   reset: string;
   result: string;
   signal: string;
+  review: string;
+  noRecordExperiment: string;
 };
 
-function continueSentence(value: string): string {
-  return value.trim().replace(/[。！？；，]+$/u, "");
+function completeSentence(value: string): string {
+  const trimmed = value.trim();
+  return /[。！？]$/u.test(trimmed) ? trimmed : `${trimmed}。`;
 }
 
 function buildBeat(
@@ -617,19 +663,19 @@ function buildBeat(
 ): NarrativeBeat {
   const consumed = buildActionSequence(sourceActionIds);
   return {
-    situation:
-      `${prefix}${continueSentence(config.scene)}，人物先寻找一个可控制的入口。`,
-    opportunity: `机会在于${config.aim}，让压力成为可讨论的条件。`,
-    firstStrength: `${config.strength}，能让事情启动并给出下一步。`,
-    overuseCost: `若用过头，${config.cost}，重要反馈就会被挡在决定之外。`,
-    lowPoint: `低点可能是${config.lowPoint}，小问题也会被误作无法改变的困局。`,
+    situation: `${prefix}${completeSentence(config.scene)}`,
+    opportunity: completeSentence(`机会在于${config.aim}`),
+    firstStrength: completeSentence(config.strength),
+    overuseCost: completeSentence(`若用过头，${config.cost}`),
+    lowPoint: completeSentence(`低点可能是${config.lowPoint}`),
     newChoice: consumed
       ? `转折动作是：${config.reset}。${consumed}完成后再看结果。`
-      : `转折动作是：${config.reset}，让事实、边界和下一步重新对齐。`,
-    turn:
-      `${continueSentence(config.result)}，变化来自反复核对，不是突然逆转。`,
+      : `${completeSentence(`转折动作是：${config.reset}`)}${completeSentence(
+        config.noRecordExperiment,
+      )}`,
+    turn: completeSentence(config.result),
     observableSignal:
-      `${continueSentence(config.signal)}，连续记录两周再判断。`,
+      `${completeSentence(config.signal)}${completeSentence(config.review)}`,
     sourceActionIds,
   };
 }
@@ -645,30 +691,31 @@ type MicroConfig<TScene extends string> = {
   turn: string;
   example: string;
   signal: string;
+  review: string;
+  noRecordExperiment: string;
 };
 
 function buildMicroStory<TScene extends string>(
   config: MicroConfig<TScene>,
   sourceActionIds: readonly DetailActionId[],
-  cue: DomainCue,
 ): SceneMicroStory<TScene> {
   const consumed = buildActionSequence(sourceActionIds);
   return {
     id: config.id,
     covers: config.covers,
     title: config.title,
-    trigger:
-      `${continueSentence(config.trigger)}时，可以${cue.opening}。`,
-    firstReaction: `${config.reaction}，借${cue.strength}暂时稳住局面。`,
-    apparentBenefit: `${config.benefit}。`,
-    cost: `${config.cost}，也要防${cue.risk}。`,
+    trigger: completeSentence(config.trigger),
+    firstReaction: completeSentence(config.reaction),
+    apparentBenefit: completeSentence(config.benefit),
+    cost: completeSentence(config.cost),
     turnAction: consumed
-      ? `${cue.mature}：${config.turn}。${consumed}`
-      : `${cue.mature}：${continueSentence(config.turn)}；还没有足够个人记录时，先把这一段当作一周小实验，记下触发、动作和结果，再决定是否保留。`,
-    example:
-      `${continueSentence(config.example)}，这会检验“${cue.opening}”。`,
+      ? `${completeSentence(config.turn)}${consumed}`
+      : `${completeSentence(config.turn)}${completeSentence(
+        config.noRecordExperiment,
+      )}`,
+    example: completeSentence(config.example),
     observableSignal:
-      `${continueSentence(config.signal)}，连续记录后再判断。`,
+      `${completeSentence(config.signal)}${completeSentence(config.review)}`,
     sourceActionIds,
   };
 }
@@ -687,6 +734,9 @@ export function buildChartNarrative(
   const cue = stable.dayMasterElement
     ? elementDomainCues[stable.dayMasterElement]
     : neutralDomainCue;
+  const relationshipReviewTexture = stable.dayMasterElement
+    ? relationshipReviewTextures[stable.dayMasterElement]
+    : "事实是否比猜测更清楚";
   const actionIds = actionIdsForIds(interpretations.map(item => item.id));
   const actionBuckets = buildActionBuckets(
     interpretations.map(item => item.id),
@@ -732,43 +782,53 @@ export function buildChartNarrative(
     aim: `自己想守住什么，以及如何${cue.mature}`,
     strength: cue.strength,
     cost: cue.risk,
-    lowPoint: `${cue.risk}，疲惫与误解会放大一次判断`,
-    reset: `${cue.mature}，再核对${visibilityCue}`,
-    result: `${cue.mature}，主见仍保留也能修正`,
-    signal: `能说出反证，并观察“${cue.mature}”后的反馈`,
+    lowPoint: "疲惫与误解会把一次局部判断放大成整体结论",
+    reset: "核对反证与当前可用方法，再决定原判断保留多少",
+    result: "判断有了复查点，主见仍保留也能修正",
+    signal: "能说出反证，也能指出下一次复查点",
+    review: "双周复盘时比较原判断、反证和实际后果",
+    noRecordExperiment: "先在一项低风险判断中写下原结论、一个反证和复查日期",
   }, actionBuckets[0], `${unknownSentence}${missingSentence}人物通常会${cue.opening}。${visibilityCue}。`);
 
   const career = buildBeat({
     scene: careerScene,
     aim: `${structure.opportunity}，再确认职责与标准`,
-    strength: `${cue.opening}，把任务带回主线`,
-    cost: `${structure.overload}，而且${cue.risk}`,
-    lowPoint: `${structure.overload}，延期与返工一起累积`,
-    reset: `${cue.mature}，写清目标、负责人和停止条件`,
-    result: `${cue.mature}，团队按同一清单协作`,
+    strength: `${style.opening}，再确认交付对象和关键条件`,
+    cost: structure.overload,
+    lowPoint: "职责空白把延期与返工同时推高",
+    reset: "核对职责、权限与验收条件，写清负责人和停止点",
+    result: "责任与验收写进同一张清单，团队据此协作",
     signal: `返工下降，“${structure.opportunity}”对应一项交付`,
+    review: "两次交付后比较返工次数、责任空白和完成标准",
+    noRecordExperiment: "先选一项小任务写清责任、权限和验收人，交付后再看返工是否下降",
   }, actionBuckets[1]);
 
   const relationship = buildBeat({
-    scene: `${relationshipScene}${relation.situation}。人物会${cue.opening}。`,
-    aim: `${relation.approach}，同时${cue.mature}`,
-    strength: `${cue.strength}，并把彼此带回具体事情`,
-    cost: `${relation.conflict}。若${cue.risk}，善意也会变成压力`,
-    lowPoint: `${relation.conflict}，双方越想自证，越难听见对方真正要守住的部分`,
-    reset: `${cue.mature}，再按这条路径修复：${relation.repair}`,
-    result: `${relation.repair}，关系不必马上完美，却多了一条可以重复使用的路径`,
-    signal: `${relation.signal}，也能看见人物${cue.mature}`,
+    scene: `${relationshipScene}${relation.situation}。人物先停下解释，确认对方真正听见了什么。`,
+    aim: `${relation.approach}，也把“${style.mature}”带进相处`,
+    strength: `${style.strength}，同时暂停自证，把彼此带回具体事情`,
+    cost: `${relation.conflict}。${style.risk}时，善意也会变成压力`,
+    lowPoint: "双方越想证明自己没有错，越难听见对方真正要守住的部分",
+    reset: `核对事实、请求与回应，再按这条路径修复：${relation.repair}`,
+    result: "双方先复述对方请求，再执行一项新约定；关系不必马上完美，却多了一条可以重复使用的路径",
+    signal: "双方能复述请求，并执行一项新约定",
+    review:
+      `下一次分歧后复盘${relationshipReviewTexture}，再看双方能否执行新约定`,
+    noRecordExperiment: "先用一场二十分钟对话核对事实与请求，结束前约定重谈时间",
   }, actionBuckets[2]);
 
   const rhythm = buildBeat({
-    scene: `${rhythmScene}${structure.recovery}，人物会${cue.opening}。`,
+    scene: `${rhythmScene}${structure.rhythmWarning}。`,
     aim: `${structure.decision}，并看清高质量时段与过载信号`,
-    strength: `${cue.strength}，把精力留给关键任务`,
-    cost: `${structure.overload}。若${cue.risk}，判断会在疲惫中启动`,
-    lowPoint: `${structure.overload}，专注、耐心和恢复速度可能一起下降`,
-    reset: `${cue.mature}，并按这条恢复顺序行动：${structure.recovery}`,
-    result: `${structure.recovery}，人物开始按记录调速`,
-    signal: `连续两周能按预定时间结束工作，并能用“${structure.decision}”完成一次决定`,
+    strength: `${style.strength}，再把可用精力留给关键任务`,
+    cost:
+      `负荷持续叠加；若复盘仍看不见“${structure.decisionProof}”，判断会在疲惫中启动`,
+    lowPoint: "结束信号被一再延后，专注、耐心和恢复速度可能一起下降",
+    reset: `核对负荷、恢复与结束信号，再按这条顺序行动：${structure.recovery}`,
+    result: "任务减量之后，人物开始按记录调速",
+    signal: "连续两周能按预定时间结束工作，并在资料截止后完成一次可撤回的决定",
+    review: structure.rhythmReview,
+    noRecordExperiment: "先连续七天记录开始、过载和停止时刻，只调整最影响恢复的一项安排",
   }, actionBuckets[3]);
 
   const careerAdvice: ChartNarrative["careerAdvice"] = [
@@ -781,25 +841,35 @@ export function buildChartNarrative(
       benefit: "项目很快有第一版，暂时摆脱停滞",
       cost: `责任与验收仍模糊，${structure.overload}`,
       turn: "写清目标、负责人、权限和验收人",
-      example: careerScene,
+      example:
+        `${careerScene}新任务刚交到手上时，一个人再把负责人、权限与验收时间写在同一页；同伴补充遗漏后，返工没有继续扩大。`,
       signal: "任务有唯一负责人，复盘不再争论谁该知道",
-    }, actionBuckets[4], cue),
+      review:
+        `复查时看角色、权限和验收是否对齐，也检查${cue.risk}有没有让第一版变成返工。`,
+      noRecordExperiment:
+        "先挑一项新任务，只记录谁决定、谁执行和谁验收；交付后再比较责任空白和返工次数。",
+    }, actionBuckets[4]),
     buildMicroStory({
       id: "career-choice-accumulation",
       covers: ["opportunity-choice", "long-accumulation"],
       title: "机会先小试，能力靠长期留下可以复查的现实证据",
       trigger: "新机会诱人，或长期积累缺少反馈",
-      reaction: "要么全力投入，要么等待完整把握",
+      reaction:
+        `要么全力投入，要么等待完整把握；这时要把“${cue.mature}”写进选择过程`,
       benefit: "全力投入带来启动感，等待暂避失败风险",
       cost: `没有试验上限，${structure.overload}`,
       turn: `${structure.decision}，再限定试验额度`,
       example: sceneFor(
         interpretations,
         ["career-environment", "wealth-risk", "talent-output"],
-        careerScene,
+        "两个机会同时出现时，一个人先给试验写下时间上限和停止条件；一周后再用新增事实决定保留哪一项。",
       ),
-      signal: `每次追加投入前都有新证据，并能说明${visibilityCue}`,
-    }, actionBuckets[5], cue),
+      signal: "每次追加投入前都有新证据，并能说明试验为何继续",
+      review:
+        "复查时比较投入前后的新证据、额度和退出条件。",
+      noRecordExperiment:
+        "先给一个小机会设七天期限，到期列出新增事实、实际投入与退出代价，只按记录决定去留。",
+    }, actionBuckets[5]),
   ];
 
   const relationshipAdvice: ChartNarrative["relationshipAdvice"] = [
@@ -807,30 +877,45 @@ export function buildChartNarrative(
       id: "relationship-approach-misunderstanding",
       covers: ["approach", "misunderstanding"],
       title: "靠近之前先说期待，误会出现先核事实",
-      trigger: "你希望获得陪伴、回应或更明确承诺，却还没有把期待说成对方能直接回答的请求",
-      reaction: "用暗示、试探或加快安排来确认自己是否被重视",
+      trigger:
+        `你希望获得陪伴或回应，却还没有把期待说成对方能直接回答的请求；此刻容易把“${cue.opening}”当成直接开口的替代`,
+      reaction:
+        `用暗示或试探来确认自己是否被重视，再借“${cue.strength}”撑住不确定`,
       benefit: "不用直接暴露需要，短期也能避免听见一个不确定答案",
-      cost: `对方只能回应表面动作，${relation.conflict}`,
-      turn: `${relation.repair}，再请对方复述理解`,
-      example: `${relationshipScene}${relation.situation}。`,
+      cost:
+        `对方只能回应动作，真正的期待仍没有进入对话，还会放大“${cue.risk}”的代价`,
+      turn: "说清事实、感受、需要与请求，再请对方复述理解",
+      example:
+        `${relationshipScene}对话里先各说一件看见的事实，再把期待改写成可以回答的请求；这样回应不必再靠猜。`,
       signal: relation.signal,
-    }, actionBuckets[6], cue),
+      review:
+        `复查时看“${relation.approach}”能否让${relationshipReviewTexture}。`,
+      noRecordExperiment:
+        "选一次低风险对话，只记录请求、对方复述和实际回应。",
+    }, actionBuckets[6]),
     buildMicroStory({
       id: "relationship-conflict-repair-boundary",
       covers: ["argument", "repair", "boundary"],
       title: "争执可以暂停，修复必须落到新规则",
-      trigger: `同一冲突再次出现，情绪和责任已经纠缠在一起，${relation.conflict}`,
-      reaction: "急着证明自己的解释完整，或为了恢复平静先答应以后注意",
+      trigger:
+        `同一冲突再次出现，情绪和责任已经纠缠在一起；人物又想沿着“${cue.opening}”尽快收场`,
+      reaction:
+        `急着证明自己的解释完整，或为了恢复平静先答应以后注意，再用“${cue.strength}”维持表面秩序`,
       benefit: "争论暂时有了出口，表面关系也可能很快恢复日常",
-      cost: `触发、影响和责任没有重新安排，${relation.conflict}`,
-      turn: `${relation.repair}，再约定暂停信号、恢复时间和一项边界`,
+      cost: `触发、影响和责任没有重新安排；${style.risk}时，同一争执仍会沿旧路径回来`,
+      turn:
+        `分开事实、影响和各自责任，再把“${relationshipReviewTexture}”落实成暂停信号、恢复时间和一项边界`,
       example: sceneFor(
         interpretations,
         ["relationship-trigger", "relationship-repair", "family-boundary"],
-        relationshipScene,
+        "同一争执再次出现时，双方先暂停十分钟，再各自复述事实、影响和能承担的一步；谈话因此没有回到旧指责。",
       ),
-      signal: relation.signal,
-    }, actionBuckets[7], cue),
+      signal: "暂停后能按约定时间重谈，并确认一项新规则",
+      review:
+        "复查时看重谈是否按时发生，新规则是否真正执行。",
+      noRecordExperiment:
+        "先约一次暂停和重谈时间，只检查新约定有没有真正执行。",
+    }, actionBuckets[7]),
   ];
 
   const rhythmAdvice: ChartNarrative["rhythmAdvice"] = [
@@ -838,30 +923,38 @@ export function buildChartNarrative(
       id: "rhythm-window-overload-pause",
       covers: ["productive-window", "overload-signal", "pause"],
       title: "高效留给重点，过载便降档",
-      trigger: `任务变密、清醒时段变少，${structure.recovery}`,
+      trigger: `任务变密、清醒时段变少，${structure.rhythmWarning}`,
       reaction: "把更多事项塞进高效时段并延长工作",
       benefit: "关键进度短期上升，数量带来掌控感",
-      cost: `休息被不断推迟，而且${structure.overload}`,
-      turn: `${structure.recovery}，再连续七天记录专注时段和结束信号`,
-      example: rhythmScene,
-      signal: `重点任务在固定时段完成，并能看见${structure.recovery}`,
-    }, actionBuckets[8], cue),
+      cost: "休息被不断推迟，第二天的判断开始借用尚未恢复的精力",
+      turn: `${structure.recoveryExperiment}，再连续七天记录专注时段和过载信号`,
+      example:
+        `下午注意力开始下降时，一个人先执行“${structure.recoveryExperiment}”里的第一步，并记录结束时间；第二天再把清醒时段留给唯一重点。`,
+      signal: `重点任务在固定时段完成，并能看见“${structure.recovery}”带来的变化`,
+      review: structure.recoveryReview,
+      noRecordExperiment:
+        "先连续七天只记录开始、过载和停止三个时刻，再调整任务量。",
+    }, actionBuckets[8]),
     buildMicroStory({
       id: "rhythm-restart-decision",
       covers: ["restart", "decision-window"],
       title: "小步重启，决定设门槛",
-      trigger: `密集阶段刚结束，或决定已有大量信息，${structure.decision}`,
-      reaction: "要么马上恢复强度，要么等待完全有把握",
+      trigger: `密集阶段刚结束，或信息已经多到难以排序；${structure.decisionExperiment}`,
+      reaction:
+        `要么马上恢复强度，要么等待完全有把握，仿佛不做到“${style.mature}”就不能开始`,
       benefit: "立即加速能延续成就感，等待也暂时避开选错焦虑",
-      cost: `身体和注意力可能还未归位，而且${structure.overload}`,
-      turn: `${structure.decision}，再恢复一个稳定作息并写下复查日期`,
+      cost: "身体和注意力可能还未归位，重新加量会把上一轮疲惫带进下一轮",
+      turn: `${structure.decisionExperiment}，再恢复一个稳定作息并标记复查日期`,
       example: sceneFor(
         interpretations,
         ["rhythm-recovery", "rhythm-decision"],
-        rhythmScene,
+        "密集任务结束后的第一天，一个人只恢复一项固定作息，并把重大决定推到睡眠恢复后；第二次检查时再决定是否加量。",
       ),
-      signal: `重新加量后仍能保持基本作息，并能说明${structure.decision}`,
-    }, actionBuckets[9], cue),
+      signal: `重新加量后仍能保持基本作息；${structure.decisionProof}`,
+      review: structure.decisionReview,
+      noRecordExperiment:
+        "先恢复一个固定作息并设三天复查点，不同时增加第二项负荷。",
+    }, actionBuckets[9]),
   ];
 
   const coveredDetailActionIds = [

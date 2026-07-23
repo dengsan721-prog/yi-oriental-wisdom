@@ -113,7 +113,7 @@ type DaoFrameContext = Readonly<{
   turn: string;
   scene: string;
   action: string;
-  placement: string;
+  opening: string;
 }>;
 
 type DaoFrame = Readonly<{
@@ -328,65 +328,82 @@ const DAO_PLACEMENTS: readonly DaoPlacement[] = [
   "closing",
 ];
 
-const DAO_PLACEMENT_LABELS: Readonly<Record<DaoPlacement, string>> = {
-  career: "事业开门",
-  relationship: "关系修复",
-  "turning-point": "转折发生",
-  closing: "全卷收束",
+const DAO_STORY_OPENINGS: Readonly<
+  Record<DaoPlacement, (scene: string) => string>
+> = {
+  career: scene =>
+    `事业这扇门打开时，${scene}成为必须先处理的现场。`,
+  relationship: scene =>
+    `关系走到需要修补的地方，${scene}已经摆到双方眼前。`,
+  "turning-point": scene =>
+    `转折来到眼前时，${scene}让旧做法再也难以维持。`,
+  closing: scene =>
+    `全卷收束到${scene}，下一步必须重新取舍。`,
+};
+
+const DAO_BOUNDARY_COPY: Readonly<Record<DaoPlacement, string>> = {
+  career:
+    "这里借古语只帮助拿捏事业行动的分寸；它不能替现实反馈作决定，也不预告工作结果。",
+  relationship:
+    "放在关系里，这层古义只帮助看见相处分寸；它不替任何一方判定动机，也不预告关系走向。",
+  "turning-point":
+    "用在转折处，这层古义只解释选择方法；变化是否成立，仍要由后续行动与他人的真实回应确认。",
+  closing:
+    "用来收束全卷时，这层古义只保留行动提醒；它不把故事写成确定结局，现实仍可继续修正。",
 };
 
 const DAO_FRAMES: Readonly<Record<string, DaoFrame>> = {
   "dao-08-water": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物面对“${context.tension}”，先把共同需要放到位置和功劳之前。当人物${context.turn}后，局面便有重新流动的空间，但结果仍由现实回应决定。`,
+      `${context.opening}人物面对“${context.tension}”，先把共同需要放到位置和功劳之前。当人物${context.turn}后，局面便有重新流动的空间，但结果仍由现实回应决定。`,
     sceneGuidance: context =>
       `人物先${context.action}，再确认谁真正受益、谁仍有异议以及何时复查。服务不是讨好，也不要求任何人放弃自己的边界。`,
   },
   "dao-15-clear": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物一度被“${context.tension}”催着立刻下结论。人物停止追加判断、等待事实沉淀；人物${context.turn}后，混乱才逐渐显出可处理的层次。`,
+      `${context.opening}人物一度被“${context.tension}”催着立刻下结论。人物停止追加判断、等待事实沉淀；人物${context.turn}后，混乱才逐渐显出可处理的层次。`,
     sceneGuidance: context =>
       `人物先暂停一个回合，${context.action}，并约定下一次核对时间。等待期间只记录新事实，不用焦虑替空白补出答案。`,
   },
   "dao-22-whole": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物因“${context.tension}”想用更大力度维持原路线。人物先让方法转弯以保留真正所守；${context.turn}之后，行动才重新获得余地。`,
+      `${context.opening}人物因“${context.tension}”想用更大力度维持原路线。人物先让方法转弯以保留真正所守；${context.turn}之后，行动才重新获得余地。`,
     sceneGuidance: context =>
       `人物先${context.action}，再写下必须保留和可以改变的部分。暂时转弯不是退场，而是避免用硬撑消耗最重要的目标。`,
   },
   "dao-33-self": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物原本被“${context.tension}”牵着走。人物不急着赢过别人，先看清自己的反应、容量与偏差；人物${context.turn}后，下一步才成为可以修正的行动。`,
+      `${context.opening}人物原本被“${context.tension}”牵着走。人物不急着赢过别人，先看清自己的反应、容量与偏差；人物${context.turn}后，下一步才成为可以修正的行动。`,
     sceneGuidance: context =>
       `人物先${context.action}，随后分别写下外部事实和自己的自动解释。看清自己不是自责，而是找到哪一处回应仍能由自己改变。`,
   },
   "dao-40-return": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物因“${context.tension}”不断向外加力。人物回到问题起点，选择较小却能持续的动作；${context.turn}之后，方向才重新接受事实校正。`,
+      `${context.opening}人物因“${context.tension}”不断向外加力。人物回到问题起点，选择较小却能持续的动作；${context.turn}之后，方向才重新接受事实校正。`,
     sceneGuidance: context =>
       `人物先${context.action}，再撤掉一项无助于主线的额外用力。退回起点是重新校准，不意味着现实一定反转或自动变好。`,
   },
   "dao-63-small": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物被“${context.tension}”压得只看见整块难题。人物在问题尚小时先作安排；人物${context.turn}后，困难便被拆成今天能够核对的部分。`,
+      `${context.opening}人物被“${context.tension}”压得只看见整块难题。人物在问题尚小时先作安排；人物${context.turn}后，困难便被拆成今天能够核对的部分。`,
     sceneGuidance: context =>
       `人物先${context.action}，再选一项二十分钟内能够完成的细节，并留下下一步接口。小步不是轻看困难，而是阻止问题继续累积。`,
   },
   "dao-64-road": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物因“${context.tension}”把目光一直放在遥远终点。人物从足下第一步起步，让后续动作彼此接续；${context.turn}使长期方向第一次有了可见进度。`,
+      `${context.opening}人物因“${context.tension}”把目光一直放在遥远终点。人物从足下第一步起步，让后续动作彼此接续；${context.turn}使长期方向第一次有了可见进度。`,
     sceneGuidance: context =>
       `人物先${context.action}，再写下紧接着的第二步和复查时间。起步之后仍保持开始时的谨慎，避免临近完成才放松关键核对。`,
   },
   "dao-76-soft": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物因“${context.tension}”把强硬误当成稳定。人物松开已经僵住的方法并保留调整能力；人物${context.turn}后，新路径才有进入空间。`,
+      `${context.opening}人物因“${context.tension}”把强硬误当成稳定。人物松开已经僵住的方法并保留调整能力；人物${context.turn}后，新路径才有进入空间。`,
     sceneGuidance: context =>
       `人物先${context.action}，再说明可以调整与不能退让的边界。柔软不是屈从，而是让行动在现实变化中仍有转向余地。`,
   },
   "dao-81-no-strife": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。人物完成工作后仍被“${context.tension}”拉回比较。人物让成果回到真实受益者；${context.turn}之后，行动不再依赖争夺位置来确认价值。`,
+      `${context.opening}人物完成工作后仍被“${context.tension}”拉回比较。人物让成果回到真实受益者；${context.turn}之后，行动不再依赖争夺位置来确认价值。`,
     sceneGuidance: context =>
       `人物先${context.action}，再核对成果是否真的被使用，并清楚记录各方贡献。不争不是抹去责任，而是不让功劳竞争破坏已经完成的工作。`,
   },
@@ -395,25 +412,25 @@ const DAO_FRAMES: Readonly<Record<string, DaoFrame>> = {
 const NEUTRAL_DAO_FRAMES: Readonly<Record<string, DaoFrame>> = {
   "dao-15-clear": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。若${context.tension}，可以先暂停追加判断，${context.action}并等待新材料；只有事实层次变得更清楚，才继续决定下一步。`,
+      `${context.opening}若${context.tension}，可以先暂停追加判断，${context.action}并等待新材料；只有事实层次变得更清楚，才继续决定下一步。`,
     sceneGuidance: context =>
       `若新事实仍然不足，先保留一个观察回合，再${context.turn}并约定核对时间。等待不是拖延，而是不给空白补出未经确认的答案。`,
   },
   "dao-33-self": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。若${context.tension}且解释仍混在其中，可以先分开记录外部事实与自动解释，再核对自己的容量与偏差；只有可修改的回应变得清楚，才安排下一步。`,
+      `${context.opening}若${context.tension}且解释仍混在其中，可以先分开记录外部事实与自动解释，再核对自己的容量与偏差；只有可修改的回应变得清楚，才安排下一步。`,
     sceneGuidance: context =>
       `若仍分不清事实与解释，先${context.action}，再请相关的人补充不同观察。看清自己不是自责，而是为后续修正保留入口。`,
   },
   "dao-63-small": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。若${context.tension}且问题还不能整体处理，可以在容易核对的细处先作安排，再${context.turn}；只有反馈支持继续推进，才接上下一步。`,
+      `${context.opening}若${context.tension}且问题还不能整体处理，可以在容易核对的细处先作安排，再${context.turn}；只有反馈支持继续推进，才接上下一步。`,
     sceneGuidance: context =>
       `若目标仍然过大，先${context.action}，再选一项二十分钟内能够完成的细节。小步不轻看困难，只避免问题继续累积。`,
   },
   "dao-81-no-strife": {
     storyConnection: context =>
-      `故事走到${context.placement}时，场景是：${context.scene}。若${context.tension}且成果归属仍不清楚，可以先核对成果是否真的被使用，再清楚记录各方贡献；只有行动回到真实受益者，才放下功劳竞争。`,
+      `${context.opening}若${context.tension}且成果归属仍不清楚，可以先核对成果是否真的被使用，再清楚记录各方贡献；只有行动回到真实受益者，才放下功劳竞争。`,
     sceneGuidance: context =>
       `若贡献边界仍不清楚，先${context.action}，再确认谁实际受益、谁仍需回应。不争不抹去责任，只避免功劳竞争破坏工作。`,
   },
@@ -499,6 +516,11 @@ function buildDaoNote(
   frames: Readonly<Record<string, DaoFrame>> = DAO_FRAMES,
 ): DaoStoryNote {
   const frame = frames[note.id];
+  const safeScene = conciseCompleteThought(
+    context.scene,
+    "需要重排边界的任务",
+    10,
+  );
   const safeContext: DaoFrameContext = {
     tension: conciseCompleteThought(
       context.tension,
@@ -510,21 +532,17 @@ function buildDaoNote(
       "完成一项可核对的改变",
       10,
     ),
-    scene: conciseCompleteThought(
-      context.scene,
-      "需要重排边界的任务",
-      10,
-    ),
+    scene: safeScene,
     action: conciseCompleteThought(
       context.action,
       "写清事实、边界和下一步",
       10,
     ),
-    placement: DAO_PLACEMENT_LABELS[placement],
+    opening: DAO_STORY_OPENINGS[placement](safeScene),
   };
   const fallbackFrame: DaoFrame = {
     storyConnection: current =>
-      `故事走到${current.placement}时，场景是：${current.scene}。人物面对“${current.tension}”，先停下原有惯性，再选择${current.turn}。古语只帮助回望这次行动，实际结果仍要由后续反馈确认。`,
+      `${current.opening}人物面对“${current.tension}”，先停下原有惯性，再选择${current.turn}。古语只帮助回望这次行动，实际结果仍要由后续反馈确认。`,
     sceneGuidance: current =>
       `人物先${current.action}，再约定复查时间、可接受范围和停止条件。动作保持具体，也给受影响的人留下补充事实与表达异议的入口。`,
   };
@@ -540,7 +558,7 @@ function buildDaoNote(
         `${note.traditionalCommentarySummary.replaceAll(
           "王弼工作文本",
           "王弼的解释",
-        ).replace(/[。！？]+$/u, "")}；这段解释只帮助理解行动分寸，也不替现实选择预告结果。`,
+        ).replace(/[。！？]+$/u, "")}；${DAO_BOUNDARY_COPY[placement]}`,
       storyConnection: selectedFrame.storyConnection(safeContext),
       sceneGuidance: selectedFrame.sceneGuidance(safeContext),
     },
@@ -825,7 +843,7 @@ export function buildLifeScrollNarrative(
   const matureMethod = rhythm
     ? storyBeat(
         "mature-method",
-        `此后，成熟方法不再依赖一次用力。${rhythmLongTerm}${structure.matureMethod}“${lessonIntent}”成为每轮行动都要重新核对的约定。`,
+        `此后，成熟方法不再依赖一次用力。${rhythmLongTerm}${structure.matureMethod}从此，每轮行动都重新核对这条约定有没有改善现实结果。`,
         rhythm,
       )
     : storyBeat(
@@ -878,7 +896,7 @@ export function buildLifeScrollNarrative(
 
   const turningReflection = joinCompleteSentences(
     "这个转折是否成立，要看行动后是否出现可观察的新反馈",
-    `把“${lessonIntent}”放在这里，是为了让选择继续接受相关人的回应，而不是宣告人物已经改变`,
+    "把这条行动约定放在这里，是为了让选择继续接受相关人的回应，而不是宣告人物已经改变",
   );
   const matureReflection = rhythm
     ? completeSentence(
