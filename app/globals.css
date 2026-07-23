@@ -110,7 +110,7 @@ main[data-element="土"]{--yi-accent:#8a642c;--yi-accent-strong:#62461f;--yi-acc
 main[data-element="金"]{--yi-accent:#5e6873;--yi-accent-strong:#414a54;--yi-accent-soft:#e3e7ea}
 main[data-element="水"]{--yi-accent:#3f647e;--yi-accent-strong:#29475d;--yi-accent-soft:#dce8ef}
 main[data-element] :focus-visible{outline:3px solid var(--yi-focus);outline-offset:3px}
-main[data-element] input:focus,main[data-element] select:focus{border-color:var(--yi-focus);box-shadow:0 0 0 2px var(--yi-accent-soft);outline:0}
+main[data-element] input:focus,main[data-element] select:focus{border-color:var(--yi-focus);box-shadow:0 0 0 2px var(--yi-accent-soft)}
 .primary-button,.primary{border:1px solid var(--yi-accent);background:var(--yi-accent);color:var(--yi-surface-raised)}
 .primary-button:hover,.primary:hover{background:var(--yi-accent-strong)}
 .primary-button,.secondary-button,.primary,.report-nav button,.result-tabs button,.life-nav button{min-height:44px}
@@ -145,3 +145,18 @@ main[data-element] input:focus,main[data-element] select:focus{border-color:var(
 .atlas-gender-switch{border-color:var(--yi-line);background:var(--yi-surface)}.atlas-gender-switch button{color:var(--yi-text-muted)}.atlas-gender-switch button[aria-pressed=true]{background:var(--yi-accent-soft);color:var(--yi-accent-strong)}.mirror-guide{border:1px solid var(--yi-line);background:var(--yi-surface);color:var(--yi-text)}.mirror-guide b,.constellation-meta h3{color:var(--yi-accent-strong)}.mirror-guide p,.constellation-meta{color:var(--yi-text-muted)}.mirror-side-labels{border-color:var(--yi-line);color:var(--yi-text)}
 .compatibility-summary,.compatibility-axis-card,.role-guidance,.name-analysis-section,.name-analysis-loading,.name-mode-section,.name-reality-test,.name-chart-comparison,.name-advice,.name-sources>div{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-text)}.compatibility-summary p,.compatibility-axis-card>p,.role-guidance p,.name-analysis-section p,.name-analysis-section small{color:var(--yi-text-muted)}.compatibility-summary small,.compatibility-axis-card>h2,.compatibility-axis-card>b{color:var(--yi-accent-strong)}
 .element-diagnostic{border-color:var(--yi-line);background:var(--yi-surface)}.element-diagnostic:nth-child(1) summary b{color:var(--yi-element-wood)}.element-diagnostic:nth-child(2) summary b{color:var(--yi-element-fire)}.element-diagnostic:nth-child(3) summary b{color:var(--yi-element-earth)}.element-diagnostic:nth-child(4) summary b{color:var(--yi-element-metal)}.element-diagnostic:nth-child(5) summary b{color:var(--yi-element-water)}
+main[data-element] input:focus-visible,main[data-element] select:focus-visible{outline:3px solid var(--yi-focus);outline-offset:3px}
+main[data-element] .name-analysis-section :focus-visible{outline:3px solid var(--yi-focus);outline-offset:3px}
+.name-character-card{border-color:var(--yi-line);background:var(--yi-surface);color:var(--yi-text)}
+.name-character-card>header>div{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-text)}
+.name-choice-group{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-text)}
+.name-reality-grid fieldset{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-text)}
+.name-risk-review{border-color:var(--yi-line);background:var(--yi-surface);color:var(--yi-text)}
+.name-chart-comparison article{border-color:var(--yi-line);background:var(--yi-surface);color:var(--yi-text)}
+.name-directions article{border-color:var(--yi-line);background:var(--yi-surface);color:var(--yi-text)}
+.name-sources{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-text)}
+.same-name-exit{border-color:var(--yi-line);background:var(--yi-surface);color:var(--yi-text)}
+.name-analysis-section :is(p,small,dd,li,label,legend){color:var(--yi-text-muted)}
+.name-analysis-section :is(h2,h3,h4,h5,strong,b,dt){color:var(--yi-text)}
+.name-analysis-section :is(.name-first-action b,.name-semantic-summary b,.name-analysis-summary small,.name-character-card small,.name-choice-group legend,.name-analysis-depth>summary,.name-sources>summary,.name-source-links a,.same-name-exit b){color:var(--yi-accent-strong)}
+.name-analysis-section :is(input,button){accent-color:var(--yi-accent)}

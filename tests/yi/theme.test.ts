@@ -74,7 +74,8 @@ const requiredTokens = [
 
 function rule(selector: string) {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = css.match(new RegExp(`${escaped}\\{([^}]*)\\}`));
+  const matches = [...css.matchAll(new RegExp(`${escaped}\\{([^}]*)\\}`, "g"))];
+  const match = matches.at(-1);
   expect(match, `${selector} rule`).toBeTruthy();
   return match?.[1] ?? "";
 }
@@ -116,18 +117,42 @@ describe("light five-element CSS contract", () => {
     }
   });
 
+  it("tokenizes every name-analysis surface family instead of leaving dark descendants", () => {
+    for (const selector of [
+      ".name-character-card",
+      ".name-character-card>header>div",
+      ".name-choice-group",
+      ".name-reality-grid fieldset",
+      ".name-risk-review",
+      ".name-chart-comparison article",
+      ".name-directions article",
+      ".name-sources",
+      ".same-name-exit",
+    ]) {
+      const surface = rule(selector);
+      expect(surface, selector).toContain("border-color:var(--yi-line)");
+      expect(surface, selector).toMatch(/background:var\(--yi-surface(?:-raised)?\)/);
+      expect(surface, selector).toContain("color:var(--yi-text)");
+      expect(surface).not.toMatch(/#(?:081923|151a1d|0b1d28|102631)/i);
+    }
+  });
+
   it("keeps text, button, focus, and accent boundaries accessible", () => {
     const foundation = rule("main[data-element]");
     const background = value(foundation, "--yi-bg");
     expect(contrast(value(foundation, "--yi-text"), background)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(value(foundation, "--yi-text-muted"), background)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(value(foundation, "--yi-focus"), background)).toBeGreaterThanOrEqual(3);
+    expect(contrast(value(foundation, "--yi-focus"), value(foundation, "--yi-surface"))).toBeGreaterThanOrEqual(3);
+    expect(contrast(value(foundation, "--yi-focus"), value(foundation, "--yi-surface-raised"))).toBeGreaterThanOrEqual(3);
 
     for (const element of ["neutral", "木", "火", "土", "金", "水"]) {
       const theme = rule(`main[data-element="${element}"]`);
       const accent = value(theme, "--yi-accent");
+      const accentStrong = value(theme, "--yi-accent-strong");
       expect(contrast("#ffffff", accent), element).toBeGreaterThanOrEqual(4.5);
       expect(contrast(accent, background), element).toBeGreaterThanOrEqual(3);
+      expect(contrast(accentStrong, value(foundation, "--yi-surface-raised")), element).toBeGreaterThanOrEqual(4.5);
     }
   });
 
@@ -141,6 +166,8 @@ describe("light five-element CSS contract", () => {
 
   it("preserves keyboard visibility, touch targets, and long-name wrapping", () => {
     expect(rule("main[data-element] :focus-visible")).toContain("outline:3px solid var(--yi-focus)");
+    expect(rule("main[data-element] input:focus,main[data-element] select:focus")).not.toMatch(/outline\s*:\s*0/);
+    expect(rule("main[data-element] input:focus-visible,main[data-element] select:focus-visible")).toContain("outline:3px solid var(--yi-focus)");
     expect(rule(".primary-button,.secondary-button,.primary,.report-nav button,.result-tabs button,.life-nav button")).toContain("min-height:44px");
     expect(rule(".report-owner-name")).toContain("overflow-wrap:anywhere");
   });
