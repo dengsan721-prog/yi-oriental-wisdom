@@ -137,6 +137,29 @@ describe("light five-element CSS contract", () => {
     }
   });
 
+  it("pairs every visible name-analysis foreground, button, and divider with light tokens", () => {
+    const foregrounds: [string, string, string][] = [
+      [".name-analysis-loading button", "background:var(--yi-surface-raised)", "color:var(--yi-accent-strong)"],
+      [".name-current-glyphs", "color:var(--yi-text)", "overflow-wrap:anywhere"],
+      [".name-mode-switch button", "background:var(--yi-surface-raised)", "color:var(--yi-accent-strong)"],
+      [".name-summary-translation p", "background:var(--yi-surface)", "color:var(--yi-text-muted)"],
+      [".name-analysis-summary dl", "background:var(--yi-surface-raised)", "border-color:var(--yi-line)"],
+      [".name-analysis-summary dl>div", "background:var(--yi-surface)", "border-color:var(--yi-line)"],
+      [".name-analysis-depth>summary", "background:var(--yi-surface-raised)", "color:var(--yi-accent-strong)"],
+      [".name-choice-group>label", "background:var(--yi-surface)", "color:var(--yi-text)"],
+      [".name-character-evidence>div", "border-color:var(--yi-line)", "background:var(--yi-surface)"],
+      [".name-source-links li", "border-color:var(--yi-line)", "background:var(--yi-surface)"],
+      [".name-source-links a", "color:var(--yi-accent-strong)", "min-height:44px"],
+    ];
+
+    for (const [selector, first, second] of foregrounds) {
+      const declaration = rule(selector);
+      expect(declaration, selector).toContain(first);
+      expect(declaration, selector).toContain(second);
+      expect(declaration, selector).not.toMatch(/#(?:d9c693|eadcad|bdc8cc|8298a2|ffffff0)/i);
+    }
+  });
+
   it("keeps text, button, focus, and accent boundaries accessible", () => {
     const foundation = rule("main[data-element]");
     const background = value(foundation, "--yi-bg");
@@ -145,6 +168,8 @@ describe("light five-element CSS contract", () => {
     expect(contrast(value(foundation, "--yi-focus"), background)).toBeGreaterThanOrEqual(3);
     expect(contrast(value(foundation, "--yi-focus"), value(foundation, "--yi-surface"))).toBeGreaterThanOrEqual(3);
     expect(contrast(value(foundation, "--yi-focus"), value(foundation, "--yi-surface-raised"))).toBeGreaterThanOrEqual(3);
+    expect(contrast(value(foundation, "--yi-text"), value(foundation, "--yi-surface-raised"))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(value(foundation, "--yi-text-muted"), value(foundation, "--yi-surface-raised"))).toBeGreaterThanOrEqual(4.5);
 
     for (const element of ["neutral", "木", "火", "土", "金", "水"]) {
       const theme = rule(`main[data-element="${element}"]`);
@@ -153,6 +178,7 @@ describe("light five-element CSS contract", () => {
       expect(contrast("#ffffff", accent), element).toBeGreaterThanOrEqual(4.5);
       expect(contrast(accent, background), element).toBeGreaterThanOrEqual(3);
       expect(contrast(accentStrong, value(foundation, "--yi-surface-raised")), element).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(accent, value(foundation, "--yi-surface-raised")), element).toBeGreaterThanOrEqual(3);
     }
   });
 
