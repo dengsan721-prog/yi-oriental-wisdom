@@ -328,7 +328,7 @@ const PRESCHOOL_STORY_FRAMES: Readonly<
     firstMove: "先把积木换个方向，或给画添一种新颜色",
     benefit: "卡住的游戏又有了好玩的入口",
     risk: "不停换玩法，刚开始就把手上的东西丢开",
-    turn: "新玩法和原玩法各玩一回，再挑更喜欢的",
+    turn: "把新玩法和原玩法各玩一回，再挑更喜欢的",
   },
   正印: {
     title: "跟着做一次，再自己来",
