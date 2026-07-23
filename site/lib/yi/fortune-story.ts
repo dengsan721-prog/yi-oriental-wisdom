@@ -68,8 +68,6 @@ type PeriodStoryFrame = Readonly<{
 
 type YearStoryFrame = Readonly<{
   title: string;
-  scene: string;
-  action: string;
 }>;
 
 const PERIOD_STORY_FRAMES: Readonly<
