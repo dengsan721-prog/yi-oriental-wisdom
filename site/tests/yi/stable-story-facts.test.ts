@@ -154,6 +154,38 @@ describe("selectStableStoryFacts", () => {
     ]);
   });
 
+  it("drops every report relation when relationSummary alone is ambiguous", () => {
+    const { chart, report, items } = fixture(exactBirth);
+    const candidateChart = structuredClone(chart);
+    const candidateReport = structuredClone(report);
+    const sentinel = "候选关系摘要不得进入稳定事实";
+    candidateChart.ambiguousPillars = [];
+    candidateChart.professional.ambiguousFields = ["relationSummary"];
+    candidateChart.professional.relations = [{
+      type: "branch-clash",
+      pillars: ["year", "month"],
+      symbols: [sentinel, sentinel],
+      label: sentinel,
+    }];
+    candidateReport.relations = [{
+      type: "branch-clash",
+      pillars: ["year", "month"],
+      symbols: [sentinel, sentinel],
+      label: sentinel,
+    }];
+
+    const facts = selectStableStoryFacts(
+      candidateChart,
+      candidateReport,
+      items,
+    );
+
+    expect(facts.relations).toEqual([]);
+    expect(JSON.stringify(facts)).not.toContain(sentinel);
+    expect(facts.uncertaintyFlags)
+      .toContain("candidate-professional-field-excluded");
+  });
+
   it("uses report relations, then removes every relation touching a candidate pillar", () => {
     const { chart, report, items } = fixture(exactBirth);
     const candidateChart = structuredClone(chart);
