@@ -180,7 +180,8 @@ export async function loadNameAnalysisForView(
     actualReadings: request.actualReadings ?? {},
     realityTest: request.realityTest ?? { ...DEFAULT_REALITY_TEST },
     usageRisks: request.usageRisks ?? [],
-    requestFreshDirection: request.mode === "candidate",
+    requestFreshDirection:
+      request.requestFreshDirection ?? request.mode === "candidate",
     chart: request.chart,
     professionalReport: request.professionalReport,
   });

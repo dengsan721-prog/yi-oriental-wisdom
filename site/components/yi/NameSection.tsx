@@ -101,6 +101,7 @@ export type NameSectionLoadAction =
 
 type CandidateLoadState = {
   status: "idle" | "loading" | "ready" | "error";
+  ownerKey: string;
   fullName: string | null;
   analysis: NameAnalysisViewResult | null;
 };
@@ -142,6 +143,25 @@ export function composeCandidateFullName(input: {
   };
 }
 
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value !== null && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.keys(record).sort().map(key => [key, canonicalize(record[key])]),
+    );
+  }
+  return value;
+}
+
+export function createNameSectionOwnerKey(input: {
+  name: string;
+  chart: Readonly<FourPillarsResult>;
+  professionalReport: Readonly<ProfessionalReport>;
+}): string {
+  return JSON.stringify(canonicalize(input));
+}
+
 export function createLatestNameRequestGuard(): LatestNameRequestGuard {
   let latestRequestId = 0;
   return {
@@ -176,9 +196,12 @@ export function buildCandidateAnalysisRequest(input: {
   professionalReport: Readonly<ProfessionalReport>;
 }): Partial<NameAnalysisRequest> {
   return {
-    mode: "candidate",
+    mode: input.viewState.mode === "traditional-reference"
+      ? "traditional-reference"
+      : "candidate",
     traditionalSelections: input.viewState.traditionalSelections,
     actualReadings: input.viewState.actualReadings,
+    requestFreshDirection: true,
     chart: input.chart,
     professionalReport: input.professionalReport,
   };
@@ -333,15 +356,17 @@ function CandidateNameInput({
   </>;
 }
 
-function ConfirmationControls({
+export function NameConfirmationControls({
   analysis,
   state,
+  groupPrefix,
   onModeChange,
   onTraditionalSelection,
   onReadingSelection,
 }: {
   analysis: NameAnalysisViewResult;
   state: ReturnType<typeof createNameAnalysisViewState>;
+  groupPrefix: "current" | "candidate";
   onModeChange: (mode: "current" | "traditional-reference") => void;
   onTraditionalSelection: (characterIndex: number, glyph: string) => void;
   onReadingSelection: (characterIndex: number, reading: string) => void;
@@ -370,7 +395,7 @@ function ConfirmationControls({
           {character.variantCandidates.map(candidate => <label key={candidate.glyph}>
             <input
               checked={state.traditionalSelections[index] === candidate.glyph}
-              name={`standalone-traditional-${index}`}
+              name={`${groupPrefix}-traditional-${index}`}
               onChange={() => onTraditionalSelection(index, candidate.glyph)}
               type="radio"
               value={candidate.glyph}
@@ -383,7 +408,7 @@ function ConfirmationControls({
           {character.readings.map(reading => <label key={reading.pinyin}>
             <input
               checked={state.actualReadings[index] === reading.pinyin}
-              name={`standalone-reading-${index}`}
+              name={`${groupPrefix}-reading-${index}`}
               onChange={() => onReadingSelection(index, reading.pinyin)}
               type="radio"
               value={reading.pinyin}
@@ -440,8 +465,9 @@ export function CurrentNameContent({
   const currentCard = coverageCardProps(analysis, chart, "当前姓名");
 
   return <>
-    <ConfirmationControls
+    <NameConfirmationControls
       analysis={analysis}
+      groupPrefix="current"
       onModeChange={onModeChange}
       onReadingSelection={onReadingSelection}
       onTraditionalSelection={onTraditionalSelection}
@@ -456,6 +482,11 @@ export function NameSection({
   chart,
   professionalReport,
 }: NameSectionProps): ReactElement {
+  const ownerKey = createNameSectionOwnerKey({
+    name,
+    chart,
+    professionalReport,
+  });
   const [state, dispatch] = useReducer(
     nameAnalysisViewReducer,
     name,
@@ -468,6 +499,7 @@ export function NameSection({
   );
   const [candidateLoad, setCandidateLoad] = useState<CandidateLoadState>({
     status: "idle",
+    ownerKey,
     fullName: null,
     analysis: null,
   });
@@ -480,6 +512,27 @@ export function NameSection({
     chart.pillars,
     chart.ambiguousPillars,
   ]);
+
+  useEffect(() => {
+    const guard = candidateGuard.current;
+    let active = true;
+    guard.invalidate();
+    queueMicrotask(() => {
+      if (!active) return;
+      setCandidateInput("");
+      setCandidateState(createNameAnalysisViewState(""));
+      setCandidateLoad({
+        status: "idle",
+        ownerKey,
+        fullName: null,
+        analysis: null,
+      });
+    });
+    return () => {
+      active = false;
+      guard.invalidate();
+    };
+  }, [ownerKey]);
 
   useEffect(() => {
     if (state.name !== name) dispatch({ type: "reset-name", name });
@@ -534,6 +587,7 @@ export function NameSection({
     });
     setCandidateLoad({
       status: "loading",
+      ownerKey,
       fullName,
       analysis: null,
     });
@@ -551,6 +605,7 @@ export function NameSection({
       },
       apply: result => setCandidateLoad({
         status: result.error ? "error" : "ready",
+        ownerKey,
         fullName,
         analysis: result.analysis,
       }),
@@ -565,7 +620,12 @@ export function NameSection({
     });
     if (composition.status === "invalid") {
       setCandidateState(createNameAnalysisViewState(""));
-      setCandidateLoad({ status: "idle", fullName: null, analysis: null });
+      setCandidateLoad({
+        status: "idle",
+        ownerKey,
+        fullName: null,
+        analysis: null,
+      });
       return;
     }
     const nextCandidateState = createNameAnalysisViewState(
@@ -582,9 +642,20 @@ export function NameSection({
   const currentCard = analysis
     ? coverageCardProps(analysis, chart, "当前姓名")
     : null;
-  const candidateCard = candidateLoad.status === "ready"
-    && candidateLoad.analysis
-    ? coverageCardProps(candidateLoad.analysis, chart, "候选姓名")
+  const candidateLoadForOwner = candidateLoad.ownerKey === ownerKey
+    ? candidateLoad
+    : {
+        status: "idle" as const,
+        ownerKey,
+        fullName: null,
+        analysis: null,
+      };
+  const candidateInputForOwner = candidateLoad.ownerKey === ownerKey
+    ? candidateInput
+    : "";
+  const candidateCard = candidateLoadForOwner.status === "ready"
+    && candidateLoadForOwner.analysis
+    ? coverageCardProps(candidateLoadForOwner.analysis, chart, "候选姓名")
     : null;
   const fixedSurname = analysis?.surname.kind === "single"
     || analysis?.surname.kind === "compound"
@@ -611,15 +682,15 @@ export function NameSection({
           >
             <h3>候选姓名</h3>
             <CandidateNameInput
-              candidateInput={candidateInput}
+              candidateInput={candidateInputForOwner}
               fixedSurname={null}
               onCandidateInputChange={handleCandidateInputChange}
             />
-            {candidateLoad.status === "loading"
+            {candidateLoadForOwner.status === "loading"
               ? <p aria-busy="true" className="yi-name-pending">
-                  正在更新候选姓名：{candidateLoad.fullName ?? ""}
+                  正在更新候选姓名：{candidateLoadForOwner.fullName ?? ""}
                 </p>
-              : candidateLoad.status === "error"
+              : candidateLoadForOwner.status === "error"
                 ? <p className="yi-name-pending" role="alert">
                     候选姓名资料暂时无法载入。
                   </p>
@@ -658,17 +729,19 @@ export function NameSection({
           {analysis && currentCard && <>
             <NameCandidateComparison
               candidate={candidateCard}
-              candidateFullName={candidateLoad.fullName}
-              candidateInput={candidateInput}
-              candidateStatus={candidateLoad.status}
+              candidateFullName={candidateLoadForOwner.fullName}
+              candidateInput={candidateInputForOwner}
+              candidateStatus={candidateLoadForOwner.status}
               current={currentCard}
               fixedSurname={fixedSurname}
               onCandidateInputChange={handleCandidateInputChange}
             />
-            {candidateLoad.status === "ready" && candidateLoad.analysis
+            {candidateLoadForOwner.status === "ready"
+              && candidateLoadForOwner.analysis
               && <section aria-label="候选姓名字形与读音确认">
-                <ConfirmationControls
-                  analysis={candidateLoad.analysis}
+                <NameConfirmationControls
+                  analysis={candidateLoadForOwner.analysis}
+                  groupPrefix="candidate"
                   onModeChange={mode => updateCandidateState(
                     nameAnalysisViewReducer(candidateState, {
                       type: "set-mode",

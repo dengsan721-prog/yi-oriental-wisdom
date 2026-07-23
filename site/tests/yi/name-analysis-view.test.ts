@@ -85,6 +85,15 @@ describe("name analysis loading boundary", () => {
       mode: "traditional-reference",
       requestFreshDirection: false,
     }));
+
+    await loadNameAnalysisForView("林知远", {
+      mode: "traditional-reference",
+      requestFreshDirection: true,
+    }, loadEngine);
+    expect(analyzeName).toHaveBeenLastCalledWith(expect.objectContaining({
+      mode: "traditional-reference",
+      requestFreshDirection: true,
+    }));
   });
 
   it("passes only explicitly reviewed real-world risks into the advice engine", async () => {
