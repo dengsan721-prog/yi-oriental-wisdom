@@ -540,7 +540,7 @@ function buildDaoNote(
         `${note.traditionalCommentarySummary.replaceAll(
           "王弼工作文本",
           "王弼的解释",
-        )}这段解释只帮助理解行动分寸，也不替现实选择预告结果。`,
+        ).replace(/[。！？]+$/u, "")}；这段解释只帮助理解行动分寸，也不替现实选择预告结果。`,
       storyConnection: selectedFrame.storyConnection(safeContext),
       sceneGuidance: selectedFrame.sceneGuidance(safeContext),
     },
