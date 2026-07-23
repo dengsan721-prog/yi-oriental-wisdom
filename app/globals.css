@@ -100,3 +100,48 @@ html,body{min-width:0;overflow-x:hidden}
 @media(max-width:390px){.name-analysis-section,.name-analysis-loading{max-width:100%;overflow-x:hidden}.name-mode-switch,.name-reality-grid fieldset>div{grid-template-columns:1fr}.name-character-card>header{grid-template-columns:1fr}.name-analysis-depth>summary{padding:0 14px}.name-current-glyphs{font-size:26px}}
 @media(prefers-reduced-motion:reduce){.name-analysis-section *{scroll-behavior:auto;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
 .yi-brand-glyph{display:block;width:clamp(112px,23vw,190px);height:auto;overflow:visible;font-size:initial;text-shadow:none;filter:drop-shadow(0 0 7px #d4a83d66) drop-shadow(0 0 20px #8b641f36)}
+
+/* Light five-element visual system */
+main[data-element]{--yi-bg:#fbf7ef;--yi-surface:#fffdf8;--yi-surface-raised:#ffffff;--yi-text:#202421;--yi-text-muted:#656a66;--yi-line:#e4ddd1;--yi-gold:#9b742e;--yi-danger:#9f3f36;--yi-success:#36705a;--yi-focus:#315f87;--yi-element-wood:#3f6d5a;--yi-element-fire:#a84f3f;--yi-element-earth:#8a642c;--yi-element-metal:#5e6873;--yi-element-water:#3f647e;min-height:100vh;color:var(--yi-text);background:var(--yi-bg)}
+main[data-element="neutral"]{--yi-accent:#8a6a3c;--yi-accent-strong:#654b25;--yi-accent-soft:#eee2ca}
+main[data-element="木"]{--yi-accent:#3f6d5a;--yi-accent-strong:#294f40;--yi-accent-soft:#dcebe3}
+main[data-element="火"]{--yi-accent:#a84f3f;--yi-accent-strong:#7b352b;--yi-accent-soft:#f3dfd9}
+main[data-element="土"]{--yi-accent:#8a642c;--yi-accent-strong:#62461f;--yi-accent-soft:#ede2c8}
+main[data-element="金"]{--yi-accent:#5e6873;--yi-accent-strong:#414a54;--yi-accent-soft:#e3e7ea}
+main[data-element="水"]{--yi-accent:#3f647e;--yi-accent-strong:#29475d;--yi-accent-soft:#dce8ef}
+main[data-element] :focus-visible{outline:3px solid var(--yi-focus);outline-offset:3px}
+main[data-element] input:focus,main[data-element] select:focus{border-color:var(--yi-focus);box-shadow:0 0 0 2px var(--yi-accent-soft);outline:0}
+.primary-button,.primary{border:1px solid var(--yi-accent);background:var(--yi-accent);color:var(--yi-surface-raised)}
+.primary-button:hover,.primary:hover{background:var(--yi-accent-strong)}
+.primary-button,.secondary-button,.primary,.report-nav button,.result-tabs button,.life-nav button{min-height:44px}
+.secondary-button{border:1px solid var(--yi-accent);background:var(--yi-surface-raised);color:var(--yi-accent-strong)}
+.report-owner-name{overflow-wrap:anywhere}
+.ritual,.intake,.calculating{background:var(--yi-bg);color:var(--yi-text)}
+.ritual-bg{border-color:var(--yi-line)}.ritual h1,.step-head h1{color:var(--yi-text)}.intake>header button{color:var(--yi-accent-strong)}
+.identity-row label>span,.picker-title label,.summary-control>span,.wheel-label,.birth-boundary{color:var(--yi-text-muted)}
+.identity-row input,.picker-title input,.summary-control,.time-entry,.time-picker,.summary-control button,.time-modes button,.calendar-switch button,.picker-sheet header button,.wheel-list,.wheel-list button.selected{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-text)}
+.time-modes button.active,.calendar-switch button.active,.calc-list div.active{border-color:var(--yi-accent);background:var(--yi-accent-soft);color:var(--yi-accent-strong)}
+.calc-list div{border-color:var(--yi-line);color:var(--yi-text-muted)}.unknown-note{background:var(--yi-accent-soft);color:var(--yi-accent-strong)}
+.picker-overlay,.save-home-overlay{background:color-mix(in srgb,var(--yi-text) 28%,transparent)}
+.picker-sheet,.save-home-dialog{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-text);box-shadow:0 24px 80px color-mix(in srgb,var(--yi-text) 20%,transparent)}
+.result-shell,.life-home{background:var(--yi-bg);color:var(--yi-text)}
+.result-head,.life-head,.result-tabs,.life-nav{border-color:var(--yi-line);background:var(--yi-surface)}
+.result-head button,.life-head button,.life-privacy button,.result-tabs button,.life-nav button{border-color:var(--yi-line);background:transparent;color:var(--yi-text-muted)}
+.result-tabs button.active,.life-nav button.active{border-color:var(--yi-accent);background:var(--yi-accent-soft);color:var(--yi-accent-strong)}
+.mini-mark{border-color:var(--yi-accent);color:var(--yi-accent-strong)}.adopted-facts{border-color:var(--yi-line);color:var(--yi-text-muted)}.adopted-facts>b{color:var(--yi-accent-strong)}
+.result-head-actions button,.life-head button,.life-privacy button,.save-home-actions button{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-text)}.result-head-actions .primary{background:var(--yi-accent);color:var(--yi-surface-raised)}
+.report-section>header small,.life-hero small,.life-panel header small,.life-theme small,.current-lesson small,.fortune-stage-story>b,.fortune-stage-actions>b,.fortune-weather>b{color:var(--yi-accent-strong)}
+.report-section>header p,.portrait-grid p,.life-hero p,.life-panel article p{color:var(--yi-text-muted)}
+.portrait-grid article,.compact-pillars article,.chart-facts>div,.detail-groups>section,.life-actions,.life-panel article,.life-form,.birth-fact-band>div,.key-judgments,.report-actions,.pillar-card,.relation-block,.element-diagnostics,.life-theme,.overview-depth,.professional-depth,.fortune-period-card,.fortune-year-card{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-text)}
+.chart-facts dt,.element-diagnostic dt,.professional-chart-rows dt,.report-action>span,.life-grid small{color:var(--yi-accent-strong)}.chart-facts dd,.detail-groups p,.detail-groups small,.professional-chart-rows dd{color:var(--yi-text-muted)}
+.reading-card,.mirror-candidate,.life-grid button,.life-panel article{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-text)}
+.reading-card p,.mirror-candidate p,.mirror-film-title,.life-grid small,.life-grid span{color:var(--yi-text-muted)}.reading-card header>span,.reading-card b,.mirror-candidate b,.mirror-candidate header small{color:var(--yi-accent-strong)}
+.reading-scene,.reading-card aside,.mirror-candidate aside{border-color:var(--yi-accent);background:var(--yi-accent-soft);color:var(--yi-text)}.reading-contrast section,.reading-actions section{border-color:var(--yi-line);background:var(--yi-surface)}
+.reading-card details>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;color:var(--yi-accent-strong)}.reading-evidence,.mirror-candidate section,.mirror-candidate details{border-color:var(--yi-line)}
+.mirror-tabs button{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-text-muted)}.mirror-tabs button.active{border-color:var(--yi-accent);color:var(--yi-accent-strong)}.mirror-tabs button.active{background:var(--yi-accent-soft);box-shadow:none}
+.mirror-candidate{border-radius:18px;background:var(--yi-surface-raised)}.mirror-candidate h2{color:var(--yi-text)}.mirror-candidate details>summary{color:var(--yi-accent-strong)}
+.life-grid button{border-color:var(--yi-line)}.life-grid button:hover{border-color:var(--yi-accent);background:var(--yi-accent-soft)}.life-form input,.relationship-kind select{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-text)}.life-form button{background:var(--yi-accent);color:var(--yi-surface-raised)}.life-privacy{border-color:var(--yi-line);color:var(--yi-text-muted)}
+.storage-error{border-color:var(--yi-danger);background:color-mix(in srgb,var(--yi-danger) 10%,var(--yi-surface-raised));color:var(--yi-danger)}
+.atlas-gender-switch{border-color:var(--yi-line);background:var(--yi-surface)}.atlas-gender-switch button{color:var(--yi-text-muted)}.atlas-gender-switch button[aria-pressed=true]{background:var(--yi-accent-soft);color:var(--yi-accent-strong)}.mirror-guide{border:1px solid var(--yi-line);background:var(--yi-surface);color:var(--yi-text)}.mirror-guide b,.constellation-meta h3{color:var(--yi-accent-strong)}.mirror-guide p,.constellation-meta{color:var(--yi-text-muted)}.mirror-side-labels{border-color:var(--yi-line);color:var(--yi-text)}
+.compatibility-summary,.compatibility-axis-card,.role-guidance,.name-analysis-section,.name-analysis-loading,.name-mode-section,.name-reality-test,.name-chart-comparison,.name-advice,.name-sources>div{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-text)}.compatibility-summary p,.compatibility-axis-card>p,.role-guidance p,.name-analysis-section p,.name-analysis-section small{color:var(--yi-text-muted)}.compatibility-summary small,.compatibility-axis-card>h2,.compatibility-axis-card>b{color:var(--yi-accent-strong)}
+.element-diagnostic{border-color:var(--yi-line);background:var(--yi-surface)}.element-diagnostic:nth-child(1) summary b{color:var(--yi-element-wood)}.element-diagnostic:nth-child(2) summary b{color:var(--yi-element-fire)}.element-diagnostic:nth-child(3) summary b{color:var(--yi-element-earth)}.element-diagnostic:nth-child(4) summary b{color:var(--yi-element-metal)}.element-diagnostic:nth-child(5) summary b{color:var(--yi-element-water)}
