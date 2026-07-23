@@ -61,7 +61,7 @@ const actionPairOutcomes: Readonly<Record<InterpretationId, string>> = {
   "self-day-master": "让判断从当下结论走向持续校准",
   "self-support": "让承担回到真实容量",
   "self-interface": "让分歧从立场回到可协商条件",
-  "talent-public": "让表达依据现场理解迭代",
+  "talent-public": "让表达随现场理解逐步调整",
   "talent-hidden": "让个人熟练变成可交接经验",
   "talent-output": "让成果随真实用途改进",
   "career-role": "让角色从名称落到可验收交付",
@@ -103,7 +103,7 @@ const actionSemanticFrames: Readonly<Record<DetailActionId, string>> = {
   "wealth-structure:actionNow": "把资金分为支出、储备和试验",
   "wealth-structure:actionLongTerm": "月初预算、月中校准、月末复盘",
   "wealth-risk:actionNow": "限定可承受试验和退出条件",
-  "wealth-risk:actionLongTerm": "记录五次机会决定再考虑追加",
+  "wealth-risk:actionLongTerm": "把五次机会决定记录下来，再考虑是否追加",
   "wealth-boundary:actionNow": "书面确认金额、用途和归还日期",
   "wealth-boundary:actionLongTerm": "区分赠与、借款和共同承担",
   "relationship-day-branch:actionNow": "用四句话说明事实、感受、需要和请求",
@@ -530,12 +530,12 @@ function buildActionSequence(
       if (pair.id === "wealth-structure") {
         return `准备投入时，${pair.now}，按${pair.longTerm}守住基本盘。`;
       }
-      return `最后${pair.now}，等${pair.longTerm}后再追加资源。`;
+      return `最后${pair.now}，${pair.outcome}：${pair.longTerm}。`;
     }).join("");
   }
   return pairs.map((pair, index) => index === 0
-    ? `先处理眼前一步：${pair.now}，再${pair.longTerm}，${pair.outcome}。`
-    : `有了反馈，${pair.now}，并${pair.longTerm}，${pair.outcome}。`
+    ? `先处理眼前一步：${pair.now}。随后${pair.longTerm}，${pair.outcome}。`
+    : `有了反馈，${pair.now}。随后${pair.longTerm}，${pair.outcome}。`
   ).join("");
 }
 
