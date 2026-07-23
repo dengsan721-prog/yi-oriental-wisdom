@@ -182,6 +182,16 @@ describe("result navigation", () => {
     expect(css).toContain(".life-nav button{min-width:0}");
   });
 
+  it("passes the existing interpretation set into the chart while preserving legacy detail and source routes", () => {
+    const source = readFileSync(new URL("../../components/yi/ResultShell.tsx", import.meta.url), "utf8");
+
+    expect(source).toContain(
+      "<ChartSection chart={chart} items={interpretations} name={name} report={report} />",
+    );
+    expect(source).toContain("<DetailSection items={interpretations} />");
+    expect(source).toContain("<SourceNote chart={chart} items={interpretations} />");
+  });
+
   it("defines a modal keyboard contract for save confirmation", async () => {
     const resultModule = await import("../../components/yi/ResultShell");
     const resolver = (resultModule as unknown as Record<string, unknown>).resolveSaveDialogKey;
