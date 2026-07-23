@@ -126,6 +126,36 @@ function normalizedSentences(values: readonly string[]): string[] {
     .filter(Boolean);
 }
 
+function repeatedHanFragments(
+  values: readonly string[],
+  fragmentLength = 16,
+  minimumFieldCount = 3,
+): string[] {
+  const owners = new Map<string, Set<number>>();
+  values.forEach((value, fieldIndex) => {
+    const normalized = value
+      .normalize("NFC")
+      .replace(/[^\p{Script=Han}]/gu, "");
+    const fieldFragments = new Set<string>();
+    for (
+      let index = 0;
+      index <= normalized.length - fragmentLength;
+      index += 1
+    ) {
+      fieldFragments.add(normalized.slice(index, index + fragmentLength));
+    }
+    for (const fragment of fieldFragments) {
+      const fields = owners.get(fragment) ?? new Set<number>();
+      fields.add(fieldIndex);
+      owners.set(fragment, fields);
+    }
+  });
+  return [...owners.entries()]
+    .filter(([, fields]) => fields.size >= minimumFieldCount)
+    .map(([fragment]) => fragment)
+    .sort();
+}
+
 function assertCompleteNarrative(narrative: LifeScrollNarrative): void {
   expect(countHan(narrative.oneLineTheme)).toBeGreaterThanOrEqual(18);
   expect(countHan(narrative.oneLineTheme)).toBeLessThanOrEqual(36);
@@ -349,10 +379,15 @@ describe("deterministic life scroll", () => {
       ]).size).toBe(3);
       expect(storyConnection).not.toContain("证明");
       expect(traditionalMeaning).toContain("王弼");
-      expect(traditionalMeaning).toContain("只帮助理解行动分寸");
-      expect(traditionalMeaning).toContain("不替现实选择预告结果");
+      expect(traditionalMeaning).toMatch(/只帮助|只解释|只保留/u);
+      expect(traditionalMeaning).toMatch(
+        /不预告|不替任何一方判定|仍要由后续行动|不把故事写成确定结局/u,
+      );
       expect(traditionalMeaning).not.toMatch(/命盘|证据|工作文本/u);
     }
+    expect(new Set(narrative.daoNotes.map(note =>
+      note.plainCommentary.traditionalMeaning.split("；").at(-1)
+    )).size).toBe(narrative.daoNotes.length);
     expect(new Set(narrative.daoNotes.map(note =>
       note.plainCommentary.storyConnection)).size)
       .toBe(narrative.daoNotes.length);
@@ -362,6 +397,25 @@ describe("deterministic life scroll", () => {
     expect(narrative.daoNotes.find(note =>
       note.internalSourceId === "dao-33-self"
     )?.plainCommentary.storyConnection).toMatch(/自知|看清自己/u);
+  });
+
+  it("keeps the central lesson and Dao scenes contextual across the whole scroll", () => {
+    const boundaryBirth: BirthInput = {
+      ...exactBirth,
+      date: "2024-02-04",
+      time: null,
+      timeConfidence: "unknown",
+      gender: "unspecified",
+    };
+    for (const birth of [exactBirth, alternateBirth, boundaryBirth]) {
+      const { chart, report, items } = fixture(birth);
+      const narrative = buildLifeScrollNarrative(chart, report, items);
+
+      expect(
+        repeatedHanFragments(visibleParts(narrative)),
+        `${birth.date}/${birth.time ?? "unknown"}`,
+      ).toEqual([]);
+    }
   });
 
   it("keeps Dao bounds for accepted long context fragments", () => {
@@ -415,7 +469,7 @@ describe("deterministic life scroll", () => {
 
       expect(note).toBeDefined();
       expect(note?.plainCommentary.storyConnection).toMatch(
-        /^故事走到.+时，场景是：.+。人物/u,
+        /^事业这扇门打开时，.+成为必须先处理的现场。人物/u,
       );
       expect(note?.plainCommentary.storyConnection).not.toMatch(
         /在(?:事业开门|关系修复|转折发生|全卷收束)的.+里/u,

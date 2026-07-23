@@ -193,6 +193,36 @@ function allVisibleFields(narrative: ChartNarrative): string[] {
   ];
 }
 
+function repeatedHanFragments(
+  values: readonly string[],
+  fragmentLength = 16,
+  minimumFieldCount = 3,
+): string[] {
+  const owners = new Map<string, Set<number>>();
+  values.forEach((value, fieldIndex) => {
+    const normalized = value
+      .normalize("NFC")
+      .replace(/[^\p{Script=Han}]/gu, "");
+    const fieldFragments = new Set<string>();
+    for (
+      let index = 0;
+      index <= normalized.length - fragmentLength;
+      index += 1
+    ) {
+      fieldFragments.add(normalized.slice(index, index + fragmentLength));
+    }
+    for (const fragment of fieldFragments) {
+      const fields = owners.get(fragment) ?? new Set<number>();
+      fields.add(fieldIndex);
+      owners.set(fragment, fields);
+    }
+  });
+  return [...owners.entries()]
+    .filter(([, fields]) => fields.size >= minimumFieldCount)
+    .map(([fragment]) => fragment)
+    .sort();
+}
+
 function assertDeepFrozen(value: unknown, seen = new Set<object>()): void {
   if (value === null || typeof value !== "object" || seen.has(value)) return;
   seen.add(value);
@@ -607,6 +637,43 @@ describe("deterministic chart narrative", () => {
     expect(publicNarrativeText(noMaterialNarrative)).not.toMatch(
       /先先|开始开始|再从先|此时[^。]{0,80}时，|先冲突后|再考虑追加后再追加|并建立支持台账并在过载时减量|让表达依据现场理解迭代|机会在于[^。]{0,80}机会在|，而先约定/u,
     );
+  });
+
+  it("keeps long phrases contextual instead of repeating one template across the chart", () => {
+    const unknownBirth: BirthInput = {
+      ...exactBirth,
+      time: null,
+      timeConfidence: "unknown",
+    };
+    for (const birth of [exactBirth, alternateBirth, unknownBirth]) {
+      const { chart, report, items } = fixture(birth);
+      const narrative = buildChartNarrative(chart, report, items);
+      const fields = allVisibleFields(narrative);
+      const publicText = fields.join("");
+
+      expect(repeatedHanFragments(fields), `${birth.date}/${birth.time ?? "unknown"}`)
+        .toEqual([]);
+      expect(publicText).not.toMatch(
+        /人物先寻找一个可控制的入口|让压力成为可讨论的条件|能让事情启动并给出下一步|重要反馈就会被挡在决定之外|小问题也会被误作无法改变的困局|变化来自反复核对，不是突然逆转|连续记录两周再判断|这会检验|连续记录后再判断|还没有足够个人记录时，先把这一段当作一周小实验/u,
+      );
+      expect(publicText).not.toMatch(
+        /防御时，可以|调整时，可以|时，可以[^。]{0,20}时/u,
+      );
+
+      const advice = [
+        ...narrative.careerAdvice,
+        ...narrative.relationshipAdvice,
+        ...narrative.rhythmAdvice,
+      ];
+      for (const field of [
+        "turnAction",
+        "example",
+        "observableSignal",
+      ] as const) {
+        expect(new Set(advice.map(story => story[field])).size, field)
+          .toBe(advice.length);
+      }
+    }
   });
 
   it("makes each plain translation respond to its matching stable fact family", () => {
