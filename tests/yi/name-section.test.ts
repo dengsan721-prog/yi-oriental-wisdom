@@ -3,9 +3,12 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
+  CurrentNameContent,
   NameCoverageCard,
   NameSection,
   formatNameCoverageScore,
+  getCurrentNameLoadStatus,
+  nameSectionLoadReducer,
 } from "../../components/yi/NameSection";
 import {
   createNameAnalysisViewState,
@@ -170,7 +173,7 @@ describe("name coverage score presentation", () => {
 });
 
 describe("standalone current-name section", () => {
-  it("renders the narrow standalone shell without legacy panels or forbidden claims", () => {
+  it("server-renders only the initial loading shell without pretending effects ran", () => {
     const html = renderToStaticMarkup(createElement(NameSection, {
       name: birth.name,
       chart,
@@ -220,6 +223,85 @@ describe("standalone current-name section", () => {
     expect(html).toContain("宋江");
     expect(html).toMatch(/覆盖 [0-5]\/5 项/);
     for (const forbidden of FORBIDDEN_COPY) expect(html).not.toContain(forbidden);
+  });
+
+  it("renders real loaded confirmation controls and current coverage together", async () => {
+    const analysis = await loadNameAnalysisForView("宋江", {
+      mode: "current",
+      chart,
+      professionalReport,
+    });
+    if (!analysis) throw new Error("宋江 analysis fixture is required");
+    const state = createNameAnalysisViewState("宋江");
+    const html = renderToStaticMarkup(createElement(CurrentNameContent, {
+      analysis,
+      chart,
+      state,
+      onModeChange: () => undefined,
+      onReadingSelection: () => undefined,
+      onTraditionalSelection: () => undefined,
+    }));
+
+    expect(html).toContain('aria-label="姓名字形与读音确认"');
+    expect(html).toContain("现用字形");
+    expect(html).toContain("传统字形参考");
+    expect(html).toContain("当前姓名");
+    expect(html).toContain("宋江");
+    expect(html).toMatch(/覆盖 [0-5]\/5 项/);
+    for (const forbidden of FORBIDDEN_COPY) expect(html).not.toContain(forbidden);
+  });
+
+  it("rejects a late old request and exposes loading, error, and ready only for the current key", async () => {
+    const analysis = await loadNameAnalysisForView("宋江", {
+      mode: "current",
+      chart,
+      professionalReport,
+    });
+    if (!analysis) throw new Error("宋江 analysis fixture is required");
+
+    let loadState = nameSectionLoadReducer(null, {
+      type: "start",
+      requestKey: "K1",
+    });
+    loadState = nameSectionLoadReducer(loadState, {
+      type: "start",
+      requestKey: "K2",
+    });
+    loadState = nameSectionLoadReducer(loadState, {
+      type: "resolve",
+      requestKey: "K1",
+      analysis,
+      error: false,
+    });
+    expect(loadState).toMatchObject({ requestKey: "K2", status: "loading" });
+    expect(getCurrentNameLoadStatus(loadState, "K2")).toBe("loading");
+    expect(getCurrentNameLoadStatus(loadState, "K1")).toBe("loading");
+
+    loadState = nameSectionLoadReducer(loadState, {
+      type: "resolve",
+      requestKey: "K2",
+      analysis,
+      error: false,
+    });
+    expect(loadState).toMatchObject({
+      requestKey: "K2",
+      status: "ready",
+      analysis,
+    });
+    expect(getCurrentNameLoadStatus(loadState, "K2")).toBe("ready");
+
+    const errorState = nameSectionLoadReducer(loadState, {
+      type: "start",
+      requestKey: "K3",
+    });
+    const resolvedError = nameSectionLoadReducer(errorState, {
+      type: "resolve",
+      requestKey: "K3",
+      analysis: null,
+      error: true,
+    });
+    expect(getCurrentNameLoadStatus(resolvedError, "K3")).toBe("error");
+    expect(getCurrentNameLoadStatus(resolvedError, "K2")).toBe("loading");
   });
 
   it("keeps the existing traditional-glyph and reading reducer mechanics intact", () => {

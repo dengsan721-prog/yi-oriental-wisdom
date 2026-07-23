@@ -3,7 +3,6 @@
 import {
   useEffect,
   useReducer,
-  useState,
   type ReactElement,
 } from "react";
 import {
@@ -52,6 +51,21 @@ export type FormattedNameCoverageScore = {
   secondary: `${NameElementCoverageScore}/100`;
 };
 
+export type NameSectionLoadState = {
+  requestKey: string;
+  status: "loading" | "ready" | "error";
+  analysis: NameAnalysisViewResult | null;
+};
+
+export type NameSectionLoadAction =
+  | { type: "start"; requestKey: string }
+  | {
+      type: "resolve";
+      requestKey: string;
+      analysis: NameAnalysisViewResult | null;
+      error: boolean;
+    };
+
 const ELEMENTS = ["木", "火", "土", "金", "水"] as const;
 const SCORE_LABELS = [
   { primary: "覆盖 0/5 项", secondary: "0/100" },
@@ -66,6 +80,36 @@ export function formatNameCoverageScore(
   coveredCount: NameElementCoverageCount,
 ): FormattedNameCoverageScore {
   return SCORE_LABELS[coveredCount];
+}
+
+export function nameSectionLoadReducer(
+  state: NameSectionLoadState | null,
+  action: NameSectionLoadAction,
+): NameSectionLoadState {
+  if (action.type === "start") {
+    return {
+      requestKey: action.requestKey,
+      status: "loading",
+      analysis: null,
+    };
+  }
+  if (state?.requestKey !== action.requestKey) return state ?? {
+    requestKey: action.requestKey,
+    status: "loading",
+    analysis: null,
+  };
+  return {
+    requestKey: action.requestKey,
+    status: action.error ? "error" : "ready",
+    analysis: action.analysis,
+  };
+}
+
+export function getCurrentNameLoadStatus(
+  state: NameSectionLoadState | null,
+  requestKey: string,
+): NameSectionLoadState["status"] {
+  return state?.requestKey === requestKey ? state.status : "loading";
 }
 
 export function NameCoverageCard({
@@ -190,6 +234,50 @@ function ConfirmationControls({
   </section>;
 }
 
+export function CurrentNameContent({
+  analysis,
+  chart,
+  state,
+  onModeChange,
+  onTraditionalSelection,
+  onReadingSelection,
+}: {
+  analysis: NameAnalysisViewResult;
+  chart: Readonly<FourPillarsResult>;
+  state: ReturnType<typeof createNameAnalysisViewState>;
+  onModeChange: (mode: "current" | "traditional-reference") => void;
+  onTraditionalSelection: (characterIndex: number, glyph: string) => void;
+  onReadingSelection: (characterIndex: number, reading: string) => void;
+}): ReactElement {
+  const coverage = calculateNameElementCoverage({
+    chart,
+    characters: toNameElementCoverageCharacters(analysis.characters),
+  });
+  const recommendationsByElement: NameCoverageRecommendations =
+    coverage.status === "complete"
+      ? Object.fromEntries(coverage.missingElements.map(element => [
+          element,
+          getReviewedNameElementRecommendations(element).slice(0, 6),
+        ]))
+      : {};
+
+  return <>
+    <ConfirmationControls
+      analysis={analysis}
+      onModeChange={onModeChange}
+      onReadingSelection={onReadingSelection}
+      onTraditionalSelection={onTraditionalSelection}
+      state={state}
+    />
+    <NameCoverageCard
+      coverage={coverage}
+      label="当前姓名"
+      name={analysis.rawInput}
+      recommendationsByElement={recommendationsByElement}
+    />
+  </>;
+}
+
 export function NameSection({
   name,
   chart,
@@ -200,11 +288,7 @@ export function NameSection({
     name,
     createNameAnalysisViewState,
   );
-  const [loaded, setLoaded] = useState<{
-    requestKey: string;
-    analysis: NameAnalysisViewResult | null;
-    error: boolean;
-  } | null>(null);
+  const [loaded, dispatchLoad] = useReducer(nameSectionLoadReducer, null);
   const requestKey = JSON.stringify([
     name,
     state.mode,
@@ -221,6 +305,7 @@ export function NameSection({
   useEffect(() => {
     if (!name.trim()) return;
     let active = true;
+    dispatchLoad({ type: "start", requestKey });
     loadNameAnalysisForView(name, {
       mode: state.mode,
       traditionalSelections: state.traditionalSelections,
@@ -228,9 +313,19 @@ export function NameSection({
       chart,
       professionalReport,
     }).then(analysis => {
-      if (active) setLoaded({ requestKey, analysis, error: false });
+      if (active) dispatchLoad({
+        type: "resolve",
+        requestKey,
+        analysis,
+        error: false,
+      });
     }).catch(() => {
-      if (active) setLoaded({ requestKey, analysis: null, error: true });
+      if (active) dispatchLoad({
+        type: "resolve",
+        requestKey,
+        analysis: null,
+        error: true,
+      });
     });
     return () => { active = false; };
   }, [
@@ -243,20 +338,8 @@ export function NameSection({
     state.traditionalSelections,
   ]);
 
-  const analysis = loaded?.requestKey === requestKey ? loaded.analysis : null;
-  const coverage = analysis
-    ? calculateNameElementCoverage({
-        chart,
-        characters: toNameElementCoverageCharacters(analysis.characters),
-      })
-    : null;
-  const recommendationsByElement: NameCoverageRecommendations =
-    coverage?.status === "complete"
-      ? Object.fromEntries(coverage.missingElements.map(element => [
-          element,
-          getReviewedNameElementRecommendations(element).slice(0, 6),
-        ]))
-      : {};
+  const loadStatus = getCurrentNameLoadStatus(loaded, requestKey);
+  const analysis = loadStatus === "ready" ? loaded?.analysis ?? null : null;
 
   return <section className="yi-name-section">
     <header className="yi-name-section-head">
@@ -272,32 +355,25 @@ export function NameSection({
           <input aria-label="输入现用姓名" defaultValue="" type="text" />
         </label>
       : <>
-          {loaded?.requestKey === requestKey && loaded.error
+          {loadStatus === "error"
             ? <p className="yi-name-pending" role="alert">姓名资料暂时无法载入。</p>
             : analysis
-              ? <>
-                  <ConfirmationControls
-                    analysis={analysis}
-                    onModeChange={mode => dispatch({ type: "set-mode", mode })}
-                    onReadingSelection={(characterIndex, reading) => dispatch({
-                      type: "select-reading",
-                      characterIndex,
-                      reading,
-                    })}
-                    onTraditionalSelection={(characterIndex, glyph) => dispatch({
-                      type: "select-traditional",
-                      characterIndex,
-                      glyph,
-                    })}
-                    state={state}
-                  />
-                  <NameCoverageCard
-                    coverage={coverage!}
-                    label="当前姓名"
-                    name={analysis.rawInput}
-                    recommendationsByElement={recommendationsByElement}
-                  />
-                </>
+              ? <CurrentNameContent
+                  analysis={analysis}
+                  chart={chart}
+                  onModeChange={mode => dispatch({ type: "set-mode", mode })}
+                  onReadingSelection={(characterIndex, reading) => dispatch({
+                    type: "select-reading",
+                    characterIndex,
+                    reading,
+                  })}
+                  onTraditionalSelection={(characterIndex, glyph) => dispatch({
+                    type: "select-traditional",
+                    characterIndex,
+                    glyph,
+                  })}
+                  state={state}
+                />
               : <p aria-busy="true" className="yi-name-pending">正在核对姓名资料…</p>}
         </>}
     <CandidateEntry />
