@@ -181,3 +181,6 @@ main[data-element] .name-analysis-section :focus-visible{outline:3px solid var(-
 .name-sources>summary{border-color:var(--yi-line);background:var(--yi-surface-raised);color:var(--yi-accent-strong)}.name-sources p,.name-sources small{color:var(--yi-text-muted)}
 .name-source-links li{border-color:var(--yi-line);background:var(--yi-surface)}.name-source-links a{min-height:44px;color:var(--yi-accent-strong)}
 .same-name-exit aside p{color:var(--yi-text-muted)}
+.same-name-exit button{border-color:var(--yi-accent);background:var(--yi-surface-raised);color:var(--yi-accent-strong)}
+.name-summary-boundary{border-color:var(--yi-line);color:var(--yi-text-muted)}
+.name-analysis-depth[open]>summary{border-color:var(--yi-line);color:var(--yi-accent-strong)}
