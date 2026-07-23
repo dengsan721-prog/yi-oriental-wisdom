@@ -4,9 +4,17 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ChartSection } from "../../components/yi/ChartSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
+import { getNaYin } from "../../lib/yi/na-yin";
 import { buildLifeOverview, type ReportCopyContext } from "../../lib/yi/report-copy";
 import { buildProfessionalReport } from "../../lib/yi/report-model";
-import type { ChartRelation, ProfessionalReport } from "../../lib/yi/types";
+import { getTwelveGrowthStage } from "../../lib/yi/twelve-growth";
+import type {
+  AmbiguousProfessionalField,
+  ChartRelation,
+  FourPillarsResult,
+  PillarKey,
+  ProfessionalReport,
+} from "../../lib/yi/types";
 
 const birth = {
   name: "林",
@@ -57,6 +65,12 @@ const relationTypes: Array<ChartRelation["type"] | null> = [
   "branch-harm",
   "branch-break",
 ];
+
+const pillarKeys: readonly PillarKey[] = ["year", "month", "day", "hour"];
+
+function cloneChart(): FourPillarsResult {
+  return structuredClone(calculateFourPillars(birth));
+}
 
 function controlledOverview(type: ChartRelation["type"] | null) {
   const chart = calculateFourPillars(birth);
@@ -191,6 +205,146 @@ describe("professional report model", () => {
     expect(new Set(report.keyJudgments).size).toBeGreaterThanOrEqual(6);
     expect(report.actions).toHaveLength(3);
     expect(new Set(report.actions).size).toBe(3);
+  });
+
+  it("projects stable Na Yin and twelve-growth values for all four exact-time pillars", () => {
+    const chart = calculateFourPillars(birth);
+    const report = buildProfessionalReport(chart, birth);
+
+    expect(Object.keys(report.pillarCoordinates)).toEqual(pillarKeys);
+    for (const key of pillarKeys) {
+      const pillar = chart.pillars[key];
+      expect(pillar, key).not.toBeNull();
+      expect(report.pillarCoordinates[key]).toEqual({
+        key,
+        naYin: {
+          status: "stable",
+          value: getNaYin(pillar!.stem, pillar!.branch),
+        },
+        twelveGrowth: {
+          status: "stable",
+          value: getTwelveGrowthStage(chart.pillars.day.stem, pillar!.branch),
+        },
+      });
+    }
+  });
+
+  it("marks an ambiguous target pillar's representative coordinates as candidates", () => {
+    const chart = cloneChart();
+    chart.ambiguousPillars = ["month"];
+    const report = buildProfessionalReport(chart, birth);
+
+    expect(report.pillarCoordinates.month.naYin).toEqual({
+      status: "candidate",
+      value: getNaYin(chart.pillars.month.stem, chart.pillars.month.branch),
+      reasons: ["target-pillar-ambiguous"],
+    });
+    expect(report.pillarCoordinates.month.twelveGrowth).toEqual({
+      status: "candidate",
+      value: getTwelveGrowthStage(
+        chart.pillars.day.stem,
+        chart.pillars.month.branch,
+      ),
+      reasons: ["target-pillar-ambiguous"],
+    });
+    expect(report.pillarCoordinates.year.naYin.status).toBe("stable");
+    expect(report.pillarCoordinates.year.twelveGrowth.status).toBe("stable");
+  });
+
+  it("records day and target ambiguity independently with deterministic reason order", () => {
+    const chart = cloneChart();
+    chart.ambiguousPillars = ["day", "month"];
+    const report = buildProfessionalReport(chart, birth);
+
+    expect(report.pillarCoordinates.year.naYin.status).toBe("stable");
+    expect(report.pillarCoordinates.year.twelveGrowth).toMatchObject({
+      status: "candidate",
+      reasons: ["day-pillar-ambiguous"],
+    });
+    for (const key of ["month", "day"] as const) {
+      expect(report.pillarCoordinates[key].naYin).toMatchObject({
+        status: "candidate",
+        reasons: ["target-pillar-ambiguous"],
+      });
+      expect(report.pillarCoordinates[key].twelveGrowth).toMatchObject({
+        status: "candidate",
+        reasons: [
+          "day-pillar-ambiguous",
+          "target-pillar-ambiguous",
+        ],
+      });
+    }
+  });
+
+  it.each([
+    "dayMaster",
+    "dayPillar",
+  ] satisfies readonly AmbiguousProfessionalField[])(
+    "treats professional %s ambiguity as day ambiguity for every twelve-growth value",
+    (field) => {
+      const chart = cloneChart();
+      chart.professional.ambiguousFields = [field];
+      const report = buildProfessionalReport(chart, birth);
+
+      for (const key of pillarKeys) {
+        expect(report.pillarCoordinates[key].naYin.status, key).toBe("stable");
+        expect(report.pillarCoordinates[key].twelveGrowth, key).toMatchObject({
+          status: "candidate",
+          reasons: ["day-pillar-ambiguous"],
+        });
+      }
+    },
+  );
+
+  it("keeps four coordinate keys but never synthesizes an unknown hour", () => {
+    const unknownBirth = {
+      ...birth,
+      time: null,
+      timeConfidence: "unknown" as const,
+    };
+    const chart = calculateFourPillars(unknownBirth);
+    const report = buildProfessionalReport(chart, unknownBirth);
+
+    expect(report.pillarFacts).toHaveLength(3);
+    expect(Object.keys(report.pillarCoordinates)).toEqual(pillarKeys);
+    expect(report.pillarCoordinates.hour).toEqual({
+      key: "hour",
+      naYin: {
+        status: "unavailable",
+        reasons: ["target-pillar-unavailable"],
+      },
+      twelveGrowth: {
+        status: "unavailable",
+        reasons: ["target-pillar-unavailable"],
+      },
+    });
+    expect(report.pillarCoordinates.hour.naYin).not.toHaveProperty("value");
+    expect(report.pillarCoordinates.hour.twelveGrowth).not.toHaveProperty("value");
+  });
+
+  it("preserves every applicable reason when an unavailable target also has an ambiguous day", () => {
+    const unknownBirth = {
+      ...birth,
+      time: null,
+      timeConfidence: "unknown" as const,
+    };
+    const chart = calculateFourPillars(unknownBirth);
+    chart.ambiguousPillars = [
+      ...new Set([...chart.ambiguousPillars, "day" as const]),
+    ];
+    const report = buildProfessionalReport(chart, unknownBirth);
+
+    expect(report.pillarCoordinates.hour.naYin).toEqual({
+      status: "unavailable",
+      reasons: ["target-pillar-unavailable"],
+    });
+    expect(report.pillarCoordinates.hour.twelveGrowth).toEqual({
+      status: "unavailable",
+      reasons: [
+        "day-pillar-ambiguous",
+        "target-pillar-unavailable",
+      ],
+    });
   });
 
   it("keeps every hidden stem with its ten god and stable source index", () => {

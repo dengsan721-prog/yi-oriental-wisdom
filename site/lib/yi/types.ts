@@ -1,3 +1,5 @@
+import type { TwelveGrowthStage } from "./twelve-growth";
+
 export type ElementName = "木" | "火" | "土" | "金" | "水";
 
 export type CalendarMode = "solar" | "lunar";
@@ -91,6 +93,29 @@ export type PillarFact = {
   ambiguous: boolean;
 };
 
+export type ChartCoordinateReason =
+  | "target-pillar-ambiguous"
+  | "day-pillar-ambiguous"
+  | "target-pillar-unavailable";
+
+export type ChartCoordinateValue<T> =
+  | { status: "stable"; value: T }
+  | {
+      status: "candidate";
+      value: T;
+      reasons: readonly ChartCoordinateReason[];
+    }
+  | {
+      status: "unavailable";
+      reasons: readonly ChartCoordinateReason[];
+    };
+
+export type PillarCoordinateFact = {
+  key: PillarKey;
+  naYin: ChartCoordinateValue<string>;
+  twelveGrowth: ChartCoordinateValue<TwelveGrowthStage>;
+};
+
 export type MonthCommandCoordinate = {
   branch: string;
   hiddenStem: string;
@@ -123,6 +148,7 @@ export type ProfessionalReport = {
     timeConfidence: "精确时间" | "约略时间" | "时辰不详";
   };
   pillarFacts: PillarFact[];
+  pillarCoordinates: Readonly<Record<PillarKey, PillarCoordinateFact>>;
   dayMaster: string;
   monthCommand: MonthCommandFact;
   exposedStems: string[];
