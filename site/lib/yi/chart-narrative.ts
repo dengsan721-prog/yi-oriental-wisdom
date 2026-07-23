@@ -562,19 +562,45 @@ function buildActionSequence(
   if (pairs.length >= 3 && pairs.every(pair => careerChoiceIds.has(pair.id))) {
     return pairs.map(pair => {
       if (pair.id === "talent-hidden") {
-        return `先把方法变成可交接成果：${pair.now}，再${pair.longTerm}。`;
+        return `一个真实机会来到桌前，人物先把方法交给同伴试用：${pair.now}，再${pair.longTerm}。同伴能够照着完成，个人熟练才算有了现实接口。`;
       }
       if (pair.id === "talent-output") {
-        return `有了底稿，${pair.now}，并${pair.longTerm}，让成果随用途改进。`;
+        return `同伴试过以后，人物${pair.now}，并${pair.longTerm}。使用者指出哪里难懂，成果便随用途改进。`;
       }
       if (pair.id === "career-environment") {
-        return `接下来${pair.now}，再${pair.longTerm}，用长期样本选择环境。`;
+        return `进入真实协作后，人物${pair.now}，再${pair.longTerm}。环境是否合适，改由长期样本回答。`;
       }
       if (pair.id === "wealth-structure") {
-        return `准备投入时，${pair.now}，按${pair.longTerm}守住基本盘。`;
+        return `准备追加投入时，人物${pair.now}，按${pair.longTerm}守住基本盘，不让试验挤掉日常责任。`;
       }
-      return `最后${pair.now}，${pair.outcome}：${pair.longTerm}。`;
+      return `直到出现新证据，人物才${pair.now}，并用结果${pair.outcome}：${pair.longTerm}。`;
     }).join("");
+  }
+  const relationshipApproachIds = new Set<InterpretationId>([
+    "relationship-repair",
+    "family-resource",
+  ]);
+  if (
+    pairs.length === 2
+    && pairs.every(pair => relationshipApproachIds.has(pair.id))
+  ) {
+    const repair = pairs.find(pair => pair.id === "relationship-repair")!;
+    const support = pairs.find(pair => pair.id === "family-resource")!;
+    return `一场对话重新开始时，双方${repair.now}，随后${repair.longTerm}，把和好落到新规则。谈到帮忙时，再${support.now}，并${support.longTerm}。请求被听见，帮助也不变成长期透支。`;
+  }
+  const relationshipBoundaryIds = new Set<InterpretationId>([
+    "family-year",
+    "family-boundary",
+    "wealth-boundary",
+  ]);
+  if (
+    pairs.length === 3
+    && pairs.every(pair => relationshipBoundaryIds.has(pair.id))
+  ) {
+    const role = pairs.find(pair => pair.id === "family-year")!;
+    const boundary = pairs.find(pair => pair.id === "family-boundary")!;
+    const money = pairs.find(pair => pair.id === "wealth-boundary")!;
+    return `家庭分工争执暂停后，人物先${role.now}，再${role.longTerm}，让旧角色重新协商。接着${boundary.now}，并${boundary.longTerm}，让责任回到本人。若牵涉金钱，就${money.now}，随后${money.longTerm}，把善意与财务责任分清。`;
   }
   return pairs.map((pair, index) => index === 0
     ? `先处理眼前一步：${pair.now}。随后${pair.longTerm}，${pair.outcome}。`
@@ -593,6 +619,7 @@ function sceneFor(
 
 function buildTranslations(
   style: typeof neutralStyle,
+  cue: DomainCue,
   facts: {
     monthAmbiguous: boolean;
     visibleCount: number;
@@ -614,26 +641,34 @@ function buildTranslations(
       whatItMeans: facts.monthAmbiguous
         ? "当前环境起点尚未完全确认，因此这里只说明可能增加助力或阻力的条件，不单独判断能力高低；真正表现仍取决于任务、资源和持续反馈。"
         : "当前环境起点已经确认，前面的信息只描述哪些条件可能增加助力或阻力，并不能单独判断能力高低；真正表现仍取决于任务、资源和持续反馈。",
-      lifeScene: "你在规则清楚、责任明确的团队里先确认目标和权限，事情便容易进入稳定节奏；若换到要求频繁变化的环境却仍照旧推进，返工会让精力很快被消耗。",
-      practicalGuidance: "用两周比较一项顺利任务和一项吃力任务，各写三项环境条件、一次求助和最终结果；只调整影响最大的一个条件，再观察变化。",
+      lifeScene:
+        `当你尝试“${style.strength}”时，规则清楚、责任明确的团队会让做法很快落地；若环境频繁变化却仍照旧推进，这份优势也可能被返工消耗。`,
+      practicalGuidance:
+        `用两周比较一项顺利任务和一项吃力任务，各写三项环境条件、一次求助和最终结果；若出现“${style.risk}”，只调整影响最大的一个条件。`,
     },
     {
       sectionId: "element-flow",
       whatItMeans: `当前有${facts.visibleCount}类方式容易直接出现，${facts.hiddenOnlyCount}类往往在准备、协作或压力之后才被调用。数量多少只是可见程度，不等同于优点、缺点或固定能力。`,
-      lifeScene: "你处理一个跨部门项目时，先用最熟练的方式打开局面，再请一位同伴承担自己不常使用的步骤；这样既保住速度，也让单一路径造成的遗漏及时显现。",
-      practicalGuidance: "本周挑一件卡住的事，列出已经反复使用的一种办法和从未尝试的一种办法；做一次低成本试验，只用结果决定是否继续。",
+      lifeScene:
+        `你处理一个跨部门项目时，可以先按“${cue.opening}”打开局面，再请同伴承担自己不常使用的步骤；于是速度被保留，单一路径造成的遗漏也会显现。`,
+      practicalGuidance:
+        `本周挑一件卡住的事，列出反复使用的一种办法和从未尝试的一种办法；做一次低成本试验，并观察哪条路径更接近“${cue.mature}”。`,
     },
     {
       sectionId: "relations",
       whatItMeans: `当前互动线索更接近“${facts.relationSituation}”。它只提供观察靠近、错位或拉扯的入口，不代表关系好坏；同一种张力也会随沟通方式改变。`,
-      lifeScene: "你和同伴对同一件事理解不同时，先各自写下事实、担心和需要，再交换复述；于是争论从评价对方转回具体安排，也让真正不能让步的条件被看见。",
-      practicalGuidance: "下一次分歧只做一次二十分钟核对：先说事实，再说影响，最后确认一项共同动作；一周后看约定是否真的执行，再决定下一步。",
+      lifeScene:
+        `为了把“${cue.mature}”带进相处，你和同伴理解不同时，先各自写下事实、担心和需要，再交换复述；争论会从评价对方回到具体安排，也让双方看见仍需协商的条件。`,
+      practicalGuidance:
+        `下一次分歧做一次二十分钟核对：先说事实，再说影响，最后确认一项共同动作；一周后再看“${cue.strength}”有没有帮助双方执行约定。`,
     },
     {
       sectionId: "missing-elements",
       whatItMeans: `当前有${facts.absentCount}类方式在稳定柱中完全未见，只表示可确认的信息有限，并不等于人生缺陷，也不自动指向某种补救。${facts.hourUnknown ? "具体时段尚未确认，当前名单仍可能改变。" : "已列时段也只能作为观察起点。"}`,
-      lifeScene: "你发现某类任务总要借助别人才能完成时，先观察是经验不足、资源不到位还是分工本就合理；因此能避免把一次困难变成自我否定，也能找到真正需要调整的环节。",
-      practicalGuidance: "用七天记录一次真实卡点，分别写下任务要求、已有资源和可求助对象；只补齐一个现实条件，不购买象征物，也不据此作重大决定。",
+      lifeScene:
+        `你发现某类任务总要借助别人时，先观察是经验不足、资源不到位还是分工本就合理；这样既不把一次困难变成自我否定，也能让“${cue.mature}”落到现实。`,
+      practicalGuidance:
+        `用七天记录一次真实卡点，写下任务要求、已有资源和可求助对象；只补齐一个现实条件，并警惕“${cue.risk}”把暂时困难解释成固定缺陷。`,
     },
   ];
 }
@@ -776,6 +811,16 @@ export function buildChartNarrative(
     ["rhythm-climate", "rhythm-recovery", "rhythm-decision"],
     "当任务连续叠加时，你可能靠惯性继续推进，直到专注、耐心或恢复速度开始明显下降。",
   );
+  const careerCollaborationScene = sceneFor(
+    interpretations,
+    ["self-interface", "talent-public"],
+    "项目第一次对齐时，一个人先把目标、分歧和需要确认的事项写到同一页，再请同伴补齐遗漏。",
+  );
+  const relationshipRequestScene = sceneFor(
+    interpretations,
+    ["relationship-repair", "family-resource"],
+    "一项相处安排没有得到回应时，一个人先说看见的事实和自己的需要，再提出对方可以直接回答的请求。",
+  );
 
   const self = buildBeat({
     scene: selfScene,
@@ -805,10 +850,10 @@ export function buildChartNarrative(
 
   const relationship = buildBeat({
     scene: `${relationshipScene}${relation.situation}。人物先停下解释，确认对方真正听见了什么。`,
-    aim: `${relation.approach}，也把“${style.mature}”带进相处`,
-    strength: `${style.strength}，同时暂停自证，把彼此带回具体事情`,
+    aim: `${relation.approach}，也把“${cue.mature}”带进相处`,
+    strength: `${cue.strength}，同时暂停自证，把彼此带回具体事情`,
     cost:
-      `${relation.conflict}。误会继续累积时，也要留意这项旧代价：${style.risk}`,
+      `${relation.conflict}。误会继续累积时，也要留意这项旧代价：${cue.risk}`,
     lowPoint: "双方越想证明自己没有错，越难听见对方真正要守住的部分",
     reset: `核对事实、请求与回应，再按这条路径修复：${relation.repair}`,
     result: "双方先复述对方请求，再执行一项新约定；关系不必马上完美，却多了一条可以重复使用的路径",
@@ -821,7 +866,7 @@ export function buildChartNarrative(
   const rhythm = buildBeat({
     scene: `${rhythmScene}${structure.rhythmWarning}。`,
     aim: `${structure.decision}，并看清高质量时段与过载信号`,
-    strength: `${style.strength}，再把可用精力留给关键任务`,
+    strength: `${cue.strength}，再把可用精力留给关键任务`,
     cost:
       `负荷持续叠加；若复盘仍看不见“${structure.decisionProof}”，判断会在疲惫中启动`,
     lowPoint: "结束信号被一再延后，专注、耐心和恢复速度可能一起下降",
@@ -843,10 +888,10 @@ export function buildChartNarrative(
       cost: `责任与验收仍模糊，${structure.overload}`,
       turn: "写清目标、负责人、权限和验收人",
       example:
-        `${careerScene}新任务刚交到手上时，一个人再把负责人、权限与验收时间写在同一页；同伴补充遗漏后，返工没有继续扩大。`,
+        `${careerCollaborationScene}同伴补充遗漏后，负责人、权限与验收时间落在同一页，返工没有继续扩大。`,
       signal: "任务有唯一负责人，复盘不再争论谁该知道",
       review:
-        `复查时看角色、权限和验收是否对齐，也检查${cue.risk}有没有让第一版变成返工。`,
+        `复查时看角色、权限和验收是否对齐，也检查第一版是否因为“${cue.risk}”增加返工。`,
       noRecordExperiment:
         "先挑一项新任务，只记录谁决定、谁执行和谁验收；交付后再比较责任空白和返工次数。",
     }, actionBuckets[4]),
@@ -887,10 +932,10 @@ export function buildChartNarrative(
         `对方只能回应动作，真正的期待仍没有进入对话，还会放大“${cue.risk}”的代价`,
       turn: "说清事实、感受、需要与请求，再请对方复述理解",
       example:
-        `${relationshipScene}对话里先各说一件看见的事实，再把期待改写成可以回答的请求；这样回应不必再靠猜。`,
+        `${relationshipRequestScene}对话里再请双方各复述一次，回应不必继续靠猜。`,
       signal: relation.signal,
       review:
-        `复查时看“${relation.approach}”能否让${relationshipReviewTexture}。`,
+        `复查时直接核对：${relationshipReviewTexture}；不再用对方的语气替真实回应下结论。`,
       noRecordExperiment:
         "选一次低风险对话，只记录请求、对方复述和实际回应。",
     }, actionBuckets[6]),
@@ -904,7 +949,7 @@ export function buildChartNarrative(
         `急着证明自己的解释完整，或为了恢复平静先答应以后注意，再用“${cue.strength}”维持表面秩序`,
       benefit: "争论暂时有了出口，表面关系也可能很快恢复日常",
       cost:
-        `触发、影响和责任未重排，同一争执仍会回来；旧代价也会重现：${style.risk}`,
+        `触发、影响和责任未重排，同一争执仍会回来；旧代价也会重现：${cue.risk}`,
       turn:
         `分开事实、影响和各自责任，再把“${relationshipReviewTexture}”落实成暂停信号、恢复时间和一项边界`,
       example: sceneFor(
@@ -943,7 +988,7 @@ export function buildChartNarrative(
       title: "小步重启，决定设门槛",
       trigger: `密集阶段刚结束，或信息已经多到难以排序；${structure.decisionExperiment}`,
       reaction:
-        `要么马上恢复强度，要么等待完全有把握，仿佛不做到“${style.mature}”就不能开始`,
+        `要么马上恢复强度，要么等待完全有把握，仿佛不做到“${cue.mature}”就不能开始`,
       benefit: "立即加速能延续成就感，等待也暂时避开选错焦虑",
       cost: "身体和注意力可能还未归位，重新加量会把上一轮疲惫带进下一轮",
       turn: `${structure.decisionExperiment}，再恢复一个稳定作息并标记复查日期`,
@@ -970,7 +1015,7 @@ export function buildChartNarrative(
   ];
 
   return deepFreeze({
-    professionalTranslations: buildTranslations(style, {
+    professionalTranslations: buildTranslations(style, cue, {
       monthAmbiguous: report.monthCommand.ambiguous,
       visibleCount: visibility.visibleElements.length,
       hiddenOnlyCount: visibility.hiddenOnlyElements.length,

@@ -91,6 +91,14 @@ type ElementTexture = Readonly<{
   transition: string;
   maturity: string;
   closing: string;
+  careerOpeningLead: string;
+  careerCostLead: string;
+  relationshipLowPointLead: string;
+  relationshipChoiceLead: string;
+  rhythmTurnLead: string;
+  matureLead: string;
+  reviewLead: string;
+  reflectionLead: string;
 }>;
 
 type StructureFrame = Readonly<{
@@ -115,6 +123,10 @@ type DaoFrameContext = Readonly<{
   action: string;
   opening: string;
 }>;
+
+type DaoPlacementContexts = Readonly<
+  Partial<Record<DaoPlacement, DaoStoryContext>>
+>;
 
 type DaoFrame = Readonly<{
   storyConnection: (context: DaoFrameContext) => string;
@@ -150,6 +162,14 @@ const ELEMENT_TEXTURES: Readonly<Record<ElementName, ElementTexture>> = {
     transition: "转折像调整枝条朝向，变化不大，却让后续生长少走弯路",
     maturity: "成熟不是一味向前，而是辨认哪一部分该生长、哪一部分该停",
     closing: "方向可以继续生长，但每次生长都要重新核对承载它的现实条件",
+    careerOpeningLead: "事业的门一开，你先扶稳最有生长可能的一枝。",
+    careerCostLead: "枝叶一多，原本的生长力也可能遮住责任与边界。",
+    relationshipLowPointLead: "当你急着把两个人带向同一方向，反对意见可能被听成拖后腿。",
+    relationshipChoiceLead: "转折不是砍掉关系，而是先修去猜测。",
+    rhythmTurnLead: "你先暂停长出新的枝杈，为恢复腾出空间。",
+    matureLead: "后来，你不再把不断扩张当成唯一进步。",
+    reviewLead: "每轮回看时，方向仍要接受现实修剪。",
+    reflectionLead: "回头看这次修枝，真正的变化不在口号里。",
   },
   火: {
     theme: "让重要之事被看见，也给判断留下冷静复核的空间",
@@ -158,6 +178,14 @@ const ELEMENT_TEXTURES: Readonly<Record<ElementName, ElementTexture>> = {
     transition: "转折像把过亮的光调到合适强度，重点仍清楚，旁人也能跟上",
     maturity: "成熟是既能照亮方向，也知道何时降温、听完并再次确认",
     closing: "重要之事值得被照亮，也值得在行动前后接受安静而完整的复核",
+    careerOpeningLead: "事业的门一开，你先把最重要的问题照亮。",
+    careerCostLead: "光太强时，速度会先于理解抵达现场。",
+    relationshipLowPointLead: "当你急着让对方明白，沉默可能被误读成冷淡，迟疑也可能被听成拒绝。",
+    relationshipChoiceLead: "你先把音量和速度降下来，让请求成为一次真正能回答的邀请。",
+    rhythmTurnLead: "一轮高强度输出之后，你先给身体和注意力降温。",
+    matureLead: "后来，热情不再靠持续燃烧证明。",
+    reviewLead: "每轮回看时，热度仍要接受安静复核。",
+    reflectionLead: "回头看这次降温，转折要靠新的回应发亮。",
   },
   土: {
     theme: "在承接责任时守住边界，让稳定能够容纳必要变化",
@@ -166,6 +194,14 @@ const ELEMENT_TEXTURES: Readonly<Record<ElementName, ElementTexture>> = {
     transition: "转折像重新分配承重点，表面没有轰动，整体却开始恢复稳定",
     maturity: "成熟是让稳定服务真实生活，而不是用不动来证明可靠",
     closing: "稳定来自边界、分工与补给共同成立，不来自一个人永远不说累",
+    careerOpeningLead: "事业的门一开，你先把散落的责任放到同一张桌上。",
+    careerCostLead: "当所有重量都落向你，可靠也可能慢慢变成默认代办。",
+    relationshipLowPointLead: "你可能用多做一点维持安稳，却把疲惫和不满留在心里。",
+    relationshipChoiceLead: "你把能承担、不能承担和需要共同承担的部分逐项摆明。",
+    rhythmTurnLead: "你先卸下一项并非必须由自己完成的重量。",
+    matureLead: "后来，稳定不再靠一个人硬撑。",
+    reviewLead: "每轮回看时，承重仍要重新核对容量。",
+    reflectionLead: "回头看这次卸重，稳定要由新的分工检验。",
   },
   金: {
     theme: "用清楚标准切开混乱，也为过渡与协商保留位置",
@@ -174,6 +210,14 @@ const ELEMENT_TEXTURES: Readonly<Record<ElementName, ElementTexture>> = {
     transition: "转折像把锋利标准磨出安全边缘，方向没变，协商开始能够发生",
     maturity: "成熟是既敢取舍，也能把过渡、例外和修正条件说明白",
     closing: "清楚标准可以保护行动，但它仍要为现实差异和后续修正留出入口",
+    careerOpeningLead: "事业的门一开，你先从混乱中切出目标、权限和完成标准。",
+    careerCostLead: "标准落得太快时，例外、过渡和人的准备时间可能一起被削掉。",
+    relationshipLowPointLead: "当清楚变成裁决，双方会忙着证明谁更有道理。",
+    relationshipChoiceLead: "你先把不能退让的底线与仍可商量的部分分开。",
+    rhythmTurnLead: "你先结束无须继续扩张的任务，为判断留出空白。",
+    matureLead: "后来，准确不只意味着敢于取舍，也意味着愿意复查。",
+    reviewLead: "每轮回看时，标准仍要为修正留下入口。",
+    reflectionLead: "回头看这次留白，标准要经过真实协作检验。",
   },
   水: {
     theme: "在流动选择中守住主线，让变化汇入可持续方向",
@@ -182,6 +226,14 @@ const ELEMENT_TEXTURES: Readonly<Record<ElementName, ElementTexture>> = {
     transition: "转折像把分散水流收回主河道，选择减少，行动反而更有力量",
     maturity: "成熟是允许路线改变，同时记得变化要服务哪个长期方向",
     closing: "变化可以带来新通道，但只有回到主线，流动才会形成持续力量",
+    careerOpeningLead: "事业的门一开，你先把分散信号接回一条主流。",
+    careerCostLead: "入口太多时，新信息会不断改写方向。",
+    relationshipLowPointLead: "为了适应变化，你可能反复调整表达，却没有说清哪项承诺不会改变。",
+    relationshipChoiceLead: "你先说清不变目标、可变方法和下次核对时间。",
+    rhythmTurnLead: "你暂时关掉新的信息入口，把精力收回一条河道。",
+    matureLead: "后来，灵活不再等于随时改道。",
+    reviewLead: "每轮回看时，变化仍要回到长期主线。",
+    reflectionLead: "回头看这次收流，主线要由后续节奏确认。",
   },
 };
 
@@ -192,6 +244,14 @@ const NEUTRAL_TEXTURE: ElementTexture = {
   transition: "转折来自一项可核对的小变化，而不是给自己下新的定论",
   maturity: "成熟是承认未知、保留边界，并让每次选择都接受现实反馈",
   closing: "尚未确定的部分可以留白，已经确认的行动则要清楚、适量并可复盘",
+  careerOpeningLead: "资料还不足以写成个人定论时，事业先从一项可撤回的小试验开始。",
+  careerCostLead: "一次顺利或吃力都不宜被扩大成固定模式。",
+  relationshipLowPointLead: "关系材料不足时，不猜测任何一方的动机，只看尚未说清的事实、影响和需要。",
+  relationshipChoiceLead: "这一步不宣布谁应该改变，只先完成一个可以回应的请求。",
+  rhythmTurnLead: "你先减少一个变量，并记录注意力、恢复和协作是否出现变化。",
+  matureLead: "未知部分继续留白，已经确认的部分则反复核对。",
+  reviewLead: "每轮回看时，只保留有新事实支持的调整。",
+  reflectionLead: "回头看这次试验，只用后来出现的事实判断。",
 };
 
 const STRUCTURE_FRAMES: Readonly<Record<
@@ -352,6 +412,35 @@ const DAO_BOUNDARY_COPY: Readonly<Record<DaoPlacement, string>> = {
     "用来收束全卷时，这层古义只保留行动提醒；它不把故事写成确定结局，现实仍可继续修正。",
 };
 
+const DAO_CONTEXT_FALLBACKS: Readonly<
+  Record<DaoPlacement, Omit<DaoFrameContext, "opening">>
+> = {
+  career: {
+    scene: "需要核对目标的任务",
+    tension: "职责与权限尚未对齐",
+    turn: "完成一项可撤回试验",
+    action: "写清目标权限和停止点",
+  },
+  relationship: {
+    scene: "需要重谈请求的关系",
+    tension: "事实与猜测混在一起",
+    turn: "提出一项可回应请求",
+    action: "复述事实影响和需要",
+  },
+  "turning-point": {
+    scene: "需要恢复容量的时刻",
+    tension: "负荷与恢复失去平衡",
+    turn: "减少一个现实变量",
+    action: "记录负荷恢复和反馈",
+  },
+  closing: {
+    scene: "需要复盘全程的节点",
+    tension: "旧方法仍可能再出现",
+    turn: "保留一项有效改变",
+    action: "约定复查时间和边界",
+  },
+};
+
 const DAO_FRAMES: Readonly<Record<string, DaoFrame>> = {
   "dao-08-water": {
     storyConnection: context =>
@@ -460,6 +549,18 @@ function joinCompleteSentences(...values: string[]): string {
   return values.map(completeSentence).join("");
 }
 
+function leadIntoStory(lead: string, ...details: string[]): string {
+  const openingClause = lead.trim().replace(/[。！？]+$/u, "");
+  return completeSentence(`${openingClause}，${details.join("")}`);
+}
+
+function asConnectedClause(value: string): string {
+  return value
+    .trim()
+    .replace(/[。！？]+$/u, "")
+    .replace(/[。！？]+/gu, "，");
+}
+
 function rewriteReviewedStoryText(value: string): string {
   return value
     .replaceAll("命理线索", "现有线索")
@@ -516,27 +617,28 @@ function buildDaoNote(
   frames: Readonly<Record<string, DaoFrame>> = DAO_FRAMES,
 ): DaoStoryNote {
   const frame = frames[note.id];
+  const fallbackContext = DAO_CONTEXT_FALLBACKS[placement];
   const safeScene = conciseCompleteThought(
     context.scene,
-    "需要重排边界的任务",
-    10,
+    fallbackContext.scene,
+    12,
   );
   const safeContext: DaoFrameContext = {
     tension: conciseCompleteThought(
       context.tension,
-      "做法与现实相互牵动",
-      10,
+      fallbackContext.tension,
+      12,
     ),
     turn: conciseCompleteThought(
       context.turn,
-      "完成一项可核对的改变",
-      10,
+      fallbackContext.turn,
+      12,
     ),
     scene: safeScene,
     action: conciseCompleteThought(
       context.action,
-      "写清事实、边界和下一步",
-      10,
+      fallbackContext.action,
+      12,
     ),
     opening: DAO_STORY_OPENINGS[placement](safeScene),
   };
@@ -569,6 +671,7 @@ function buildDaoStoryNotesWithFrames(
   themes: readonly DaoNoteTheme[],
   context: DaoStoryContext,
   frames: Readonly<Record<string, DaoFrame>>,
+  placementContexts: DaoPlacementContexts = {},
 ): DaoStoryNoteResult {
   const selected = selectReviewedDaoNotes(themes, { min: 2, max: 4 });
   const usable: UsableDaoNote[] = selected.filter(isUsableDaoNote);
@@ -600,14 +703,15 @@ function buildDaoStoryNotesWithFrames(
     add(note);
   }
 
-  const daoNotes = usable.slice(0, 4).map((note, index) =>
-    buildDaoNote(
+  const daoNotes = usable.slice(0, 4).map((note, index) => {
+    const placement = DAO_PLACEMENTS[index] ?? "closing";
+    return buildDaoNote(
       note,
-      context,
-      DAO_PLACEMENTS[index] ?? "closing",
+      placementContexts[placement] ?? context,
+      placement,
       frames,
-    )
-  );
+    );
+  });
   return deepFreeze({ daoNotes, uncertaintyFlags });
 }
 
@@ -782,73 +886,126 @@ export function buildLifeScrollNarrative(
   );
   const desire = storyBeat(
     "desire",
-    `在这段处境里，你真正想守住的是${texture.desiredOutcome}。${talentAdvantage}这份能力要接受“${lessonIntent}”的约束，才会从愿望进入现实行动。${stable.hourUnknown ? UNKNOWN_TIME_SENTENCE : ""}`,
+    `在这段处境里，你真正想守住的是${texture.desiredOutcome}：${asConnectedClause(talentAdvantage)}。这份能力要接受“${lessonIntent}”的约束，才会从愿望进入现实行动。${stable.hourUnknown ? UNKNOWN_TIME_SENTENCE : ""}`,
     talent,
   );
   const opening = career
     ? storyBeat(
         "opening",
-        `为此，你先用同一份事业优势打开入口。${careerAdvantage}${structure.openingMethod}`,
+        leadIntoStory(
+          texture.careerOpeningLead,
+          careerAdvantage,
+          structure.openingMethod,
+        ),
         career,
       )
     : storyBeat(
         "opening",
-        `为此，${DOMAIN_GAP_COPY.career}通用做法是先确认目标、权限和完成标准，再试一项可逆的小动作。`,
+        leadIntoStory(
+          NEUTRAL_TEXTURE.careerOpeningLead,
+          DOMAIN_GAP_COPY.career,
+          "通用做法是先确认目标、权限和完成标准，再试一项可逆的小动作。",
+        ),
         undefined,
       );
   const cost = career
     ? storyBeat(
         "cost",
-        `可是，同一种优势一旦被用过头，就会变成代价。${careerShadow}${structure.overuseCost}`,
+        leadIntoStory(
+          texture.careerCostLead,
+          `${asConnectedClause(careerShadow)}。`,
+          structure.overuseCost,
+        ),
         career,
       )
     : storyBeat(
         "cost",
-        "可是，缺少稳定事业材料时，不能把通用风险写成你的固定模式。这里只提醒：一次承担过多，会让边界和恢复成本变得不可见。",
+        leadIntoStory(
+          NEUTRAL_TEXTURE.careerCostLead,
+          "缺少稳定事业材料时，不能把通用风险写成你的固定模式。这里只提醒：一次承担过多，会让边界和恢复成本变得不可见。",
+        ),
         undefined,
       );
   const lowPoint = relationship
     ? storyBeat(
         "low-point",
-        `当任务压力被带进关系时，需要先留意解释是否快过事实。${relationshipShadow}${relation.conflict}`,
+        leadIntoStory(
+          texture.relationshipLowPointLead,
+          `${asConnectedClause(relationshipShadow)}。`,
+          relation.conflict,
+        ),
         relationship,
       )
     : storyBeat(
         "low-point",
-        `于是，${DOMAIN_GAP_COPY.relationship}这里只观察事实、影响和未说清的需要，不替任何一方解释动机。`,
+        leadIntoStory(
+          NEUTRAL_TEXTURE.relationshipLowPointLead,
+          DOMAIN_GAP_COPY.relationship,
+          "这里只观察事实、影响和未说清的需要，不替任何一方解释动机。",
+        ),
         undefined,
       );
   const choice = relationship
     ? storyBeat(
         "choice",
-        `改变从停止原有循环开始。${relationshipAction}${relation.repair}`,
+        leadIntoStory(
+          texture.relationshipChoiceLead,
+          relationshipAction,
+          relation.repair,
+        ),
         relationship,
       )
     : storyBeat(
         "choice",
-        "改变只能从通用动作开始：复述事实，提出一项可以回应的具体请求，并约定何时重谈；这不是对你的关系模式下结论。",
+        leadIntoStory(
+          NEUTRAL_TEXTURE.relationshipChoiceLead,
+          "复述事实，提出一项可以回应的具体请求，并约定何时重谈；这不是对你的关系模式下结论。",
+        ),
         undefined,
       );
   const turn = rhythm
     ? storyBeat(
         "turn",
-        `随后，节奏上的调整开始让转折可见。${rhythmAction}节奏稍稍恢复后，人物才有余地回到关系事实，再核对可调整与不可调整的条件。${relation.visibleTurn.replace(/^可见转折是/u, "这时，")}${texture.transition}`,
+        leadIntoStory(
+          texture.rhythmTurnLead,
+          rhythmAction,
+          leadIntoStory(
+            texture.transition,
+            "节奏稍稍恢复后，人物才有余地回到关系事实，再核对可调整与不可调整的条件。",
+          ),
+          relation.visibleTurn.replace(/^可见转折是/u, "这时，"),
+        ),
         rhythm,
       )
     : storyBeat(
         "turn",
-        "随后，因为没有稳定节奏材料，转折只保留通用观察：减少一项额外负担，恢复基本作息，再看注意力和协作是否出现可见变化。",
+        leadIntoStory(
+          NEUTRAL_TEXTURE.rhythmTurnLead,
+          "因为没有稳定节奏材料，转折只保留通用观察：减少一项额外负担，恢复基本作息，再看注意力和协作是否出现可见变化。",
+        ),
         undefined,
       );
   const matureMethod = rhythm
     ? storyBeat(
         "mature-method",
-        `此后，成熟方法不再依赖一次用力。${rhythmLongTerm}${structure.matureMethod}从此，每轮行动都重新核对这条约定有没有改善现实结果。`,
+        leadIntoStory(
+          texture.matureLead,
+          rhythmLongTerm,
+          structure.matureMethod,
+          leadIntoStory(
+            texture.reviewLead,
+            "从此，每轮行动都重新核对这条约定有没有改善现实结果。",
+          ),
+        ),
         rhythm,
       )
     : storyBeat(
         "mature-method",
-        `此后，${DOMAIN_GAP_COPY.rhythm}通用长期方法只是固定复盘时间、一次改变一个变量，并保留停止与求助条件。`,
+        leadIntoStory(
+          NEUTRAL_TEXTURE.matureLead,
+          DOMAIN_GAP_COPY.rhythm,
+          "通用长期方法只是固定复盘时间、一次改变一个变量，并保留停止与求助条件。",
+        ),
         undefined,
       );
 
@@ -862,6 +1019,61 @@ export function buildLifeScrollNarrative(
     turn,
     matureMethod,
   ];
+  const daoPlacementContexts: Readonly<
+    Record<DaoPlacement, DaoStoryContext>
+  > = hasAnyMaterial
+    ? {
+        career: {
+          scene: career?.scenario ?? careerAdvantage,
+          tension: career?.shadowVersion ?? careerShadow,
+          turn: career?.actionNow ?? careerAdvantage,
+          action: career?.actionLongTerm ?? structure.openingMethod,
+        },
+        relationship: {
+          scene: relationship?.scenario ?? relation.daoScene,
+          tension: relationship?.shadowVersion ?? relationshipShadow,
+          turn: relationship?.actionNow ?? relationshipAction,
+          action: relationship?.actionLongTerm ?? relation.daoAction,
+        },
+        "turning-point": {
+          scene: rhythm?.scenario ?? "需要恢复基本容量的时刻",
+          tension: rhythm?.shadowVersion ?? "负荷与恢复尚未重新平衡",
+          turn: relation.visibleTurn,
+          action: rhythm?.actionNow ?? rhythmAction,
+        },
+        closing: {
+          scene: rhythm?.advantageVersion ?? rhythmAdvantage,
+          tension: structure.daoTension,
+          turn: lessonIntent,
+          action: rhythm?.actionLongTerm ?? rhythmLongTerm,
+        },
+      }
+    : {
+        career: {
+          scene: "只观察一项事业小试验",
+          tension: "事业信息仍待核对",
+          turn: "完成一项可撤回试验",
+          action: "写清目标权限和停止点",
+        },
+        relationship: {
+          scene: "只观察一次关系对话",
+          tension: "关系事实仍待补充",
+          turn: "提出一项可回应请求",
+          action: "复述事实影响和需要",
+        },
+        "turning-point": {
+          scene: "只观察一周负荷变化",
+          tension: "节奏记录仍不完整",
+          turn: "减少一个现实变量",
+          action: "记录负荷恢复和反馈",
+        },
+        closing: {
+          scene: "只回看已经核对的部分",
+          tension: "全卷材料仍有留白",
+          turn: "保留一项有效改变",
+          action: "约定复查时间和边界",
+        },
+      };
   const daoResult = buildDaoStoryNotesWithFrames(
     selectNarrativeDaoThemes(
       stable.structureBalance,
@@ -870,20 +1082,9 @@ export function buildLifeScrollNarrative(
       career !== undefined,
       rhythm !== undefined,
     ),
-    hasAnyMaterial
-      ? {
-          tension: structure.daoTension,
-          turn: lessonIntent,
-          scene: relation.daoScene,
-          action: relation.daoAction,
-        }
-      : {
-          tension: "信息尚未充分核对",
-          turn: "完成一项可核对的改变",
-          scene: "只保留通用观察的时刻",
-          action: "写清已知事实和下一步",
-        },
+    daoPlacementContexts.closing,
     hasAnyMaterial ? DAO_FRAMES : NEUTRAL_DAO_FRAMES,
+    daoPlacementContexts,
   );
   const mirrors = buildStoryMirrors(chart);
   const missingDomains = ([
@@ -894,9 +1095,12 @@ export function buildLifeScrollNarrative(
     .filter((entry): entry is readonly [MissingDomain, undefined] => !entry[1])
     .map(([domain]) => `missing-domain:${domain}`);
 
-  const turningReflection = joinCompleteSentences(
-    "这个转折是否成立，要看行动后是否出现可观察的新反馈",
-    "把这条行动约定放在这里，是为了让选择继续接受相关人的回应，而不是宣告人物已经改变",
+  const turningReflection = leadIntoStory(
+    texture.reflectionLead,
+    `${asConnectedClause(joinCompleteSentences(
+      "这个转折是否成立，要看行动后是否出现可观察的新反馈",
+      "把这条行动约定放在这里，是为了让选择继续接受相关人的回应，而不是宣告人物已经改变",
+    ))}。`,
   );
   const matureReflection = rhythm
     ? completeSentence(
