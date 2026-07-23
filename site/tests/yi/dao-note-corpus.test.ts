@@ -23,7 +23,7 @@ const EXPECTED_NOTES = [
     theme: "service",
     paragraphId: 11599,
     crossCheckLocator: "上篇·第八章",
-    commentaryIdea: /不争/,
+    commentaryIdea: /处下.*几于道|几于道.*处下/,
   },
   {
     id: "dao-15-clear",
@@ -103,7 +103,7 @@ const EXPECTED_NOTES = [
     theme: "flexibility",
     paragraphId: 11667,
     crossCheckLocator: "下篇·第七十六章",
-    commentaryIdea: /柔弱.*适应|适应.*柔弱/,
+    commentaryIdea: /木之本.*枝条|枝条.*木之本/,
   },
   {
     id: "dao-81-no-strife",
@@ -113,7 +113,7 @@ const EXPECTED_NOTES = [
     theme: "completion",
     paragraphId: 11672,
     crossCheckLocator: "下篇·第八十一章",
-    commentaryIdea: /为而不争/,
+    commentaryIdea: /顺天之利.*不相伤|不相伤.*顺天之利/,
   },
 ] as const satisfies readonly {
   id: string;
@@ -290,6 +290,26 @@ describe("reviewed Dao note corpus", () => {
     expect(serialized).not.toMatch(
       /人工专家|专家审核|传统文本内容复核|已由专家|权威认证/,
     );
+
+    const chapter8 = REVIEWED_DAO_NOTES.find((note) => note.chapter === 8);
+    expect(chapter8?.traditionalCommentarySummary).toMatch(/处下/);
+    expect(chapter8?.traditionalCommentarySummary).toMatch(/人恶卑/);
+    expect(chapter8?.traditionalCommentarySummary).toMatch(/几于道/);
+    expect(chapter8?.traditionalCommentarySummary).toMatch(
+      /不等同于道|并非道|不是道/,
+    );
+    expect(chapter8?.traditionalCommentarySummary).not.toMatch(/不求报|占有/);
+
+    const chapter76 = REVIEWED_DAO_NOTES.find((note) => note.chapter === 76);
+    expect(chapter76?.traditionalCommentarySummary).toMatch(/木之本/);
+    expect(chapter76?.traditionalCommentarySummary).toMatch(/枝条/);
+    expect(chapter76?.traditionalCommentarySummary).not.toMatch(/适应/);
+    expect(chapter76?.modernStoryMeanings.join("")).toMatch(/适应/);
+
+    const chapter81 = REVIEWED_DAO_NOTES.find((note) => note.chapter === 81);
+    expect(chapter81?.traditionalCommentarySummary).toMatch(/顺天之利/);
+    expect(chapter81?.traditionalCommentarySummary).toMatch(/不相伤/);
+    expect(chapter81?.traditionalCommentarySummary).not.toMatch(/完成|占有/);
   });
 
   it("keeps exactly two concrete story uses per note without chart claims", () => {

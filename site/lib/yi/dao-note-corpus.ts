@@ -198,7 +198,7 @@ const REVIEWED_DAO_NOTE_VALUES: ReviewedDaoNote[] = [
     displayTextSimplified: "上善若水，水善利万物而不争",
     traditionalCommentaryStatus: "present",
     traditionalCommentarySummary:
-      "王弼工作文本把水的“不争”落在利物而不求报、处下而不争位；重点是成全而不占有。",
+      "王弼于“处众人之所恶”下注“人恶卑也”；“几于道”说明水的处下近于道，却不等同于道。",
     modernStoryMeanings: [
       "用于合作故事：人物先解决共同需要，不把功劳与回报抢到自己名下。",
       "用于关系转折：让出位置并非退场，而是让资源流到真正需要它的场景。",
@@ -213,7 +213,7 @@ const REVIEWED_DAO_NOTE_VALUES: ReviewedDaoNote[] = [
     variantDecision:
       "繁体短句按CText paragraph 11599采用；简体展示逐字记录，不作运行时繁简转换。固定Wikisource版本同章交叉检查未见改变本句意思的异文。",
     checksum:
-      "sha256:5370f431b11d488eb9b325f036258bae236b853af2f6d811e56a5ae1010dbdd6",
+      "sha256:8ed9c1642f5c08e46f462b341f05ef927270d4491cbc599a9143f066989e9131",
   },
   {
     ...SHARED_AUDIT_FIELDS,
@@ -405,7 +405,7 @@ const REVIEWED_DAO_NOTE_VALUES: ReviewedDaoNote[] = [
     displayTextSimplified: "强大处下，柔弱处上",
     traditionalCommentaryStatus: "present",
     traditionalCommentarySummary:
-      "王弼工作文本以生之柔弱、死之坚强说明柔弱能够适应变化；这里的适应不是自我贬低。",
+      "王弼就“强大处下，柔弱处上”以木为喻：木之本强大而居下，枝条柔弱而处上。",
     modernStoryMeanings: [
       "用于变化故事：人物保留调整姿态的能力，不因一时强硬而失去转向空间。",
       "用于危机场景：先松开僵住的做法，再寻找可以适应现实的新行动。",
@@ -420,7 +420,7 @@ const REVIEWED_DAO_NOTE_VALUES: ReviewedDaoNote[] = [
     variantDecision:
       "繁体短句按CText paragraph 11667采用；简体展示固定“强、处”。固定Wikisource版本按本章交叉检查，不把柔弱改写成屈从。",
     checksum:
-      "sha256:f6f79e6adc88b875c213b895aca59aa0e86ed9b9a6889c7e95c614343363fdd7",
+      "sha256:d503bec7e4c5040d1ec6bd770b4e0f391b123e185f40ca34633aa16fc852df29",
   },
   {
     ...SHARED_AUDIT_FIELDS,
@@ -431,7 +431,7 @@ const REVIEWED_DAO_NOTE_VALUES: ReviewedDaoNote[] = [
     displayTextSimplified: "圣人之道，为而不争",
     traditionalCommentaryStatus: "present",
     traditionalCommentarySummary:
-      "王弼工作文本以“为而不争”收束全章：完成应做之事而不与人争夺，行动不以占有为终点。",
+      "王弼将“为而不争”释为“顺天之利，不相伤也”，重点是顺天之利、不相伤。",
     modernStoryMeanings: [
       "用于成事故事：人物完成该做的工作，不把最后一段变成争夺功劳。",
       "用于全篇收束：行动已经落地便放下比较，让结果回到真实受益者。",
@@ -446,7 +446,7 @@ const REVIEWED_DAO_NOTE_VALUES: ReviewedDaoNote[] = [
     variantDecision:
       "繁体短句按CText paragraph 11672采用；简体展示固定“圣、为、争”。固定Wikisource版本按下篇第八十一章交叉检查。",
     checksum:
-      "sha256:7d7b08897a87c78a8d33941133e77080f8c2c6c457311cf0b321860b45cb6634",
+      "sha256:3f8fbf9b7ba4b132de45a1bb836c4970edc7604cc6ca39ea4074e2d75d703a2b",
   },
 ];
 
