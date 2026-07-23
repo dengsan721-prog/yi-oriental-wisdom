@@ -137,10 +137,10 @@ test("GitHub build publishes the lunar-typescript MIT notice", async () => {
 
 test("GitHub build publishes the audited lishu vector and its license", async () => {
   const [sourceSvg, deployedSvg, sourceAudit, deployedAudit, sourceLicense, deployedLicense, sourceReadme, deployedReadme, attributes] = await Promise.all([
-    readFile(new URL("../public/fonts/yi-lishu-u827a.svg", import.meta.url)),
-    readFile(new URL("../../docs/fonts/yi-lishu-u827a.svg", import.meta.url)),
-    readFile(new URL("../public/fonts/yi-lishu-source-audit.json", import.meta.url)),
-    readFile(new URL("../../docs/fonts/yi-lishu-source-audit.json", import.meta.url)),
+    readFile(new URL("../public/fonts/yi-lishu-u547d.svg", import.meta.url)),
+    readFile(new URL("../../docs/fonts/yi-lishu-u547d.svg", import.meta.url)),
+    readFile(new URL("../public/fonts/yi-lishu-u547d-source-audit.json", import.meta.url)),
+    readFile(new URL("../../docs/fonts/yi-lishu-u547d-source-audit.json", import.meta.url)),
     readFile(new URL("../public/fonts/OFL-1.1.rtf", import.meta.url)),
     readFile(new URL("../../docs/fonts/OFL-1.1.rtf", import.meta.url)),
     readFile(new URL("../public/fonts/README.md", import.meta.url)),
@@ -164,10 +164,10 @@ test("GitHub build publishes the audited lishu vector and its license", async ()
   assert.equal(sha256(sourceLicense), audit.source.licenseSha256);
   assert.equal(sha256(sourceSvg), audit.inlineSvgSha256);
   assert.equal(sha256(outline), audit.outlineSha256);
-  assert.equal(audit.codePoint, "U+827A");
+  assert.equal(audit.codePoint, "U+547D");
   assert.equal(audit.style, "lishu");
   assert.equal(audit.coverage.matchingGlyphRecords, 1);
-  assert.match(svg, /data-code-point="U\+827A"/);
+  assert.match(svg, /data-code-point="U\+547D"/);
   assert.doesNotMatch(svg, /<text\b|font-family/i);
   assert.match(deployedLicense.toString("utf8"), /SIL OPEN FONT LICENSE Version 1\.1/);
   assert.doesNotMatch(css, /@font-face|JFZSKSealScript|Yi Zhongshan Seal/i);
