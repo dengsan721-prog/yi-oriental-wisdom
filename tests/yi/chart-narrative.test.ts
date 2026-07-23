@@ -556,6 +556,39 @@ describe("deterministic chart narrative", () => {
     expect(rhythmActions.some(id => id.startsWith("wealth-"))).toBe(false);
   });
 
+  it("keeps composed Chinese grammatical and turns the longest action chain into a readable progression", () => {
+    for (const birth of [exactBirth, alternateBirth]) {
+      const { chart, report, items } = fixture(birth);
+      const narrative = buildChartNarrative(chart, report, items);
+      const visible = publicNarrativeText(narrative);
+
+      expect(visible).not.toMatch(
+        /先先|开始开始|再从先|此时[^。]{0,80}时，|先冲突后/u,
+      );
+      for (const story of [
+        ...narrative.careerAdvice,
+        ...narrative.relationshipAdvice,
+        ...narrative.rhythmAdvice,
+      ]) {
+        expect(story.trigger).not.toMatch(/时，先先|此时[^。]{0,80}时，/u);
+      }
+
+      const progression = narrative.careerAdvice[1].turnAction;
+      const stages = [
+        "可试用清单",
+        "交付模板",
+        "择业条件",
+        "支出、储备和试验",
+        "限定可承受试验和退出条件",
+      ].map(stage => progression.indexOf(stage));
+      expect(stages.every(index => index >= 0)).toBe(true);
+      expect(stages).toEqual([...stages].sort((left, right) => left - right));
+      expect(progression.match(/接着/g) ?? []).toHaveLength(0);
+      expect(progression.split("。").filter(Boolean).length)
+        .toBeGreaterThanOrEqual(5);
+    }
+  });
+
   it("makes each plain translation respond to its matching stable fact family", () => {
     const exact = fixture();
     const exactNarrative = buildChartNarrative(
