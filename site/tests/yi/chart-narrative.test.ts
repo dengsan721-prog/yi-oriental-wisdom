@@ -85,7 +85,7 @@ const EXPECTED_ACTION_FRAMES: Readonly<Record<DetailActionId, string>> = {
   "wealth-structure:actionNow": "把资金分为支出、储备和试验",
   "wealth-structure:actionLongTerm": "月初预算、月中校准、月末复盘",
   "wealth-risk:actionNow": "限定可承受试验和退出条件",
-  "wealth-risk:actionLongTerm": "记录五次机会决定再考虑追加",
+  "wealth-risk:actionLongTerm": "把五次机会决定记录下来，再考虑是否追加",
   "wealth-boundary:actionNow": "书面确认金额、用途和归还日期",
   "wealth-boundary:actionLongTerm": "区分赠与、借款和共同承担",
   "relationship-day-branch:actionNow": "用四句话说明事实、感受、需要和请求",
@@ -557,13 +557,18 @@ describe("deterministic chart narrative", () => {
   });
 
   it("keeps composed Chinese grammatical and turns the longest action chain into a readable progression", () => {
-    for (const birth of [exactBirth, alternateBirth]) {
+    const unknownBirth: BirthInput = {
+      ...exactBirth,
+      time: null,
+      timeConfidence: "unknown",
+    };
+    for (const birth of [exactBirth, alternateBirth, unknownBirth]) {
       const { chart, report, items } = fixture(birth);
       const narrative = buildChartNarrative(chart, report, items);
       const visible = publicNarrativeText(narrative);
 
       expect(visible).not.toMatch(
-        /先先|开始开始|再从先|此时[^。]{0,80}时，|先冲突后/u,
+        /先先|开始开始|再从先|此时[^。]{0,80}时，|先冲突后|再考虑追加后再追加|并建立支持台账并在过载时减量|让表达依据现场理解迭代/u,
       );
       for (const story of [
         ...narrative.careerAdvice,
@@ -574,19 +579,34 @@ describe("deterministic chart narrative", () => {
       }
 
       const progression = narrative.careerAdvice[1].turnAction;
-      const stages = [
+      const expectedStages = [
         "可试用清单",
         "交付模板",
         "择业条件",
         "支出、储备和试验",
         "限定可承受试验和退出条件",
-      ].map(stage => progression.indexOf(stage));
-      expect(stages.every(index => index >= 0)).toBe(true);
+        "把五次机会决定记录下来",
+      ].filter(stage => birth.time !== null || stage !== "交付模板");
+      const stages = expectedStages.map(stage => progression.indexOf(stage));
+      expect(
+        stages.every(index => index >= 0),
+        `${birth.date}/${birth.time ?? "unknown"}: ${progression}`,
+      ).toBe(true);
       expect(stages).toEqual([...stages].sort((left, right) => left - right));
       expect(progression.match(/接着/g) ?? []).toHaveLength(0);
       expect(progression.split("。").filter(Boolean).length)
         .toBeGreaterThanOrEqual(5);
     }
+
+    const noMaterial = fixture();
+    const noMaterialNarrative = buildChartNarrative(
+      noMaterial.chart,
+      noMaterial.report,
+      [],
+    );
+    expect(publicNarrativeText(noMaterialNarrative)).not.toMatch(
+      /先先|开始开始|再从先|此时[^。]{0,80}时，|先冲突后|再考虑追加后再追加|并建立支持台账并在过载时减量|让表达依据现场理解迭代/u,
+    );
   });
 
   it("makes each plain translation respond to its matching stable fact family", () => {
