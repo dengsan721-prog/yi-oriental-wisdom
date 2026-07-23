@@ -3,6 +3,8 @@
 import {
   useEffect,
   useReducer,
+  useRef,
+  useState,
   type ReactElement,
 } from "react";
 import {
@@ -22,17 +24,38 @@ import type {
   FourPillarsResult,
   ProfessionalReport,
 } from "../../lib/yi/types";
+import type { NameSurname } from "../../lib/yi/name-types";
 import {
   createNameAnalysisViewState,
   loadNameAnalysisForView,
   nameAnalysisViewReducer,
+  type NameAnalysisRequest,
   type NameAnalysisViewResult,
+  type NameAnalysisViewState,
 } from "./NameAnalysisSection";
 
 export type NameSectionProps = {
   name: string;
   chart: Readonly<FourPillarsResult>;
   professionalReport: Readonly<ProfessionalReport>;
+};
+
+export type CandidateNameComposition =
+  | {
+      status: "ready";
+      fullName: string;
+      inputKind: "given-name" | "full-name";
+      fixedSurname: string | null;
+    }
+  | {
+      status: "invalid";
+      reason: "empty-input";
+    };
+
+export type LatestNameRequestGuard = {
+  begin(): number;
+  isCurrent(requestId: number): boolean;
+  invalidate(): void;
 };
 
 export type NameCoverageRecommendations = Readonly<
@@ -44,6 +67,16 @@ export type NameCoverageCardProps = {
   name: string;
   coverage: NameElementCoverage;
   recommendationsByElement: NameCoverageRecommendations;
+};
+
+export type NameCandidateComparisonProps = {
+  current: NameCoverageCardProps;
+  candidate: NameCoverageCardProps | null;
+  fixedSurname: string | null;
+  candidateInput?: string;
+  candidateFullName?: string | null;
+  candidateStatus?: "idle" | "loading" | "ready" | "error";
+  onCandidateInputChange?: (value: string) => void;
 };
 
 export type FormattedNameCoverageScore = {
@@ -66,6 +99,12 @@ export type NameSectionLoadAction =
       error: boolean;
     };
 
+type CandidateLoadState = {
+  status: "idle" | "loading" | "ready" | "error";
+  fullName: string | null;
+  analysis: NameAnalysisViewResult | null;
+};
+
 const ELEMENTS = ["木", "火", "土", "金", "水"] as const;
 const SCORE_LABELS = [
   { primary: "覆盖 0/5 项", secondary: "0/100" },
@@ -75,6 +114,75 @@ const SCORE_LABELS = [
   { primary: "覆盖 4/5 项", secondary: "80/100" },
   { primary: "覆盖 5/5 项", secondary: "100/100" },
 ] as const satisfies readonly FormattedNameCoverageScore[];
+
+export function composeCandidateFullName(input: {
+  currentSurname: Readonly<NameSurname> | null;
+  candidateInput: string;
+}): CandidateNameComposition {
+  const candidateInput = input.candidateInput.trim();
+  if (!candidateInput) return { status: "invalid", reason: "empty-input" };
+
+  if (
+    input.currentSurname?.kind === "single"
+    || input.currentSurname?.kind === "compound"
+  ) {
+    return {
+      status: "ready",
+      fullName: `${input.currentSurname.value}${candidateInput}`,
+      inputKind: "given-name",
+      fixedSurname: input.currentSurname.value,
+    };
+  }
+
+  return {
+    status: "ready",
+    fullName: candidateInput,
+    inputKind: "full-name",
+    fixedSurname: null,
+  };
+}
+
+export function createLatestNameRequestGuard(): LatestNameRequestGuard {
+  let latestRequestId = 0;
+  return {
+    begin() {
+      latestRequestId += 1;
+      return latestRequestId;
+    },
+    isCurrent(requestId) {
+      return requestId === latestRequestId;
+    },
+    invalidate() {
+      latestRequestId += 1;
+    },
+  };
+}
+
+export async function runLatestNameRequest<T>(input: {
+  guard: LatestNameRequestGuard;
+  load: () => Promise<T>;
+  apply: (value: T) => void;
+}): Promise<"applied" | "stale"> {
+  const requestId = input.guard.begin();
+  const value = await input.load();
+  if (!input.guard.isCurrent(requestId)) return "stale";
+  input.apply(value);
+  return "applied";
+}
+
+export function buildCandidateAnalysisRequest(input: {
+  viewState: Readonly<NameAnalysisViewState>;
+  chart: Readonly<FourPillarsResult>;
+  professionalReport: Readonly<ProfessionalReport>;
+}): Partial<NameAnalysisRequest> {
+  return {
+    mode: "candidate",
+    traditionalSelections: input.viewState.traditionalSelections,
+    actualReadings: input.viewState.actualReadings,
+    chart: input.chart,
+    professionalReport: input.professionalReport,
+  };
+}
 
 export function formatNameCoverageScore(
   coveredCount: NameElementCoverageCount,
@@ -161,14 +269,68 @@ export function NameCoverageCard({
   </article>;
 }
 
-function CandidateEntry(): ReactElement {
+export function NameCandidateComparison({
+  current,
+  candidate,
+  fixedSurname,
+  candidateInput = "",
+  candidateFullName = null,
+  candidateStatus = candidate ? "ready" : "idle",
+  onCandidateInputChange,
+}: NameCandidateComparisonProps): ReactElement {
   return <section
     aria-label="候选姓名入口"
     className="yi-name-candidate-entry"
   >
     <h3>候选姓名</h3>
-    <p>候选区已保留，当前不生成候选姓名。</p>
+    <CandidateNameInput
+      candidateInput={candidateInput}
+      fixedSurname={fixedSurname}
+      onCandidateInputChange={onCandidateInputChange}
+    />
+    <div className="yi-name-character-list">
+      <section data-name-role="current">
+        <h3>当前姓名：{current.name}</h3>
+        <NameCoverageCard {...current} />
+      </section>
+      {candidateStatus === "loading"
+        ? <p aria-busy="true" className="yi-name-pending">
+            正在更新候选姓名：{candidateFullName ?? ""}
+          </p>
+        : candidateStatus === "error"
+          ? <p className="yi-name-pending" role="alert">候选姓名资料暂时无法载入。</p>
+          : candidate && <section data-name-role="candidate">
+              <h3>候选姓名：{candidate.name}</h3>
+              <NameCoverageCard {...candidate} />
+            </section>}
+    </div>
   </section>;
+}
+
+function CandidateNameInput({
+  candidateInput,
+  fixedSurname,
+  onCandidateInputChange,
+}: {
+  candidateInput: string;
+  fixedSurname: string | null;
+  onCandidateInputChange?: (value: string) => void;
+}): ReactElement {
+  const inputLabel = fixedSurname
+    ? "候选名（不含姓氏）"
+    : "候选完整姓名";
+  return <>
+    {fixedSurname && <p>保留姓氏：{fixedSurname}</p>}
+    <label className="yi-name-empty-input">
+      <span>{inputLabel}</span>
+      <input
+        aria-label={inputLabel}
+        onChange={event => onCandidateInputChange?.(event.currentTarget.value)}
+        type="text"
+        value={candidateInput}
+      />
+    </label>
+  </>;
 }
 
 function ConfirmationControls({
@@ -234,21 +396,11 @@ function ConfirmationControls({
   </section>;
 }
 
-export function CurrentNameContent({
-  analysis,
-  chart,
-  state,
-  onModeChange,
-  onTraditionalSelection,
-  onReadingSelection,
-}: {
-  analysis: NameAnalysisViewResult;
-  chart: Readonly<FourPillarsResult>;
-  state: ReturnType<typeof createNameAnalysisViewState>;
-  onModeChange: (mode: "current" | "traditional-reference") => void;
-  onTraditionalSelection: (characterIndex: number, glyph: string) => void;
-  onReadingSelection: (characterIndex: number, reading: string) => void;
-}): ReactElement {
+function coverageCardProps(
+  analysis: NameAnalysisViewResult,
+  chart: Readonly<FourPillarsResult>,
+  label: NameCoverageCardProps["label"],
+): NameCoverageCardProps {
   const coverage = calculateNameElementCoverage({
     chart,
     characters: toNameElementCoverageCharacters(analysis.characters),
@@ -260,6 +412,32 @@ export function CurrentNameContent({
           getReviewedNameElementRecommendations(element).slice(0, 6),
         ]))
       : {};
+  return {
+    label,
+    name: analysis.rawInput,
+    coverage,
+    recommendationsByElement,
+  };
+}
+
+export function CurrentNameContent({
+  analysis,
+  chart,
+  state,
+  onModeChange,
+  onTraditionalSelection,
+  onReadingSelection,
+  showCoverageCard = true,
+}: {
+  analysis: NameAnalysisViewResult;
+  chart: Readonly<FourPillarsResult>;
+  state: ReturnType<typeof createNameAnalysisViewState>;
+  onModeChange: (mode: "current" | "traditional-reference") => void;
+  onTraditionalSelection: (characterIndex: number, glyph: string) => void;
+  onReadingSelection: (characterIndex: number, reading: string) => void;
+  showCoverageCard?: boolean;
+}): ReactElement {
+  const currentCard = coverageCardProps(analysis, chart, "当前姓名");
 
   return <>
     <ConfirmationControls
@@ -269,12 +447,7 @@ export function CurrentNameContent({
       onTraditionalSelection={onTraditionalSelection}
       state={state}
     />
-    <NameCoverageCard
-      coverage={coverage}
-      label="当前姓名"
-      name={analysis.rawInput}
-      recommendationsByElement={recommendationsByElement}
-    />
+    {showCoverageCard && <NameCoverageCard {...currentCard} />}
   </>;
 }
 
@@ -289,6 +462,16 @@ export function NameSection({
     createNameAnalysisViewState,
   );
   const [loaded, dispatchLoad] = useReducer(nameSectionLoadReducer, null);
+  const [candidateInput, setCandidateInput] = useState("");
+  const [candidateState, setCandidateState] = useState(
+    () => createNameAnalysisViewState(""),
+  );
+  const [candidateLoad, setCandidateLoad] = useState<CandidateLoadState>({
+    status: "idle",
+    fullName: null,
+    analysis: null,
+  });
+  const candidateGuard = useRef(createLatestNameRequestGuard());
   const requestKey = JSON.stringify([
     name,
     state.mode,
@@ -340,6 +523,73 @@ export function NameSection({
 
   const loadStatus = getCurrentNameLoadStatus(loaded, requestKey);
   const analysis = loadStatus === "ready" ? loaded?.analysis ?? null : null;
+  const startCandidateRequest = (
+    fullName: string,
+    viewState: NameAnalysisViewState,
+  ): void => {
+    const request = buildCandidateAnalysisRequest({
+      viewState,
+      chart,
+      professionalReport,
+    });
+    setCandidateLoad({
+      status: "loading",
+      fullName,
+      analysis: null,
+    });
+    void runLatestNameRequest({
+      guard: candidateGuard.current,
+      load: async () => {
+        try {
+          return {
+            analysis: await loadNameAnalysisForView(fullName, request),
+            error: false,
+          };
+        } catch {
+          return { analysis: null, error: true };
+        }
+      },
+      apply: result => setCandidateLoad({
+        status: result.error ? "error" : "ready",
+        fullName,
+        analysis: result.analysis,
+      }),
+    });
+  };
+  const handleCandidateInputChange = (value: string): void => {
+    candidateGuard.current.invalidate();
+    setCandidateInput(value);
+    const composition = composeCandidateFullName({
+      currentSurname: analysis?.surname ?? null,
+      candidateInput: value,
+    });
+    if (composition.status === "invalid") {
+      setCandidateState(createNameAnalysisViewState(""));
+      setCandidateLoad({ status: "idle", fullName: null, analysis: null });
+      return;
+    }
+    const nextCandidateState = createNameAnalysisViewState(
+      composition.fullName,
+    );
+    setCandidateState(nextCandidateState);
+    startCandidateRequest(composition.fullName, nextCandidateState);
+  };
+  const updateCandidateState = (nextState: NameAnalysisViewState): void => {
+    candidateGuard.current.invalidate();
+    setCandidateState(nextState);
+    if (nextState.name) startCandidateRequest(nextState.name, nextState);
+  };
+  const currentCard = analysis
+    ? coverageCardProps(analysis, chart, "当前姓名")
+    : null;
+  const candidateCard = candidateLoad.status === "ready"
+    && candidateLoad.analysis
+    ? coverageCardProps(candidateLoad.analysis, chart, "候选姓名")
+    : null;
+  const fixedSurname = analysis?.surname.kind === "single"
+    || analysis?.surname.kind === "compound"
+    ? analysis.surname.value
+    : null;
 
   return <section className="yi-name-section">
     <header className="yi-name-section-head">
@@ -350,14 +600,36 @@ export function NameSection({
     </header>
 
     {!name.trim()
-      ? <label className="yi-name-empty-input">
-          <span>现用姓名</span>
-          <input aria-label="输入现用姓名" defaultValue="" type="text" />
-        </label>
+      ? <>
+          <label className="yi-name-empty-input">
+            <span>现用姓名</span>
+            <input aria-label="输入现用姓名" defaultValue="" type="text" />
+          </label>
+          <section
+            aria-label="候选姓名入口"
+            className="yi-name-candidate-entry"
+          >
+            <h3>候选姓名</h3>
+            <CandidateNameInput
+              candidateInput={candidateInput}
+              fixedSurname={null}
+              onCandidateInputChange={handleCandidateInputChange}
+            />
+            {candidateLoad.status === "loading"
+              ? <p aria-busy="true" className="yi-name-pending">
+                  正在更新候选姓名：{candidateLoad.fullName ?? ""}
+                </p>
+              : candidateLoad.status === "error"
+                ? <p className="yi-name-pending" role="alert">
+                    候选姓名资料暂时无法载入。
+                  </p>
+                : candidateCard && <NameCoverageCard {...candidateCard} />}
+          </section>
+        </>
       : <>
           {loadStatus === "error"
             ? <p className="yi-name-pending" role="alert">姓名资料暂时无法载入。</p>
-            : analysis
+            : analysis && currentCard
               ? <CurrentNameContent
                   analysis={analysis}
                   chart={chart}
@@ -372,10 +644,59 @@ export function NameSection({
                     characterIndex,
                     glyph,
                   })}
+                  showCoverageCard={false}
                   state={state}
                 />
               : <p aria-busy="true" className="yi-name-pending">正在核对姓名资料…</p>}
+          {!analysis && <section
+            aria-label="候选姓名入口"
+            className="yi-name-candidate-entry"
+          >
+            <h3>候选姓名</h3>
+            <p>当前姓名核对完成后可比较候选姓名。</p>
+          </section>}
+          {analysis && currentCard && <>
+            <NameCandidateComparison
+              candidate={candidateCard}
+              candidateFullName={candidateLoad.fullName}
+              candidateInput={candidateInput}
+              candidateStatus={candidateLoad.status}
+              current={currentCard}
+              fixedSurname={fixedSurname}
+              onCandidateInputChange={handleCandidateInputChange}
+            />
+            {candidateLoad.status === "ready" && candidateLoad.analysis
+              && <section aria-label="候选姓名字形与读音确认">
+                <ConfirmationControls
+                  analysis={candidateLoad.analysis}
+                  onModeChange={mode => updateCandidateState(
+                    nameAnalysisViewReducer(candidateState, {
+                      type: "set-mode",
+                      mode,
+                    }),
+                  )}
+                  onReadingSelection={(characterIndex, reading) =>
+                    updateCandidateState(nameAnalysisViewReducer(
+                      candidateState,
+                      {
+                        type: "select-reading",
+                        characterIndex,
+                        reading,
+                      },
+                    ))}
+                  onTraditionalSelection={(characterIndex, glyph) =>
+                    updateCandidateState(nameAnalysisViewReducer(
+                      candidateState,
+                      {
+                        type: "select-traditional",
+                        characterIndex,
+                        glyph,
+                      },
+                    ))}
+                  state={candidateState}
+                />
+              </section>}
+          </>}
         </>}
-    <CandidateEntry />
   </section>;
 }

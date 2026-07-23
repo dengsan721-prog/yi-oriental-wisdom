@@ -4,11 +4,16 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   CurrentNameContent,
+  NameCandidateComparison,
   NameCoverageCard,
   NameSection,
+  buildCandidateAnalysisRequest,
+  composeCandidateFullName,
+  createLatestNameRequestGuard,
   formatNameCoverageScore,
   getCurrentNameLoadStatus,
   nameSectionLoadReducer,
+  runLatestNameRequest,
 } from "../../components/yi/NameSection";
 import {
   createNameAnalysisViewState,
@@ -336,5 +341,348 @@ describe("standalone current-name section", () => {
     expect(css).toMatch(/\.yi-name-section[\s\S]*overflow-wrap:\s*anywhere/);
     expect(css).toMatch(/\.yi-name-section[\s\S]*min-height:\s*44px/);
     expect(css).toMatch(/@media\s*\(max-width:\s*390px\)/);
+  });
+});
+
+function deferred<T>(): {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+} {
+  let resolvePromise!: (value: T) => void;
+  const promise = new Promise<T>((resolve) => {
+    resolvePromise = resolve;
+  });
+  return { promise, resolve: resolvePromise };
+}
+
+describe("candidate full-name composition", () => {
+  it("keeps a reviewed single surname fixed and trims only surrounding whitespace", () => {
+    expect(composeCandidateFullName({
+      currentSurname: { value: "林", kind: "single" },
+      candidateInput: " 清 禾 ",
+    })).toEqual({
+      status: "ready",
+      fullName: "林清 禾",
+      inputKind: "given-name",
+      fixedSurname: "林",
+    });
+  });
+
+  it("keeps a reviewed compound surname fixed without converting glyphs", () => {
+    expect(composeCandidateFullName({
+      currentSurname: { value: "歐陽", kind: "compound" },
+      candidateInput: "髮",
+    })).toEqual({
+      status: "ready",
+      fullName: "歐陽髮",
+      inputKind: "given-name",
+      fixedSurname: "歐陽",
+    });
+  });
+
+  it.each([
+    [{ value: "", kind: "unknown" } as const],
+    [null],
+  ])("treats the input as a complete name when the surname is unknown", currentSurname => {
+    expect(composeCandidateFullName({
+      currentSurname,
+      candidateInput: " 顾清禾 ",
+    })).toEqual({
+      status: "ready",
+      fullName: "顾清禾",
+      inputKind: "full-name",
+      fixedSurname: null,
+    });
+  });
+
+  it.each(["", "   "])("rejects empty candidate input %j", candidateInput => {
+    expect(composeCandidateFullName({
+      currentSurname: { value: "林", kind: "single" },
+      candidateInput,
+    })).toEqual({
+      status: "invalid",
+      reason: "empty-input",
+    });
+  });
+});
+
+describe("latest candidate request", () => {
+  it("applies only the latest candidate result", async () => {
+    const guard = createLatestNameRequestGuard();
+    const first = deferred<string>();
+    const second = deferred<string>();
+    const applied: string[] = [];
+
+    const firstRun = runLatestNameRequest({
+      guard,
+      load: () => first.promise,
+      apply: value => applied.push(value),
+    });
+    const secondRun = runLatestNameRequest({
+      guard,
+      load: () => second.promise,
+      apply: value => applied.push(value),
+    });
+
+    second.resolve("K2-new-blockers");
+    first.resolve("K1-old-blockers");
+
+    await expect(secondRun).resolves.toBe("applied");
+    await expect(firstRun).resolves.toBe("stale");
+    expect(applied).toEqual(["K2-new-blockers"]);
+  });
+
+  it("invalidates an in-flight request before another load starts", async () => {
+    const guard = createLatestNameRequestGuard();
+    const first = deferred<string>();
+    const applied: string[] = [];
+    const firstRun = runLatestNameRequest({
+      guard,
+      load: () => first.promise,
+      apply: value => applied.push(value),
+    });
+
+    guard.invalidate();
+    first.resolve("stale");
+
+    await expect(firstRun).resolves.toBe("stale");
+    expect(applied).toEqual([]);
+  });
+});
+
+describe("candidate analysis request", () => {
+  it("projects only candidate confirmations and exact chart/report references", () => {
+    let candidateState = createNameAnalysisViewState("林清禾");
+    candidateState = nameAnalysisViewReducer(candidateState, {
+      type: "set-mode",
+      mode: "traditional-reference",
+    });
+    candidateState = nameAnalysisViewReducer(candidateState, {
+      type: "select-traditional",
+      characterIndex: 1,
+      glyph: "清",
+    });
+    candidateState = nameAnalysisViewReducer(candidateState, {
+      type: "select-reading",
+      characterIndex: 1,
+      reading: "qīng",
+    });
+    candidateState = nameAnalysisViewReducer(candidateState, {
+      type: "answer-reality",
+      dimension: "hearing",
+      answer: "both",
+    });
+
+    const request = buildCandidateAnalysisRequest({
+      viewState: candidateState,
+      chart,
+      professionalReport,
+    });
+
+    expect(request).toEqual({
+      mode: "candidate",
+      traditionalSelections: candidateState.traditionalSelections,
+      actualReadings: candidateState.actualReadings,
+      chart,
+      professionalReport,
+    });
+    expect(request.chart).toBe(chart);
+    expect(request.professionalReport).toBe(professionalReport);
+    expect(request).not.toHaveProperty("realityTest");
+    expect(request).not.toHaveProperty("usageRisks");
+  });
+
+  it("resets only candidate confirmations when the candidate full name changes", () => {
+    let currentState = createNameAnalysisViewState("林知夏");
+    currentState = nameAnalysisViewReducer(currentState, {
+      type: "select-reading",
+      characterIndex: 1,
+      reading: "zhī",
+    });
+    let candidateState = createNameAnalysisViewState("林清禾");
+    candidateState = nameAnalysisViewReducer(candidateState, {
+      type: "select-traditional",
+      characterIndex: 1,
+      glyph: "清",
+    });
+    candidateState = nameAnalysisViewReducer(candidateState, {
+      type: "select-reading",
+      characterIndex: 1,
+      reading: "qīng",
+    });
+    const currentSnapshot = structuredClone(currentState);
+
+    candidateState = nameAnalysisViewReducer(candidateState, {
+      type: "reset-name",
+      name: "林明川",
+    });
+
+    expect(candidateState).toMatchObject({
+      name: "林明川",
+      traditionalSelections: {},
+      actualReadings: {},
+    });
+    expect(currentState).toEqual(currentSnapshot);
+  });
+});
+
+describe("candidate comparison", () => {
+  const currentCoverage: NameElementCoverage = {
+    status: "complete",
+    visibleChartElements: ["木", "火", "土"],
+    nameElements: ["水"],
+    coveredElements: ["木", "火", "土", "水"],
+    missingElements: ["金"],
+    coveredCount: 4,
+    score: 80,
+    chartAlreadyComplete: false,
+    notice: "只看五行覆盖，不是姓名好坏",
+    scopeNotice: NAME_COVERAGE_SCOPE_NOTICE,
+  };
+  const candidateCoverage: NameElementCoverage = {
+    status: "complete",
+    visibleChartElements: ["木", "火", "土"],
+    nameElements: ["金", "水"],
+    coveredElements: ["木", "火", "土", "金", "水"],
+    missingElements: [],
+    coveredCount: 5,
+    score: 100,
+    chartAlreadyComplete: false,
+    notice: "只看五行覆盖，不是姓名好坏",
+    scopeNotice: NAME_COVERAGE_SCOPE_NOTICE,
+  };
+
+  it("labels current and candidate names without declaring a winner", () => {
+    const html = renderToStaticMarkup(createElement(NameCandidateComparison, {
+      current: {
+        label: "当前姓名",
+        name: "林知夏",
+        coverage: currentCoverage,
+        recommendationsByElement: {
+          金: getReviewedNameElementRecommendations("金"),
+        },
+      },
+      candidate: {
+        label: "候选姓名",
+        name: "林清禾",
+        coverage: candidateCoverage,
+        recommendationsByElement: {},
+      },
+      fixedSurname: "林",
+    }));
+
+    expect(html).toContain("保留姓氏：林");
+    expect(html).toContain('aria-label="候选名（不含姓氏）"');
+    expect(html).toContain("候选姓名：林清禾");
+    expect(html).toContain("当前姓名：林知夏");
+    expect(html).toContain("覆盖 4/5 项");
+    expect(html).toContain("80/100");
+    expect(html).toContain("还差：金");
+    expect(html).toContain("覆盖 5/5 项");
+    expect(html).toContain("100/100");
+    expect(html).not.toMatch(
+      /现实使用实测分|专业来源|本章依据|专业依据|使用边界|更好|胜出|吉名|改运/,
+    );
+  });
+
+  it.each([null, ""])("asks for a complete candidate name without a reviewed surname", fixedSurname => {
+    const html = renderToStaticMarkup(createElement(NameCandidateComparison, {
+      current: {
+        label: "当前姓名",
+        name: "",
+        coverage: currentCoverage,
+        recommendationsByElement: {},
+      },
+      candidate: null,
+      fixedSurname,
+    }));
+
+    expect(html).toContain('aria-label="候选完整姓名"');
+    expect(html).not.toContain("保留姓氏：");
+  });
+
+  it("suppresses a stale candidate card while the next candidate is loading", () => {
+    const html = renderToStaticMarkup(createElement(NameCandidateComparison, {
+      current: {
+        label: "当前姓名",
+        name: "林知夏",
+        coverage: currentCoverage,
+        recommendationsByElement: {},
+      },
+      candidate: {
+        label: "候选姓名",
+        name: "林旧名",
+        coverage: pendingCoverage,
+        recommendationsByElement: {},
+      },
+      fixedSurname: "林",
+      candidateFullName: "林新名",
+      candidateStatus: "loading",
+    }));
+
+    expect(html).toContain("正在更新候选姓名：林新名");
+    expect(html).not.toContain("林旧名");
+  });
+
+  it("renders a real unresolved candidate as pending without a candidate score", async () => {
+    const analysis = await loadNameAnalysisForView("解珍", {
+      mode: "candidate",
+      chart,
+      professionalReport,
+    });
+    if (!analysis) throw new Error("解珍 candidate fixture is required");
+    const coverage = calculateNameElementCoverage({
+      chart,
+      characters: toNameElementCoverageCharacters(analysis.characters),
+    });
+    const html = renderToStaticMarkup(createElement(NameCandidateComparison, {
+      current: {
+        label: "当前姓名",
+        name: "宋江",
+        coverage: pendingCoverage,
+        recommendationsByElement: {},
+      },
+      candidate: {
+        label: "候选姓名",
+        name: "解珍",
+        coverage,
+        recommendationsByElement: {},
+      },
+      fixedSurname: null,
+      candidateStatus: "ready",
+    }));
+    const candidateHtml = html.match(
+      /<section data-name-role="candidate">([\s\S]*?)<\/section>/,
+    )?.[1] ?? "";
+
+    expect(coverage.status).toBe("pending");
+    expect(candidateHtml).toContain("资料待确认，暂不评分");
+    expect(candidateHtml).not.toContain("/100");
+  });
+});
+
+describe("candidate production wiring and persistence boundary", () => {
+  it("uses the candidate helpers and invalidates before composing a new request", () => {
+    const source = readFileSync(
+      new URL("../../components/yi/NameSection.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(source).toContain("useRef(createLatestNameRequestGuard())");
+    expect(source).toContain("buildCandidateAnalysisRequest({");
+    expect(source).toContain("runLatestNameRequest({");
+    expect(source).toContain("<NameCandidateComparison");
+    expect(source.indexOf("candidateGuard.current.invalidate()")).toBeLessThan(
+      source.indexOf("composeCandidateFullName({"),
+    );
+  });
+
+  it("does not write candidate state outside the component session", () => {
+    const source = readFileSync(
+      new URL("../../components/yi/NameSection.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(source).not.toMatch(
+      /localStorage|sessionStorage|yi-life-profile-v1|URLSearchParams/,
+    );
   });
 });
