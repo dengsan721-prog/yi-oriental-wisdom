@@ -11,7 +11,8 @@ import { SourceNote } from "../../components/yi/SourceNote";
 import { calculateCompatibility, classifyBranchRelation } from "../../lib/yi/compatibility";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { buildFortuneTimeline } from "../../lib/yi/fortune";
-import { buildInterpretations, buildProfessionalOverview } from "../../lib/yi/interpretation";
+import { buildInterpretations } from "../../lib/yi/interpretation";
+import { buildLifeScrollNarrative } from "../../lib/yi/life-scroll";
 import { buildProfessionalReport } from "../../lib/yi/report-model";
 import { getAllSources, YI_RULE_SOURCES } from "../../lib/yi/sources";
 import { branches, branchElements } from "../../lib/yi/stems-branches";
@@ -134,9 +135,11 @@ describe("2. portrait semantic mappings", () => {
   it("uses distinct current relationship-pressure and rhythm-decision content", () => {
     const chart = calculateFourPillars(exactBirth);
     const items = buildInterpretations(chart);
+    const report = buildProfessionalReport(chart, exactBirth);
+    const narrative = buildLifeScrollNarrative(chart, report, items);
     const html = renderToStaticMarkup(createElement(PortraitSection, {
       chart,
-      overview: buildProfessionalOverview(chart),
+      report,
       items,
     }));
     const pressure = items.find((item) => item.id === "relationship-trigger");
@@ -144,20 +147,34 @@ describe("2. portrait semantic mappings", () => {
     expect(pressure).toBeTruthy();
     expect(mainLine).toBeTruthy();
     expect(pressure?.professionalTitle).not.toBe(mainLine?.professionalTitle);
-    expect(html).toContain(`压力下的反应 · ${pressure?.professionalTitle}`);
-    expect(html).toContain(`当前人生主线 · ${mainLine?.professionalTitle}`);
-    expect(html).toContain("本章依据与使用边界");
-    expect(html).toContain("外部来源");
+    expect(narrative.relationshipArc).not.toEqual(narrative.turningPointArc);
+    for (const paragraph of [
+      ...narrative.relationshipArc,
+      ...narrative.turningPointArc,
+    ]) {
+      expect(html).toContain(paragraph);
+    }
+    expect(html).toContain("婚姻与关系线");
+    expect(html).toContain("命运转折线");
+    expect(html).not.toContain("本章依据与使用边界");
+    expect(html).not.toContain("外部来源");
   });
 
-  it("fails loudly when a required portrait item is absent", () => {
+  it("keeps a complete story when relationship material is absent", () => {
     const chart = calculateFourPillars(exactBirth);
-    const items = buildInterpretations(chart).filter((item) => item.id !== "relationship-trigger");
-    expect(() => renderToStaticMarkup(createElement(PortraitSection, {
+    const report = buildProfessionalReport(chart, exactBirth);
+    const items = buildInterpretations(chart).filter((item) => item.domain !== "relationship");
+    const narrative = buildLifeScrollNarrative(chart, report, items);
+    const html = renderToStaticMarkup(createElement(PortraitSection, {
       chart,
-      overview: buildProfessionalOverview(chart),
+      report,
       items,
-    }))).toThrow(/relationship-trigger/);
+    }));
+
+    expect(narrative.uncertaintyFlags).toContain("missing-domain:relationship");
+    expect(html).toContain("婚姻与关系线");
+    expect(html).toContain(narrative.relationshipArc[0]);
+    expect(html).not.toContain("relationship-trigger");
   });
 });
 
