@@ -7,6 +7,7 @@ import {
   type LifeScrollNarrative,
 } from "../../lib/yi/life-scroll";
 import { buildProfessionalReport } from "../../lib/yi/report-model";
+import { selectStableStoryFacts } from "../../lib/yi/stable-story-facts";
 import type {
   BirthInput,
   InterpretationItem,
@@ -19,6 +20,15 @@ const exactBirth: BirthInput = {
   time: "09:30",
   location: "北京市",
   gender: "female",
+  timeConfidence: "exact",
+};
+
+const alternateBirth: BirthInput = {
+  name: "顾临川",
+  date: "1992-11-03",
+  time: "18:20",
+  location: "北京市",
+  gender: "male",
   timeConfidence: "exact",
 };
 
@@ -73,19 +83,40 @@ function visibleParts(narrative: LifeScrollNarrative): string[] {
   ];
 }
 
+function mainArcParts(narrative: LifeScrollNarrative): string[] {
+  return [
+    ...narrative.openingScene,
+    ...narrative.careerArc,
+    ...narrative.relationshipArc,
+    ...narrative.turningPointArc,
+    ...narrative.matureArc,
+  ];
+}
+
+function normalizedSentences(values: readonly string[]): string[] {
+  return values
+    .join("")
+    .split(/[。！？]/u)
+    .map(value => value.normalize("NFC").replace(/\s+/g, ""))
+    .filter(Boolean);
+}
+
 function assertCompleteNarrative(narrative: LifeScrollNarrative): void {
   expect(countHan(narrative.oneLineTheme)).toBeGreaterThanOrEqual(18);
   expect(countHan(narrative.oneLineTheme)).toBeLessThanOrEqual(36);
-  for (const arc of [
-    narrative.openingScene,
-    narrative.careerArc,
-    narrative.relationshipArc,
-    narrative.turningPointArc,
-    narrative.matureArc,
-  ]) {
+  for (const [name, arc] of [
+    ["opening", narrative.openingScene],
+    ["career", narrative.careerArc],
+    ["relationship", narrative.relationshipArc],
+    ["turning", narrative.turningPointArc],
+    ["mature", narrative.matureArc],
+  ] as const) {
     expect(arc.length).toBeGreaterThanOrEqual(2);
     expect(arc.length).toBeLessThanOrEqual(4);
-    expect(arc.every(paragraph => countHan(paragraph) >= 45)).toBe(true);
+    for (const paragraph of arc) {
+      expect(countHan(paragraph), `${name}: ${paragraph}`)
+        .toBeGreaterThanOrEqual(45);
+    }
   }
   expect(narrative.closingLine.trim()).not.toBe("");
   expect(narrative.actionNow.trim()).not.toBe("");
@@ -115,6 +146,101 @@ describe("deterministic life scroll", () => {
     expect(Object.isFrozen(narrative.daoNotes)).toBe(true);
   });
 
+  it("selects core material deterministically and carries one causal thread", () => {
+    const { chart, report, items } = fixture();
+    const narrative = buildLifeScrollNarrative(chart, report, items);
+    const reversed = buildLifeScrollNarrative(
+      chart,
+      report,
+      [...items].reverse(),
+    );
+    const beats = Object.fromEntries(
+      narrative.internalStoryBeats.map(beat => [beat.id, beat]),
+    );
+
+    expect(reversed).toEqual(narrative);
+    expect(narrative.internalEvidenceIds).toEqual(
+      expect.arrayContaining([
+        "career-role",
+        "relationship-day-branch",
+        "rhythm-climate",
+      ]),
+    );
+    expect(beats.opening.internalEvidenceId)
+      .toBe(beats.cost.internalEvidenceId);
+    expect(beats["low-point"].internalEvidenceId)
+      .toBe(beats.choice.internalEvidenceId);
+    expect(beats.turn.internalEvidenceId)
+      .toBe(beats["mature-method"].internalEvidenceId);
+
+    expect(beats.situation.text).toMatch(/处境|眼前|站在/u);
+    expect(beats.desire.text).toMatch(/想守住|真正想要|希望/u);
+    expect(beats.opening.text).toMatch(/为此|于是|打开入口/u);
+    expect(beats.cost.text).toMatch(/同一种优势|过度|可是/u);
+    expect(beats["low-point"].text).toMatch(/低点|于是|最终/u);
+    expect(beats.choice.text).toMatch(/改变|转折|决定/u);
+    expect(beats.turn.text).toMatch(/随后|开始出现|可见变化/u);
+    expect(beats["mature-method"].text).toMatch(/此后|成熟|长期/u);
+
+    const mainText = mainArcParts(narrative).join("");
+    for (const storyBeat of narrative.internalStoryBeats) {
+      expect(mainText.split(storyBeat.text)).toHaveLength(2);
+    }
+    const beatHan = countHan(
+      narrative.internalStoryBeats.map(beat => beat.text).join(""),
+    );
+    expect(beatHan / countHan(mainText)).toBeGreaterThan(0.55);
+  });
+
+  it("responds substantively to two different stable charts", () => {
+    const primary = fixture(exactBirth);
+    const alternate = fixture(alternateBirth);
+    const primaryFacts = selectStableStoryFacts(
+      primary.chart,
+      primary.report,
+      primary.items,
+    );
+    const alternateFacts = selectStableStoryFacts(
+      alternate.chart,
+      alternate.report,
+      alternate.items,
+    );
+    const primaryNarrative = buildLifeScrollNarrative(
+      primary.chart,
+      primary.report,
+      primary.items,
+    );
+    const alternateNarrative = buildLifeScrollNarrative(
+      alternate.chart,
+      alternate.report,
+      alternate.items,
+    );
+
+    expect({
+      dayMasterElement: primaryFacts.dayMasterElement,
+      structureBalance: primaryFacts.structureBalance,
+      relationTypes: primaryFacts.relations.map(relation => relation.type),
+      currentLesson: primaryFacts.currentLesson,
+    }).not.toEqual({
+      dayMasterElement: alternateFacts.dayMasterElement,
+      structureBalance: alternateFacts.structureBalance,
+      relationTypes: alternateFacts.relations.map(relation => relation.type),
+      currentLesson: alternateFacts.currentLesson,
+    });
+    expect(primaryNarrative.oneLineTheme)
+      .not.toBe(alternateNarrative.oneLineTheme);
+    for (const key of [
+      "openingScene",
+      "careerArc",
+      "relationshipArc",
+      "turningPointArc",
+      "matureArc",
+    ] as const) {
+      expect(primaryNarrative[key].join(""))
+        .not.toBe(alternateNarrative[key].join(""));
+    }
+  });
+
   it("keeps every Dao note complete, distinct, and inside the reviewed length gates", () => {
     const { chart, report, items } = fixture();
     const narrative = buildLifeScrollNarrative(chart, report, items);
@@ -142,7 +268,22 @@ describe("deterministic life scroll", () => {
         sceneGuidance,
       ]).size).toBe(3);
       expect(storyConnection).not.toContain("证明");
+      expect(
+        `${traditionalMeaning}${storyConnection}${sceneGuidance}`,
+      ).toContain("不是命盘证据");
     }
+    expect(new Set(narrative.daoNotes.map(note =>
+      note.plainCommentary.storyConnection)).size)
+      .toBe(narrative.daoNotes.length);
+    expect(new Set(narrative.daoNotes.map(note =>
+      note.plainCommentary.sceneGuidance)).size)
+      .toBe(narrative.daoNotes.length);
+    expect(narrative.daoNotes.find(note =>
+      note.internalSourceId === "dao-33-self"
+    )?.plainCommentary.storyConnection).toMatch(/自知|看清自己/u);
+    expect(narrative.daoNotes.find(note =>
+      note.internalSourceId === "dao-64-road"
+    )?.plainCommentary.storyConnection).toMatch(/起步|第一步|接续/u);
   });
 
   it("replaces the chapter-66 null commentary with reviewed stable fallbacks", () => {
@@ -196,12 +337,32 @@ describe("deterministic life scroll", () => {
     const narrative = buildLifeScrollNarrative(chart, report, selected);
 
     assertCompleteNarrative(narrative);
-    const expectedMissing = removed.length === 0
+    const expectedMissing: Array<"career" | "relationship" | "rhythm"> =
+      removed.length === 0
       ? ["career", "relationship", "rhythm"]
-      : removed;
+      : [...removed];
+    const domainCopy = {
+      career:
+        "事业这一段没有足够稳定材料，因此只给通用观察，不当成个人结论。",
+      relationship:
+        "关系这一段没有足够稳定材料，因此只给通用观察，不当成个人结论。",
+      rhythm:
+        "节奏这一段没有足够稳定材料，因此只给通用观察，不当成个人结论。",
+    };
+    const domainArc = {
+      career: narrative.careerArc,
+      relationship: narrative.relationshipArc,
+      rhythm: narrative.matureArc,
+    };
     for (const domain of expectedMissing) {
       expect(narrative.uncertaintyFlags)
         .toContain(`missing-domain:${domain}`);
+      expect(domainArc[domain].join("")).toContain(domainCopy[domain]);
+    }
+    if (removed.length === 0) {
+      expect(narrative.oneLineTheme).toContain("稳定材料不足");
+      expect(mainArcParts(narrative).join(""))
+        .not.toMatch(/你就是|你天生|你必然/u);
     }
   });
 
@@ -290,7 +451,7 @@ describe("deterministic life scroll", () => {
     ).join("");
 
     expect(visible).not.toMatch(
-      /四柱|日主|十神|月令|旺衰|藏干|纳音|十二长生|干支关系/,
+      /四柱|日主|十神|月令|旺衰|藏干|纳音|十二长生|干支关系|命理/,
     );
     expect(visible).not.toMatch(
       /专业依据|本章来源|可靠级|证据等级|计算规则|规则 ID|数据来源清单/,
@@ -298,5 +459,38 @@ describe("deterministic life scroll", () => {
     expect(visible).not.toMatch(
       /你(?:已经|曾经|注定|必然|一定会).{0,16}(?:成功|离职|结婚|离婚|患病|发财)/,
     );
+  });
+
+  it("uses complete, non-repetitive public sentences without clipped fragments", () => {
+    const { chart, report, items } = fixture();
+    const narrative = buildLifeScrollNarrative(chart, report, items);
+    const sentences = [
+      ...mainArcParts(narrative),
+      narrative.closingLine,
+      narrative.actionNow,
+      narrative.animalInterlude.introduction,
+      narrative.animalInterlude.matchingScene,
+      narrative.animalInterlude.difference,
+      narrative.animalInterlude.takeaway,
+      narrative.historicalInterlude.introduction,
+      narrative.historicalInterlude.matchingScene,
+      narrative.historicalInterlude.difference,
+      narrative.historicalInterlude.takeaway,
+      ...narrative.daoNotes.flatMap(note => [
+        note.plainCommentary.traditionalMeaning,
+        note.plainCommentary.storyConnection,
+        note.plainCommentary.sceneGuidance,
+      ]),
+    ];
+
+    for (const sentence of sentences) {
+      expect(sentence.trim()).toMatch(/[。！？]$/u);
+      expect(sentence).not.toMatch(
+        /而；|和，再|你里|环境变化，找(?:。|；)|若急于显示能力而/u,
+      );
+    }
+    const normalized = normalizedSentences(mainArcParts(narrative));
+    expect(new Set(normalized).size / normalized.length)
+      .toBeGreaterThanOrEqual(0.9);
   });
 });

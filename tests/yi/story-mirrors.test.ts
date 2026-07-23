@@ -29,6 +29,7 @@ describe("reviewed story-mirror projection", () => {
       const mirror = projectStoryMirror(candidate);
       expect(mirror.internalCandidateId).toBe(candidate.id);
       expect(mirror.name).toBe(candidate.name);
+      expect(mirror.matchingScene).toContain(candidate.name);
       expect(mirror.introduction.length, `${candidate.id}:introduction`)
         .toBeGreaterThanOrEqual(24);
       expect(mirror.matchingScene, `${candidate.id}:scene`)
@@ -43,6 +44,32 @@ describe("reviewed story-mirror projection", () => {
         /来源|可靠级|证据等级|匹配分|显式映射/,
       );
       expect(Object.isFrozen(mirror)).toBe(true);
+    }
+  });
+
+  it("gives all 30 candidates distinct person-action-consequence scenes", () => {
+    const projected = [...ANIMAL_MIRRORS, ...HISTORICAL_MIRRORS]
+      .map(projectStoryMirror);
+    const normalizedScenes = projected.map(mirror =>
+      mirror.matchingScene.normalize("NFC").replace(/\s+/g, "")
+    );
+    const openings = projected.map(mirror =>
+      mirror.matchingScene.split("时，")[0]
+    );
+    const consequences = projected.map(mirror =>
+      mirror.matchingScene.split("；").at(-1)
+    );
+
+    expect(new Set(normalizedScenes).size).toBe(30);
+    expect(new Set(openings).size).toBeGreaterThanOrEqual(15);
+    expect(new Set(consequences).size).toBeGreaterThanOrEqual(15);
+    for (const mirror of projected) {
+      expect(mirror.matchingScene).toMatch(
+        /当.+时，.+；(?:这样|因此|于是|结果).+。$/u,
+      );
+      expect(mirror.matchingScene).not.toMatch(
+        /而；|和，再|你里|环境变化，找(?:。|；)|若急于显示能力而/u,
+      );
     }
   });
 
