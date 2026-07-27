@@ -56,7 +56,8 @@ describe("birth intake state", () => {
     const html = renderToStaticMarkup(createElement(BirthIntake, { onSubmit: () => {} }));
 
     expect(html).toContain("请选择出生日期");
-    expect(html).toContain("请选择时辰，或选择不知道时辰");
+    expect(html).not.toContain('class="summary-control time-summary"');
+    expect(html).not.toContain("→");
     expect(html).toMatch(/<button[^>]+type="submit"[^>]+disabled/);
     expect(html).toContain("仅支持出生地当时采用中国标准时间（UTC+8）的钟表时间");
     expect(html).toContain("出生地址只作报告记录");

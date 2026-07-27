@@ -42,9 +42,8 @@ function renderResult(birth: BirthInput = exactBirth, options: {
 }
 
 describe("result navigation", () => {
-  it("introduces the report owner before the independent document title", () => {
+  it("puts the report owner directly into the panoramic report title", () => {
     const { html } = renderResult({ ...exactBirth, name: "林知夏" });
-    const owner = html.indexOf('data-testid="report-owner-ritual"');
     const reportTitle = html.indexOf('data-testid="report-document-title"');
     const facts = html.indexOf('data-testid="adopted-birth-facts"');
     const actions = html.indexOf('data-testid="report-save-actions"');
@@ -53,27 +52,28 @@ describe("result navigation", () => {
       html.indexOf("</header>"),
     );
 
-    expect(html).toContain("本卷主人");
-    expect(html).toContain('class="report-owner-name">林知夏<');
+    expect(html).toContain('data-testid="report-owner-ritual"');
     expect(html).toContain('data-testid="report-document-title"');
-    expect(html).toContain("<h1>个人命运全景报告</h1>");
+    expect(html).toContain("<h1>林知夏命运全景报告</h1>");
     expect(html).toContain('class="yi-brand-mark yi-brand-mark--compact"');
     expect(html).toContain('aria-label="命"');
     expect(html).toContain('data-code-point="U+547D"');
     expect(html).not.toContain("访客的人生报告");
+    expect(titleRegion).not.toContain("艺｜东方人生智慧");
+    expect(titleRegion).not.toContain("本卷主人");
     expect(titleRegion.match(/<h1>/g)).toHaveLength(1);
-    expect(owner).toBeGreaterThan(-1);
-    expect(reportTitle).toBeGreaterThan(owner);
+    expect(reportTitle).toBeGreaterThan(-1);
     expect(facts).toBeGreaterThan(reportTitle);
     expect(actions).toBeGreaterThan(facts);
   });
 
-  it("uses a clear fallback for an empty report owner and wraps long names", () => {
+  it("uses a clear fallback for an empty report owner and wraps long owner titles", () => {
     const empty = renderResult({ ...exactBirth, name: "" });
     const long = renderResult({ ...exactBirth, name: "欧阳司徒上官诸葛林知夏" });
 
-    expect(empty.html).toContain('class="report-owner-name">未填写姓名<');
-    expect(long.html).toContain('class="report-owner-name">欧阳司徒上官诸葛林知夏<');
+    expect(empty.html).toContain("<h1>个人命运全景报告</h1>");
+    expect(empty.html).not.toContain("未填写姓名命运全景报告");
+    expect(long.html).toContain("<h1>欧阳司徒上官诸葛林知夏命运全景报告</h1>");
   });
 
   it("keeps neutral evidence neutral in the owner seal", () => {
@@ -112,14 +112,17 @@ describe("result navigation", () => {
     expect(html).not.toContain("保存到本机");
   });
 
-  it("keeps the result actions tappable and free of horizontal overflow on narrow screens", () => {
+  it("keeps the result actions in a bottom-safe dock instead of the mobile reading lead", () => {
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
     expect(css).toMatch(/\.result-head-actions\{[^}]*display:flex[^}]*justify-content:flex-end[^}]*gap:8px/);
     expect(css).toMatch(/\.result-head-actions button\{[^}]*min-width:0[^}]*min-height:44px/);
-    expect(css).toMatch(/@media\(max-width:520px\)\{\.result-head>\.result-head-actions\{[^}]*display:grid[^}]*grid-template-columns:1fr/);
-    expect(css).toMatch(/@media\(max-width:520px\)\{\.result-head>\.result-head-actions\{[^}]*\}\.result-head-actions button\{[^}]*width:100%/);
-    expect(css).toMatch(/\.report-owner-name\{[^}]*overflow-wrap:anywhere/);
+    expect(css).toContain(".result-shell{padding-bottom:calc(112px + env(safe-area-inset-bottom))}");
+    expect(css).toContain(".result-head>.result-head-actions{position:fixed");
+    expect(css).toContain("bottom:calc(12px + env(safe-area-inset-bottom))");
+    expect(css).toContain("grid-template-columns:minmax(0,1fr) minmax(112px,.72fr)");
+    expect(css).toContain(".result-head-actions button{width:100%");
+    expect(css).toMatch(/\.report-document-title h1\{[^}]*overflow-wrap:anywhere/);
     expect(css).toMatch(/\.report-title-region\{[^}]*min-width:0/);
     expect(css).not.toMatch(/\.mini-mark\b|\.result-head-main\b/);
   });

@@ -200,6 +200,6 @@ describe("light five-element CSS contract", () => {
     expect(rule("main[data-element] input:focus,main[data-element] select:focus")).not.toMatch(/outline\s*:\s*0/);
     expect(rule("main[data-element] input:focus-visible,main[data-element] select:focus-visible")).toContain("outline:3px solid var(--yi-focus)");
     expect(rule(".primary-button,.secondary-button,.primary,.report-nav button,.result-tabs button,.life-nav button")).toContain("min-height:44px");
-    expect(rule(".report-owner-name")).toContain("overflow-wrap:anywhere");
+    expect(rule(".report-document-title h1")).toContain("overflow-wrap:anywhere");
   });
 });
