@@ -15,6 +15,7 @@ export function LifeHome({ profile, onChange, onViewReport, onClear }: {
   const [section, setSection] = useState<HomeSection>("overview");
   const [storageError, setStorageError] = useState("");
   const home = buildLifeHome(profile);
+  const completedActions = profile.actions.filter(action => action.done).length;
 
   function update(next: LifeProfile) {
     const result = onChange({ ...next, updatedAt: new Date().toISOString() });
@@ -51,12 +52,17 @@ export function LifeHome({ profile, onChange, onViewReport, onClear }: {
     <div className="life-content">
       {section === "overview" && <>
         <section className="life-hero"><small>当前阶段</small><h1>{home.currentStage}</h1><p>下一步：{home.nextAction}</p></section>
-        <div className="life-grid">
-          <button onClick={() => setSection("annual")}><small>{home.annualEntry?.year ?? "今年"}</small><b>{home.annualEntry?.theme ?? "查看年度复盘计划"}</b><span>年度计划入口 →</span></button>
-          <button onClick={() => setSection("monthly")}><small>本月行动计划</small><b>{home.monthlyTheme}</b><span>月度计划入口 →</span></button>
-          <button onClick={() => setSection("events")}><small>{home.events.length} 个记录</small><b>重要事件</b><span>事件入口 →</span></button>
-          <button onClick={() => setSection("relations")}><small>{home.relations.length} 个记录</small><b>关系观察</b><span>关系入口 →</span></button>
+        <div className="life-record-grid" aria-label="核心记录入口">
+          <button onClick={() => setSection("events")}><small>{home.events.length} 个事件已记录</small><b>记录一件事</b><span>把今天发生的变化留成一条线索 →</span></button>
+          <button onClick={() => setSection("relations")}><small>{home.relations.length} 个关系已记录</small><b>记录一个关系</b><span>写下事实、感受和下一次可观察动作 →</span></button>
         </div>
+        <section className="life-dashboard" aria-label="成就看板">
+          <header><small>成就看板</small><h2>已完成 {completedActions}/{profile.actions.length}</h2><p>先积累自己的生活记录，年度和月度只作为复盘入口。</p></header>
+          <div className="life-grid">
+            <button onClick={() => setSection("annual")}><small>{home.annualEntry?.year ?? "今年"}</small><b>{home.annualEntry?.theme ?? "查看年度复盘计划"}</b><span>年度计划入口 →</span></button>
+            <button onClick={() => setSection("monthly")}><small>本月行动计划</small><b>{home.monthlyTheme}</b><span>月度计划入口 →</span></button>
+          </div>
+        </section>
         <section className="life-actions"><h2>行动清单</h2>{home.actions.map(action => <label key={action.id}><input type="checkbox" checked={action.done} onChange={() => update(lifeProfileReducer(profile, { type: "toggle-action", id: action.id }))} />{action.text}</label>)}</section>
       </>}
       {section === "annual" && <section className="life-panel"><header><small>年度复盘与计划模板</small><h1>看清阶段，不替你决定</h1><p>以下为固定行动模板，不是流年或运势推断。</p></header>{profile.annualMap.map(entry => <article key={entry.year}><b>{entry.year} · {entry.theme}</b><p>{entry.focus}</p></article>)}</section>}
