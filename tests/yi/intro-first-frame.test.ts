@@ -20,6 +20,7 @@ describe("public intro first frame", () => {
     expect(html).not.toContain("建立出生坐标");
     expect(html).not.toContain("请确认出生信息");
     expect(html).not.toContain("正在读取本机档案");
+    expect(html).not.toContain("→");
     expect(html).not.toMatch(/<(?:p|small)\b/);
   });
 
@@ -54,6 +55,15 @@ describe("public intro first frame", () => {
     expect(reducedMotion).not.toMatch(/rotate|flash/i);
     expect(css).not.toContain("yi-breathe");
     expect(css).not.toContain(".yi-breath-ring");
+  });
+
+  it("uses a lishu headline stack for the opening promise", async () => {
+    const css = await readFile(new URL("app/globals.css", siteRoot), "utf8");
+    const ritualTitleRule = css.match(/\.ritual h1\{[^}]*\}/)?.[0] ?? "";
+
+    expect(ritualTitleRule).toContain('"LiSu"');
+    expect(ritualTitleRule).toContain('"隶书"');
+    expect(ritualTitleRule).not.toContain('"Songti SC"');
   });
 
   it("ships byte-identical audited U+547D lishu vectors without a device-font dependency", async () => {

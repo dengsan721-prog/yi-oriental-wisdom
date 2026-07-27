@@ -22,6 +22,12 @@ function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
+test("GitHub build uses the current product title", async () => {
+  const html = await readFile(new URL("../../docs/index.html", import.meta.url), "utf8");
+  assert.match(html, /<title>命\|东方人生智慧<\/title>/);
+  assert.doesNotMatch(html, /<title>艺｜东方人生智慧<\/title>/);
+});
+
 test("GitHub build is the full bundled React app", async () => {
   const html = await readFile(new URL("../../docs/index.html", import.meta.url), "utf8");
   const assets = await readdir(new URL("../../docs/assets/", import.meta.url));

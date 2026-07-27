@@ -18,7 +18,7 @@ function RitualIntro({ restoring, onStart }: { restoring: boolean; onStart: () =
   return <section className="ritual" aria-busy={restoring}>
     <div className="ritual-bg" /><YiBrandMark variant="hero" />
     <h1 className="ritual-lines"><span>看见命局</span><span>读懂时运</span></h1>
-    <button className="primary" disabled={restoring} onClick={onStart}>开始排盘 <span>→</span></button>
+    <button className="primary" disabled={restoring} onClick={onStart}>开始排盘</button>
   </section>;
 }
 

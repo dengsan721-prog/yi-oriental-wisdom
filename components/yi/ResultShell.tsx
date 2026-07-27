@@ -86,7 +86,8 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
   const saveTriggerRef = useRef<HTMLButtonElement>(null);
   const availableSections = getAvailableSections(true);
-  const displayName = name.trim() || "未填写姓名";
+  const ownerName = name.trim();
+  const reportTitle = ownerName ? `${ownerName}命运全景报告` : "个人命运全景报告";
   const ownerSeal = themeElement === "neutral" ? "待定命印" : `${themeElement}命印`;
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollTop(scrollPositions, activeSection) }));
@@ -107,15 +108,10 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
       <header className="report-title-region" data-testid="report-title-region">
         <div className="report-owner-ritual" data-testid="report-owner-ritual">
           <YiBrandMark variant="compact" />
-          <div className="report-owner-lockup">
-            <span className="report-owner-kicker">本卷主人</span>
-            <strong className="report-owner-name">{displayName}</strong>
-            <span className="report-owner-seal">{ownerSeal}</span>
-          </div>
+          <span className="report-owner-seal">{ownerSeal}</span>
         </div>
         <div className="report-document-title" data-testid="report-document-title">
-          <small>艺｜东方人生智慧</small>
-          <h1>个人命运全景报告</h1>
+          <h1>{reportTitle}</h1>
         </div>
       </header>
       <aside className="adopted-facts" data-testid="adopted-birth-facts" aria-label="本次采用出生事实"><b>本次采用</b><span>{report.birthFacts.solar}</span><span>{report.birthFacts.timeConfidence}</span><span>{report.birthFacts.location}</span><span>{report.birthFacts.timezone}</span>{report.birthFacts.timeConfidence === "时辰不详" && <small>已关闭：时柱、时柱派生判断与精确大运年份。</small>}</aside>

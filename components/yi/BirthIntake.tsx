@@ -198,10 +198,10 @@ export function BirthIntake({ onSubmit, heading = "建立出生坐标" }: { onSu
           <button ref={draft.timeMode === "earthly" ? timeTriggerRef : undefined} type="button" aria-pressed={confirmation.time && draft.timeMode === "earthly"} className={confirmation.time && draft.timeMode === "earthly" ? "active" : ""} onClick={(event) => chooseTimeMode("earthly", event.currentTarget)}>十二时辰</button>
           <button ref={draft.timeMode === "unknown" ? timeTriggerRef : undefined} type="button" aria-pressed={confirmation.time && draft.timeMode === "unknown"} className={confirmation.time && draft.timeMode === "unknown" ? "active" : ""} onClick={(event) => chooseTimeMode("unknown", event.currentTarget)}>不知道时辰</button>
         </div>
-        {!confirmation.time ? <section className="summary-control time-summary"><span>当前时辰</span><strong>请选择时辰，或选择不知道时辰</strong></section> : draft.timeMode !== "unknown" && <section className="summary-control time-summary"><span>{draft.timeMode === "exact" ? "当前时间" : "当前时辰"}</span><strong>{timeSummary}</strong><button type="button" onClick={(event) => chooseTimeMode(draft.timeMode, event.currentTarget)}>修改时辰</button></section>}
+        {confirmation.time && draft.timeMode !== "unknown" && <section className="summary-control time-summary"><span>{draft.timeMode === "exact" ? "当前时间" : "当前时辰"}</span><strong>{timeSummary}</strong><button type="button" onClick={(event) => chooseTimeMode(draft.timeMode, event.currentTarget)}>修改时辰</button></section>}
       </section>
       <p className="birth-boundary">当前仅支持出生地当时采用中国标准时间（UTC+8）的钟表时间；出生地址只作报告记录，暂不换算海外时区或真太阳时。</p>
-      <button className="primary submit" type="submit" disabled={!isReady}>生成命盘 <span>→</span></button>
+      <button className="primary submit" type="submit" disabled={!isReady}>生成命盘</button>
       {dateOpen && (
         <div className="picker-overlay" role="dialog" aria-modal="true" aria-labelledby="date-picker-title" ref={dialogRef} onKeyDown={(event) => {
           if (event.key === "Escape") { event.preventDefault(); cancelDatePicker(); return; }
