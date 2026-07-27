@@ -229,50 +229,140 @@ const interpretationOrder = new Map<string, number>(
   INTERPRETATION_IDS.map((id, index) => [id, index]),
 );
 
-const elementStoryStyle: Record<
+type ElementStoryStyle = Readonly<{
+  opening: string;
+  strength: string;
+  risk: string;
+  mature: string;
+  overviewScene: string;
+  overviewGuidance: string;
+  monthScene: string;
+  monthGuidance: string;
+  flowScene: string;
+  flowGuidance: string;
+}>;
+
+const elementStoryStyle: Readonly<Record<
   ElementName,
-  { opening: string; strength: string; risk: string; mature: string }
-> = {
+  ElementStoryStyle
+>> = {
   木: {
     opening: "先从混乱里搭出方向，再让做法逐步生长",
     strength: "愿意先立起骨架，并给后来的人留下可以继续推进的入口",
     risk: "方向一旦立住，容易晚一步听见条件已经改变",
     mature: "把坚持变成有复查点的长期建设",
+    overviewScene:
+      "接到需要从零启动的新任务时，你先把目标、限制与可用资源搭成一页骨架，再请同伴指出哪根支撑还不稳；第一版因此能够生长，也保留修订入口。",
+    overviewGuidance:
+      "本周挑一项刚起步的任务，画出主干、两条支线和停止条件；三天后只保留得到现实反馈的一枝。",
+    monthScene:
+      "项目条件变化时，你不急着推倒重来，而是标出受影响的枝节、需要修订的接口和仍然有效的主干；于是团队知道从哪里继续接手。",
+    monthGuidance:
+      "用两周记录三次条件变化，每次只修订一个接口，并比较返工是否下降、交接是否更顺。",
+    flowScene:
+      "跨部门协作卡住时，你先让一位同伴试跑最小的一步，再根据他接住了什么、卡在哪里，决定下一枝由谁继续；遗漏会在扩张前出现。",
+    flowGuidance:
+      "本周把一项熟练做法改成三步清单，交给同伴完成一次；只依据试跑记录决定增加、修剪还是停止。",
   },
   火: {
     opening: "先把重点照亮，让身边的人看见为何值得行动",
     strength: "能迅速聚拢注意力，把模糊问题转成大家愿意讨论的主题",
     risk: "亮度和速度同时上升时，容易让尚未准备好的人只感到压力",
     mature: "把热度变成可持续的节拍和清楚邀请",
+    overviewScene:
+      "讨论陷入散乱时，你先圈出最需要回答的一个问题，用一页画面说明为何重要，再把话筒交给现场；大家能复述重点，行动才真正开始。",
+    overviewGuidance:
+      "本周选一次十分钟表达，只保留一个主题、一个例子和一个请求；结束后记录听众实际复述了什么。",
+    monthScene:
+      "连续发言或推进后，你主动留出回应时间，让尚未准备好的人提出疑问；热度因此没有压过理解，方案也能在现场补齐盲点。",
+    monthGuidance:
+      "用两周比较一次只顾讲完与一次预留提问的结果，记录回应人数、遗漏问题和会后返工。",
+    flowScene:
+      "需要带动多人时，你先在现场点亮共同目标，再明确邀请一位安静成员补充反例；不同声音进入后，速度仍在，方向却不再只靠气氛。",
+    flowGuidance:
+      "本周主持一次短讨论，先说重点，再点名邀请两种不同意见；会后只保留能被共同执行的一项动作。",
   },
   土: {
     opening: "先稳住责任与次序，再把零散条件一项项接住",
     strength: "能在局面摇摆时建立可靠坐标，让事情不至于失去承接",
     risk: "为了维持稳定，容易把本该协商的变化继续揽在自己身上",
     mature: "把可靠变成边界清楚的共同承担",
+    overviewScene:
+      "多人分工还在摇摆时，你把责任、期限和验收人放进同一张表，并把无人承接的事项公开出来；可靠从个人兜底变成团队可见的安排。",
+    overviewGuidance:
+      "本周选一项共同任务，标出发起、执行、收尾和可求助对象；先交回一件长期默认代办。",
+    monthScene:
+      "临时加项来到桌前时，你先重新确认当前容量、原有承诺和谁来承接，不用沉默接下换取稳定；分工因此没有继续压向同一个人。",
+    monthGuidance:
+      "连续两周记录每次临时加项由谁提出、谁决定、谁执行；超过容量时明确延后、交接或取消一种。",
+    flowScene:
+      "团队习惯把零碎工作交给最可靠的人时，你把默认代办逐项交回负责人，再给需要协作的部分安排清楚接口；事情仍有人接，重量却开始分散。",
+    flowGuidance:
+      "本周从任务表中选一项默认代办，写清原负责人、交接时间和验收方式；七天后核对是否真正归位。",
   },
   金: {
     opening: "先切开混乱、划清标准，再决定哪一步值得推进",
     strength: "能快速辨认关键差异，把含糊要求整理成可以复核的结果",
     risk: "标准收得太快时，容易漏掉过渡、解释与共同适应的成本",
     mature: "让清楚的标准同时保留修正入口",
+    overviewScene:
+      "面对需求含糊的新任务，你先写下三项验收标准、一个允许试验的例外和复查日期；同伴据此做出小样，争论便从感觉回到结果。",
+    overviewGuidance:
+      "本周选一项正在评审的方案，把结论、依据、例外与停止条件放在同一页；小样完成后再决定取舍。",
+    monthScene:
+      "规则变化时，你先补一条例外和过渡办法，再请受影响的人复述新标准；清楚因此没有变成突然裁决，执行者也知道何时复查。",
+    monthGuidance:
+      "用两周跟踪一次规则调整，分别记录例外使用、解释成本和返工次数；只修改造成最大误解的一条。",
+    flowScene:
+      "跨部门拿到一份模糊要求时，你把它切成对象、交付物、验收人和截止点，再留一个协商入口；不同做法因此能在同一标准下比较。",
+    flowGuidance:
+      "本周把一个模糊要求改写成四项可验收条件，请两位同伴各做一次复述；根据遗漏处补标准，不补评价。",
   },
   水: {
     opening: "先汇集信号、连接不同位置，再寻找真正能流动的通道",
     strength: "能在变化中保留多个视角，把分散信息带回一条主线",
     risk: "选择持续增加时，主线容易被新鲜信息带散",
     mature: "让开放与停止规则同时存在",
+    overviewScene:
+      "消息从多个入口涌来时，你先把它们收回一条工作主线，标出今天必须回应、可以等待和应当关闭的通道；注意力于是重新有了去向。",
+    overviewGuidance:
+      "本周关闭三个非必要消息入口，只保留一个信息源和一个当天动作；完成后再决定是否打开下一条通道。",
+    monthScene:
+      "新信息不断改变判断时，你先写下停止收集的规则、当前主线和允许改道的条件；变化仍能进入，却不能每次都把行动带回起点。",
+    monthGuidance:
+      "用两周记录五次改主意的时刻，注明是哪条新事实改变了关键条件；没有新证据时继续原路线。",
+    flowScene:
+      "多人各自带来一组信号时，你先汇总共同目标、冲突条件和可验证的一条路径，再让每个人说明手中信息能支持哪一步；分散线索由此汇入行动。",
+    flowGuidance:
+      "本周把三路信息画成一张流向图，只选择能在七天内产生反馈的一条路径，并写下何时停止。",
   },
 };
 
-const neutralStyle = {
+const neutralStyle: ElementStoryStyle = {
   opening: "先核对眼前事实，再决定下一步怎样推进",
   strength: "愿意在行动前看清条件，也给不同意见留下进入空间",
   risk: "若急着获得确定感，仍可能把第一种解释当成全部事实",
   mature: "把判断写成可以复查和修改的行动",
+  overviewScene:
+    "一项新任务来到眼前时，你先把已知事实、未知条件和可撤回的一步分开写下，再请同伴补充遗漏。",
+  overviewGuidance:
+    "本周只做一次低风险试验，记录原判断、现实反馈和一处修正；七天后再决定是否继续。",
+  monthScene:
+    "外部条件还在变化时，你先确认目标、资源和能够求助的人，再开始一个不会锁死后路的小动作。",
+  monthGuidance:
+    "用两周比较顺利与吃力的各一次经历，只调整最影响结果的一个现实条件。",
+  flowScene:
+    "几种做法都可能有效时，你把其中一种交给同伴试用，再依据对方能否完成来判断是否保留。",
+  flowGuidance:
+    "本周列出一项常用办法与一项未试办法，各做一次小测试，并写下继续或停止的理由。",
 };
 
-type DomainCue = typeof neutralStyle;
+type DomainCue = Readonly<{
+  opening: string;
+  strength: string;
+  risk: string;
+  mature: string;
+}>;
 
 const elementDomainCues: Readonly<Record<ElementName, DomainCue>> = {
   木: {
@@ -552,6 +642,18 @@ function buildActionSequence(
       outcome: actionPairOutcomes[interpretationId],
     });
   }
+  const careerEntryIds = new Set<InterpretationId>([
+    "self-interface",
+    "talent-public",
+  ]);
+  if (
+    pairs.length === 2
+    && pairs.every(pair => careerEntryIds.has(pair.id))
+  ) {
+    const interfacePair = pairs.find(pair => pair.id === "self-interface")!;
+    const publicPair = pairs.find(pair => pair.id === "talent-public")!;
+    return `项目第一次对齐会上，人物先${interfacePair.now}，放到同一页。讨论出现分歧后，再${publicPair.now}。会后${interfacePair.longTerm}。随后六次汇报留下记录，项目结束时再${publicPair.longTerm}，只保留有效表达。`;
+  }
   const careerChoiceIds = new Set<InterpretationId>([
     "talent-hidden",
     "talent-output",
@@ -633,26 +735,24 @@ function buildTranslations(
     {
       sectionId: "overview",
       whatItMeans: `前面的排列只是在说明，你面对任务时较容易从“${style.opening}”开始，也有一些部分必须借助现实反馈才能确认。它不是性格定论，更不是结果预告。`,
-      lifeScene: "你接到一个目标模糊的新任务时，可能先按熟悉方式搭出框架，再邀请同伴复述目标；这样能迅速形成起点，也让遗漏条件在投入扩大前被看见。",
-      practicalGuidance: "本周选一件正在推进的事，只记录最先采取的动作、别人给出的反馈和一次修正；七天后再判断这套起步方式在哪些场景真正有效。",
+      lifeScene:
+        `${style.overviewScene}结果仍要由现实反馈检验。`,
+      practicalGuidance:
+        `${style.overviewGuidance}并写下下一次复查时间和停止条件。`,
     },
     {
       sectionId: "month-strength",
       whatItMeans: facts.monthAmbiguous
         ? "当前环境起点尚未完全确认，因此这里只说明可能增加助力或阻力的条件，不单独判断能力高低；真正表现仍取决于任务、资源和持续反馈。"
         : "当前环境起点已经确认，前面的信息只描述哪些条件可能增加助力或阻力，并不能单独判断能力高低；真正表现仍取决于任务、资源和持续反馈。",
-      lifeScene:
-        `当你尝试“${style.strength}”时，规则清楚、责任明确的团队会让做法很快落地；若环境频繁变化却仍照旧推进，这份优势也可能被返工消耗。`,
-      practicalGuidance:
-        `用两周比较一项顺利任务和一项吃力任务，各写三项环境条件、一次求助和最终结果；若出现“${style.risk}”，只调整影响最大的一个条件。`,
+      lifeScene: `${style.monthScene}并继续接受现实反馈校验。`,
+      practicalGuidance: `${style.monthGuidance}七天后复查一次，并写下保留理由。`,
     },
     {
       sectionId: "element-flow",
       whatItMeans: `当前有${facts.visibleCount}类方式容易直接出现，${facts.hiddenOnlyCount}类往往在准备、协作或压力之后才被调用。数量多少只是可见程度，不等同于优点、缺点或固定能力。`,
-      lifeScene:
-        `你处理一个跨部门项目时，可以先按“${cue.opening}”打开局面，再请同伴承担自己不常使用的步骤；于是速度被保留，单一路径造成的遗漏也会显现。`,
-      practicalGuidance:
-        `本周挑一件卡住的事，列出反复使用的一种办法和从未尝试的一种办法；做一次低成本试验，并观察哪条路径更接近“${cue.mature}”。`,
+      lifeScene: `${style.flowScene}再用结果决定去留。`,
+      practicalGuidance: `${style.flowGuidance}七天后复查一次。`,
     },
     {
       sectionId: "relations",
@@ -811,11 +911,6 @@ export function buildChartNarrative(
     ["rhythm-climate", "rhythm-recovery", "rhythm-decision"],
     "当任务连续叠加时，你可能靠惯性继续推进，直到专注、耐心或恢复速度开始明显下降。",
   );
-  const careerCollaborationScene = sceneFor(
-    interpretations,
-    ["self-interface", "talent-public"],
-    "项目第一次对齐时，一个人先把目标、分歧和需要确认的事项写到同一页，再请同伴补齐遗漏。",
-  );
   const relationshipRequestScene = sceneFor(
     interpretations,
     ["relationship-repair", "family-resource"],
@@ -882,14 +977,15 @@ export function buildChartNarrative(
       id: "career-entry-collaboration",
       covers: ["task-entry", "collaboration-conflict"],
       title: "先把角色说清，再把分歧摆上桌",
-      trigger: "刚接新角色，或多人对任务各有理解",
-      reaction: "先按熟悉方式补空白，以速度换确定",
+      trigger:
+        "新角色的第一次项目对齐会上，团队对负责人、决定权限和完成标准各有理解",
+      reaction: `先按“${cue.opening}”补空白，以速度换确定`,
       benefit: "项目很快有第一版，暂时摆脱停滞",
       cost: `责任与验收仍模糊，${structure.overload}`,
       turn: "写清目标、负责人、权限和验收人",
       example:
-        `${careerCollaborationScene}同伴补充遗漏后，负责人、权限与验收时间落在同一页，返工没有继续扩大。`,
-      signal: "任务有唯一负责人，复盘不再争论谁该知道",
+        `这场会结束前，同伴补齐遗漏，负责人、权限与验收时间落在同一页，并把“${cue.mature}”写进下次复查；第一版没有继续扩大返工。`,
+      signal: "会后任务有唯一负责人，下一次对齐不再争论谁该知道",
       review:
         `复查时看角色、权限和验收是否对齐，也检查第一版是否因为“${cue.risk}”增加返工。`,
       noRecordExperiment:

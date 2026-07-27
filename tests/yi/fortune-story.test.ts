@@ -261,6 +261,110 @@ describe("fortune stage story projection", () => {
       .not.toMatch(/课堂|老师|课程|亲手试一次|写下适用/u);
   });
 
+  it("keeps a 9–18 transition in youth language without adult launch scenes", () => {
+    const birth: BirthInput = {
+      name: "周行",
+      date: "1968-01-01",
+      time: "12:00",
+      location: "北京市",
+      gender: "male",
+      timeConfidence: "exact",
+    };
+    const projected = buildFortuneStoryTimeline(
+      calculateFourPillars(birth),
+      birth,
+    );
+    expectAvailable(projected);
+
+    const transition = projected.periods.find(period =>
+      period.ageRange === "9–18岁"
+    );
+    expect(transition).toBeDefined();
+    if (!transition) throw new Error("Expected the 9–18 transition period");
+
+    const visible = [
+      transition.openingScene,
+      transition.careerScene,
+      transition.resourceScene,
+      transition.relationshipScene,
+      transition.familyScene,
+      transition.rhythmScene,
+      ...transition.actions,
+      ...transition.years.flatMap(year => [year.title, year.scene, year.action]),
+    ].join("");
+    expect(visible).toMatch(/课堂|社团|朋友|家庭期待|学习|老师|家人/u);
+    expect(visible).not.toMatch(
+      /室友|共同开支|第一次独立|独立交付|收入|实习|工作任务|正式责任|新团队|预算|现金流/u,
+    );
+  });
+
+  it("keeps a 3–12 transition child-sized instead of mixing preschool with teen scenes", () => {
+    const chart = calculateFourPillars(exactMale);
+    const [raw] = buildFortuneTimeline(chart, exactMale);
+    const years = Array.from({ length: 10 }, (_, index) => ({
+      ...raw.years[index % raw.years.length],
+      age: 3 + index,
+      year: 2004 + index,
+    }));
+    vi.mocked(buildFortuneTimeline).mockReturnValueOnce([{
+      ...raw,
+      startAge: 3,
+      endAge: 12,
+      startYear: 2004,
+      endYear: 2013,
+      years,
+    }]);
+
+    const projected = buildFortuneStoryTimeline(chart, exactMale);
+    expectAvailable(projected);
+    const [period] = projected.periods;
+    const visible = [
+      period.openingScene,
+      period.careerScene,
+      period.resourceScene,
+      period.relationshipScene,
+      period.familyScene,
+      period.rhythmScene,
+      ...period.actions,
+      ...period.years.flatMap(year => [year.title, year.scene, year.action]),
+    ].join("");
+
+    expect(period.ageRange).toBe("3–12岁");
+    expect(visible).toMatch(/玩具|家人|照顾者|课堂|老师/u);
+    expect(visible).not.toMatch(
+      /课程小组|社团活动|朋友之间|交作业|室友|共同开支|第一次独立/u,
+    );
+  });
+
+  it("keeps public stage order tied to the independently calculated fortune direction", () => {
+    const male = { ...exactMale, gender: "male" as const };
+    const female = { ...exactMale, gender: "female" as const };
+    const maleRaw = buildFortuneTimeline(calculateFourPillars(male), male);
+    const femaleRaw = buildFortuneTimeline(
+      calculateFourPillars(female),
+      female,
+    );
+    vi.mocked(buildFortuneTimeline).mockClear();
+
+    const maleStory = buildFortuneStoryTimeline(
+      calculateFourPillars(male),
+      male,
+    );
+    const femaleStory = buildFortuneStoryTimeline(
+      calculateFourPillars(female),
+      female,
+    );
+    expectAvailable(maleStory);
+    expectAvailable(femaleStory);
+
+    expect(maleStory.periods.map(period => period.yearRange))
+      .toEqual(maleRaw.map(period => `${period.startYear}–${period.endYear}`));
+    expect(femaleStory.periods.map(period => period.yearRange))
+      .toEqual(femaleRaw.map(period => `${period.startYear}–${period.endYear}`));
+    expect(maleRaw.map(period => period.stemBranch).join("|"))
+      .not.toBe(femaleRaw.map(period => period.stemBranch).join("|"));
+  });
+
   it("writes stage and year scenes with a person, event, action, and consequence", () => {
     const chart = calculateFourPillars(exactMale);
     const projected = buildFortuneStoryTimeline(chart, exactMale);

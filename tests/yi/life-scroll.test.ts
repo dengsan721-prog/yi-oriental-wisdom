@@ -343,10 +343,10 @@ describe("deterministic life scroll", () => {
     expect(relationship).toMatch(/当|为了|你可能/u);
     expect(turning).not.toContain("。可见转折是");
     expect(turning).toContain(
-      "节奏稍稍恢复后，人物才有余地回到关系事实，再核对可调整与不可调整的条件",
+      "稍稳后，再把关系条件带回对话",
     );
     expect(turning).toMatch(
-      /节奏.+(?:余地|空间).+(?:再|随后).+(?:事实|条件|协商)/u,
+      /(?:暂停|降温|卸下|结束|收回|减少).+稍稳后.+关系条件.+对话/u,
     );
   });
 
@@ -359,7 +359,7 @@ describe("deterministic life scroll", () => {
       time: null,
       timeConfidence: "unknown" as const,
     },
-  ])("rewrites the four-sentence relationship action as one complete clause", (birth) => {
+  ])("keeps each relationship choice concrete and naturally phrased", (birth) => {
     const { chart, report, items } = fixture(birth);
     const relationship = buildLifeScrollNarrative(
       chart,
@@ -367,8 +367,11 @@ describe("deterministic life scroll", () => {
       items,
     ).relationshipArc.join("");
 
-    expect(relationship).toContain(
-      "依次用四句话说明事实、感受、需要与具体请求",
+    expect(relationship).toMatch(
+      /事实|理由|承诺|任务|底线/u,
+    );
+    expect(relationship).toMatch(
+      /请求|复述|复查|确认|重谈|协商|归还/u,
     );
     expect(relationship).not.toContain(
       "依次说明事实、感受、需要与具体请求四句话表达",
@@ -431,12 +434,12 @@ describe("deterministic life scroll", () => {
         .not.toBe(alternateNarrative[key].join(""));
     }
     expect(primaryIds).toEqual(expect.arrayContaining([
-      "dao-76-soft",
+      "dao-63-small",
       "dao-33-self",
+      "dao-81-no-strife",
     ]));
     expect(alternateIds).toEqual(expect.arrayContaining([
-      "dao-63-small",
-      "dao-64-road",
+      "dao-81-no-strife",
     ]));
     expect(primaryIds).not.toEqual(alternateIds);
     for (const ids of [primaryIds, alternateIds]) {
@@ -447,6 +450,12 @@ describe("deterministic life scroll", () => {
   });
 
   it("gives every element its own complete career, relation, rhythm, and mature arc", () => {
+    const arcOwners = {
+      career: [] as string[],
+      relationship: [] as string[],
+      turning: [] as string[],
+      mature: [] as string[],
+    };
     const sentenceSets = fiveElementBirths.map(({ element, birth, leads }) => {
       const { chart, report, items } = fixture(birth);
       const narrative = buildLifeScrollNarrative(chart, report, items);
@@ -463,6 +472,10 @@ describe("deterministic life scroll", () => {
       expect(visible).not.toMatch(
         /先用同一份事业优势打开入口|同一种优势一旦被用过头|改变从停止原有循环开始|成熟方法不再依赖一次用力/u,
       );
+      arcOwners.career.push(narrative.careerArc.join(""));
+      arcOwners.relationship.push(narrative.relationshipArc.join(""));
+      arcOwners.turning.push(narrative.turningPointArc.join(""));
+      arcOwners.mature.push(narrative.matureArc.join(""));
 
       return new Set(
         normalizedSentences(arcs).filter(sentence => countHan(sentence) >= 16),
@@ -473,6 +486,12 @@ describe("deterministic life scroll", () => {
     );
 
     expect(sharedByAllElements).toEqual([]);
+    for (const [arc, values] of Object.entries(arcOwners)) {
+      expect(
+        repeatedHanFragments(values, 24, fiveElementBirths.length),
+        arc,
+      ).toEqual([]);
+    }
   });
 
   it("keeps every Dao note complete, distinct, and inside the reviewed length gates", () => {
@@ -558,6 +577,25 @@ describe("deterministic life scroll", () => {
         new Set(contexts).size,
         `${label}: ${JSON.stringify(contexts)}`,
       ).toBe(narrative.daoNotes.length);
+    }
+    for (const note of narrative.daoNotes) {
+      expect(
+        `${note.plainCommentary.storyConnection}${note.plainCommentary.sceneGuidance}`,
+      ).not.toMatch(
+        /时成为|时后|人物先并|被“[^”]*(?:里|时)”|提醒观察让|变短时让|之后后/u,
+      );
+    }
+  });
+
+  it("reserves the completion chapter for the closing placement", () => {
+    for (const { birth } of fiveElementBirths) {
+      const { chart, report, items } = fixture(birth);
+      const narrative = buildLifeScrollNarrative(chart, report, items);
+      const closing = narrative.daoNotes.find(note =>
+        note.placement === "closing"
+      );
+
+      expect(closing?.internalSourceId).toBe("dao-81-no-strife");
     }
   });
 
@@ -646,6 +684,24 @@ describe("deterministic life scroll", () => {
     }
   });
 
+  it("rejects malformed Dao slot fragments before composing public sentences", () => {
+    const result = buildDaoStoryNotes(["small-steps", "self-knowledge"], {
+      scene: "人物接手新角色时成为团队焦点",
+      tension: "人物先并核对权限",
+      turn: "完成新的角色分配时后",
+      action: "再把熟悉关系里",
+    });
+    const publicCopy = result.daoNotes.map(note =>
+      `${note.plainCommentary.storyConnection}${note.plainCommentary.sceneGuidance}`
+    ).join("");
+
+    expect(publicCopy).not.toMatch(
+      /时(?:成为|已经|让|后)|人物先(?:并|再)|被“[^”]{1,16}(?:里|时)”|提醒观察(?:成为|已经|让)|[，。]当[^，。]{2,18}已经/u,
+    );
+    expect(publicCopy).toContain("需要核对目标的任务");
+    expect(publicCopy).toContain("需要重谈请求的关系");
+  });
+
   it("replaces the chapter-66 null commentary with reviewed stable fallbacks", () => {
     const result = buildDaoStoryNotes(["leadership"], {
       tension: "一项共同任务需要有人先放低位置听清不同意见",
@@ -728,9 +784,9 @@ describe("deterministic life scroll", () => {
       expect(mainArcParts(narrative).join(""))
         .not.toMatch(/你就是|你天生|你必然/u);
       expect(narrative.daoNotes.map(note => note.internalSourceId)).toEqual([
-        "dao-15-clear",
-        "dao-33-self",
         "dao-63-small",
+        "dao-33-self",
+        "dao-15-clear",
         "dao-81-no-strife",
       ]);
       expect(daoCopy).toContain("只观察一项事业小试验");
@@ -749,7 +805,7 @@ describe("deterministic life scroll", () => {
     const opening = narrative.openingScene.join("");
 
     assertCompleteNarrative(narrative);
-    expect(opening).toContain("当需要同时处理几项责任时");
+    expect(opening).toContain("材料尚未稳定时");
     expect(opening).not.toContain("眼前同时有几项责任需要处理");
   });
 
