@@ -271,28 +271,31 @@ function assertCompleteNarrative(narrative: ChartNarrative): void {
   ]);
   for (const translation of narrative.professionalTranslations) {
     expect(countHan(translation.whatItMeans), translation.sectionId)
-      .toBeGreaterThanOrEqual(45);
+      .toBeGreaterThanOrEqual(70);
     expect(countHan(translation.whatItMeans), translation.sectionId)
-      .toBeLessThanOrEqual(90);
+      .toBeLessThanOrEqual(150);
     expect(countHan(translation.lifeScene), translation.sectionId)
-      .toBeGreaterThanOrEqual(55);
+      .toBeGreaterThanOrEqual(105);
     expect(countHan(translation.lifeScene), translation.sectionId)
-      .toBeLessThanOrEqual(110);
+      .toBeLessThanOrEqual(210);
     expect(countHan(translation.practicalGuidance), translation.sectionId)
-      .toBeGreaterThanOrEqual(45);
+      .toBeGreaterThanOrEqual(85);
     expect(countHan(translation.practicalGuidance), translation.sectionId)
-      .toBeLessThanOrEqual(90);
+      .toBeLessThanOrEqual(170);
     expect(countHan(
       `${translation.whatItMeans}${translation.lifeScene}${translation.practicalGuidance}`,
-    ), translation.sectionId).toBeGreaterThanOrEqual(160);
+    ), translation.sectionId).toBeGreaterThanOrEqual(290);
     expect(countHan(
       `${translation.whatItMeans}${translation.lifeScene}${translation.practicalGuidance}`,
-    ), translation.sectionId).toBeLessThanOrEqual(260);
+    ), translation.sectionId).toBeLessThanOrEqual(520);
     expect(translation.lifeScene).toMatch(/你|一个人|当事人/u);
+    expect(translation.lifeScene).toMatch(/早上|晚上|客户|同事|家里|饭桌|市场|伴侣|朋友|孩子/u);
     expect(translation.lifeScene).toMatch(/先|把|写|说|问|做|记录|选择|暂停|交付/u);
     expect(translation.lifeScene).toMatch(/于是|因此|结果|否则|便|从而|让/u);
     expect(translation.practicalGuidance)
-      .toMatch(/本周|一次|两周|七天|二十分钟|三项|一项/u);
+      .toMatch(/本周|一次|两周|七天|二十分钟|三项|一项|今晚|明天/u);
+    expect(translation.practicalGuidance)
+      .toMatch(/照着|讲给|复述|清单|台账|白纸|一句话|小本子/u);
   }
 
   const beats = [
@@ -736,8 +739,9 @@ describe("deterministic chart narrative", () => {
         return `${section!.lifeScene}${section!.practicalGuidance}`;
       });
 
+      expect(new Set(passages).size, sectionId).toBe(fiveElementBirths.length);
       expect(
-        repeatedHanFragments(passages, 24, fiveElementBirths.length),
+        repeatedHanFragments(passages, 120, fiveElementBirths.length),
         sectionId,
       ).toEqual([]);
     }

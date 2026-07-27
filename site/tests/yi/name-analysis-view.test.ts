@@ -159,7 +159,7 @@ describe("name analysis state", () => {
     expect(Object.values(state.realityTest)).toEqual(["unverified", "unverified", "unverified", "unverified"]);
   });
 
-  it("keeps expanded details open across analysis controls and closes for a new name", async () => {
+  it("keeps legacy local choices in state while the public view stays collapsed", async () => {
     let state = createNameAnalysisViewState("发");
     state = nameAnalysisViewReducer(state, { type: "set-details-open", open: true });
     expect(state.detailsOpen).toBe(true);
@@ -176,7 +176,7 @@ describe("name analysis state", () => {
     expect(state.detailsOpen).toBe(true);
 
     const analysis = await analyzeName({ rawInput: "发", mode: "candidate", requestFreshDirection: true });
-    expect(renderView(analysis!, state)).toContain('<details class="name-analysis-depth" open="">');
+    expect(renderView(analysis!, state)).not.toContain("name-analysis-depth");
 
     state = nameAnalysisViewReducer(state, { type: "reset-name", name: "林知远" });
     expect(state.detailsOpen).toBe(false);
@@ -184,28 +184,26 @@ describe("name analysis state", () => {
 });
 
 describe("name analysis reading view", () => {
-  it("keeps the first layer concise and separates verified use score from evidence coverage", async () => {
+  it("shows direct reference-only name scoring and four classical suggestions without review clutter", async () => {
     const chart = calculateFourPillars(exactBirth);
     const analysis = await analyzeName({ rawInput: exactBirth.name, chart, realityTest: allVerified });
-    const unverified = await analyzeName({ rawInput: exactBirth.name, chart });
     const html = renderView(analysis!);
-    const unverifiedHtml = renderView(unverified!);
-    const summaryHtml = html.slice(html.indexOf('class="name-analysis-summary"'), html.indexOf('<details class="name-analysis-depth"'));
 
-    expect(html).toContain("姓名使用与五行文化");
+    expect(html).toContain("姓名五行参考分");
     expect(html).toContain(exactBirth.name);
-    expect(html).toContain("姓名现实使用实测分");
-    expect(html).toContain("100 / 100");
-    expect(html).toContain("资料覆盖");
-    expect(summaryHtml).toContain(analysis!.ruleObservation);
-    expect(summaryHtml).toContain(analysis!.plainLanguageScene);
-    expect(summaryHtml).toContain(analysis!.action);
-    expect(summaryHtml).toContain(analysis!.boundary);
-    expect(html).not.toContain("姓名适配分");
-    expect(unverifiedHtml).toContain("尚未完成现实验证，暂不评分");
+    expect(html).toMatch(/\d+\/100/);
+    expect(html).toContain("仅供参考");
+    expect(html).toContain("五行缺补");
+    expect(html).toContain("名义五行补救建议");
+    expect(html).toContain("典籍取名建议");
+    expect(html.match(/data-classic-name=/g)).toHaveLength(4);
+    expect(html).toContain("单字名");
+    expect(html).toContain("双字名");
+    expect(html).toMatch(/《诗经》|《楚辞》|《论语》|《尚书》|《周易》|《礼记》/);
+    expect(html).not.toMatch(/待人工复核|待人工审核|人工复核|现实使用实测分|现实风险复核门|展开姓名事实|依据与流派边界|本章依据|使用边界|ruleId|来源 ID/);
   });
 
-  it("shows a manual review gate before severe reality-test problems can change advice", async () => {
+  it("keeps severe reality-test problems out of the public scoring card", async () => {
     const analysis = await analyzeName({
       rawInput: exactBirth.name,
       realityTest: {
@@ -225,12 +223,12 @@ describe("name analysis reading view", () => {
       },
     });
 
-    expect(html).toContain("现实风险复核门");
-    expect(html).toContain("人工复核");
-    expect(html).toContain("确认前不会触发更名建议");
+    expect(html).toContain("姓名五行参考分");
+    expect(html).toContain("仅供参考");
+    expect(html).not.toMatch(/现实风险复核门|人工复核|确认前不会触发更名建议|姓名现实使用实测分/);
   });
 
-  it("uses explicit candidate mode for directions and conservative advice, then returns to current", async () => {
+  it("does not expose candidate-mode direction controls in the public name score", async () => {
     const current = await analyzeName({ rawInput: exactBirth.name, mode: "current" });
     const traditional = await analyzeName({ rawInput: exactBirth.name, mode: "traditional-reference" });
     const candidate = await analyzeName({ rawInput: exactBirth.name, mode: "candidate", requestFreshDirection: true });
@@ -242,10 +240,11 @@ describe("name analysis reading view", () => {
     const returnedHtml = renderView(current!, { ...candidateState, mode: "current" });
 
     expect(candidate?.advice.tier).toBe("rebuild-direction");
-    expect(candidateHtml).toContain("新姓名方向");
-    expect(candidateHtml).toContain('aria-pressed="true"');
-    expect(candidateHtml).toContain("三个命名方向");
-    expect(candidateHtml).toContain("仅查看有限命名方向");
+    expect(candidateHtml).toContain("典籍取名建议");
+    expect(candidateHtml).not.toContain("新姓名方向");
+    expect(candidateHtml).not.toContain('aria-pressed="true"');
+    expect(candidateHtml).not.toContain("三个命名方向");
+    expect(candidateHtml).not.toContain("仅查看有限命名方向");
     expect(currentHtml).not.toContain("三个命名方向");
     expect(traditionalHtml).not.toContain("三个命名方向");
     expect(returnedHtml).not.toContain("三个命名方向");
@@ -260,15 +259,16 @@ describe("name analysis reading view", () => {
     const unblockedHtml = renderView(unblocked!, { ...createNameAnalysisViewState(exactBirth.name), mode: "candidate" });
 
     expect(blocked?.advice.tier).toBe("hold");
-    expect(blockedHtml).toContain(blocked!.advice.ruleObservation);
-    expect(blockedHtml).toContain(blocked!.advice.action);
-    expect(blockedHtml).toContain("事实确认后再显示方向");
+    expect(blockedHtml).toContain("姓名五行参考分");
+    expect(blockedHtml).not.toContain(blocked!.advice.ruleObservation);
+    expect(blockedHtml).not.toContain(blocked!.advice.action);
+    expect(blockedHtml).not.toContain("事实确认后再显示方向");
     expect(blockedHtml).not.toContain("三个命名方向");
     expect(blockedHtml).not.toContain("生长与涵养");
 
     expect(unblocked?.advice.tier).toBe("rebuild-direction");
-    expect(unblockedHtml).toContain("三个命名方向");
-    expect(unblockedHtml).toContain("生长与涵养");
+    expect(unblockedHtml).not.toContain("三个命名方向");
+    expect(unblockedHtml).toContain("典籍取名建议");
   });
 
   it("renders unselected 发→發/髮 meaning choices, then requires an explicit 髮 reading", async () => {
@@ -300,24 +300,16 @@ describe("name analysis reading view", () => {
       actualReadings: { 0: "fà" },
     });
 
-    expect(pendingHtml).toContain("现实登记字形");
+    expect(pendingHtml).toContain("姓名五行参考分");
     expect(pendingHtml).toContain("发");
-    expect(pendingHtml).toContain("發");
-    expect(pendingHtml).toContain("髮");
-    expect(pendingHtml).toContain("生发、出发、发展等义项");
-    expect(pendingHtml).toContain("头发、毛发等义项");
-    expect(pendingHtml).toContain("现实登记字形事实");
-    expect(pendingHtml).toContain("U+53D1 · 通用规范汉字表第 1 级 · 总笔画工程记录 5");
-    expect(pendingHtml).toContain("尚未采用");
-    expect(pendingHtml).not.toContain("U+53D1 · 8105 字核心表暂未覆盖");
+    expect(pendingHtml).toContain("仅供参考");
+    expect(pendingHtml).not.toContain("现实登记字形事实");
+    expect(pendingHtml).not.toContain("U+53D1 · 通用规范汉字表第 1 级 · 总笔画工程记录 5");
     expect(pendingHtml).not.toMatch(/name="traditional-0"[^>]*checked/);
-    expect(hairHtml).toContain("采用的传统参考字形");
-    expect(hairHtml).toContain("传统参考字形事实");
-    expect(hairHtml).toContain("规范等级只用于现实登记字形");
-    expect(hairHtml).toContain("fà");
-    expect(hairHtml).toContain("fǎ");
-    expect(hairHtml).toContain("请确认姓名中的实际读音");
-    expect(confirmedHtml).toContain('name="reading-0" checked="" value="fà"');
+    expect(hairHtml).not.toContain("采用的传统参考字形");
+    expect(hairHtml).not.toContain("传统参考字形事实");
+    expect(hairHtml).not.toContain("规范等级只用于现实登记字形");
+    expect(confirmedHtml).not.toContain('name="reading-0" checked="" value="fà"');
   });
 
   it("keeps the registered 后 TGH facts visible beside an unreviewed 後 candidate", async () => {
@@ -332,14 +324,14 @@ describe("name analysis reading view", () => {
       traditionalSelections: { 0: "後" },
     });
 
-    expect(html).toContain("现实登记字形事实");
-    expect(html).toContain("U+540E · 通用规范汉字表第 1 级 · 总笔画工程记录 6");
-    expect(html).toContain("采用的传统参考字形");
-    expect(html).toContain("後");
-    expect(html).toContain("姓名采用义项尚未进入有限人工审校集");
+    expect(html).toContain("姓名五行参考分");
+    expect(html).toContain("后");
+    expect(html).not.toContain("现实登记字形事实");
+    expect(html).not.toContain("U+540E · 通用规范汉字表第 1 级 · 总笔画工程记录 6");
+    expect(html).not.toContain("姓名采用义项尚未进入有限人工审校集");
   });
 
-  it("shows glyph facts, semantic coverage, chart comparison, advice, directions, sources and boundaries", async () => {
+  it("hides glyph facts, sources and boundaries from the public name score", async () => {
     const chart = calculateFourPillars(exactBirth);
     const report = buildProfessionalReport(chart, exactBirth);
     const analysis = await analyzeName({ rawInput: exactBirth.name, mode: "candidate", requestFreshDirection: true, chart, professionalReport: report });
@@ -347,31 +339,26 @@ describe("name analysis reading view", () => {
     const html = renderView(analysis!, state);
 
     for (const label of [
-      "逐字事实与采用口径",
-      "字义五行文化向量",
-      "未知比例",
-      "姓名文化与出生盘并排看",
-      "建议门禁",
-      "三个命名方向",
-      "依据与流派边界",
-      "本产品未查询全国同名人数",
-      "分数只评估姓名方案，不评价人",
-      "姓名不会改写出生盘",
+      "姓名五行参考分",
+      "五行缺补",
+      "名义五行补救建议",
+      "典籍取名建议",
     ]) expect(html).toContain(label);
-    expect(html).toContain("生长与涵养");
-    expect(html).toContain("开阔与延展");
-    expect(html).toContain("理解与守信");
-    expect(html).toContain("待人工复核");
-    expect(html).toContain(analysis!.chartInteraction!.plainLanguageScene);
-    expect(html).toContain(analysis!.advice.plainLanguageScene);
-    expect(html).toContain("教育部《通用规范汉字表》");
-    expect(html).toContain("Unicode 17.0.0 Unihan");
+    expect(html).not.toContain("逐字事实与采用口径");
+    expect(html).not.toContain("未知比例");
+    expect(html).not.toContain("姓名文化与出生盘并排看");
+    expect(html).not.toContain("建议门禁");
+    expect(html).not.toContain("三个命名方向");
+    expect(html).not.toContain("依据与流派边界");
+    expect(html).not.toContain("本产品未查询全国同名人数");
+    expect(html).not.toContain("教育部《通用规范汉字表》");
+    expect(html).not.toContain("Unicode 17.0.0 Unihan");
     expect(html).not.toContain('href="https://ywtb.mps.gov.cn/"');
 
     const confirmedExitHtml = renderView(analysis!, { ...state, sameNameExitConfirmed: true });
-    expect(confirmedExitHtml).toContain("将离开本产品");
-    expect(confirmedExitHtml).toContain("登录、实名认证和信息处理由公安部平台负责");
-    expect(confirmedExitHtml).toContain('href="https://ywtb.mps.gov.cn/"');
+    expect(confirmedExitHtml).not.toContain("将离开本产品");
+    expect(confirmedExitHtml).not.toContain("登录、实名认证和信息处理由公安部平台负责");
+    expect(confirmedExitHtml).not.toContain('href="https://ywtb.mps.gov.cn/"');
     expect(confirmedExitHtml).not.toContain(encodeURIComponent(exactBirth.name));
   });
 });

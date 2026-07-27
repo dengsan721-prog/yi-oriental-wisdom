@@ -106,26 +106,27 @@ it("renders three priority cards with four ordered progressive-reading layers", 
   const readings = priorities.map(makeReading);
   const html = renderToStaticMarkup(createElement(DetailSection, { items: readings }));
 
-  expect(html.match(/<article class="reading-card reading-(?:core|important|supporting)">/g)).toHaveLength(3);
+  expect(html).toContain('class="detail-groups waterfall-grid"');
+  expect(html.match(/<details class="reading-card reading-(?:core|important|supporting) waterfall-card">/g)).toHaveLength(3);
+  expect(html).toContain("点开阅读");
+  expect(html).toContain("收起回到总览");
 
   for (const reading of readings) {
-    const articleStart = html.indexOf(`<article class="reading-card reading-${reading.priority}">`);
-    expect(articleStart, `${reading.priority} article`).toBeGreaterThan(-1);
-    const article = extractBalancedElement(html, "article", articleStart);
-    const outerDetailsStart = article.indexOf("<details>");
-    expect(outerDetailsStart, `${reading.priority} outer details`).toBeGreaterThan(-1);
-    const outerDetails = extractBalancedElement(article, "details", outerDetailsStart);
-    expect(outerDetails.slice(0, outerDetails.indexOf(">") + 1)).toBe("<details>");
+    const cardStart = html.indexOf(`<details class="reading-card reading-${reading.priority} waterfall-card">`);
+    expect(cardStart, `${reading.priority} card`).toBeGreaterThan(-1);
+    const card = extractBalancedElement(html, "details", cardStart);
+    const bodyStart = card.indexOf('<div class="waterfall-card-body">');
+    expect(bodyStart, `${reading.priority} body`).toBeGreaterThan(-1);
+    const body = card.slice(bodyStart);
 
-    const evidenceStart = outerDetails.indexOf('<details class="reading-evidence">');
+    const evidenceStart = body.indexOf('<details class="reading-evidence">');
     expect(evidenceStart, `${reading.priority} nested evidence`).toBeGreaterThan(-1);
-    const evidence = extractBalancedElement(outerDetails, "details", evidenceStart);
+    const evidence = extractBalancedElement(body, "details", evidenceStart);
     expect(evidence.slice(0, evidence.indexOf(">") + 1)).toBe('<details class="reading-evidence">');
-    expect(outerDetails.slice(evidenceStart + evidence.length)).toBe("</details>");
 
-    const visibleLayer = article.slice(0, outerDetailsStart);
-    const deepLayer = outerDetails.slice(0, evidenceStart);
-    const outsideOuterDetails = article.slice(0, outerDetailsStart) + article.slice(outerDetailsStart + outerDetails.length);
+    const visibleLayer = card.slice(0, bodyStart);
+    const deepLayer = body.slice(0, evidenceStart);
+    const outsideBody = visibleLayer;
     const visibleMarkers = [reading.professionalTitle, reading.innovationTitle, reading.plainLanguage, reading.scenario];
     const deepMarkers = [
       reading.advantageVersion,
@@ -147,25 +148,25 @@ it("renders three priority cards with four ordered progressive-reading layers", 
     expectStrictOrder(evidence, evidenceMarkers);
 
     for (const marker of visibleMarkers) {
-      expect(occurrences(article, marker), marker).toBe(1);
-      expect(outerDetails, marker).not.toContain(marker);
+      expect(occurrences(card, marker), marker).toBe(1);
+      expect(body, marker).not.toContain(marker);
     }
     for (const marker of deepMarkers) {
-      expect(occurrences(article, marker), marker).toBe(1);
-      expect(outsideOuterDetails, marker).not.toContain(marker);
+      expect(occurrences(card, marker), marker).toBe(1);
+      expect(outsideBody, marker).not.toContain(marker);
       expect(evidence, marker).not.toContain(marker);
     }
     for (const marker of evidenceMarkers) {
-      expect(occurrences(article, marker), marker).toBe(1);
-      expect(outerDetails.slice(0, evidenceStart), marker).not.toContain(marker);
-      expect(outsideOuterDetails, marker).not.toContain(marker);
+      expect(occurrences(card, marker), marker).toBe(1);
+      expect(body.slice(0, evidenceStart), marker).not.toContain(marker);
+      expect(outsideBody, marker).not.toContain(marker);
     }
   }
 });
 
 it("keeps disclosure targets touch-safe and reading grids single-column on mobile", () => {
   const css = readFileSync(resolve("app/globals.css"), "utf8");
-  expect(css).toMatch(/\.reading-card details>summary\{min-height:44px;display:flex;align-items:center;cursor:pointer;color:var\(--yi-accent-strong\)\}/);
+  expect(css).toMatch(/\.waterfall-card>summary\{[^}]*min-height:92px[^}]*cursor:pointer/);
   expect(css).toMatch(/@media\(max-width:700px\)\{\.reading-contrast,\.reading-actions\{grid-template-columns:1fr\}/);
 });
 

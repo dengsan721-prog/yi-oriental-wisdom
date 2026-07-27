@@ -32,7 +32,7 @@ function renderLifeScroll() {
 }
 
 describe("life scroll view", () => {
-  it("renders the full first-reading chapter in one visible flow", () => {
+  it("renders the full first-reading chapter as waterfall entry cards", () => {
     const { html, narrative } = renderLifeScroll();
 
     for (const text of [
@@ -66,7 +66,11 @@ describe("life scroll view", () => {
       "<h2>收束</h2>",
     ].map(token => html.indexOf(token));
     expect(readingOrder).toEqual([...readingOrder].sort((left, right) => left - right));
-    expect(html).not.toContain("<details");
+    expect(html).toContain('class="life-scroll-reading waterfall-grid"');
+    expect(html.match(/<details class="life-scroll-part waterfall-card/g)).toHaveLength(8);
+    expect(html.match(/class="waterfall-open-hint"/g)).toHaveLength(8);
+    expect(html).toContain("点开阅读");
+    expect(html).toContain("收起回到总览");
   });
 
   it("shows every animal and historical mirror field as a concrete interlude", () => {
@@ -143,6 +147,8 @@ describe("life scroll view", () => {
     expect(portraitSource).not.toContain("function pick(");
     expect(portraitSource).not.toContain("<ChapterSources");
     expect(css).toMatch(/\.life-scroll-reading\{[^}]*width:min\(760px,100%\)[^}]*margin:[^;}]*auto/);
+    expect(css).toMatch(/\.waterfall-grid\{[^}]*column-count:2/);
+    expect(css).toMatch(/\.waterfall-card>summary\{[^}]*cursor:pointer/);
     expect(css).toMatch(/\.life-scroll-reading p\{[^}]*line-height:1\.(?:7[5-9]|8|9)/);
     expect(mobileCss).toContain(".life-scroll-reading{width:100%;gap:18px}");
     expect(mobileCss).toContain(".life-scroll-part,.dao-story-note{padding:16px}");

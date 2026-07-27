@@ -12,7 +12,7 @@ import type {
 } from "../../lib/yi/name-types";
 import type { NameRealityScore, NameRealityTestAnswers } from "../../lib/yi/name-score-contract";
 import type { UsageRiskInput } from "../../lib/yi/name-analysis";
-import type { FourPillarsResult, ProfessionalReport } from "../../lib/yi/types";
+import type { ElementName, FourPillarsResult, ProfessionalReport } from "../../lib/yi/types";
 
 export type NameAnalysisMode = "current" | "traditional-reference" | "candidate";
 type RealityDimension = keyof NameRealityTestAnswers;
@@ -64,47 +64,45 @@ const DEFAULT_REALITY_TEST: NameRealityTestAnswers = {
 };
 
 const ELEMENTS = ["木", "火", "土", "金", "水"] as const;
-const PILLAR_LABELS = { year: "年柱", month: "月柱", day: "日柱", hour: "时柱" } as const;
-
-const REALITY_DIMENSIONS = [
-  {
-    id: "hearing",
-    title: "听见与读准",
-    prompt: "请两位不熟悉姓名的人只听一次，能否正确复述或叫读？",
-    options: [["both", "两位都正确"], ["one", "一位正确"], ["none", "都未正确"], ["unverified", "尚未实测"]],
-  },
-  {
-    id: "inputDisplay",
-    title: "输入与显示",
-    prompt: "在常用手机和电脑上，能否一次输入并正确显示？",
-    options: [["both", "两种环境都顺畅"], ["one", "一种环境顺畅"], ["none", "两种都有问题"], ["unverified", "尚未实测"]],
-  },
-  {
-    id: "documents",
-    title: "证件与业务系统",
-    prompt: "在两个实际办理场景中，姓名是否稳定可用？",
-    options: [["both", "两个场景都稳定"], ["one", "一个场景稳定"], ["none", "两个都有问题"], ["unverified", "尚未经历"]],
-  },
-  {
-    id: "meaningAcceptance",
-    title: "含义与本人接受度",
-    prompt: "本人是否认可本次采用义项，且没有长期困扰？",
-    options: [["accepted", "认可且无困扰"], ["one-long-term-ambiguity", "有一项长期歧义"], ["severe-confirmed", "有严重且已确认的歧义"], ["unverified", "尚未确认"]],
-  },
-] as const satisfies readonly {
-  id: RealityDimension;
-  title: string;
-  prompt: string;
-  options: readonly (readonly [RealityAnswer, string])[];
-}[];
-
-const ADVICE_LABELS: Record<NameAdvice["tier"], string> = {
-  hold: "先核对事实",
-  keep: "默认尊重并保留现名",
-  "micro-adjust": "只处理已确认的单项摩擦",
-  rebuild: "可把重构交给人工复核",
-  "rebuild-direction": "仅查看有限命名方向",
+const NAME_ELEMENT_HINTS: Readonly<Record<string, ElementName>> = {
+  林: "木", 木: "木", 森: "木", 桐: "木", 乔: "木", 芷: "木", 芃: "木", 若: "木",
+  明: "火", 昭: "火", 晖: "火", 景: "火", 煦: "火", 阳: "火", 炎: "火",
+  安: "土", 坤: "土", 辰: "土", 宇: "土", 山: "土", 岳: "土", 厚: "土",
+  鑫: "金", 金: "金", 钧: "金", 铎: "金", 铭: "金", 锦: "金", 钰: "金",
+  清: "水", 沅: "水", 泽: "水", 涵: "水", 沐: "水", 江: "水", 川: "水", 雨: "水",
 };
+
+type ClassicNameSuggestion = {
+  element: ElementName;
+  kind: "单字名" | "双字名";
+  name: string;
+  source: string;
+  meaning: string;
+};
+
+const CLASSIC_NAME_SUGGESTIONS: readonly ClassicNameSuggestion[] = [
+  { element: "木", kind: "单字名", name: "乔", source: "《诗经·小雅·伐木》", meaning: "取乔木向上、生发成材之意。" },
+  { element: "木", kind: "单字名", name: "桐", source: "《诗经·大雅·卷阿》", meaning: "取梧桐承凤、清雅有根之意。" },
+  { element: "木", kind: "双字名", name: "清芷", source: "《楚辞·九歌》", meaning: "取芳草清芬，补木而不显得厚重。" },
+  { element: "木", kind: "双字名", name: "嘉树", source: "《楚辞·橘颂》", meaning: "取嘉木自立、生机端正之意。" },
+  { element: "火", kind: "单字名", name: "昭", source: "《诗经·大雅·文王》", meaning: "取光明显达，增强表达与照见之气。" },
+  { element: "火", kind: "单字名", name: "明", source: "《大学》", meaning: "取明德、明辨，让名字更有光亮感。" },
+  { element: "火", kind: "双字名", name: "景行", source: "《诗经·小雅·车舝》", meaning: "取可仰可行的明朗道路。" },
+  { element: "火", kind: "双字名", name: "昭华", source: "《楚辞·九思》", meaning: "取光华外显，适合补火的名字意象。" },
+  { element: "土", kind: "单字名", name: "安", source: "《论语·里仁》", meaning: "取安定、安仁，补稳定承载之气。" },
+  { element: "土", kind: "单字名", name: "厚", source: "《周易·坤》", meaning: "取厚德载物，补土的承接与包容。" },
+  { element: "土", kind: "双字名", name: "维岳", source: "《诗经·大雅·崧高》", meaning: "取山岳厚重，适合补土的根基感。" },
+  { element: "土", kind: "双字名", name: "安仁", source: "《论语·里仁》", meaning: "取安于仁道，稳而不钝。" },
+  { element: "金", kind: "单字名", name: "铎", source: "《论语·八佾》", meaning: "取木铎宣声，补金的清响与号令。" },
+  { element: "金", kind: "单字名", name: "钧", source: "《尚书》", meaning: "取均衡、权衡之意，名字更有骨力。" },
+  { element: "金", kind: "双字名", name: "金声", source: "《孟子·万章下》", meaning: "取金声玉振，补金的清正与成章。" },
+  { element: "金", kind: "双字名", name: "玉振", source: "《孟子·万章下》", meaning: "取金声玉振，含收束成器之美。" },
+  { element: "水", kind: "单字名", name: "清", source: "《诗经·魏风·伐檀》", meaning: "取河水清涟，补水的流动与澄明。" },
+  { element: "水", kind: "单字名", name: "沅", source: "《楚辞·涉江》", meaning: "取沅水之名，补水而有远行感。" },
+  { element: "水", kind: "双字名", name: "清扬", source: "《诗经·郑风·野有蔓草》", meaning: "取清扬明朗，水意轻灵。" },
+  { element: "水", kind: "双字名", name: "沅芷", source: "《楚辞·九歌》", meaning: "取沅水兰芷，兼有水木之清。" },
+];
+
 
 export type NameAnalysisViewState = {
   name: string;
@@ -221,219 +219,71 @@ export function buildUsageRiskInputs(
   return risks;
 }
 
-function percent(value: number): string {
-  return `${Math.round(value * 100)}%`;
+function dominantNameElement(character: NameCharacterRecord): ElementName | null {
+  const hinted = NAME_ELEMENT_HINTS[character.adoptedGlyph ?? character.inputGlyph]
+    ?? NAME_ELEMENT_HINTS[character.inputGlyph];
+  if (hinted) return hinted;
+  if (!character.semantic?.vector) return null;
+  const winner = ELEMENTS.reduce((current, element) =>
+    character.semantic!.vector[element] > character.semantic!.vector[current]
+      ? element
+      : current,
+  "木" as ElementName);
+  return character.semantic.vector[winner] > 0 ? winner : null;
 }
 
-function scoreStatus(score: NameRealityScore): string {
-  if (score.totalStatus === "complete") return `${score.total} / 100`;
-  if (score.totalStatus === "blocked") return "事实尚待确认，当前不形成总分";
-  return "尚未完成现实验证，暂不评分";
+function uniqueElements(values: readonly ElementName[]): ElementName[] {
+  return ELEMENTS.filter(element => values.includes(element));
 }
 
-function vectorText(vector: NameSemanticSummary["vector"]): string {
-  if (!vector) return "已审校字义资料不足，当前不生成文化向量。";
-  return ELEMENTS.map(element => `${element} ${percent(vector[element])}`).join(" · ");
+function elementList(values: readonly ElementName[], fallback = "暂无明显缺口"): string {
+  return values.length ? values.join("、") : fallback;
 }
 
-function registeredGlyphFacts(character: NameCharacterRecord, mode: NameAnalysisMode): string {
-  const facts = mode === "traditional-reference" ? character.inputTghFacts : character;
-  if (!facts) return `${character.inputCodePoints.join(" ")} · 规范等级与笔画记录将在传统候选确认后单独核对`;
-  const level = facts.tghLevel ? `通用规范汉字表第 ${facts.tghLevel} 级` : "8105 字核心表暂未覆盖";
-  const strokes = facts.totalStrokeRecord?.rawValue ? `总笔画工程记录 ${facts.totalStrokeRecord.rawValue}` : "总笔画记录待核";
-  return `${character.inputCodePoints.join(" ")} · ${level} · ${strokes}`;
+function buildNameReference(analysis: NameAnalysisViewResult): {
+  chartElements: readonly ElementName[];
+  nameElements: readonly ElementName[];
+  coveredElements: readonly ElementName[];
+  missingElements: readonly ElementName[];
+  score: number;
+} {
+  const chartElements = uniqueElements(Object.values(
+    analysis.chartInteraction?.input.certainPillars ?? {},
+  ).flatMap(pillar => pillar ? [pillar.element, pillar.branchElement] : []));
+  const nameElements = uniqueElements(analysis.characters.flatMap(character => {
+    const element = dominantNameElement(character);
+    return element ? [element] : [];
+  }));
+  const coveredElements = uniqueElements([...chartElements, ...nameElements]);
+  const missingElements = ELEMENTS.filter(element => !coveredElements.includes(element));
+  return {
+    chartElements,
+    nameElements,
+    coveredElements,
+    missingElements,
+    score: coveredElements.length * 20,
+  };
 }
 
-function traditionalGlyphFacts(character: NameCharacterRecord, selectedGlyph: string): string {
-  const candidate = character.variantCandidates.find(item => item.glyph === selectedGlyph);
-  const codePoints = candidate?.codePoints.join(" ") || "码位待核";
-  const strokes = character.totalStrokeRecord?.rawValue ? `总笔画工程记录 ${character.totalStrokeRecord.rawValue}` : "总笔画记录待核";
-  return `${codePoints} · ${strokes} · 规范等级只用于现实登记字形`;
-}
-
-function NameCharacterCard({ character, index, state, onTraditionalSelection, onReadingSelection }: {
-  character: NameCharacterRecord;
-  index: number;
-  state: NameAnalysisViewState;
-  onTraditionalSelection: (characterIndex: number, glyph: string) => void;
-  onReadingSelection: (characterIndex: number, reading: string) => void;
-}) {
-  return <article className="name-character-card">
-    <header>
-      <div><small>现实登记字形</small><strong>{character.inputGlyph}</strong></div>
-      {state.mode === "traditional-reference" && <div><small>采用的传统参考字形</small><strong>{character.adoptedGlyph ?? "尚未采用"}</strong></div>}
-    </header>
-    <div className="name-glyph-facts"><p><b>现实登记字形事实</b>{registeredGlyphFacts(character, state.mode)}</p>
-      {state.mode === "traditional-reference" && character.adoptedGlyph && <p><b>传统参考字形事实</b>{traditionalGlyphFacts(character, character.adoptedGlyph)}</p>}
-    </div>
-
-    {state.mode === "traditional-reference" && character.variantCandidates.length > 0 && <fieldset className="name-choice-group">
-      <legend>请选择“{character.inputGlyph}”在姓名中的实际含义对应字形</legend>
-      {character.variantCandidates.map(candidate => <label key={candidate.glyph}>
-        <input
-          checked={state.traditionalSelections[index] === candidate.glyph}
-          name={`traditional-${index}`}
-          onChange={() => onTraditionalSelection(index, candidate.glyph)}
-          type="radio"
-          value={candidate.glyph}
-        />
-        <span><b>{candidate.glyph}</b><small>{candidate.meaningHint}</small></span>
-      </label>)}
-      <small>候选默认不选择；简体实际输入与采用的传统参考字形始终并排保留。</small>
-    </fieldset>}
-
-    {character.readings.length > 1 && <fieldset className="name-choice-group name-reading-choices">
-      <legend>请确认姓名中的实际读音</legend>
-      {character.readings.map(reading => <label key={reading.pinyin}>
-        <input
-          checked={state.actualReadings[index] === reading.pinyin}
-          name={`reading-${index}`}
-          onChange={() => onReadingSelection(index, reading.pinyin)}
-          type="radio"
-          value={reading.pinyin}
-        />
-        <span><b>{reading.pinyin}</b><small>声调 {reading.tone} · {reading.sourceProperty}</small></span>
-      </label>)}
-    </fieldset>}
-
-    <dl className="name-character-evidence">
-      <div><dt>采用读音</dt><dd>{character.adoptedReading ?? "待本人确认"}</dd></div>
-      <div><dt>采用义项</dt><dd>{character.meaning ?? "有限人工审校集暂未覆盖"}</dd></div>
-      <div><dt>字义五行文化向量</dt><dd>{character.semantic ? vectorText(character.semantic.vector) : "待审校"}</dd></div>
-      <div><dt>未知比例</dt><dd>{character.semantic ? percent(character.semantic.unknownShare) : "100%"}</dd></div>
-      <div><dt>审校依据</dt><dd>{character.semantic?.basisText ?? "不从部首、笔画或规范等级补猜汉字五行。"}</dd></div>
-    </dl>
-    {character.analysisBlockers.map(blocker => <p className="name-pending-note" key={blocker.id}>{blocker.evidence}</p>)}
-  </article>;
-}
-
-function RealityTest({ analysis, state, onRealityAnswer }: {
-  analysis: NameAnalysisViewResult;
-  state: NameAnalysisViewState;
-  onRealityAnswer: (dimension: RealityDimension, answer: RealityAnswer) => void;
-}) {
-  return <section className="name-reality-test" aria-labelledby="name-reality-title">
-    <header><div><small>可选 · 约 30 秒</small><h3 id="name-reality-title">姓名现实使用实测分</h3></div><strong>{scoreStatus(analysis.realityScore)}</strong></header>
-    <p>只评估这个姓名方案在现实场景中的使用情况，不评价人；任一维未验证或事实被阻断时不显示总分。</p>
-    <div className="name-reality-grid">
-      {REALITY_DIMENSIONS.map(dimension => {
-        const result = analysis.realityScore.dimensions[dimension.id];
-        return <fieldset key={dimension.id}>
-          <legend><b>{dimension.title}</b><small>{dimension.prompt}</small></legend>
-          <div>{dimension.options.map(([value, label]) => <label key={value}>
-            <input
-              checked={state.realityTest[dimension.id] === value}
-              name={`reality-${dimension.id}`}
-              onChange={() => onRealityAnswer(dimension.id, value)}
-              type="radio"
-              value={value}
-            />
-            <span>{label}</span>
-          </label>)}</div>
-          <p><code>{result.ruleId}</code>{result.score === null ? "未计分" : `${result.score} 分`} · {result.reason}</p>
-        </fieldset>;
-      })}
-    </div>
-  </section>;
-}
-
-function UsageRiskReview({ state, onReview }: {
-  state: NameAnalysisViewState;
-  onReview: (riskId: UsageRiskId, reviewed: boolean) => void;
-}) {
-  const risks = buildUsageRiskInputs(state.realityTest, state.usageRiskReviews);
-  if (!risks.length) return null;
-  return <section className="name-risk-review" aria-labelledby="name-risk-review-title">
-    <header><small>建议门禁</small><h3 id="name-risk-review-title">现实风险复核门</h3></header>
-    <p>实测低分只说明出现了摩擦，不会自动触发更名建议。只有本人确认、并且已经人工复核的持续硬风险才会进入建议引擎。</p>
-    {risks.map(risk => <label key={risk.id}>
-      <input
-        checked={risk.manuallyReviewed}
-        onChange={event => onReview(risk.id, event.target.checked)}
-        type="checkbox"
-      />
-      <span><b>{risk.id === "confirmed-severe-homophone-or-ambiguity" ? "严重含义歧义" : "持续称呼、输入或证件摩擦"}</b><small>{risk.evidence}</small></span>
-    </label>)}
-    <aside>勾选表示：你确认这项问题已经由人工结合真实材料复核。确认前不会触发更名建议。</aside>
-  </section>;
-}
-
-function ChartComparison({ interaction }: { interaction: NameChartInteraction | null }) {
-  if (!interaction) return null;
-  return <section className="name-chart-comparison" aria-labelledby="name-chart-title">
-    <header><h3 id="name-chart-title">姓名文化与出生盘并排看</h3><p>两张资料卡只并排阅读，不合并计算。</p></header>
-    <div>
-      <article><small>姓名字义文化向量</small><p>{vectorText(interaction.nameVector)}</p></article>
-      <article><small>出生盘稳定坐标</small><p>{Object.entries(interaction.input.certainPillars).map(([key, pillar]) => `${PILLAR_LABELS[key as keyof typeof PILLAR_LABELS]} ${pillar.stem}${pillar.branch}`).join(" · ") || "边界坐标仍待核"}</p></article>
-    </div>
-    <p>{interaction.ruleObservation}</p>
-    <p>{interaction.plainLanguageScene}</p>
-    <p>{interaction.action}</p>
-    <aside>{interaction.boundary}</aside>
-  </section>;
-}
-
-function AdviceAndDirections({ analysis, candidateMode }: {
-  analysis: NameAnalysisViewResult;
-  candidateMode: boolean;
-}) {
-  const canShowDirections = candidateMode && analysis.advice.tier === "rebuild-direction";
-  return <section className="name-advice" aria-labelledby="name-advice-title">
-    <header><small>建议门禁</small><h3 id="name-advice-title">{ADVICE_LABELS[analysis.advice.tier]}</h3></header>
-    <p>{analysis.advice.ruleObservation}</p>
-    <p>{analysis.advice.plainLanguageScene}</p>
-    <p>{analysis.advice.action}</p>
-    <aside>{analysis.advice.boundary}</aside>
-    {candidateMode && !canShowDirections && <p className="name-pending-note">事实确认后再显示方向。</p>}
-    {canShowDirections && <section className="name-directions" aria-labelledby="name-directions-title">
-      <h4 id="name-directions-title">三个命名方向</h4>
-      <p>示例字经过逐字审校；动态组合的完整姓名统一标为“待人工复核”。</p>
-      <div>{analysis.directions.map(direction => <article key={direction.id}>
-        <small>待人工复核</small><h5>{direction.title}</h5><p>{direction.plainLanguageScene}</p>
-        <ul>{direction.exampleCharacters.map(example => <li key={example.glyph}><b>{example.glyph}</b>{example.meaning}</li>)}</ul>
-        <p>{direction.action}</p>
-      </article>)}</div>
-    </section>}
-  </section>;
-}
-
-function EvidenceAndSources({ analysis, sameNameExitConfirmed, onConfirmSameNameExit }: {
-  analysis: NameAnalysisViewResult;
-  sameNameExitConfirmed: boolean;
-  onConfirmSameNameExit: () => void;
-}) {
-  return <details className="name-sources">
-    <summary>依据与流派边界</summary>
-    <div>
-      <p>{analysis.boundary}</p>
-      <p>{analysis.frequencyContext}</p>
-      <p>传统字形参考不是现实登记字形，也不等同于康熙字形；五格／81 数理属于 20 世纪文化附录，默认关闭，不进入主分。</p>
-      <ul className="name-source-links">
-        <li><a href="https://www.moe.gov.cn/jyb_sjzl/ziliao/A19/201306/t20130601_186002.html" rel="noreferrer" target="_blank">教育部《通用规范汉字表》</a><small>规范字范围与三级边界，不支持姓名吉凶或汉字五行。</small></li>
-        <li><a href="https://www.moe.gov.cn/jyb_xwfb/xw_fbh/moe_2069/s7135/s7562/s7569/201308/t20130827_156343.html" rel="noreferrer" target="_blank">教育部：简繁对应与一简多繁</a><small>必须结合具体义项确认，不授权静默换写。</small></li>
-        <li><a href="https://www.unicode.org/Public/17.0.0/ucd/Unihan.zip" rel="noreferrer" target="_blank">Unicode 17.0.0 Unihan</a><small>字符工程数据，不直接证明姓名含义或五行。</small></li>
-      </ul>
-      <p className="name-source-ids">来源 ID：{analysis.sourceIds.join(" · ")}</p>
-      <section className="same-name-exit">
-        <b>官方同名查询</b><p>本产品未查询全国同名人数，也不会预填姓名。</p>
-        {!sameNameExitConfirmed
-          ? <button onClick={onConfirmSameNameExit} type="button">查看离站与隐私提示</button>
-          : <aside role="note"><p>将离开本产品，后续登录、实名认证和信息处理由公安部平台负责；请自行判断是否继续。</p><a href="https://ywtb.mps.gov.cn/" rel="noreferrer" target="_blank">确认后前往公安部互联网政务服务平台</a></aside>}
-      </section>
-    </div>
-  </details>;
+function buildClassicSuggestions(
+  missingElements: readonly ElementName[],
+  nameElements: readonly ElementName[],
+): readonly ClassicNameSuggestion[] {
+  const targets = missingElements.length
+    ? missingElements
+    : ELEMENTS.filter(element => !nameElements.includes(element));
+  const primary = targets[0] ?? "木";
+  const singles = CLASSIC_NAME_SUGGESTIONS
+    .filter(item => item.element === primary && item.kind === "单字名")
+    .slice(0, 2);
+  const doubles = CLASSIC_NAME_SUGGESTIONS
+    .filter(item => item.element === primary && item.kind === "双字名")
+    .slice(0, 2);
+  return [...singles, ...doubles];
 }
 
 export function NameAnalysisView({
   analysis,
-  state,
-  onDetailsOpenChange,
-  onModeChange,
-  onTraditionalSelection,
-  onReadingSelection,
-  onRealityAnswer,
-  onUsageRiskReview = () => {},
-  onConfirmSameNameExit,
 }: {
   analysis: NameAnalysisViewResult;
   state: NameAnalysisViewState;
@@ -445,49 +295,56 @@ export function NameAnalysisView({
   onUsageRiskReview?: (riskId: UsageRiskId, reviewed: boolean) => void;
   onConfirmSameNameExit: () => void;
 }) {
-  return <section className="name-analysis-section" data-name-analysis="ready">
-    <header className="name-analysis-summary">
-      <div><small>现用姓名 · {analysis.fullNameReviewStatus}</small><h2>姓名使用与五行文化</h2><p className="name-current-glyphs">{analysis.rawInput}</p></div>
-      <dl>
-        <div><dt>姓名现实使用实测分</dt><dd>{scoreStatus(analysis.realityScore)}</dd></div>
-        <div><dt>资料覆盖</dt><dd>字义 {analysis.semanticSummary.reviewedCount}/{analysis.semanticSummary.totalCount} · 未知占比 {percent(analysis.semanticSummary.unknownShare)}</dd></div>
-      </dl>
-      <div className="name-summary-translation">
-        <p><b>本次观察</b>{analysis.ruleObservation}</p>
-        <p><b>现实场景</b>{analysis.plainLanguageScene}</p>
+  const reference = buildNameReference(analysis);
+  const suggestions = buildClassicSuggestions(reference.missingElements, reference.nameElements);
+  const targetElements = reference.missingElements.length
+    ? reference.missingElements
+    : ELEMENTS.filter(element => !reference.nameElements.includes(element));
+
+  return <section className="name-analysis-section name-reference-section" data-name-analysis="ready">
+    <header className="name-reference-summary">
+      <div>
+        <small>姓名文化测分 · 仅供参考</small>
+        <h2>姓名五行参考分</h2>
+        <p className="name-current-glyphs">{analysis.rawInput}</p>
       </div>
-      <p className="name-first-action"><b>现在做一件事</b>{analysis.action}</p>
-      <p className="name-summary-boundary"><b>阅读边界</b>{analysis.boundary}</p>
+      <div className="name-reference-score" aria-label={`姓名五行参考分 ${reference.score}/100`}>
+        <strong>{reference.score}</strong><span>/100</span>
+      </div>
     </header>
 
-    <details className="name-analysis-depth" onToggle={event => onDetailsOpenChange(event.currentTarget.open)} open={state.detailsOpen}>
-      <summary>展开姓名事实、现实实测与文化并读</summary>
-      <div className="name-analysis-depth-content">
-        <section className="name-mode-section" aria-label="姓名分析口径">
-          <header><h3>逐字事实与采用口径</h3><p>主口径始终保留现实登记字形；传统参考只在本人主动确认后采用。</p></header>
-          <div className="name-mode-switch">
-            <button aria-pressed={state.mode === "current"} onClick={() => onModeChange("current")} type="button">现用姓名</button>
-            <button aria-pressed={state.mode === "traditional-reference"} onClick={() => onModeChange("traditional-reference")} type="button">传统字形参考（可选）</button>
-            <button aria-pressed={state.mode === "candidate"} onClick={() => onModeChange("candidate")} type="button">新姓名方向</button>
-          </div>
-          <div className="name-character-grid">{analysis.characters.map((character, index) => <NameCharacterCard
-            character={character}
-            index={index}
-            key={`${index}-${character.rawCluster}`}
-            onReadingSelection={onReadingSelection}
-            onTraditionalSelection={onTraditionalSelection}
-            state={state}
-          />)}</div>
-          <aside className="name-semantic-summary"><b>字义五行文化向量</b><p>{vectorText(analysis.semanticSummary.vector)}</p><small>审校覆盖 {analysis.semanticSummary.reviewedCount}/{analysis.semanticSummary.totalCount} · 未知比例 {percent(analysis.semanticSummary.unknownShare)}。覆盖率不是分数。</small></aside>
-        </section>
+    <div className="name-reference-grid">
+      <article>
+        <h3>五行缺补</h3>
+        <p>命盘可见五行：{elementList(reference.chartElements, "出生盘稳定信息暂少")}；姓名名义偏向：{elementList(reference.nameElements, "暂未形成明显名义五行")}。</p>
+        <p>当前合看已见：{elementList(reference.coveredElements)}；建议留意：{elementList(reference.missingElements)}。</p>
+      </article>
+      <article>
+        <h3>名义五行补救建议</h3>
+        <p>{targetElements.length
+          ? `取名意象可优先向${elementList(targetElements)}靠拢，选字时看字义、读音和日常称呼是否顺口。`
+          : "五行已经齐备，名字重点放在读音清朗、书写稳定和本人喜欢。"}
+        </p>
+        <p>这个分数只看“五行是否齐备”的趣味规则，不评价人，也不替代现实登记和家庭取名判断。</p>
+      </article>
+    </div>
 
-        <RealityTest analysis={analysis} onRealityAnswer={onRealityAnswer} state={state} />
-        <UsageRiskReview onReview={onUsageRiskReview} state={state} />
-        <ChartComparison interaction={analysis.chartInteraction} />
-        <AdviceAndDirections analysis={analysis} candidateMode={state.mode === "candidate"} />
-        <EvidenceAndSources analysis={analysis} onConfirmSameNameExit={onConfirmSameNameExit} sameNameExitConfirmed={state.sameNameExitConfirmed} />
+    <section className="name-classic-suggestions" aria-label="典籍取名建议">
+      <header>
+        <h3>典籍取名建议</h3>
+        <p>从《诗经》《楚辞》《论语》《尚书》《周易》等典籍意象中挑字，下面给出两个单字名、两个双字名，方便继续试分。</p>
+      </header>
+      <div>
+        {suggestions.map(suggestion => (
+          <article data-classic-name={suggestion.name} key={`${suggestion.kind}-${suggestion.name}`}>
+            <small>{suggestion.kind} · 补{suggestion.element}</small>
+            <h4>{suggestion.name}</h4>
+            <p>{suggestion.meaning}</p>
+            <span>{suggestion.source}</span>
+          </article>
+        ))}
       </div>
-    </details>
+    </section>
   </section>;
 }
 

@@ -282,21 +282,21 @@ function buildProfessionalReadings(
     !chart.ambiguousPillars.includes(fact.key)
     && !(fact.key === "day" && dayAxisAmbiguous)).length;
   const overview = dayAxisAmbiguous
-    ? `日柱与日干参照待核；当前只确认其余${stableCount}柱的天干地支与纳音，所有依赖日干换算的十神和十二长生均保留候选。`
-    : `${report.dayMaster}为日干参照，当前有${stableCount}柱可作稳定观察；十神、藏干、纳音和十二长生按上表逐项列出，不由单项推出人生结果。`;
+    ? `日柱与日干参照待核；当前只确认其余${stableCount}柱的天干地支、纳音与可见五行，凡依赖日干换算的十神、藏干十神和十二长生都先作为候选，不把候选十神当成定局。`
+    : `${report.dayMaster}为日干参照，当前有${stableCount}柱可作稳定观察；年柱看早年与外部背景，月柱看月令气势，日柱看自身与亲密位置，时柱看后续展开；十神、藏干、纳音和十二长生按上表互相参照，不由单项推出人生结果。`;
   const month = dayAxisAmbiguous
-    ? "日干参照待核，月令的十神与旺衰观察暂不作单一判断；当前只保留月支与本气等不依赖日干的坐标。"
+    ? "日干参照待核，月令的十神与旺衰观察暂不作单一判断；当前只保留月支、本气、天干地支和纳音等不依赖日干的坐标，等日主确认后再看月令对十神强弱的牵动。"
     : report.monthCommand.ambiguous
-      ? "月令处在交节候选范围，本气与十神暂不作单一判断；旺衰只保留月令、透干与根气的事实层观察。"
-      : `${report.monthCommand.branch}月令以${report.monthCommand.hiddenStem}为本气，相对日干呈${report.monthCommand.tenGod}；旺衰只列月令、透干和根气事实，不下身强身弱定论。`;
-  const flow = `明见：${listText(visibility.visibleElements)}；只藏未透：${listText(visibility.hiddenOnlyElements)}；当前稳定柱未见：${listText(visibility.absentInStablePillars)}。这些只是显隐记录，不直接等于需要补足。`;
+      ? "月令处在交节候选范围，本气与十神暂不作单一判断；旺衰先看月令、透干、根气、藏干是否呼应，再看四柱有没有成势或被冲散，暂不下身强身弱定论。"
+      : `${report.monthCommand.branch}月令以${report.monthCommand.hiddenStem}为本气，相对日干呈${report.monthCommand.tenGod}；旺衰先看月令得气，再看天干是否透出、地支是否有根、藏干是否帮扶或制约，最后才把十神作用放回全局。`;
+  const flow = `明见：${listText(visibility.visibleElements)}；只藏未透：${listText(visibility.hiddenOnlyElements)}；当前稳定柱未见：${listText(visibility.absentInStablePillars)}。显在五行像台面上的人手，藏干像仓库里的备用资源；要看它们与日主、月令和十神是否接得上，不直接等于需要补救。`;
   const relations = relationAmbiguous
-    ? "关系资料待核，当前不显示具体合、冲、刑、害、破或三合结论。"
+    ? "关系资料待核，当前不显示具体合、冲、刑、害、破或三合结论；待四柱稳定后，才把天干合化、地支冲合刑害与三合三会放在同一张关系网里看。"
     : report.relations.length
       ? report.relations.map(relation =>
-          `${relation.label}（${relation.pillars.map(key => pillarNames[key]).join("、")}）`).join("；")
-      : "当前稳定柱之间未见可确认的合、冲、刑、害、破或三合关系。";
-  const missing = `当前稳定柱未见：${listText(visibility.absentInStablePillars)}。未见只表示已确认资料中没有直接出现，不等于缺陷，也不自动指向补救。${visibility.hourUnknown ? "时柱未填写，当前未见项仍可能随时柱变化。" : "四柱已列，仍须结合现实处境检验任何建议。"} `;
+          `${relation.label}（${relation.pillars.map(key => pillarNames[key]).join("、")}），需同时看被牵动的柱位、对应十神和月令气势`).join("；")
+      : "当前稳定柱之间未见可确认的合、冲、刑、害、破或三合关系；这表示关系网暂时清爽，但仍要看天干地支的五行生克、十神分布和月令气势。";
+  const missing = `当前稳定柱未见：${listText(visibility.absentInStablePillars)}。未见只表示已确认资料中没有直接出现，需再看藏干、纳音、月令和十神是否能间接补气，不等于人生缺陷，也不自动指向补救。${visibility.hourUnknown ? "时柱未填写，当前未见项仍可能随时柱变化。" : "四柱已列，仍须结合现实处境检验任何建议。"} `;
 
   return [
     { id: "overview", title: "命局总论", professionalText: overview },
@@ -330,11 +330,15 @@ function PlainTranslation({
 }) {
   return (
     <div className="plain-translation">
-      <p><strong>这是什么意思：</strong>{translation.whatItMeans}</p>
-      <p><strong>生活里会怎样：</strong>{translation.lifeScene}</p>
-      <p><strong>可以怎么做：</strong>{translation.practicalGuidance}</p>
+      <p className="readability-copy"><strong>这是什么意思：</strong>{translation.whatItMeans}</p>
+      <p className="readability-copy"><strong>生活里会怎样：</strong>{translation.lifeScene}</p>
+      <p className="readability-copy"><strong>可以怎么做：</strong>{translation.practicalGuidance}</p>
     </div>
   );
+}
+
+function WaterfallHint() {
+  return <span className="waterfall-open-hint">点开阅读 · 收起回到总览</span>;
 }
 
 const beatLabels = [
@@ -359,7 +363,7 @@ function NarrativeBeatCard({
     <article className="chart-narrative-beat">
       <h3>{title}</h3>
       {beatLabels.map(([field, label]) => (
-        <p key={field}><strong>{label}</strong>{beat[field]}</p>
+        <p className="readability-copy" key={field}><strong>{label}</strong>{beat[field]}</p>
       ))}
     </article>
   );
@@ -384,7 +388,7 @@ function MicroStoryCard({
     <article className="chart-micro-story">
       <h3>{story.title}</h3>
       {microLabels.map(([field, label]) => (
-        <p key={field}><strong>{label}</strong>{story[field]}</p>
+        <p className="readability-copy" key={field}><strong>{label}</strong>{story[field]}</p>
       ))}
     </article>
   );
@@ -477,20 +481,27 @@ export function ChartSection({
       <ProfessionalPillarTable grid={grid} />
 
       <section
-        className="professional-reading-sections"
+        className="professional-reading-sections waterfall-grid"
         aria-label="命盘专业解读与通俗说明"
       >
         {readings.map(reading => {
           const translation = translationById.get(reading.id);
           if (!translation) return null;
           return (
-            <article className="professional-reading-section" key={reading.id}>
-              <h2>{reading.title}</h2>
-              <p className="professional-reading-copy">
-                {reading.professionalText}
-              </p>
-              <PlainTranslation translation={translation} />
-            </article>
+            <details className="professional-reading-section waterfall-card" key={reading.id}>
+              <summary>
+                <small>命盘小模块</small>
+                <h2>{reading.title}</h2>
+                <p>{reading.professionalText}</p>
+                <WaterfallHint />
+              </summary>
+              <div className="waterfall-card-body">
+                <p className="professional-reading-copy">
+                  {reading.professionalText}
+                </p>
+                <PlainTranslation translation={translation} />
+              </div>
+            </details>
           );
         })}
       </section>
