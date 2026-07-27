@@ -40,8 +40,8 @@ describe("life home overview", () => {
   it("makes recording an event and a relation the first overview actions", () => {
     const html = renderToStaticMarkup(createElement(LifeHome, {
       profile,
-      onChange: () => ({ ok: true }),
-      onClear: () => ({ ok: true }),
+      onChange: () => ({ ok: true as const }),
+      onClear: () => ({ ok: true as const }),
       onViewReport: () => undefined,
     }));
 
