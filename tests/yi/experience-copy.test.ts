@@ -511,6 +511,20 @@ it("keeps mirror guidance and user-owned side labels visible in the initial face
   expect(html).toContain('<div class="mirror-side-labels"><span>你的左脸</span><span>你的右脸</span></div>');
 });
 
+it("keeps a light version note in the atlas without restoring evidence panels", () => {
+  const birth = {
+    name: "男", date: "1990-06-15", time: "09:30", location: "杭州",
+    gender: "unspecified", timeConfidence: "exact",
+  } as const;
+  const chart = calculateFourPillars(birth);
+  const html = renderToStaticMarkup(createElement(ReferenceAtlasSection, { chart, birth }));
+
+  expect(html).toContain("版本说明");
+  expect(html).toContain("明代佚名编纂");
+  expect(html).toMatch(/传统图谱|文化模型/u);
+  expect(html).not.toMatch(/专业依据|本章来源|本章依据与使用边界|查看完整来源与规则/u);
+});
+
 it("integrates constellation maps and mole user-side copy without a second mirror transform", () => {
   const source = readFileSync(resolve("components/yi/ReferenceAtlasSection.tsx"), "utf8");
   const css = readFileSync(resolve("app/globals.css"), "utf8");

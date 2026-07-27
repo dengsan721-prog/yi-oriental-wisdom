@@ -98,6 +98,9 @@ export function ReferenceAtlasSection({
       ><b>{item.label}</b><small>{item.subtitle}</small></button>)}
     </div>
     <p className="atlas-boundary">标准照片与图谱仅供自行对照；本页不会读取、上传或识别你的照片。</p>
+    <p className="atlas-version-note">
+      版本说明：传统图谱采用固定公开参考图与文字卡；相学文化名目参照《新刊图相麻衣相法》页面标注明代佚名编纂，只作文化自查，不回到人生故事判断。
+    </p>
     {birth.gender === "unspecified" && isMirrorMethod && <div
       className="atlas-gender-switch"
       aria-label="参考人物性别"
