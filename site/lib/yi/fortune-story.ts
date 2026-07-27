@@ -473,9 +473,22 @@ function lifeStageForAge(age: number): LifeStageContext {
   return LIFE_STAGE_CONTEXTS[6];
 }
 
+function safeTransitionEndStage(
+  start: LifeStageContext,
+  end: LifeStageContext,
+): LifeStageContext {
+  if (start.id === "preschool" && end.id !== "preschool") {
+    return LIFE_STAGE_CONTEXTS[1];
+  }
+  if (start.youth && !end.youth) {
+    return LIFE_STAGE_CONTEXTS[2];
+  }
+  return end;
+}
+
 function lifeStageForPeriod(period: FortunePeriod): LifeStageContext {
   const start = lifeStageForAge(period.startAge);
-  const end = lifeStageForAge(period.endAge);
+  const end = safeTransitionEndStage(start, lifeStageForAge(period.endAge));
   if (start.id === end.id) return start;
   const startLabel = start.label.replace(/期$/u, "");
   const endLabel = end.label.replace(/期$/u, "");
@@ -493,6 +506,24 @@ function lifeStageForPeriod(period: FortunePeriod): LifeStageContext {
     reviewPartner: "家人、同伴或其他可信任的人",
     youth: start.youth && end.youth,
   };
+}
+
+function lifeStageForPeriodYear(
+  period: FortunePeriod,
+  age: number,
+): LifeStageContext {
+  const stage = lifeStageForAge(age);
+  if (
+    period.startAge <= 6
+    && period.endAge > 6
+    && stage.id !== "preschool"
+  ) {
+    return LIFE_STAGE_CONTEXTS[1];
+  }
+  if (period.startAge <= 17 && period.endAge > 17 && !stage.youth) {
+    return LIFE_STAGE_CONTEXTS[2];
+  }
+  return stage;
 }
 
 function deepFreeze<T>(value: T, seen = new Set<object>()): Readonly<T> {
@@ -516,12 +547,13 @@ function storyCategory(tenGod: TenGodName): StoryCategory {
 function buildFortuneStoryYear(
   chart: Readonly<FourPillarsResult>,
   year: FortunePeriod["years"][number],
+  stageOverride?: LifeStageContext,
 ): FortuneStoryYear {
   const annualGod = calculateTenGod(
     chart.pillars.day.stem,
     year.stemBranch[0],
   );
-  const lifeStage = lifeStageForAge(year.age);
+  const lifeStage = stageOverride ?? lifeStageForAge(year.age);
   const annualFrame = lifeStage.id === "preschool"
     ? PRESCHOOL_STORY_FRAMES[annualGod]
     : ANNUAL_STORY_FRAMES[annualGod];
@@ -594,7 +626,7 @@ function buildFortuneStoryPeriod(
         `${action}完成后与${lifeStage.reviewPartner}核对一次结果，再决定是否继续。`
       ) as [string, string, string];
   const years = period.years.map(year =>
-    buildFortuneStoryYear(chart, year)
+    buildFortuneStoryYear(chart, year, lifeStageForPeriodYear(period, year.age))
   ) as [FortuneStoryYear, ...FortuneStoryYear[]];
   return {
     id: period.id,

@@ -41,6 +41,37 @@ const alternateBirth: BirthInput = {
   timeConfidence: "exact",
 };
 
+const fiveElementBirths = [
+  {
+    element: "木",
+    birth: { ...exactBirth, date: "1988-08-08", time: "18:30" },
+  },
+  {
+    element: "火",
+    birth: { ...exactBirth, date: "2001-09-21", time: "14:10" },
+  },
+  {
+    element: "土",
+    birth: { ...exactBirth, date: "1995-05-17", time: "12:00" },
+  },
+  {
+    element: "金",
+    birth: { ...exactBirth, date: "1978-12-05", time: "06:20" },
+  },
+  {
+    element: "水",
+    birth: {
+      ...exactBirth,
+      date: "1992-11-03",
+      time: null,
+      timeConfidence: "unknown",
+    },
+  },
+] as const satisfies readonly {
+  element: ElementName;
+  birth: BirthInput;
+}[];
+
 const BEAT_FIELDS = [
   "situation",
   "opportunity",
@@ -626,6 +657,15 @@ describe("deterministic chart narrative", () => {
       expect(progression.match(/接着/g) ?? []).toHaveLength(0);
       expect(progression.split("。").filter(Boolean).length)
         .toBeGreaterThanOrEqual(5);
+
+      const entryCollaboration = narrative.careerAdvice[0].turnAction;
+      expect(entryCollaboration).toContain("项目第一次对齐会");
+      expect(entryCollaboration).toMatch(
+        /同一页.+讨论出现分歧.+会后.+随后六次汇报/u,
+      );
+      expect(entryCollaboration).not.toMatch(
+        /先处理眼前一步|有了反馈/u,
+      );
     }
 
     const noMaterial = fixture();
@@ -673,6 +713,33 @@ describe("deterministic chart narrative", () => {
         expect(new Set(advice.map(story => story[field])).size, field)
           .toBe(advice.length);
       }
+    }
+  });
+
+  it("gives overview, environment, and flow their own five-element scenes and actions", () => {
+    const narratives = fiveElementBirths.map(({ element, birth }) => {
+      const { chart, report, items } = fixture(birth);
+      expect(chart.professional.dayMaster.element).toBe(element);
+      return buildChartNarrative(chart, report, items);
+    });
+
+    for (const sectionId of [
+      "overview",
+      "month-strength",
+      "element-flow",
+    ] as const) {
+      const passages = narratives.map(narrative => {
+        const section = narrative.professionalTranslations.find(
+          translation => translation.sectionId === sectionId,
+        );
+        expect(section).toBeDefined();
+        return `${section!.lifeScene}${section!.practicalGuidance}`;
+      });
+
+      expect(
+        repeatedHanFragments(passages, 24, fiveElementBirths.length),
+        sectionId,
+      ).toEqual([]);
     }
   });
 

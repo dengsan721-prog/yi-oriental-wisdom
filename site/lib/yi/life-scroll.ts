@@ -99,21 +99,26 @@ type ElementTexture = Readonly<{
   matureLead: string;
   reviewLead: string;
   reflectionLead: string;
+  desireScene: string;
+  careerScene: string;
+  careerActionScene: string;
+  relationshipScene: string;
+  relationshipActionScene: string;
+  rhythmScene: string;
+  rhythmActionScene: string;
+  matureScene: string;
 }>;
 
 type StructureFrame = Readonly<{
   openingMethod: string;
   overuseCost: string;
   matureMethod: string;
-  daoTension: string;
 }>;
 
 type RelationFrame = Readonly<{
   conflict: string;
   repair: string;
   visibleTurn: string;
-  daoScene: string;
-  daoAction: string;
 }>;
 
 type DaoFrameContext = Readonly<{
@@ -170,6 +175,22 @@ const ELEMENT_TEXTURES: Readonly<Record<ElementName, ElementTexture>> = {
     matureLead: "后来，你不再把不断扩张当成唯一进步。",
     reviewLead: "每轮回看时，方向仍要接受现实修剪。",
     reflectionLead: "回头看这次修枝，真正的变化不在口号里。",
+    desireScene:
+      "方向还不完整时，你把零散线索接成一条可试的路径，也允许第一版在反馈中修剪。",
+    careerScene:
+      "新项目刚启动时，你把所有想法画成一张分支图，只选一条能在三天内交付的小枝先做。",
+    careerActionScene:
+      "第一版交出去后，再依据使用者反馈决定继续生长、改向还是停下。",
+    relationshipScene:
+      "两个人商量下一年的生活安排时，你先写下共同目标，再分别说明各自需要保留的空间。",
+    relationshipActionScene:
+      "方向一致不等于每一步相同，先约定一个月后的复查点，比催对方立刻跟上更可靠。",
+    rhythmScene:
+      "新想法连续冒出来的一周，你只保留一项正在生长的任务，其余放进候选清单。",
+    rhythmActionScene:
+      "连续两周比较完成量与恢复感，没有现实进展的枝线暂不追加投入。",
+    matureScene:
+      "每个季度回看一次正在推进的方向，保留有成果和反馈支撑的部分，停止只靠热情维持的支线。成熟不是长得更多，而是知道何时扶正、何时修剪。",
   },
   火: {
     theme: "让重要之事被看见，也给判断留下冷静复核的空间",
@@ -186,6 +207,22 @@ const ELEMENT_TEXTURES: Readonly<Record<ElementName, ElementTexture>> = {
     matureLead: "后来，热情不再靠持续燃烧证明。",
     reviewLead: "每轮回看时，热度仍要接受安静复核。",
     reflectionLead: "回头看这次降温，转折要靠新的回应发亮。",
+    desireScene:
+      "重点刚被看见时，你把热情收成一个能被复述的问题，再邀请现场补上不同意见。",
+    careerScene:
+      "重要方案第一次亮相时，你把内容收成一页重点和一个明确请求，用十分钟讲完，再把剩余时间交给现场提问。",
+    careerActionScene:
+      "别人能复述重点，才说明这次表达真正照亮了问题。",
+    relationshipScene:
+      "争论的音量和语速开始上升时，双方先暂停二十分钟，再轮流说事实、感受和请求。",
+    relationshipActionScene:
+      "每个人说完后请对方复述，避免把沉默直接解释成冷淡或拒绝。",
+    rhythmScene:
+      "一轮发布、授课或公开表达结束后，不马上承诺下一场高强度任务，先留出半天收尾和恢复。",
+    rhythmActionScene:
+      "三天后再看睡眠、注意力与反馈质量，决定是否重新加量。",
+    matureScene:
+      "每次重要表达前写清受众、重点和希望得到的回应，结束后也安排固定降温时间。热情能够反复点亮事情，却不再依赖持续燃烧自己。",
   },
   土: {
     theme: "在承接责任时守住边界，让稳定能够容纳必要变化",
@@ -202,6 +239,22 @@ const ELEMENT_TEXTURES: Readonly<Record<ElementName, ElementTexture>> = {
     matureLead: "后来，稳定不再靠一个人硬撑。",
     reviewLead: "每轮回看时，承重仍要重新核对容量。",
     reflectionLead: "回头看这次卸重，稳定要由新的分工检验。",
+    desireScene:
+      "责任逐渐聚拢时，你先把承接范围画清，再确认哪些重量需要共同分担。",
+    careerScene:
+      "临时接手项目时，你把负责人、决定权限、交付物和验收人放进同一张责任表。",
+    careerActionScene:
+      "会后若仍有任务无人承接，就公开补位，不再默认由最可靠的人继续兜底。",
+    relationshipScene:
+      "家庭照顾或家务分工开始失衡时，把一周任务逐项摆到日历上，标出谁发起、谁执行、谁收尾。",
+    relationshipActionScene:
+      "先归还一项长期代办，再观察关系是否因为边界清楚而轻松一些。",
+    rhythmScene:
+      "日程已经没有空白时，先移出一项并非必须由自己完成的任务，把腾出的时间真正留给吃饭、睡眠或安静恢复。",
+    rhythmActionScene:
+      "七天后比较负荷与精力，确认减量有没有发生，而不是只换一种忙法。",
+    matureScene:
+      "每月核对一次责任台账，区分亲自承担、共同承担、可以交接和应该停止的事项。稳定来自重量被合理分配，不来自一个人永远不说累。",
   },
   金: {
     theme: "用清楚标准切开混乱，也为过渡与协商保留位置",
@@ -218,6 +271,22 @@ const ELEMENT_TEXTURES: Readonly<Record<ElementName, ElementTexture>> = {
     matureLead: "后来，准确不只意味着敢于取舍，也意味着愿意复查。",
     reviewLead: "每轮回看时，标准仍要为修正留下入口。",
     reflectionLead: "回头看这次留白，标准要经过真实协作检验。",
+    desireScene:
+      "混乱需要被切开时，你先写下能核对的标准，也给例外和异议留下位置。",
+    careerScene:
+      "评审新方案时，你先列出三项必须达到的标准，再单列允许试验的例外。",
+    careerActionScene:
+      "两个方案各做一次小样，用真实结果决定取舍，避免标准还没经过现场就变成裁决。",
+    relationshipScene:
+      "讨论周末安排或共同预算时，先把不能退让的底线与仍可协商的部分分开。",
+    relationshipActionScene:
+      "每一方都说完理由后再决定，清楚不再等于谁先下结论。",
+    rhythmScene:
+      "一天结束前，你先关闭已经完成或暂时无须推进的事项，写下明天唯一必须处理的重点。",
+    rhythmActionScene:
+      "停止时间之后不再新增任务，让判断从疲惫中退出来。",
+    matureScene:
+      "每次重要决定都保留结论、依据、例外和复查日期。准确不是一次切得最干净，而是标准在新事实出现时仍能修正。",
   },
   水: {
     theme: "在流动选择中守住主线，让变化汇入可持续方向",
@@ -234,6 +303,22 @@ const ELEMENT_TEXTURES: Readonly<Record<ElementName, ElementTexture>> = {
     matureLead: "后来，灵活不再等于随时改道。",
     reviewLead: "每轮回看时，变化仍要回到长期主线。",
     reflectionLead: "回头看这次收流，主线要由后续节奏确认。",
+    desireScene:
+      "信号从不同方向涌来时，你先分清主流与支流，让变化服务一个长期问题。",
+    careerScene:
+      "同时出现两个机会时，你分别给它们设七天试验、投入上限和停止条件。",
+    careerActionScene:
+      "到期只比较新增事实、真实成本与协作反馈，再决定哪条路进入主线。",
+    relationshipScene:
+      "临时改变计划时，你先说清哪项承诺不变、哪部分可以调整，以及何时再次确认。",
+    relationshipActionScene:
+      "变化有了坐标，对方才不必把改道理解成随时撤回。",
+    rhythmScene:
+      "信息多到无法排序时，先关闭三个非必要入口，只保留一个信息源和一个当天动作。",
+    rhythmActionScene:
+      "完成后再决定是否打开下一条通道，不让新鲜信息不断冲散注意力。",
+    matureScene:
+      "每月画一次决定地图，标出当前主线、备用路径和允许切换的条件。灵活仍被保留，但每次改道都要重新回答它是否服务长期方向。",
   },
 };
 
@@ -252,6 +337,22 @@ const NEUTRAL_TEXTURE: ElementTexture = {
   matureLead: "未知部分继续留白，已经确认的部分则反复核对。",
   reviewLead: "每轮回看时，只保留有新事实支持的调整。",
   reflectionLead: "回头看这次试验，只用后来出现的事实判断。",
+  desireScene:
+    "材料尚未稳定时，只选择一件低风险的小事验证，不把一次结果扩大成人生结论。",
+  careerScene:
+    "面对一项新任务，先写清目标、权限、验收方式和可以撤回的位置。",
+  careerActionScene:
+    "完成一轮小试验后，只根据新增事实决定继续、调整还是停止。",
+  relationshipScene:
+    "面对一场尚未说清的对话，只记录事实、影响和双方实际说出的请求。",
+  relationshipActionScene:
+    "先请对方复述理解，再约定一个可以观察的新动作和重谈时间。",
+  rhythmScene:
+    "面对一周负荷变化，只减少一个变量，并记录注意力、睡眠和结束时间。",
+  rhythmActionScene:
+    "记录满七天后再比较变化，不用一天轻松或疲惫替长期节奏下结论。",
+  matureScene:
+    "每次复盘只保留有新事实支持的做法，同时写清停止条件和求助入口。未知部分继续留白，已经确认的部分允许下一轮修正。",
 };
 
 const STRUCTURE_FRAMES: Readonly<Record<
@@ -265,7 +366,6 @@ const STRUCTURE_FRAMES: Readonly<Record<
       "过度的一端是继续承接、准备和补充，行动窗口却在反复完善中逐渐缩小。",
     matureMethod:
       "长期方法要给输入设置停止点，并让每一轮积累都接上一项现实交付。",
-    daoTension: "准备和承接不断增加，现实行动却被向后推迟",
   },
   mixed: {
     openingMethod:
@@ -274,7 +374,6 @@ const STRUCTURE_FRAMES: Readonly<Record<
       "过度的一端是在多个方向间反复切换，忙于平衡，却没有留下清楚的主次。",
     matureMethod:
       "长期方法要固定主线与复盘节点，只在新事实真正改变判断时调整路线。",
-    daoTension: "多个方向彼此牵动，主线和补给都容易失去次序",
   },
   "expression-heavy": {
     openingMethod:
@@ -283,7 +382,6 @@ const STRUCTURE_FRAMES: Readonly<Record<
       "过度的一端是行动和表达持续加速，理解、恢复与协作容量却来不及跟上。",
     matureMethod:
       "长期方法要在每次输出后安排恢复和反馈，让速度不再依靠持续透支。",
-    daoTension: "输出速度不断上升，理解和恢复空间却被逐渐挤压",
   },
 };
 
@@ -294,7 +392,6 @@ const NEUTRAL_STRUCTURE: StructureFrame = {
     "结构尚未稳定时，不把一次顺利或吃力扩大成长期结论，只记录具体条件与结果。",
   matureMethod:
     "长期方法先保留检查点和停止条件，让未知部分继续留白。",
-  daoTension: "条件尚未稳定，行动容易被过早解释成固定结论",
 };
 
 const RELATION_FRAMES: Readonly<Record<ChartRelation["type"], RelationFrame>> = {
@@ -305,8 +402,6 @@ const RELATION_FRAMES: Readonly<Record<ChartRelation["type"], RelationFrame>> = 
       "修复要把共同意图写成负责人、期限与完成标准，再让双方复述各自理解。",
     visibleTurn:
       "可见转折是口头共识开始变成各方都能核对的书面约定。",
-    daoScene: "共同意图已经出现，但职责和完成标准仍未说清",
-    daoAction: "把负责人、期限与完成标准逐项确认",
   },
   "branch-combination": {
     conflict:
@@ -315,8 +410,6 @@ const RELATION_FRAMES: Readonly<Record<ChartRelation["type"], RelationFrame>> = 
       "修复要先确认共同目标，再把资源归属、退出条件和复核时间逐项说清。",
     visibleTurn:
       "可见转折是默契之外出现清楚边界，合作不再依赖任何一方自行猜测。",
-    daoScene: "日常配合逐渐顺手，资源边界和退出条件却被省略",
-    daoAction: "确认共同目标并补齐资源边界与退出条件",
   },
   "branch-trine": {
     conflict:
@@ -325,8 +418,6 @@ const RELATION_FRAMES: Readonly<Record<ChartRelation["type"], RelationFrame>> = 
       "修复要把分散力量收回一个共同目标，并设置阶段检查点与停止条件。",
     visibleTurn:
       "可见转折是团队从同时加码改为分段投入，每一步都有容量检查。",
-    daoScene: "多方力量同向增加，整体容量和停止位置却被忽略",
-    daoAction: "只保留一个共同目标并设置阶段检查点",
   },
   "branch-clash": {
     conflict:
@@ -335,8 +426,6 @@ const RELATION_FRAMES: Readonly<Record<ChartRelation["type"], RelationFrame>> = 
       "修复要暂停即时结论，分列双方事实与不可让渡项，再安排限时协调。",
     visibleTurn:
       "可见转折是对撞被拆成具体条件，双方开始讨论可调整与不可调整之处。",
-    daoScene: "时间表与立场正面对撞，双方都急着先保住自己的答案",
-    daoAction: "暂停即时结论并分列双方事实与底线",
   },
   "branch-punishment": {
     conflict:
@@ -345,8 +434,6 @@ const RELATION_FRAMES: Readonly<Record<ChartRelation["type"], RelationFrame>> = 
       "修复要记录触发顺序并设置停止条件，必要时请第三方拆开责任与情绪。",
     visibleTurn:
       "可见转折是重复循环第一次在固定位置停下，新的回应得以进入。",
-    daoScene: "同一问题反复加码，旧办法在压力下被不断重复",
-    daoAction: "记录触发顺序并在固定位置设置停止信号",
   },
   "branch-harm": {
     conflict:
@@ -355,8 +442,6 @@ const RELATION_FRAMES: Readonly<Record<ChartRelation["type"], RelationFrame>> = 
       "修复要先复述听见的意思，再补问遗漏条件，不根据暗示替对方决定。",
     visibleTurn:
       "可见转折是暗示被具体问题取代，误解在继续累积前得到核对。",
-    daoScene: "表面仍然平静，未说清的顾虑和期待却持续错位",
-    daoAction: "先复述所听见的意思，再询问遗漏条件",
   },
   "branch-break": {
     conflict:
@@ -365,8 +450,6 @@ const RELATION_FRAMES: Readonly<Record<ChartRelation["type"], RelationFrame>> = 
       "修复要逐条核对旧约定的适用范围，保留可用部分并写下过渡安排。",
     visibleTurn:
       "可见转折是旧接口被明确更新，责任和资源重新找到承接位置。",
-    daoScene: "旧约定开始松动，新安排还没有接住责任与资源",
-    daoAction: "核对旧约定范围并写下清楚的过渡安排",
   },
 };
 
@@ -377,8 +460,6 @@ const NEUTRAL_RELATION: RelationFrame = {
     "通用修复从复述事实、提出具体请求和约定重谈时间开始，不预设谁应该让步。",
   visibleTurn:
     "只有当相关的人都能观察并确认一项新的回应时，才把它视为可见转折。",
-  daoScene: "双方需要重新核对事实、影响和可以承担的下一步",
-  daoAction: "复述事实并提出一项可以回应的具体请求",
 };
 
 const DAO_PLACEMENTS: readonly DaoPlacement[] = [
@@ -438,6 +519,35 @@ const DAO_CONTEXT_FALLBACKS: Readonly<
     tension: "旧方法仍可能再出现",
     turn: "保留一项有效改变",
     action: "约定复查时间和边界",
+  },
+};
+
+const DAO_STORY_CONTEXTS: Readonly<
+  Record<DaoPlacement, DaoStoryContext>
+> = {
+  career: {
+    scene: "目标与权限未对齐的新任务",
+    tension: "责任已落下，权限仍未说清",
+    turn: "把目标和验收人写进同一页",
+    action: "比较两次交付的返工和责任空白",
+  },
+  relationship: {
+    scene: "期待尚未说出口的重要对话",
+    tension: "双方只顾解释，未复述请求",
+    turn: "逐项说清事实感受需要和请求",
+    action: "约定重谈并核对新规则",
+  },
+  "turning-point": {
+    scene: "连续加量后注意力下降的一周",
+    tension: "任务增加，恢复窗口被挤掉",
+    turn: "移出一项负荷并记录变化",
+    action: "比较睡眠专注和结束时间",
+  },
+  closing: {
+    scene: "十二周记录后的复盘",
+    tension: "一次调整正被当成长久答案",
+    turn: "只保留新事实支持的做法",
+    action: "写下复查停止和求助条件",
   },
 };
 
@@ -554,13 +664,6 @@ function leadIntoStory(lead: string, ...details: string[]): string {
   return completeSentence(`${openingClause}，${details.join("")}`);
 }
 
-function asConnectedClause(value: string): string {
-  return value
-    .trim()
-    .replace(/[。！？]+$/u, "")
-    .replace(/[。！？]+/gu, "，");
-}
-
 function rewriteReviewedStoryText(value: string): string {
   return value
     .replaceAll("命理线索", "现有线索")
@@ -576,33 +679,36 @@ function rewriteReviewedStoryText(value: string): string {
     );
 }
 
-function safeStoryField(value: string, fallback: string): string {
-  const rewritten = rewriteReviewedStoryText(value);
-  return completeSentence(
-    !rewritten.trim() || PUBLIC_FORBIDDEN.test(rewritten)
-      ? fallback
-      : rewritten,
-  );
-}
-
-function conciseCompleteThought(
+function conciseDaoSlot(
   value: string,
   fallback: string,
-  maximumHan = 30,
+  slot: "scene" | "tension" | "turn" | "action",
+  maximumHan = 16,
 ): string {
   const rewritten = rewriteReviewedStoryText(value);
-  const candidates = rewritten
+  const candidate = rewritten
     .split(/[。！？；，,]/u)
     .map(part => part.trim())
-    .filter(Boolean);
-  const selected = candidates.find(part => {
-    const length = countHan(part);
-    return length >= 4
+    .find(Boolean);
+  if (!candidate) return fallback;
+  const length = countHan(candidate);
+  const invalidEnding = /[而和与并再把将在为时后里]$/u.test(candidate);
+  const invalidOpening = (slot === "turn" || slot === "action")
+    && /^(?:并|再|先|随后|接着)/u.test(candidate);
+  const invalidScene = slot === "scene"
+    && /(?:提醒|适合|开始|完成)$/u.test(candidate);
+  const invalidFragment =
+    /时(?:成为|已经|让|后)|人物先(?:并|再)|提醒观察(?:成为|已经|让)|当[^，。]{2,18}已经/u
+      .test(candidate);
+  return length >= 4
       && length <= maximumHan
-      && !PUBLIC_FORBIDDEN.test(part)
-      && !/[而和与并再把将在为]$/u.test(part);
-  });
-  return selected ?? fallback;
+      && !PUBLIC_FORBIDDEN.test(candidate)
+      && !invalidEnding
+      && !invalidOpening
+      && !invalidScene
+      && !invalidFragment
+    ? candidate
+    : fallback;
 }
 
 function isUsableDaoNote(note: ReviewedDaoNote): note is UsableDaoNote {
@@ -618,27 +724,27 @@ function buildDaoNote(
 ): DaoStoryNote {
   const frame = frames[note.id];
   const fallbackContext = DAO_CONTEXT_FALLBACKS[placement];
-  const safeScene = conciseCompleteThought(
+  const safeScene = conciseDaoSlot(
     context.scene,
     fallbackContext.scene,
-    12,
+    "scene",
   );
   const safeContext: DaoFrameContext = {
-    tension: conciseCompleteThought(
+    tension: conciseDaoSlot(
       context.tension,
       fallbackContext.tension,
-      12,
+      "tension",
     ),
-    turn: conciseCompleteThought(
+    turn: conciseDaoSlot(
       context.turn,
       fallbackContext.turn,
-      12,
+      "turn",
     ),
     scene: safeScene,
-    action: conciseCompleteThought(
+    action: conciseDaoSlot(
       context.action,
       fallbackContext.action,
-      12,
+      "action",
     ),
     opening: DAO_STORY_OPENINGS[placement](safeScene),
   };
@@ -733,49 +839,45 @@ function selectNarrativeDaoThemes(
 ): readonly DaoNoteTheme[] {
   if (!hasAnyMaterial) {
     return [
-      "patience",
-      "self-knowledge",
       "small-steps",
+      "self-knowledge",
+      "patience",
       "completion",
     ];
   }
 
-  const themes: DaoNoteTheme[] = [];
-  const add = (theme: DaoNoteTheme): void => {
-    if (themes.length < 4 && !themes.includes(theme)) themes.push(theme);
-  };
-
-  if (structureBalance === "expression-heavy") {
-    add("flexibility");
-    add("self-knowledge");
-  } else if (structureBalance === "support-heavy") {
-    add("small-steps");
-    add("long-road");
-  } else {
-    add("patience");
-    add("self-knowledge");
-  }
-
-  if (relations.some(relation =>
+  const hasCooperativeRelation = relations.some(relation =>
     relation.type === "stem-combination"
     || relation.type === "branch-combination"
-    || relation.type === "branch-trine")) {
-    add("service");
-  }
-  if (relations.some(relation =>
+    || relation.type === "branch-trine");
+  const hasTenseRelation = relations.some(relation =>
     relation.type === "branch-clash"
     || relation.type === "branch-punishment"
     || relation.type === "branch-harm"
-    || relation.type === "branch-break")) {
-    add("bend");
-  }
-  if (hasCareerMaterial && hasRhythmMaterial) {
-    add("small-steps");
-    add("long-road");
-  }
-  add("completion");
+    || relation.type === "branch-break");
+  const careerTheme: DaoNoteTheme = hasCareerMaterial
+    && structureBalance === "support-heavy"
+    ? "long-road"
+    : "small-steps";
+  const relationshipTheme: DaoNoteTheme = hasCooperativeRelation
+    ? "service"
+    : "self-knowledge";
+  const turningTheme: DaoNoteTheme = !hasRhythmMaterial
+    ? "patience"
+    : hasTenseRelation
+    ? "bend"
+    : structureBalance === "expression-heavy"
+    ? "flexibility"
+    : structureBalance === "support-heavy"
+    ? "reversal"
+    : "patience";
 
-  return themes;
+  return [
+    careerTheme,
+    relationshipTheme,
+    turningTheme,
+    "completion",
+  ];
 }
 
 function selectDomainItem(
@@ -830,7 +932,7 @@ export function buildLifeScrollNarrative(
   const relationship = selectDomainItem(stableItems, "relationship");
   const rhythm = selectDomainItem(stableItems, "rhythm");
   const hasAnyMaterial = stableItems.length > 0;
-  const texture = stable.dayMasterElement
+  const texture = hasAnyMaterial && stable.dayMasterElement
     ? ELEMENT_TEXTURES[stable.dayMasterElement]
     : NEUTRAL_TEXTURE;
   const structure = stable.structureBalance
@@ -842,59 +944,23 @@ export function buildLifeScrollNarrative(
   const lessonIntent = extractLessonIntent(stable.currentLesson)
     ?? "先把事实、边界和下一次检查时间说清";
 
-  const selfScenario = safeStoryField(
-    self?.scenario ?? "",
-    "当需要同时处理几项责任时，先把事实、容量和优先顺序放在一起核对。",
-  );
-  const talentAdvantage = safeStoryField(
-    talent?.advantageVersion ?? "",
-    "可用的能力先通过一项小而可逆的任务接受检验，再决定是否扩大投入。",
-  );
-  const careerAdvantage = safeStoryField(
-    career?.advantageVersion ?? "",
-    "通用观察是先确认对象、目标、权限和完成标准，再开始一项可逆的小试验。",
-  );
-  const careerShadow = safeStoryField(
-    career?.shadowVersion ?? "",
-    "通用风险是为了尽快获得确定感而一次承担过多，使边界、依赖和恢复成本被推到后面。",
-  );
-  const relationshipShadow = safeStoryField(
-    relationship?.shadowVersion ?? "",
-    "通用风险是双方用各自解释填补空白，使原本可协商的问题逐渐变成防御。",
-  );
-  const relationshipAction = safeStoryField(
-    relationship?.actionNow ?? "",
-    "通用动作是分别说明事实、影响、需要与具体请求，再请对方复述理解。",
-  );
-  const rhythmAction = safeStoryField(
-    rhythm?.actionNow ?? "",
-    "通用动作是记录一周的负荷、专注和恢复，再只调整一项可以观察的安排。",
-  );
-  const rhythmLongTerm = safeStoryField(
-    rhythm?.actionLongTerm ?? "",
-    "通用长期方法是固定复盘时间，每次只改变一个变量，并保留停止与求助条件。",
-  );
-  const rhythmAdvantage = safeStoryField(
-    rhythm?.advantageVersion ?? "",
-    "通用观察是把恢复纳入任务计划，并根据连续记录调整工作与休息。",
-  );
-
   const situation = storyBeat(
     "situation",
-    `眼前的处境${texture.situation}。${selfScenario}`,
+    `眼前的处境${texture.situation}。${texture.desireScene}`,
     self,
   );
   const desire = storyBeat(
     "desire",
-    `在这段处境里，你真正想守住的是${texture.desiredOutcome}：${asConnectedClause(talentAdvantage)}。这份能力要接受“${lessonIntent}”的约束，才会从愿望进入现实行动。${stable.hourUnknown ? UNKNOWN_TIME_SENTENCE : ""}`,
+    `在这段处境里，你真正想守住的是${texture.desiredOutcome}。接下来要让“${lessonIntent}”进入一个可检查的现实动作，而不是停在愿望里。${stable.hourUnknown ? UNKNOWN_TIME_SENTENCE : ""}`,
     talent,
   );
   const opening = career
     ? storyBeat(
         "opening",
-        leadIntoStory(
+        joinCompleteSentences(
           texture.careerOpeningLead,
-          careerAdvantage,
+          texture.careerScene,
+          texture.careerActionScene,
           structure.openingMethod,
         ),
         career,
@@ -911,9 +977,8 @@ export function buildLifeScrollNarrative(
   const cost = career
     ? storyBeat(
         "cost",
-        leadIntoStory(
+        joinCompleteSentences(
           texture.careerCostLead,
-          `${asConnectedClause(careerShadow)}。`,
           structure.overuseCost,
         ),
         career,
@@ -929,9 +994,9 @@ export function buildLifeScrollNarrative(
   const lowPoint = relationship
     ? storyBeat(
         "low-point",
-        leadIntoStory(
+        joinCompleteSentences(
           texture.relationshipLowPointLead,
-          `${asConnectedClause(relationshipShadow)}。`,
+          texture.relationshipScene,
           relation.conflict,
         ),
         relationship,
@@ -948,9 +1013,9 @@ export function buildLifeScrollNarrative(
   const choice = relationship
     ? storyBeat(
         "choice",
-        leadIntoStory(
+        joinCompleteSentences(
           texture.relationshipChoiceLead,
-          relationshipAction,
+          texture.relationshipActionScene,
           relation.repair,
         ),
         relationship,
@@ -966,13 +1031,11 @@ export function buildLifeScrollNarrative(
   const turn = rhythm
     ? storyBeat(
         "turn",
-        leadIntoStory(
+        joinCompleteSentences(
           texture.rhythmTurnLead,
-          rhythmAction,
-          leadIntoStory(
-            texture.transition,
-            "节奏稍稍恢复后，人物才有余地回到关系事实，再核对可调整与不可调整的条件。",
-          ),
+          texture.rhythmScene,
+          texture.rhythmActionScene,
+          "稍稳后，再把关系条件带回对话",
           relation.visibleTurn.replace(/^可见转折是/u, "这时，"),
         ),
         rhythm,
@@ -988,14 +1051,10 @@ export function buildLifeScrollNarrative(
   const matureMethod = rhythm
     ? storyBeat(
         "mature-method",
-        leadIntoStory(
+        joinCompleteSentences(
           texture.matureLead,
-          rhythmLongTerm,
+          texture.matureScene,
           structure.matureMethod,
-          leadIntoStory(
-            texture.reviewLead,
-            "从此，每轮行动都重新核对这条约定有没有改善现实结果。",
-          ),
         ),
         rhythm,
       )
@@ -1022,32 +1081,7 @@ export function buildLifeScrollNarrative(
   const daoPlacementContexts: Readonly<
     Record<DaoPlacement, DaoStoryContext>
   > = hasAnyMaterial
-    ? {
-        career: {
-          scene: career?.scenario ?? careerAdvantage,
-          tension: career?.shadowVersion ?? careerShadow,
-          turn: career?.actionNow ?? careerAdvantage,
-          action: career?.actionLongTerm ?? structure.openingMethod,
-        },
-        relationship: {
-          scene: relationship?.scenario ?? relation.daoScene,
-          tension: relationship?.shadowVersion ?? relationshipShadow,
-          turn: relationship?.actionNow ?? relationshipAction,
-          action: relationship?.actionLongTerm ?? relation.daoAction,
-        },
-        "turning-point": {
-          scene: rhythm?.scenario ?? "需要恢复基本容量的时刻",
-          tension: rhythm?.shadowVersion ?? "负荷与恢复尚未重新平衡",
-          turn: relation.visibleTurn,
-          action: rhythm?.actionNow ?? rhythmAction,
-        },
-        closing: {
-          scene: rhythm?.advantageVersion ?? rhythmAdvantage,
-          tension: structure.daoTension,
-          turn: lessonIntent,
-          action: rhythm?.actionLongTerm ?? rhythmLongTerm,
-        },
-      }
+    ? DAO_STORY_CONTEXTS
     : {
         career: {
           scene: "只观察一项事业小试验",
@@ -1095,16 +1129,16 @@ export function buildLifeScrollNarrative(
     .filter((entry): entry is readonly [MissingDomain, undefined] => !entry[1])
     .map(([domain]) => `missing-domain:${domain}`);
 
-  const turningReflection = leadIntoStory(
+  const turningReflection = joinCompleteSentences(
     texture.reflectionLead,
-    `${asConnectedClause(joinCompleteSentences(
-      "这个转折是否成立，要看行动后是否出现可观察的新反馈",
-      "把这条行动约定放在这里，是为了让选择继续接受相关人的回应，而不是宣告人物已经改变",
-    ))}。`,
+    texture.transition,
+    texture.reviewLead,
   );
   const matureReflection = rhythm
-    ? completeSentence(
-        `${rhythmAdvantage}${texture.maturity}。每次复盘只保留一项有新事实支持的调整，让长期方法既能累积，也能被停止或修正`,
+    ? joinCompleteSentences(
+        texture.maturity,
+        texture.reviewLead,
+        texture.reflectionLead,
       )
     : completeSentence(
         "缺少稳定节奏材料时，成熟只作通用观察：记录负荷、恢复和实际结果，连续异常或明显不适则停止自行解释并寻求专业帮助",
