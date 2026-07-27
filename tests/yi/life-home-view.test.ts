@@ -1,4 +1,5 @@
 import { createElement } from "react";
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { LifeHome } from "../../components/yi/LifeHome";
@@ -37,7 +38,7 @@ const profile: LifeProfile = {
 };
 
 describe("life home overview", () => {
-  it("makes recording an event and a relation the first overview actions", () => {
+  it("keeps the first life-home screen focused on one simple self-cultivation record", () => {
     const html = renderToStaticMarkup(createElement(LifeHome, {
       profile,
       onChange: () => ({ ok: true as const }),
@@ -45,11 +46,36 @@ describe("life home overview", () => {
       onViewReport: () => undefined,
     }));
 
-    expect(html).toContain("记录一件事");
-    expect(html).toContain("记录一个关系");
-    expect(html).toContain("成就看板");
-    expect(html).toContain("已完成 1/2");
-    expect(html.indexOf("记录一件事")).toBeLessThan(html.indexOf("年度计划入口"));
-    expect(html.indexOf("记录一个关系")).toBeLessThan(html.indexOf("月度计划入口"));
+    expect(html).toContain("记录自己的所见所闻所思所想");
+    expect(html).toContain("念、思、言、行");
+    expect(html).toContain("<button>改命</button>");
+    expect(html).toContain('aria-label="今天发生的一件事"');
+    expect(html).toContain('aria-label="当下感受"');
+    expect(html).toContain('aria-label="下一步计划"');
+    expect(html).toContain("写下这一条");
+    expect(html).not.toContain("记录一个关系");
+    expect(html).not.toContain("人生首页入口");
+    expect(html).not.toContain("年度计划入口");
+    expect(html).not.toContain("月度计划入口");
+  });
+
+  it("keeps change-life summaries, sprout guidance and rewards behind the top change button", () => {
+    const source = readFileSync(new URL("../../components/yi/LifeHome.tsx", import.meta.url), "utf8");
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+
+    expect(source).toContain('"改命"');
+    expect(source).toContain('"change"');
+    expect(source).toContain("月度记录汇总");
+    expect(source).toContain("年度记录汇总");
+    expect(source).toContain("内容分析");
+    expect(source).toContain("数据分析");
+    expect(source).toContain("发芽");
+    expect(source).toContain("连续填写");
+    expect(source).toContain("转念，然后改命");
+    expect(source).toContain("查看命盘报告");
+    expect(css).toContain(".life-record-window");
+    expect(css).toContain(".life-change-dashboard");
+    expect(css).toContain(".life-data-cube");
+    expect(css).toContain(".life-sprout-card");
   });
 });

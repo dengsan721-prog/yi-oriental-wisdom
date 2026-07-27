@@ -202,4 +202,21 @@ describe("light five-element CSS contract", () => {
     expect(rule(".primary-button,.secondary-button,.primary,.report-nav button,.result-tabs button,.life-nav button")).toContain("min-height:44px");
     expect(rule(".report-document-title h1")).toContain("overflow-wrap:anywhere");
   });
+
+  it("raises dense report copy into readable hierarchy cards", () => {
+    expect(rule(".readability-copy")).toContain("font-size:15px");
+    expect(rule(".readability-copy")).toContain("line-height:1.85");
+    expect(rule(".name-reference-summary")).toContain("background:linear-gradient");
+    expect(rule(".name-reference-score strong")).toContain("font-size:clamp(42px,8vw,70px)");
+    expect(rule(".plain-translation p,.chart-narrative-beat p,.chart-micro-story p")).toContain("font-size:15px");
+    expect(rule(".professional-reading-copy")).toContain("font-size:15px");
+  });
+
+  it("keeps traditional atlas selection text readable on light surfaces", () => {
+    expect(rule(".atlas-methods button,.atlas-options button")).toContain("background:var(--yi-surface-raised)");
+    expect(rule(".atlas-methods button,.atlas-options button")).toContain("color:var(--yi-text)");
+    expect(rule(".atlas-methods button small,.atlas-options button small")).toContain("color:var(--yi-text-muted)");
+    expect(rule(".atlas-methods button.active,.atlas-options button.active")).toContain("background:var(--yi-accent-soft)");
+    expect(rule(".atlas-methods button.active,.atlas-options button.active")).toContain("color:var(--yi-accent-strong)");
+  });
 });

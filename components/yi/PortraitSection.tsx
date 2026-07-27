@@ -31,6 +31,23 @@ function PlacedDaoNotes({
     .map(note => <DaoNote key={note.internalSourceId} note={note} />);
 }
 
+function WaterfallSummary({
+  index,
+  title,
+  subtitle,
+}: {
+  index: string;
+  title: string;
+  subtitle: string;
+}) {
+  return <summary>
+    <small>{index}</small>
+    <h2>{title}</h2>
+    <p>{subtitle}</p>
+    <span className="waterfall-open-hint">点开阅读 · 收起回到总览</span>
+  </summary>;
+}
+
 function MirrorInterlude({
   kind,
   mirror,
@@ -38,18 +55,19 @@ function MirrorInterlude({
   kind: "动物镜像" | "历史镜像";
   mirror: StoryMirror;
 }) {
-  return <article className="life-scroll-part life-scroll-interlude">
-    <header>
-      <small>{kind}</small>
-      <h2>{mirror.name}</h2>
-    </header>
-    <div className="life-scroll-mirror">
+  return <details className="life-scroll-part waterfall-card life-scroll-interlude">
+    <WaterfallSummary
+      index={kind}
+      title={mirror.name}
+      subtitle={kind === "动物镜像" ? "用一个动物场景读懂行动方式" : "用一个历史人物读懂人生回声"}
+    />
+    <div className="waterfall-card-body life-scroll-mirror">
       <p><strong>{kind === "动物镜像" ? "它是谁" : "这位人物是谁"}</strong>{mirror.introduction}</p>
       <p><strong>相像的一幕</strong>{mirror.matchingScene}</p>
       <p><strong>重要区别</strong>{mirror.difference}</p>
       <p><strong>带走的方法</strong>{mirror.takeaway}</p>
     </div>
-  </article>;
+  </details>;
 }
 
 export function PortraitSection({
@@ -69,49 +87,61 @@ export function PortraitSection({
       <h1>人生画卷</h1>
       <p>从眼前处境读起，看见事业、关系与节奏怎样彼此牵动，再把今天能做的一步留下来。</p>
     </header>
-    <div className="life-scroll-reading">
-      <article className="life-scroll-part life-scroll-opening">
-        <header><small>01</small><h2>人生一句话</h2></header>
-        <blockquote>{narrative.oneLineTheme}</blockquote>
-        {narrative.openingScene.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
-      </article>
+    <div className="life-scroll-reading waterfall-grid">
+      <details className="life-scroll-part waterfall-card life-scroll-opening">
+        <WaterfallSummary index="01" title="人生一句话" subtitle={narrative.oneLineTheme} />
+        <div className="waterfall-card-body">
+          <blockquote>{narrative.oneLineTheme}</blockquote>
+          {narrative.openingScene.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+        </div>
+      </details>
 
       <MirrorInterlude kind="动物镜像" mirror={narrative.animalInterlude} />
 
-      <article className="life-scroll-part">
-        <header><small>02</small><h2>事业线</h2></header>
-        {narrative.careerArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
-        <PlacedDaoNotes notes={narrative.daoNotes} placement="career" />
-      </article>
+      <details className="life-scroll-part waterfall-card">
+        <WaterfallSummary index="02" title="事业线" subtitle="事业、承担与机会怎样展开" />
+        <div className="waterfall-card-body">
+          {narrative.careerArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+          <PlacedDaoNotes notes={narrative.daoNotes} placement="career" />
+        </div>
+      </details>
 
-      <article className="life-scroll-part">
-        <header><small>03</small><h2>婚姻与关系线</h2></header>
-        {narrative.relationshipArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
-        <PlacedDaoNotes notes={narrative.daoNotes} placement="relationship" />
-      </article>
+      <details className="life-scroll-part waterfall-card">
+        <WaterfallSummary index="03" title="婚姻与关系线" subtitle="亲密关系、沟通和修复的一幕" />
+        <div className="waterfall-card-body">
+          {narrative.relationshipArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+          <PlacedDaoNotes notes={narrative.daoNotes} placement="relationship" />
+        </div>
+      </details>
 
-      <article className="life-scroll-part">
-        <header><small>04</small><h2>命运转折线</h2></header>
-        {narrative.turningPointArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
-        <PlacedDaoNotes notes={narrative.daoNotes} placement="turning-point" />
-      </article>
+      <details className="life-scroll-part waterfall-card">
+        <WaterfallSummary index="04" title="命运转折线" subtitle="低点、选择与转身的方式" />
+        <div className="waterfall-card-body">
+          {narrative.turningPointArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+          <PlacedDaoNotes notes={narrative.daoNotes} placement="turning-point" />
+        </div>
+      </details>
 
       <MirrorInterlude kind="历史镜像" mirror={narrative.historicalInterlude} />
 
-      <article className="life-scroll-part">
-        <header><small>05</small><h2>中后程</h2></header>
-        {narrative.matureArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
-      </article>
+      <details className="life-scroll-part waterfall-card">
+        <WaterfallSummary index="05" title="中后程" subtitle="成熟之后怎样收束力量" />
+        <div className="waterfall-card-body">
+          {narrative.matureArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+        </div>
+      </details>
 
-      <article className="life-scroll-part life-scroll-closing">
-        <header><small>写在卷尾</small><h2>收束</h2></header>
-        <p>{narrative.closingLine}</p>
-        <aside className="life-scroll-action">
-          <strong>当下行动</strong>
-          <p>{narrative.actionNow}</p>
-        </aside>
-        <PlacedDaoNotes notes={narrative.daoNotes} placement="closing" />
-      </article>
+      <details className="life-scroll-part waterfall-card life-scroll-closing">
+        <WaterfallSummary index="写在卷尾" title="收束" subtitle="读完之后今天先做什么" />
+        <div className="waterfall-card-body">
+          <p>{narrative.closingLine}</p>
+          <aside className="life-scroll-action">
+            <strong>当下行动</strong>
+            <p>{narrative.actionNow}</p>
+          </aside>
+          <PlacedDaoNotes notes={narrative.daoNotes} placement="closing" />
+        </div>
+      </details>
     </div>
   </section>;
 }

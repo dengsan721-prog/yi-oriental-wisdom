@@ -86,6 +86,8 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
   const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
   const saveTriggerRef = useRef<HTMLButtonElement>(null);
   const availableSections = getAvailableSections(true);
+  const resultSections = getResultSections().filter(([id]) => availableSections.includes(id));
+  const activeSectionLabel = resultSections.find(([id]) => id === activeSection)?.[1] ?? "人生画卷";
   const ownerName = name.trim();
   const reportTitle = ownerName ? `${ownerName}命运全景报告` : "个人命运全景报告";
   const ownerSeal = themeElement === "neutral" ? "待定命印" : `${themeElement}命印`;
@@ -120,7 +122,10 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
     {saveConfirmOpen && <SaveHomeDialog onClose={closeSaveDialog} onConfirm={() => { closeSaveDialog(); onSaveHome?.(); }} />}
     {storageError && <p className="storage-error" role="alert">{storageError}</p>}
     <nav className="result-tabs" aria-label="人生报告章节">
-      {getResultSections().filter(([id]) => availableSections.includes(id)).map(([id, label]) => <button key={id} className={activeSection === id ? "active" : ""} aria-current={activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>{label}</button>)}
+      <div className="result-tabs-guide" aria-hidden="true"><small>报告导览</small><strong>当前章 · {activeSectionLabel}</strong><span>{resultSections.length}章命运全景 · 点击切换重点</span></div>
+      <div className="result-tab-list">
+        {resultSections.map(([id, label]) => <button key={id} className={activeSection === id ? "active" : ""} aria-current={activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>{label}</button>)}
+      </div>
     </nav>
     <div className="result-content">
       <div hidden={activeSection !== "portrait"}><PortraitSection chart={chart} report={report} items={interpretations} /></div>

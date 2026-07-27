@@ -256,6 +256,10 @@ describe("expanded professional chart reading", () => {
     const narrative = buildChartNarrative(chart, report, items);
 
     expect(html).toContain('data-testid="professional-pillar-table"');
+    expect(html).toContain('class="professional-reading-sections waterfall-grid"');
+    expect(html.match(/<details class="professional-reading-section waterfall-card/g)).toHaveLength(5);
+    expect(html).toContain("点开阅读");
+    expect(html).toContain("收起回到总览");
     expect(html.match(/data-chart-row=/g)).toHaveLength(7);
     expect(html.match(/data-pillar-column=/g)).toHaveLength(4);
     for (const heading of [
@@ -270,6 +274,10 @@ describe("expanded professional chart reading", () => {
       "生活节奏",
     ]) {
       expect(html).toContain(heading);
+    }
+    for (const professionalCopy of html.match(/<p class="professional-reading-copy">(.+?)<\/p>/gu) ?? []) {
+      expect(professionalCopy).toMatch(/日干|日主|月令|十神|藏干|纳音|十二长生|天干|地支|合|冲|刑|害|破/u);
+      expect(professionalCopy.length).toBeGreaterThanOrEqual(90);
     }
     for (const translation of narrative.professionalTranslations) {
       expect(html).toContain(translation.whatItMeans);

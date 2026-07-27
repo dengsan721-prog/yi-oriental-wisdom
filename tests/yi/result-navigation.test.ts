@@ -141,6 +141,17 @@ describe("result navigation", () => {
     expect(renderResult({ ...exactBirth, time: null, timeConfidence: "exact" }).html).toContain("已关闭：时柱、时柱派生判断与精确大运年份。");
   });
 
+  it("presents the report navigation as an important chapter guide", () => {
+    const { html } = renderResult();
+
+    expect(html).toContain('class="result-tabs"');
+    expect(html).toContain('class="result-tabs-guide"');
+    expect(html).toContain("<small>报告导览</small>");
+    expect(html).toContain("<strong>当前章 · 人生画卷</strong>");
+    expect(html).toContain("<span>7章命运全景 · 点击切换重点</span>");
+    expect(html).toContain('class="result-tab-list"');
+  });
+
   it("keeps the seven report sections in a stable reading order", () => {
     expect(getResultSections().map(([id]) => id)).toEqual([
       "portrait", "chart", "detail", "fortune", "compatibility", "mirror", "tradition",
@@ -170,19 +181,25 @@ describe("result navigation", () => {
     expect(submitted.compatibility.primaryParentRole).toBe("child");
   });
 
-  it("uses a four-column no-scroll mobile report navigation while preserving desktop navigation", () => {
+  it("uses a prominent no-overflow chapter guide on mobile while preserving desktop navigation", () => {
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-    expect(css).toMatch(/@media\(max-width:760px\)\{[^}]*\.result-tabs\{[^}]*display:grid[^}]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)[^}]*overflow-x:hidden/);
-    expect(css).toMatch(/\.result-tabs button\{min-width:0;min-height:44px;padding-inline:4px\}/);
-    expect(css).toMatch(/\.result-tabs\{position:sticky;top:0;[^}]*display:flex/);
+    expect(css).toMatch(/\.result-tabs\{[^}]*position:sticky[^}]*display:grid[^}]*grid-template-columns:minmax\(180px,\.36fr\) minmax\(0,1fr\)/);
+    expect(css).toMatch(/\.result-tabs-guide\{[^}]*border:1px solid var\(--yi-accent\)[^}]*background:var\(--yi-accent-soft\)/);
+    expect(css).toMatch(/\.result-tab-list\{[^}]*display:grid[^}]*grid-template-columns:repeat\(7,minmax\(0,1fr\)\)/);
+    expect(css).toMatch(/\.result-tabs button\{[^}]*min-width:0[^}]*min-height:48px/);
+    expect(css).toContain("@media(max-width:760px){.result-tabs{grid-template-columns:1fr;padding-inline:12px}.result-tab-list{grid-template-columns:repeat(2,minmax(0,1fr))}");
+    expect(css).toContain(".result-tabs button{padding:9px 8px}");
   });
 
-  it("keeps all five life-home destinations visible at 390px without horizontal scrolling", () => {
+  it("keeps the simple life-home record window readable at 390px without horizontal scrolling", () => {
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-    expect(css).toContain(".life-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));padding-inline:12px}");
-    expect(css).toContain(".life-nav button{min-width:0}");
+    expect(css).toMatch(/\.life-head-simple button\{[^}]*min-width:88px/);
+    expect(css).toMatch(/\.life-daily-form\{[^}]*grid-template-columns:1fr/);
+    expect(css).toMatch(/\.life-record-window\{[^}]*overflow:hidden/);
+    expect(css).toMatch(/\.life-data-cubes\{[^}]*grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+    expect(css).toContain(".life-data-cubes{grid-template-columns:repeat(2,minmax(0,1fr))}");
   });
 
   it("passes the existing interpretation set into the chart while preserving legacy detail and source routes", () => {
