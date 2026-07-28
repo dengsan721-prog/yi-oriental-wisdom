@@ -69,7 +69,7 @@ export function getReadyBirthSubmission(draft: BirthSubmissionDraft, confirmatio
   return isBirthSubmissionReady(confirmation) ? normalizeBirthSubmission(draft) : null;
 }
 
-export function BirthIntake({ onSubmit, heading = "建立出生坐标" }: { onSubmit: (value: BirthSubmission) => void; heading?: string }) {
+export function BirthIntake({ onSubmit, heading = "你的出生坐标" }: { onSubmit: (value: BirthSubmission) => void; heading?: string }) {
   const currentYear = new Date().getFullYear();
   const [draft, setDraft] = useState<BirthSubmissionDraft>({
     name: "", location: "", date: { mode: "solar", year: 1990, month: 6, day: 15, isLeapMonth: false },

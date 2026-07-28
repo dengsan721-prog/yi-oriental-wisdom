@@ -16,10 +16,11 @@ import type { ParentChildPrimaryRole } from "./CompatibilitySection";
 import { TraditionSection } from "./TraditionSection";
 import type { YiThemeElement } from "../../lib/yi/theme";
 import { YiBrandMark } from "./YiBrandMark";
+import { NameAnalysisSection } from "./NameAnalysisSection";
 
 export const getResultSections = () => [
   ["portrait", "人生画卷"], ["chart", "命盘"], ["detail", "详批"],
-  ["fortune", "大运"], ["compatibility", "合盘"], ["mirror", "镜像"],
+  ["name", "姓名"], ["fortune", "大运"], ["compatibility", "合盘"], ["mirror", "镜像"],
   ["tradition", "传统"],
 ] as const;
 
@@ -129,8 +130,9 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
     </nav>
     <div className="result-content">
       <div hidden={activeSection !== "portrait"}><PortraitSection chart={chart} report={report} items={interpretations} /></div>
-      <div hidden={activeSection !== "chart"}><ChartSection chart={chart} items={interpretations} name={name} report={report} /></div>
+      <div hidden={activeSection !== "chart"}><ChartSection chart={chart} items={interpretations} report={report} /></div>
       <div hidden={activeSection !== "detail"}><DetailSection items={interpretations} /></div>
+      <div hidden={activeSection !== "name"}>{ownerName ? <NameAnalysisSection chart={chart} key={ownerName} name={ownerName} report={report} /> : <section className="name-analysis-section name-reference-section"><header className="name-reference-summary"><div><small>姓名文化测分 · 仅供参考</small><h2>姓名五行参考分</h2><p className="name-current-glyphs">填写姓名后展示</p></div></header></section>}</div>
       <div hidden={activeSection !== "fortune"}><FortuneSection chart={chart} birth={birth} /></div>
       <div hidden={activeSection !== "mirror"}><MirrorSection chart={chart} /></div>
       <div hidden={activeSection !== "compatibility"}><CompatibilitySection chart={chart} primaryName={name} relationship={state.compatibility.relationship} primaryParentRole={state.compatibility.primaryParentRole} secondBirth={state.compatibility.secondBirth} onRelationshipChange={relationship => dispatch({ type: "set-relationship", relationship })} onSecondBirthChange={birth => dispatch({ type: "set-second-birth", birth })} onParentChildPrimaryRoleChange={primaryParentRole => dispatch({ type: "set-parent-child-primary-role", primaryParentRole })} /></div>

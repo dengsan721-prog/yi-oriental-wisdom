@@ -85,10 +85,10 @@ export function LifeHome({ profile, onChange, onViewReport, onClear }: {
   }
 
   return <section className="life-home">
-    <header className="life-head life-head-simple"><div><YiBrandMark variant="compact" /><div><small>人生首页</small><b>{home.name}，欢迎回来</b></div></div><div className="life-head-actions"><button className="life-report-return" onClick={onViewReport}>回看命盘报告</button><button onClick={() => setSection(section === "change" ? "record" : "change")}>{section === "change" ? "继续记录" : "改命"}</button></div></header>
+    <header className="life-head life-head-simple"><div><YiBrandMark variant="compact" /><div><small>人生首页</small><b>{home.name}，欢迎回来</b></div></div><div className="life-head-actions"><button className="life-report-return" onClick={onViewReport}>回看命盘报告</button><button onClick={() => setSection(section === "change" ? "record" : "change")}>{section === "change" ? "继续记录" : "改命记录"}</button></div></header>
     <div className="life-content">
       {section === "record" && <>
-        <section className="life-purpose"><small>填写的意义</small><h1>记录自己的所见所闻所思所想</h1><p>每天写下一件事，看见当时的感受，定一个可执行的小计划。念、思、言、行一点点变正，人才会慢慢转念，然后改命。</p></section>
+        <section className="life-purpose"><small>了凡式改命记录</small><h1>今天遇到的小怪，也能变成通关记录</h1><p>把一件事写成一枚经验值：看见当时起了什么念，承认哪里做错，补上一点善意，再定一个明天能做到的小招。念、思、言、行一关一关校正，人就不是被剧情推着走，而是在自己的副本里慢慢升级、转念、改命。</p></section>
         <section className="life-record-window" aria-label="每日记录窗口">
           <header><small>今日一记</small><h2>先把生活留下一笔</h2><p>不求玄妙，求真实。写得越朴素，复盘时越有力量。</p></header>
           <form action={addDailyRecord} className="life-form life-daily-form">
@@ -100,18 +100,18 @@ export function LifeHome({ profile, onChange, onViewReport, onClear }: {
         </section>
       </>}
       {section === "change" && <section className="life-change-dashboard">
-        <header><small>改命看板</small><h1>把记录养成会发芽的生活账本</h1><p>这里不替你下结论，只把月度、年度、相似事件和连续填写奖励摆出来，让你看见自己正在怎样变化。</p></header>
+        <header><small>修行进度</small><h1>把每天的小怪，炼成自己的改命地图</h1><p>每一条记录都是一次把命运方向盘拿回来的练习：按了凡四训的顺序，立命、改过、积善、谦德——先知道自己要往哪走，再修正今天失手的一招，把一个好念头落成行动，最后保持谦下复盘，继续升级。</p></header>
         <div className="life-data-cubes" aria-label="数据分析">
-          <article className="life-data-cube"><small>本月记录</small><b>{monthEvents.length}</b><span>条</span></article>
-          <article className="life-data-cube"><small>年度记录</small><b>{yearEvents.length}</b><span>条</span></article>
+          <article className="life-data-cube"><small>本月打怪</small><b>{monthEvents.length}</b><span>条通关记录</span></article>
+          <article className="life-data-cube"><small>年度主线</small><b>{yearEvents.length}</b><span>次剧情推进</span></article>
           <article className="life-data-cube"><small>连续填写</small><b>{streak}</b><span>天</span></article>
-          <article className="life-data-cube"><small>正向计划</small><b>{countPositivePlans(profile.events)}</b><span>次</span></article>
+          <article className="life-data-cube"><small>行动善念</small><b>{countPositivePlans(profile.events)}</b><span>个小招已定</span></article>
         </div>
         <div className="life-summary-grid">
-          <article><small>月度记录汇总 · 内容分析</small><h2>{home.monthlyTheme}</h2><p>这个月你已经写下 {monthEvents.length} 条生活线索。重点不是数量，而是它们把你的注意力带回现实：哪些事反复牵动情绪，哪些计划真的能落地，哪些关系需要更柔和的说法。</p></article>
-          <article><small>年度记录汇总 · 数据分析</small><h2>{home.annualEntry?.theme ?? "今年的改命账本"}</h2><p>今年累计 {yearEvents.length} 条记录。记录越多，越能看见“我总在什么地方起念、犹豫、用力或退缩”，这就是年度复盘最有价值的地方。</p></article>
-          <article className="life-sprout-card"><small>发芽</small><h2>相似事件与智慧启发</h2><p>{sprout.similar}</p><p>{sprout.wisdom}</p></article>
-          <article className="life-reward-card"><small>称呼与徽章</small><h2>{reward.title}</h2><p>{reward.badge}</p></article>
+          <article><small>本月打怪 · 内容分析</small><h2>{home.monthlyTheme}</h2><p>这个月你已经写下 {monthEvents.length} 条生活线索。它们像副本里的怪物图鉴：哪些事反复牵动情绪，哪些话一出口就变成误会，哪些计划真的能落地，都会慢慢显形。</p></article>
+          <article><small>年度主线 · 数据分析</small><h2>{home.annualEntry?.theme ?? "今年的改命账本"}</h2><p>今年累计 {yearEvents.length} 条记录。记录越多，越能看见“我总在什么地方起念、犹豫、用力或退缩”。看见不是责备，是从命运剧情里找到下一次可以改写的分岔口。</p></article>
+          <article className="life-sprout-card"><small>善念发芽</small><h2>相似事件与智慧启发</h2><p>{sprout.similar}</p><p>{sprout.wisdom}</p></article>
+          <article className="life-reward-card"><small>称号徽章</small><h2>{reward.title}</h2><p>{reward.badge}</p></article>
         </div>
         <section className="life-panel life-recent-records"><header><small>最近记录</small><h2>回看不是责备自己，是重新选路</h2></header>{profile.events.slice(-4).reverse().map(event => <article key={event.id}><b>{event.title}</b><button className="record-delete" onClick={() => update(lifeProfileReducer(profile, { type: "delete-event", id: event.id }))}>删除</button><p>{event.date || "未设日期"} · {event.note || "暂无备注"}</p></article>)}<button className="life-report-link" onClick={onViewReport}>查看命盘报告</button></section>
       </section>}

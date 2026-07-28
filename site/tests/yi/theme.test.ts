@@ -195,21 +195,35 @@ describe("light five-element CSS contract", () => {
     }
   });
 
-  it("preserves keyboard visibility, touch targets, and long-name wrapping", () => {
+  it("preserves keyboard visibility, touch targets, and compact report title rhythm", () => {
     expect(rule("main[data-element] :focus-visible")).toContain("outline:3px solid var(--yi-focus)");
     expect(rule("main[data-element] input:focus,main[data-element] select:focus")).not.toMatch(/outline\s*:\s*0/);
     expect(rule("main[data-element] input:focus-visible,main[data-element] select:focus-visible")).toContain("outline:3px solid var(--yi-focus)");
     expect(rule(".primary-button,.secondary-button,.primary,.report-nav button,.result-tabs button,.life-nav button")).toContain("min-height:44px");
-    expect(rule(".report-document-title h1")).toContain("overflow-wrap:anywhere");
+    expect(rule(".report-document-title h1")).toContain('font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif');
+    expect(rule(".report-document-title h1")).toContain("white-space:nowrap");
+    expect(rule(".report-document-title h1")).toContain("text-overflow:ellipsis");
   });
 
   it("raises dense report copy into readable hierarchy cards", () => {
+    expect(rule("body")).toContain('font-family:var(--yi-sans)');
+    expect(rule(":root")).toContain('--yi-sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif');
+    expect(rule(":root")).toContain('--yi-serif:"STKaiti","KaiTi","Kaiti SC","Songti SC","Noto Serif CJK SC",serif');
+    expect(rule("main[data-element]")).toContain("font-family:var(--yi-sans)");
+    expect(rule(".report-section>header h1")).toContain("font-weight:500");
     expect(rule(".readability-copy")).toContain("font-size:15px");
     expect(rule(".readability-copy")).toContain("line-height:1.85");
     expect(rule(".name-reference-summary")).toContain("background:linear-gradient");
     expect(rule(".name-reference-score strong")).toContain("font-size:clamp(42px,8vw,70px)");
     expect(rule(".plain-translation p,.chart-narrative-beat p,.chart-micro-story p")).toContain("font-size:15px");
     expect(rule(".professional-reading-copy")).toContain("font-size:15px");
+    expect(rule(".detail-report .reading-card h2")).toContain("font-weight:650");
+  });
+
+  it("keeps the save confirmation compact and legible on mobile", () => {
+    expect(css).toMatch(/\.save-home-dialog\{[^}]*width:min\(520px,calc\(100% - 28px\)\)[^}]*padding:18px/);
+    expect(css).toMatch(/\.save-home-dialog p\{[^}]*font-size:13px[^}]*line-height:1\.65/);
+    expect(css).toContain("@media(max-width:520px){.save-home-overlay{align-items:start;padding-top:10vh}.save-home-dialog{width:min(360px,calc(100% - 28px));padding:16px;border-radius:20px}.save-home-actions{grid-template-columns:1fr}.save-home-actions button{min-height:46px}}");
   });
 
   it("keeps traditional atlas selection text readable on light surfaces", () => {

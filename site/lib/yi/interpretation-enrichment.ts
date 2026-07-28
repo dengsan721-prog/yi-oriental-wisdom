@@ -31,7 +31,7 @@ const enrichment: Record<InterpretationId, InterpretationEnrichment> = {
     priority: "core",
   },
   "self-support": {
-    traditionalJudgment: "日主得令、得地、得助与泄耗制化共同构成支持结构的观察。产品支持度只把已知干支中的补给和输出关系转成可读线索，不能替代完整的旺衰、格局与喜忌判断。",
+    traditionalJudgment: "日主得令、得地、得助与泄耗制化共同构成支持结构的观察。支持度线索只把已知干支中的补给和输出关系转成可读线索，不能替代完整的旺衰、格局与喜忌判断。",
     advantageVersion: "当工作、家庭与关系责任同时到来时，你若能先识别可用资源、恢复窗口和可交接事项，就能把承担力转成稳定推进，而不是依靠临时透支维持表面完整。",
     shadowVersion: "责任叠加时，容易只按完成数量评价自己，忽略注意力、耐心和协作资源正在下降。继续加量会让重要判断被琐事淹没，也可能把求助误解成能力不足。",
     actionNow: "把本周并行责任列成清单，分别标注必须亲自完成、可以协作和可以暂停，每天只保留三项关键承诺。",
@@ -87,7 +87,7 @@ const enrichment: Record<InterpretationId, InterpretationEnrichment> = {
     priority: "important",
   },
   "career-environment": {
-    traditionalJudgment: "日主支持与输出的相对结构，可用来比较人在不同工作条件下的补给、判断和交付节奏；产品计分不是古法格局，也不能直接推出适合的行业或单位性质。",
+    traditionalJudgment: "日主支持与输出的相对结构，可用来比较人在不同工作条件下的补给、判断和交付节奏；支持度分值不是古法格局，也不能直接推出适合的行业或单位性质。",
     advantageVersion: "选择工作环境时，你能把抽象的喜欢或不喜欢拆成任务密度、自主程度、反馈速度、协作方式和恢复条件，从而用现实样本判断环境是否支持长期发挥。",
     shadowVersion: "若只凭短期兴奋或单次挫折评价环境，可能频繁更换却没有找到真正变量；也可能把个人可改进的问题全部归因于组织，错过验证和协商的机会。",
     actionNow: "比较两个现实工作环境，分别按自主度、协作密度、反馈速度、成长证据和恢复成本打分，并写下证据来源。",

@@ -58,7 +58,7 @@ function MirrorInterlude({
   return <details className="life-scroll-part waterfall-card life-scroll-interlude">
     <WaterfallSummary
       index={kind}
-      title={mirror.name}
+      title={kind === "历史镜像" ? `历史导师 · ${mirror.name}` : mirror.name}
       subtitle={kind === "动物镜像" ? "用一个动物场景读懂行动方式" : "用一个历史人物读懂人生回声"}
     />
     <div className="waterfall-card-body life-scroll-mirror">
@@ -83,13 +83,13 @@ export function PortraitSection({
 
   return <section className="report-section portrait-report">
     <header className="life-scroll-heading">
-      <small>第一章 · 先读故事</small>
+      <small>第一章 · 英雄成长记</small>
       <h1>人生画卷</h1>
-      <p>从眼前处境读起，看见事业、关系与节奏怎样彼此牵动，再把今天能做的一步留下来。</p>
+      <p>把命盘读成一部电影：开场遇见难题，路上遇见镜像和导师，在事业、关系与节奏里闯关，最后带走今天能升级的一招。</p>
     </header>
     <div className="life-scroll-reading waterfall-grid">
       <details className="life-scroll-part waterfall-card life-scroll-opening">
-        <WaterfallSummary index="01" title="人生一句话" subtitle={narrative.oneLineTheme} />
+        <WaterfallSummary index="开场 · 命运给出的第一道题" title="人生一句话" subtitle={narrative.oneLineTheme} />
         <div className="waterfall-card-body">
           <blockquote>{narrative.oneLineTheme}</blockquote>
           {narrative.openingScene.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
@@ -99,7 +99,7 @@ export function PortraitSection({
       <MirrorInterlude kind="动物镜像" mirror={narrative.animalInterlude} />
 
       <details className="life-scroll-part waterfall-card">
-        <WaterfallSummary index="02" title="事业线" subtitle="事业、承担与机会怎样展开" />
+        <WaterfallSummary index="副本一 · 事业副本" title="事业线" subtitle="事业、承担与机会怎样展开" />
         <div className="waterfall-card-body">
           {narrative.careerArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
           <PlacedDaoNotes notes={narrative.daoNotes} placement="career" />
@@ -107,7 +107,7 @@ export function PortraitSection({
       </details>
 
       <details className="life-scroll-part waterfall-card">
-        <WaterfallSummary index="03" title="婚姻与关系线" subtitle="亲密关系、沟通和修复的一幕" />
+        <WaterfallSummary index="副本二 · 关系副本" title="婚姻与关系线" subtitle="亲密关系、沟通和修复的一幕" />
         <div className="waterfall-card-body">
           {narrative.relationshipArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
           <PlacedDaoNotes notes={narrative.daoNotes} placement="relationship" />
@@ -115,7 +115,7 @@ export function PortraitSection({
       </details>
 
       <details className="life-scroll-part waterfall-card">
-        <WaterfallSummary index="04" title="命运转折线" subtitle="低点、选择与转身的方式" />
+        <WaterfallSummary index="转折 · 命运转折" title="命运转折线" subtitle="低点、选择与转身的方式" />
         <div className="waterfall-card-body">
           {narrative.turningPointArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
           <PlacedDaoNotes notes={narrative.daoNotes} placement="turning-point" />
@@ -125,14 +125,14 @@ export function PortraitSection({
       <MirrorInterlude kind="历史镜像" mirror={narrative.historicalInterlude} />
 
       <details className="life-scroll-part waterfall-card">
-        <WaterfallSummary index="05" title="中后程" subtitle="成熟之后怎样收束力量" />
+        <WaterfallSummary index="后半场" title="中后程" subtitle="成熟之后怎样收束力量" />
         <div className="waterfall-card-body">
           {narrative.matureArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
         </div>
       </details>
 
       <details className="life-scroll-part waterfall-card life-scroll-closing">
-        <WaterfallSummary index="写在卷尾" title="收束" subtitle="读完之后今天先做什么" />
+        <WaterfallSummary index="写在卷尾 · 卷尾行动" title="收束" subtitle="读完之后今天先做什么" />
         <div className="waterfall-card-body">
           <p>{narrative.closingLine}</p>
           <aside className="life-scroll-action">
