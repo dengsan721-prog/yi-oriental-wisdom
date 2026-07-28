@@ -48,6 +48,8 @@ describe("life home overview", () => {
 
     expect(html).toContain("记录自己的所见所闻所思所想");
     expect(html).toContain("念、思、言、行");
+    expect(html).toContain('class="life-report-return"');
+    expect(html).toContain("回看命盘报告");
     expect(html).toContain("<button>改命</button>");
     expect(html).toContain('aria-label="今天发生的一件事"');
     expect(html).toContain('aria-label="当下感受"');
@@ -57,6 +59,7 @@ describe("life home overview", () => {
     expect(html).not.toContain("人生首页入口");
     expect(html).not.toContain("年度计划入口");
     expect(html).not.toContain("月度计划入口");
+    expect(html.indexOf("回看命盘报告")).toBeLessThan(html.indexOf("记录自己的所见所闻所思所想"));
   });
 
   it("keeps change-life summaries, sprout guidance and rewards behind the top change button", () => {
@@ -77,5 +80,7 @@ describe("life home overview", () => {
     expect(css).toContain(".life-change-dashboard");
     expect(css).toContain(".life-data-cube");
     expect(css).toContain(".life-sprout-card");
+    expect(css).toContain(".life-head-actions");
+    expect(css).toContain(".life-report-return");
   });
 });

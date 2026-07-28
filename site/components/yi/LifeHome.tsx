@@ -85,7 +85,7 @@ export function LifeHome({ profile, onChange, onViewReport, onClear }: {
   }
 
   return <section className="life-home">
-    <header className="life-head life-head-simple"><div><YiBrandMark variant="compact" /><div><small>人生首页</small><b>{home.name}，欢迎回来</b></div></div><button onClick={() => setSection(section === "change" ? "record" : "change")}>{section === "change" ? "继续记录" : "改命"}</button></header>
+    <header className="life-head life-head-simple"><div><YiBrandMark variant="compact" /><div><small>人生首页</small><b>{home.name}，欢迎回来</b></div></div><div className="life-head-actions"><button className="life-report-return" onClick={onViewReport}>回看命盘报告</button><button onClick={() => setSection(section === "change" ? "record" : "change")}>{section === "change" ? "继续记录" : "改命"}</button></div></header>
     <div className="life-content">
       {section === "record" && <>
         <section className="life-purpose"><small>填写的意义</small><h1>记录自己的所见所闻所思所想</h1><p>每天写下一件事，看见当时的感受，定一个可执行的小计划。念、思、言、行一点点变正，人才会慢慢转念，然后改命。</p></section>
