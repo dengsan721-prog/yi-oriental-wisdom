@@ -2,7 +2,10 @@ import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { PortraitSection } from "../../components/yi/PortraitSection";
+import {
+  buildHundredYearLifeProgress,
+  PortraitSection,
+} from "../../components/yi/PortraitSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { buildInterpretations } from "../../lib/yi/interpretation";
 import { buildLifeScrollNarrative } from "../../lib/yi/life-scroll";
@@ -24,9 +27,11 @@ function renderLifeScroll() {
   const items = buildInterpretations(chart);
   const narrative = buildLifeScrollNarrative(chart, report, items);
   const html = renderToStaticMarkup(createElement(PortraitSection, {
+    birth,
     chart,
     report,
     items,
+    today: new Date("2026-07-28T00:00:00+08:00"),
   }));
   return { html, narrative };
 }
@@ -87,10 +92,34 @@ describe("life scroll view", () => {
     ].map(token => html.indexOf(token));
     expect(readingOrder).toEqual([...readingOrder].sort((left, right) => left - right));
     expect(html).toContain('class="life-scroll-reading waterfall-grid"');
+    expect(html).toContain('class="life-progress-card"');
+    expect(html).toContain('class="life-progress-stickman"');
+    expect(html).toContain("100");
+    expect(html).toContain("36.1%");
+    expect(html).toContain("13,192");
     expect(html.match(/<details class="life-scroll-part waterfall-card/g)).toHaveLength(13);
     expect(html.match(/class="waterfall-open-hint"/g)).toHaveLength(13);
+    expect(html.match(/class="scene-line-art scene-line-art--/g)).toHaveLength(13);
+    expect(html).toContain('class="scene-line-art scene-line-art--animal"');
+    expect(html).toContain('class="scene-line-art scene-line-art--history"');
+    expect(html.match(/aria-hidden="true"/g)?.length ?? 0).toBeGreaterThanOrEqual(13);
+    expect(html.match(/focusable="false"/g)?.length ?? 0).toBeGreaterThanOrEqual(13);
     expect(html).toContain("点开阅读");
     expect(html).toContain("收起回到总览");
+  });
+
+  it("turns the birth date into a hundred-year progress blessing", () => {
+    const progress = buildHundredYearLifeProgress(
+      "1990-06-15",
+      new Date("2026-07-28T00:00:00+08:00"),
+    );
+
+    expect(progress.daysLived).toBe(13192);
+    expect(progress.percentText).toBe("36.1%");
+    expect(progress.progressPercent).toBeGreaterThan(36);
+    expect(progress.progressPercent).toBeLessThan(37);
+    expect(progress.blessing).toContain("过去");
+    expect(progress.blessing).toContain("未来");
   });
 
   it("shows every animal and historical mirror field as a concrete interlude", () => {
@@ -169,6 +198,9 @@ describe("life scroll view", () => {
     expect(css).toMatch(/\.life-scroll-reading\{[^}]*width:min\(760px,100%\)[^}]*margin:[^;}]*auto/);
     expect(css).toMatch(/\.waterfall-grid\{[^}]*column-count:2/);
     expect(css).toMatch(/\.waterfall-card>summary\{[^}]*cursor:pointer/);
+    expect(css).toMatch(/\.waterfall-card--illustrated>summary\{[^}]*padding-right:104px/);
+    expect(css).toMatch(/\.scene-line-art\{[^}]*pointer-events:none/);
+    expect(css).toMatch(/@media\(max-width:520px\)\{[^}]*\.scene-line-art/u);
     expect(css).toMatch(/\.life-scroll-reading p\{[^}]*line-height:1\.(?:7[5-9]|8|9)/);
     expect(mobileCss).toContain(".life-scroll-reading{width:100%;gap:18px}");
     expect(mobileCss).toContain(".life-scroll-part,.dao-story-note{padding:16px}");

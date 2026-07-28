@@ -257,6 +257,9 @@ describe("expanded professional chart reading", () => {
     expect(html).not.toContain("姓名五行参考分");
     expect(html).toContain('class="professional-reading-sections waterfall-grid"');
     expect(html.match(/<details class="professional-reading-section waterfall-card/g)).toHaveLength(5);
+    expect(html.match(/class="scene-line-art scene-line-art--chart"/g)).toHaveLength(5);
+    expect(html.match(/class="scene-line-art scene-line-art--story"/g)).toHaveLength(4);
+    expect(html.match(/class="scene-line-art scene-line-art--scene"/g)).toHaveLength(6);
     expect(html).toContain("点开阅读");
     expect(html).toContain("收起回到总览");
     expect(html.match(/data-chart-row=/g)).toHaveLength(7);

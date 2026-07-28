@@ -1,4 +1,5 @@
 import type { InterpretationItem } from "../../lib/yi/types";
+import { SceneLineArt } from "./SceneLineArt";
 
 const domainNames: Record<InterpretationItem["domain"], string> = {
   self: "开局 · 我是谁", talent: "技能 · 手里有什么招", career: "事业 · 去哪里闯关", wealth: "财帛 · 资源怎么流动",
@@ -36,8 +37,9 @@ export function DetailSection({ items }: { items: InterpretationItem[] }) {
           <section key={domain}>
             <h2>{label}</h2>
             {items.filter(item => item.domain === domain).map(item => (
-              <details className={"reading-card reading-" + item.priority + " waterfall-card"} key={item.id}>
+              <details className={"reading-card reading-" + item.priority + " waterfall-card waterfall-card--illustrated"} key={item.id}>
                 <summary className="detail-summary">
+                  <SceneLineArt kind="detail" />
                   <small>命盘小模块</small>
                   <span className="detail-professional-label">{cleanBackendTerms(item.professionalTitle)}</span>
                   <h2>起手式 · {cleanBackendTerms(item.innovationTitle)}</h2>

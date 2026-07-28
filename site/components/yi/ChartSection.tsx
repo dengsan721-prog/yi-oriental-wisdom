@@ -13,6 +13,7 @@ import type {
   PillarKey,
   ProfessionalReport,
 } from "../../lib/yi/types";
+import { SceneLineArt } from "./SceneLineArt";
 
 const pillarOrder: readonly PillarKey[] = ["year", "month", "day", "hour"];
 const pillarNames: Record<PillarKey, string> = {
@@ -360,6 +361,7 @@ function NarrativeBeatCard({
 }) {
   return (
     <article className="chart-narrative-beat">
+      <SceneLineArt kind="story" />
       <h3>{title}</h3>
       {beatLabels.map(([field, label]) => (
         <p className="readability-copy" key={field}><strong>{label}</strong>{beat[field]}</p>
@@ -385,6 +387,7 @@ function MicroStoryCard({
 }) {
   return (
     <article className="chart-micro-story">
+      <SceneLineArt kind="scene" />
       <h3>{story.title}</h3>
       {microLabels.map(([field, label]) => (
         <p className="readability-copy" key={field}><strong>{label}</strong>{story[field]}</p>
@@ -476,8 +479,9 @@ export function ChartSection({
           const translation = translationById.get(reading.id);
           if (!translation) return null;
           return (
-            <details className="professional-reading-section waterfall-card" key={reading.id}>
+            <details className="professional-reading-section waterfall-card waterfall-card--illustrated" key={reading.id}>
               <summary>
+                <SceneLineArt kind="chart" />
                 <small>命盘小模块</small>
                 <h2>{reading.title}</h2>
                 <p>{reading.professionalText}</p>

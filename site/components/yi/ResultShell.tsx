@@ -129,7 +129,7 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
       </div>
     </nav>
     <div className="result-content">
-      <div hidden={activeSection !== "portrait"}><PortraitSection chart={chart} report={report} items={interpretations} /></div>
+      <div hidden={activeSection !== "portrait"}><PortraitSection birth={birth} chart={chart} report={report} items={interpretations} /></div>
       <div hidden={activeSection !== "chart"}><ChartSection chart={chart} items={interpretations} report={report} /></div>
       <div hidden={activeSection !== "detail"}><DetailSection items={interpretations} /></div>
       <div hidden={activeSection !== "name"}>{ownerName ? <NameAnalysisSection chart={chart} key={ownerName} name={ownerName} report={report} /> : <section className="name-analysis-section name-reference-section"><header className="name-reference-summary"><div><small>姓名文化测分 · 仅供参考</small><h2>姓名五行参考分</h2><p className="name-current-glyphs">填写姓名后展示</p></div></header></section>}</div>

@@ -107,7 +107,8 @@ it("renders three priority cards with four ordered progressive-reading layers", 
   const html = renderToStaticMarkup(createElement(DetailSection, { items: readings }));
 
   expect(html).toContain('class="detail-groups waterfall-grid"');
-  expect(html.match(/<details class="reading-card reading-(?:core|important|supporting) waterfall-card">/g)).toHaveLength(3);
+  expect(html.match(/<details class="reading-card reading-(?:core|important|supporting) waterfall-card waterfall-card--illustrated">/g)).toHaveLength(3);
+  expect(html.match(/class="scene-line-art scene-line-art--detail"/g)).toHaveLength(3);
     expect(html).toContain("点开阅读");
     expect(html).toContain("收起回到总览");
     expect(html).toContain("起手式");
@@ -121,7 +122,7 @@ it("renders three priority cards with four ordered progressive-reading layers", 
     expect(html).not.toContain("排盘引擎");
 
     for (const reading of readings) {
-    const cardStart = html.indexOf(`<details class="reading-card reading-${reading.priority} waterfall-card">`);
+    const cardStart = html.indexOf(`<details class="reading-card reading-${reading.priority} waterfall-card waterfall-card--illustrated">`);
     expect(cardStart, `${reading.priority} card`).toBeGreaterThan(-1);
     const card = extractBalancedElement(html, "details", cardStart);
     const bodyStart = card.indexOf('<div class="waterfall-card-body">');

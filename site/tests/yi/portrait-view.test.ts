@@ -20,9 +20,11 @@ it("presents the portrait route as the story-first life scroll", () => {
   });
   const items = buildInterpretations(chart);
   const html = renderToStaticMarkup(createElement(PortraitSection, {
+    birth,
     chart,
     report: buildProfessionalReport(chart, birth),
     items,
+    today: new Date("2026-07-28T00:00:00+08:00"),
   }));
 
   for (const label of [

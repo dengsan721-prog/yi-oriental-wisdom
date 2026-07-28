@@ -138,9 +138,11 @@ describe("2. portrait semantic mappings", () => {
     const report = buildProfessionalReport(chart, exactBirth);
     const narrative = buildLifeScrollNarrative(chart, report, items);
     const html = renderToStaticMarkup(createElement(PortraitSection, {
+      birth: exactBirth,
       chart,
       report,
       items,
+      today: new Date("2026-07-28T00:00:00+08:00"),
     }));
     const pressure = items.find((item) => item.id === "relationship-trigger");
     const mainLine = items.find((item) => item.id === "rhythm-decision");
@@ -166,9 +168,11 @@ describe("2. portrait semantic mappings", () => {
     const items = buildInterpretations(chart).filter((item) => item.domain !== "relationship");
     const narrative = buildLifeScrollNarrative(chart, report, items);
     const html = renderToStaticMarkup(createElement(PortraitSection, {
+      birth: exactBirth,
       chart,
       report,
       items,
+      today: new Date("2026-07-28T00:00:00+08:00"),
     }));
 
     expect(narrative.uncertaintyFlags).toContain("missing-domain:relationship");
