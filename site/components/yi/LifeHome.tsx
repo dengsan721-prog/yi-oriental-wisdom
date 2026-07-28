@@ -85,7 +85,7 @@ export function LifeHome({ profile, onChange, onViewReport, onClear }: {
   }
 
   return <section className="life-home">
-    <header className="life-head life-head-simple"><div><YiBrandMark variant="compact" /><div><small>人生首页</small><b>{home.name}，欢迎回来</b></div></div><div className="life-head-actions"><button className="life-report-return" onClick={onViewReport}>回看命盘报告</button><button onClick={() => setSection(section === "change" ? "record" : "change")}>{section === "change" ? "继续记录" : "改命记录"}</button></div></header>
+    <header className="life-head life-head-simple"><div className="life-head-identity"><YiBrandMark variant="compact" /><div><small>人生首页</small><b>{home.name}，欢迎回来</b></div></div><div className="life-head-actions"><button className="life-report-return" onClick={onViewReport}>回看命盘报告</button><button onClick={() => setSection(section === "change" ? "record" : "change")}>{section === "change" ? "继续记录" : "改命记录"}</button></div></header>
     <div className="life-content">
       {section === "record" && <>
         <section className="life-purpose"><small>了凡式改命记录</small><h1>今天遇到的小怪，也能变成通关记录</h1><p>把一件事写成一枚经验值：看见当时起了什么念，承认哪里做错，补上一点善意，再定一个明天能做到的小招。念、思、言、行一关一关校正，人就不是被剧情推着走，而是在自己的副本里慢慢升级、转念、改命。</p></section>
@@ -116,7 +116,7 @@ export function LifeHome({ profile, onChange, onViewReport, onClear }: {
         <section className="life-panel life-recent-records"><header><small>最近记录</small><h2>回看不是责备自己，是重新选路</h2></header>{profile.events.slice(-4).reverse().map(event => <article key={event.id}><b>{event.title}</b><button className="record-delete" onClick={() => update(lifeProfileReducer(profile, { type: "delete-event", id: event.id }))}>删除</button><p>{event.date || "未设日期"} · {event.note || "暂无备注"}</p></article>)}<button className="life-report-link" onClick={onViewReport}>查看命盘报告</button></section>
       </section>}
       {storageError && <p className="storage-error" role="alert">{storageError}</p>}
-      <footer className="life-privacy"><p>档案保存在当前网站来源的浏览器存储中；共用此设备及浏览器资料的人可能看到。出生地点不会保存或导出。</p><button onClick={downloadProfile}>导出 JSON</button><button onClick={removeLocalProfile}>清除本机档案</button></footer>
+      <footer className="life-privacy"><p>档案保存在当前网站来源的浏览器存储中；共用此设备及浏览器资料的人可能看到。出生地点不会保存或导出。</p><div className="life-local-actions"><button onClick={downloadProfile}>导出 JSON</button><button onClick={removeLocalProfile}>清除本机档案</button></div></footer>
     </div>
   </section>;
 }

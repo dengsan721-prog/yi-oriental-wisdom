@@ -42,6 +42,11 @@ describe("life scroll view", () => {
       "婚姻与关系线",
       "命运转折线",
       "中后程",
+      "命运成语",
+      "一句俗语",
+      "推荐一首诗",
+      "传统古典音乐",
+      "周杰伦歌单",
       "收束",
       "当下行动",
       narrative.oneLineTheme,
@@ -52,6 +57,16 @@ describe("life scroll view", () => {
       ...narrative.relationshipArc,
       ...narrative.turningPointArc,
       ...narrative.matureArc,
+      narrative.recommendations.idiom.phrase,
+      narrative.recommendations.idiom.commentary,
+      narrative.recommendations.proverb.phrase,
+      narrative.recommendations.proverb.commentary,
+      narrative.recommendations.poem.title,
+      narrative.recommendations.poem.commentary,
+      narrative.recommendations.classicalMusic.title,
+      narrative.recommendations.classicalMusic.commentary,
+      narrative.recommendations.jayChouSong.title,
+      narrative.recommendations.jayChouSong.commentary,
     ]) {
       expect(html).toContain(text);
     }
@@ -63,12 +78,17 @@ describe("life scroll view", () => {
       "<h2>命运转折线</h2>",
       "<small>历史镜像</small>",
       "<h2>中后程</h2>",
+      "<h2>命运成语</h2>",
+      "<h2>一句俗语</h2>",
+      "<h2>推荐一首诗</h2>",
+      "<h2>传统古典音乐</h2>",
+      "<h2>周杰伦歌单</h2>",
       "<h2>收束</h2>",
     ].map(token => html.indexOf(token));
     expect(readingOrder).toEqual([...readingOrder].sort((left, right) => left - right));
     expect(html).toContain('class="life-scroll-reading waterfall-grid"');
-    expect(html.match(/<details class="life-scroll-part waterfall-card/g)).toHaveLength(8);
-    expect(html.match(/class="waterfall-open-hint"/g)).toHaveLength(8);
+    expect(html.match(/<details class="life-scroll-part waterfall-card/g)).toHaveLength(13);
+    expect(html.match(/class="waterfall-open-hint"/g)).toHaveLength(13);
     expect(html).toContain("点开阅读");
     expect(html).toContain("收起回到总览");
   });

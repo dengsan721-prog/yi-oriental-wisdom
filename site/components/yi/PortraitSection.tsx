@@ -1,6 +1,7 @@
 import {
   buildLifeScrollNarrative,
   type DaoStoryNote,
+  type LifeScrollRecommendations,
 } from "../../lib/yi/life-scroll";
 import type { StoryMirror } from "../../lib/yi/story-mirrors";
 import type {
@@ -70,6 +71,35 @@ function MirrorInterlude({
   </details>;
 }
 
+function RecommendationCard({
+  index,
+  title,
+  item,
+}: {
+  index: string;
+  title: string;
+  item: { phrase?: string; title?: string; commentary: string };
+}) {
+  const headline = item.phrase ?? item.title ?? title;
+  return <details className="life-scroll-part waterfall-card life-scroll-recommendation">
+    <WaterfallSummary index={index} title={title} subtitle={headline} />
+    <div className="waterfall-card-body">
+      <p className="life-recommendation-headline">{headline}</p>
+      <p>{item.commentary}</p>
+    </div>
+  </details>;
+}
+
+function LifeScrollRecommendationCards({ recommendations }: { recommendations: LifeScrollRecommendations }) {
+  return <>
+    <RecommendationCard index="趣味签 · 成语" title="命运成语" item={recommendations.idiom} />
+    <RecommendationCard index="趣味签 · 俗语" title="一句俗语" item={recommendations.proverb} />
+    <RecommendationCard index="趣味签 · 诗" title="推荐一首诗" item={recommendations.poem} />
+    <RecommendationCard index="趣味签 · 古典乐" title="传统古典音乐" item={recommendations.classicalMusic} />
+    <RecommendationCard index="趣味签 · 周杰伦" title="周杰伦歌单" item={recommendations.jayChouSong} />
+  </>;
+}
+
 export function PortraitSection({
   chart,
   report,
@@ -130,6 +160,8 @@ export function PortraitSection({
           {narrative.matureArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
         </div>
       </details>
+
+      <LifeScrollRecommendationCards recommendations={narrative.recommendations} />
 
       <details className="life-scroll-part waterfall-card life-scroll-closing">
         <WaterfallSummary index="写在卷尾 · 卷尾行动" title="收束" subtitle="读完之后今天先做什么" />

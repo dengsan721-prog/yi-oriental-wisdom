@@ -25,7 +25,7 @@ function makeReading(priority: InterpretationItem["priority"]): InterpretationIt
     domain: "self",
     professionalTitle: `professional-${priority}`,
     innovationTitle: `innovation-${priority}`,
-    basis: `basis-${priority}`,
+    basis: `支持结构与规则协商来自EightCharAPI-${priority}`,
     traditionalJudgment: `traditional-${priority}`,
     plainLanguage: `plain-${priority}`,
     scenario: `scenario-${priority}`,
@@ -108,10 +108,19 @@ it("renders three priority cards with four ordered progressive-reading layers", 
 
   expect(html).toContain('class="detail-groups waterfall-grid"');
   expect(html.match(/<details class="reading-card reading-(?:core|important|supporting) waterfall-card">/g)).toHaveLength(3);
-  expect(html).toContain("点开阅读");
-  expect(html).toContain("收起回到总览");
+    expect(html).toContain("点开阅读");
+    expect(html).toContain("收起回到总览");
+    expect(html).toContain("起手式");
+    expect(html).toContain("顺风局");
+    expect(html).toContain("逆风局");
+    expect(html).toContain("破局口诀");
+    expect(html).toContain("顺口溜");
+    expect(html).not.toContain("支持结构");
+    expect(html).not.toContain("规则协商");
+    expect(html).not.toContain("EightCharAPI");
+    expect(html).not.toContain("排盘引擎");
 
-  for (const reading of readings) {
+    for (const reading of readings) {
     const cardStart = html.indexOf(`<details class="reading-card reading-${reading.priority} waterfall-card">`);
     expect(cardStart, `${reading.priority} card`).toBeGreaterThan(-1);
     const card = extractBalancedElement(html, "details", cardStart);
@@ -128,20 +137,20 @@ it("renders three priority cards with four ordered progressive-reading layers", 
     const deepLayer = body.slice(0, evidenceStart);
     const outsideBody = visibleLayer;
     const visibleMarkers = [reading.professionalTitle, reading.innovationTitle, reading.plainLanguage, reading.scenario];
-    const deepMarkers = [
-      reading.advantageVersion,
-      reading.shadowVersion,
-      reading.mirror,
-      reading.actionNow,
+      const deepMarkers = [
+        reading.advantageVersion,
+        reading.shadowVersion,
+        reading.mirror,
+        reading.actionNow,
       reading.actionLongTerm,
       reading.caution,
     ];
-    const evidenceMarkers = [
-      reading.traditionalJudgment,
-      reading.basis,
-      reading.sourceTradition,
-      ...reading.sourceReferences,
-    ];
+      const evidenceMarkers = [
+        reading.traditionalJudgment,
+        `铺垫与互动方式-${reading.priority}`,
+        reading.sourceTradition,
+        ...reading.sourceReferences,
+      ];
 
     expectStrictOrder(visibleLayer, visibleMarkers);
     expectStrictOrder(deepLayer, deepMarkers);

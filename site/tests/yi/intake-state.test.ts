@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import {
@@ -140,6 +141,14 @@ describe("birth intake state", () => {
     const html = renderToStaticMarkup(createElement(TimePicker, { mode: "unknown", hour: null, minute: null, earthlyIndex: null, onChange: () => {} }));
     expect(html).toContain('aria-pressed="true"');
     expect(html.match(/aria-pressed="false"/g)).toHaveLength(2);
+  });
+
+  it("keeps twelve-period wheel labels compact and non-wrapping on mobile", () => {
+    const html = renderToStaticMarkup(createElement(TimePicker, { mode: "earthly", hour: null, minute: null, earthlyIndex: 0, onChange: () => {} }));
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+
+    expect(html).toContain("子时 · 23:00–00:59");
+    expect(css).toContain("@media(max-width:520px){.time-picker{padding:16px}.time-modes{gap:6px}.time-modes button{font-size:13px;padding-inline:6px}.wheel-list button{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wheel-list button.selected{font-size:15px}.time-picker .wheel-list{height:168px}}");
   });
 
   it("clamps keyboard wheel movement to the available options", () => {

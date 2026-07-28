@@ -337,13 +337,13 @@ describe("professional interpretation", () => {
     expect(html).toContain("<small>专业祥批</small>");
     expect(html).toContain("<h1>七域祥批</h1>");
     expect(html).toContain(items[0].professionalTitle);
-    expect(html).toContain(`伏笔 · ${items[0].innovationTitle}`);
+    expect(html).toContain(`起手式 · ${items[0].innovationTitle}`);
     expect(html).toContain("命盘小模块");
     expect(html).toContain("点开阅读");
     expect(html).not.toContain(`（${items[0].confidence}）`);
-    expect(html).not.toMatch(/高置信|中等置信|有限置信|使用边界|理论传统|参考依据|产品计分|EightCharAPI/u);
+    expect(html).not.toMatch(/高置信|中等置信|有限置信|使用边界|理论传统|参考依据|产品计分|EightCharAPI|排盘引擎|支持结构|规则协商/u);
     expect(html).toContain(firstPlainSentence);
-    for (const label of ["专业判断", "白话故事", "得势时", "失衡时", "自然镜像", "此刻可做", "长期练习"]) {
+    for (const label of ["命盘判断", "白话故事", "顺风局", "逆风局", "自然镜像", "今天破局", "长期练功", "破局口诀", "顺口溜"]) {
       expect(html).toContain(label);
     }
   });

@@ -52,6 +52,8 @@ describe("life home overview", () => {
     expect(html).toContain("念、思、言、行");
     expect(html).not.toContain("填写的意义");
     expect(html).toContain('class="life-report-return"');
+    expect(html).toContain('class="life-head-identity"');
+    expect(html).toContain('class="life-local-actions"');
     expect(html).toContain("回看命盘报告");
     expect(html).toContain("<button>改命记录</button>");
     expect(html).toContain('aria-label="今天发生的一件事"');
@@ -89,5 +91,8 @@ describe("life home overview", () => {
     expect(css).toContain(".life-sprout-card");
     expect(css).toContain(".life-head-actions");
     expect(css).toContain(".life-report-return");
+    expect(css).toContain(".life-head-identity");
+    expect(css).toContain(".life-local-actions");
+    expect(css).toContain("@media(max-width:520px){.life-head-simple{grid-template-columns:minmax(0,1fr) auto}.life-head-identity b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.life-head-actions{flex-wrap:nowrap}.life-head-simple button{white-space:nowrap;padding-inline:10px}.life-local-actions{display:flex;flex-wrap:nowrap;gap:8px}.life-local-actions button{flex:0 0 auto;min-height:38px;padding-inline:10px;font-size:13px}}");
   });
 });

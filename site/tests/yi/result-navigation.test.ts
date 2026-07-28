@@ -129,8 +129,10 @@ describe("result navigation", () => {
   it("compresses the adopted birth facts on mobile without horizontal overflow", () => {
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts\{[^}]*display:grid[^}]*grid-template-columns:auto minmax\(0,1fr\)[^}]*padding:8px 10px[^}]*font-size:12px/);
-    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts span\{[^}]*min-width:0[^}]*white-space:nowrap[^}]*overflow:hidden[^}]*text-overflow:ellipsis/);
+    expect(css).toMatch(/\.adopted-facts\{[^}]*display:grid[^}]*grid-template-columns:auto repeat\(4,minmax\(0,auto\)\)[^}]*align-items:center/);
+    expect(css).toMatch(/\.adopted-facts span\{[^}]*min-width:0[^}]*white-space:nowrap[^}]*overflow:hidden[^}]*text-overflow:ellipsis/);
+    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts\{[^}]*grid-template-columns:auto minmax\(0,1fr\)[^}]*gap:4px 8px[^}]*padding:9px 10px/);
+    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts span\{[^}]*max-width:100%/);
     expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts small\{[^}]*grid-column:1\/-1/);
   });
 

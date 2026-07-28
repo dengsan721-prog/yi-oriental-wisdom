@@ -61,6 +61,14 @@ export type DaoStoryNoteResult = Readonly<{
   uncertaintyFlags: readonly string[];
 }>;
 
+export type LifeScrollRecommendations = Readonly<{
+  idiom: Readonly<{ phrase: string; commentary: string }>;
+  proverb: Readonly<{ phrase: string; commentary: string }>;
+  poem: Readonly<{ title: string; commentary: string }>;
+  classicalMusic: Readonly<{ title: string; commentary: string }>;
+  jayChouSong: Readonly<{ title: string; commentary: string }>;
+}>;
+
 export type LifeScrollNarrative = Readonly<{
   oneLineTheme: string;
   openingScene: readonly string[];
@@ -70,6 +78,7 @@ export type LifeScrollNarrative = Readonly<{
   matureArc: readonly string[];
   animalInterlude: StoryMirror;
   historicalInterlude: StoryMirror;
+  recommendations: LifeScrollRecommendations;
   daoNotes: readonly DaoStoryNote[];
   closingLine: string;
   actionNow: string;
@@ -158,6 +167,51 @@ const PRIORITY_ORDER: Readonly<Record<SafeStoryInterpretation["priority"], numbe
 
 const PUBLIC_FORBIDDEN =
   /四柱|日主|十神|月令|旺衰|藏干|纳音|十二长生|干支关系|命理|专业依据|本章来源|可靠级|证据等级|计算规则|规则 ID|数据来源清单/u;
+
+const RECOMMENDATION_LIBRARY: Readonly<Record<ElementName | "neutral", LifeScrollRecommendations>> = {
+  木: {
+    idiom: { phrase: "厚积薄发", commentary: "像树根在土里慢慢铺开，眼前不急着抢一时热闹，先把基本功、关系和节奏养厚；等风来时，枝叶自然会往上走。" },
+    proverb: { phrase: "十年树木，百年树人", commentary: "这句俗语提醒你：真正改命不是一夜翻盘，而是每天把念头扶正一点，把行动种深一点，日久自然成林。" },
+    poem: { title: "《诗经·桃夭》", commentary: "适合读它的生发之气：不是空喊兴旺，而是让一个人把温柔、秩序和新生活一点点带进家门。" },
+    classicalMusic: { title: "《高山流水》", commentary: "木的生长需要知音和回响，这首曲子像山水之间的相逢，提醒你别只赶路，也要找到能听懂你节奏的人。" },
+    jayChouSong: { title: "周杰伦《稻香》", commentary: "这首歌适合做低谷时的回家路：先把心收回真实生活，饭香、田埂、家人和小愿望，都能把人从虚火里拉回来。" },
+  },
+  火: {
+    idiom: { phrase: "光风霁月", commentary: "火不是一直烧到尽头，而是把心照亮之后仍有清明；热情要有光，也要有分寸。" },
+    proverb: { phrase: "心急吃不了热豆腐", commentary: "这句俗语很朴素，却正好压住火气：越重要的事，越不能靠急吼吼取胜，先降温，话才进得了人心。" },
+    poem: { title: "泰戈尔《飞鸟集》", commentary: "适合借它读一种明亮而轻盈的心：真正的光不压人，它照见方向，也给别人留下回应的天空。" },
+    classicalMusic: { title: "《阳春白雪》", commentary: "清亮、开阔、有上扬之气，适合提醒自己：表达要有锋芒，也要有雅量。" },
+    jayChouSong: { title: "周杰伦《晴天》", commentary: "它适合放在情绪转折处：有热、有遗憾、有少年气，但最后还是要学会把那场雨唱成回忆。" },
+  },
+  土: {
+    idiom: { phrase: "稳扎稳打", commentary: "土的本事不在声势，而在承载。一步一脚印，把责任、边界、交付都落在地上，才不怕风吹。" },
+    proverb: { phrase: "一口吃不成胖子", commentary: "这句俗语替你拆掉焦虑：大事慢慢来，先把今天能扛的一小段扛稳，命运就有了新的落脚点。" },
+    poem: { title: "陶渊明《归园田居》", commentary: "适合读它的安顿感：不是退缩，而是知道什么东西值得守，什么喧哗可以放下。" },
+    classicalMusic: { title: "《平沙落雁》", commentary: "这首曲子有落地之美，像雁群归队，提醒你把漂浮的念头收回秩序与日常。" },
+    jayChouSong: { title: "周杰伦《听妈妈的话》", commentary: "适合土气重责任的人听：真正的成熟不是硬扛到底，而是记得来处，也懂得把爱落实到行动。" },
+  },
+  金: {
+    idiom: { phrase: "去芜存菁", commentary: "金的力量是取舍：把杂音削掉，把标准立住，留下真正锋利、真正有用的那一部分。" },
+    proverb: { phrase: "磨刀不误砍柴工", commentary: "先校准工具、规则和边界，再出手，反而走得快；急着砍，刀钝了，力气都白费。" },
+    poem: { title: "王昌龄《从军行》", commentary: "适合读它的决断与骨气：不为噪声乱阵，关键时候守住一口硬气。" },
+    classicalMusic: { title: "《十面埋伏》", commentary: "它有锋利的局势感，提醒你看清来路去路，判断之后再行动，不在混乱里乱挥刀。" },
+    jayChouSong: { title: "周杰伦《将军》", commentary: "适合金气的布局感：看棋、定势、落子，真正厉害不是逞强，而是知道哪一步最要紧。" },
+  },
+  水: {
+    idiom: { phrase: "水滴石穿", commentary: "水的胜利不是硬碰硬，而是长久、柔韧、不断回到方向；慢一点，也能穿过最硬的石头。" },
+    proverb: { phrase: "船到桥头自然直", commentary: "不是躺平等运气，而是提醒你：先把船划到桥头，很多路是在靠近之后才看清的。" },
+    poem: { title: "苏轼《定风波》", commentary: "适合读它的从容：风雨来了不必立刻证明自己，先稳住脚步，风过之后，人会更清醒。" },
+    classicalMusic: { title: "《渔舟唱晚》", commentary: "水的智慧在回旋与归航，这首曲子像傍晚收桨，提醒你在流动中保留安定。" },
+    jayChouSong: { title: "周杰伦《七里香》", commentary: "它有水一样的记忆感：很多关系与时光，不靠用力抓住，而靠细细感受，慢慢回味。" },
+  },
+  neutral: {
+    idiom: { phrase: "知行合一", commentary: "材料不足时，不急着给自己下定义；先把知道的事做成一小步，行动会慢慢照见答案。" },
+    proverb: { phrase: "路遥知马力，日久见人心", commentary: "命运也要经得起日子检验。先记录，先行动，时间会替你筛出真正有用的路。" },
+    poem: { title: "《诗经·蒹葭》", commentary: "适合读它的寻找感：方向还在水一方，但人已经开始上路；模糊不怕，怕的是不再靠近。" },
+    classicalMusic: { title: "《流水》", commentary: "不知道该归哪一类时，就先听水。水不争形，却能绕过阻碍，慢慢找到自己的路。" },
+    jayChouSong: { title: "周杰伦《星晴》", commentary: "适合当作轻一点的开场：先把心情抬起来，再去面对具体的事，路就没那么沉。" },
+  },
+};
 
 const ELEMENT_TEXTURES: Readonly<Record<ElementName, ElementTexture>> = {
   木: {
@@ -935,6 +989,9 @@ export function buildLifeScrollNarrative(
   const texture = hasAnyMaterial && stable.dayMasterElement
     ? ELEMENT_TEXTURES[stable.dayMasterElement]
     : NEUTRAL_TEXTURE;
+  const recommendations = hasAnyMaterial && stable.dayMasterElement
+    ? RECOMMENDATION_LIBRARY[stable.dayMasterElement]
+    : RECOMMENDATION_LIBRARY.neutral;
   const structure = stable.structureBalance
     ? STRUCTURE_FRAMES[stable.structureBalance]
     : NEUTRAL_STRUCTURE;
@@ -1154,6 +1211,7 @@ export function buildLifeScrollNarrative(
     matureArc: [matureMethod.text, matureReflection],
     animalInterlude: mirrors.animal,
     historicalInterlude: mirrors.historical,
+    recommendations,
     daoNotes: daoResult.daoNotes,
     closingLine: joinCompleteSentences(
       texture.closing,
