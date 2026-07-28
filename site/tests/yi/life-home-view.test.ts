@@ -95,4 +95,13 @@ describe("life home overview", () => {
     expect(css).toContain(".life-local-actions");
     expect(css).toContain("@media(max-width:520px){.life-head-simple{grid-template-columns:minmax(0,1fr) auto}.life-head-identity b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.life-head-actions{flex-wrap:nowrap}.life-head-simple button{white-space:nowrap;padding-inline:10px}.life-local-actions{display:flex;flex-wrap:nowrap;gap:8px}.life-local-actions button{flex:0 0 auto;min-height:38px;padding-inline:10px;font-size:13px}}");
   });
+
+  it("keeps three- and four-character names from squeezing the mobile home actions", () => {
+    const html = renderToStaticMarkup(createElement(LifeHome, { profile: { ...profile, name: "欧阳司徒" }, onChange: () => ({ ok: true as const }), onClear: () => ({ ok: true as const }), onViewReport: () => undefined }));
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+
+    expect(html).toContain("<small>欢迎回来</small><b>欧阳司徒</b>");
+    expect(html).not.toContain("欧阳司徒，欢迎回来");
+    expect(css).toContain("@media(max-width:520px){.life-head-identity small{white-space:nowrap}.life-head-identity b{max-width:4.4em;font-size:16px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.life-head-actions{flex:0 0 auto}}");
+  });
 });

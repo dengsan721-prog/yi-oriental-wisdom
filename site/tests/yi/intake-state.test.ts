@@ -151,6 +151,12 @@ describe("birth intake state", () => {
     expect(css).toContain("@media(max-width:520px){.time-picker{padding:16px}.time-modes{gap:6px}.time-modes button{font-size:13px;padding-inline:6px}.wheel-list button{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wheel-list button.selected{font-size:15px}.time-picker .wheel-list{height:168px}}");
   });
 
+  it("keeps the confirmed birth-time summary on one mobile line", () => {
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+
+    expect(css).toContain("@media(max-width:520px){.summary-control.time-summary{grid-template-columns:auto minmax(0,1fr) auto;gap:6px 8px;padding:10px 12px}.summary-control.time-summary>span{font-size:11px;white-space:nowrap}.summary-control.time-summary strong{grid-column:auto;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}.summary-control.time-summary button{grid-column:auto;grid-row:auto;min-height:36px;padding-inline:10px;font-size:13px;white-space:nowrap}}");
+  });
+
   it("clamps keyboard wheel movement to the available options", () => {
     expect(getNextWheelIndex(1, "ArrowDown", 3)).toBe(2);
     expect(getNextWheelIndex(2, "ArrowDown", 3)).toBe(2);
