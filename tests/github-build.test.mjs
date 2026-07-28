@@ -39,7 +39,8 @@ test("GitHub build is the full bundled React app", async () => {
   const cssName = assets.find((name) => /^index-.+\.css$/.test(name));
   assert.ok(cssName);
   const css = await readFile(new URL(`../../docs/assets/${cssName}`, import.meta.url), "utf8");
-  assert.match(js, /建立出生坐标/);
+  assert.match(js, /你的出生坐标/);
+  assert.doesNotMatch(js, /建立出生坐标/);
   assert.match(js, /开始排盘/);
   assert.doesNotMatch(js, /用最少操作完成录入/);
   assert.doesNotMatch(js, /阳历、农历均可录入/);

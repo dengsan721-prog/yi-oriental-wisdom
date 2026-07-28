@@ -55,14 +55,12 @@ function renderChart(birth: BirthInput = exactBirth, mutate?: (
   mutate?.(chart);
   const report = buildProfessionalReport(chart, birth);
   const items = buildInterpretations(chart);
-  const Component = ChartSection as unknown as ComponentType<{
-    name?: string;
+    const Component = ChartSection as unknown as ComponentType<{
     chart: FourPillarsResult;
     report: ProfessionalReport;
     items: readonly InterpretationItem[];
   }>;
   const html = renderToStaticMarkup(createElement(Component, {
-    name: birth.name,
     chart,
     report,
     items,
@@ -256,6 +254,7 @@ describe("expanded professional chart reading", () => {
     const narrative = buildChartNarrative(chart, report, items);
 
     expect(html).toContain('data-testid="professional-pillar-table"');
+    expect(html).not.toContain("姓名五行参考分");
     expect(html).toContain('class="professional-reading-sections waterfall-grid"');
     expect(html.match(/<details class="professional-reading-section waterfall-card/g)).toHaveLength(5);
     expect(html).toContain("点开阅读");
@@ -322,16 +321,11 @@ describe("expanded professional chart reading", () => {
     }
   });
 
-  it("keeps the name module between facts and the chart until the final route cutover", () => {
+  it("keeps name analysis out of the professional chart route", () => {
     const named = renderChart();
-    const blank = renderChart({ ...exactBirth, name: " \t " });
 
-    expect(blank.html).not.toContain("data-name-analysis");
-    expect(named.html).toContain("data-name-analysis");
-    expect(named.html.indexOf("birth-fact-band"))
-      .toBeLessThan(named.html.indexOf("data-name-analysis"));
-    expect(named.html.indexOf("data-name-analysis"))
-      .toBeLessThan(named.html.indexOf("professional-pillar-table"));
+    expect(named.html).not.toContain("data-name-analysis");
+    expect(named.html).not.toContain("姓名五行参考分");
   });
 
   it("does not render unsupported conclusions, calculation panels or a concrete relation when its summary is ambiguous", () => {

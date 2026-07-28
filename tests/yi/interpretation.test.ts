@@ -329,17 +329,21 @@ describe("professional interpretation", () => {
     expect(fallbacks).toContain("五合、六合、三合、冲、刑、害、破");
   });
 
-  it("renders concise summaries and all expanded evidence labels with sources", () => {
+  it("renders the detail chapter as readable xiangpi cards without backend scoring labels", () => {
     const items = buildInterpretations(knownChart);
     const html = renderToStaticMarkup(createElement(DetailSection, { items }));
     const firstPlainSentence = items[0].plainLanguage.match(/^.*?[。！？]/)?.[0] ?? items[0].plainLanguage;
-    const confidenceText = { high: "高置信", medium: "中等置信", limited: "有限置信" }[items[0].confidence];
+
+    expect(html).toContain("<small>专业祥批</small>");
+    expect(html).toContain("<h1>七域祥批</h1>");
     expect(html).toContain(items[0].professionalTitle);
-    expect(html).toContain(items[0].innovationTitle);
-    expect(html).toContain(confidenceText);
+    expect(html).toContain(`伏笔 · ${items[0].innovationTitle}`);
+    expect(html).toContain("命盘小模块");
+    expect(html).toContain("点开阅读");
     expect(html).not.toContain(`（${items[0].confidence}）`);
+    expect(html).not.toMatch(/高置信|中等置信|有限置信|使用边界|理论传统|参考依据|产品计分|EightCharAPI/u);
     expect(html).toContain(firstPlainSentence);
-    for (const label of ["专业判断", "命理依据", "白话解释", "典型场景", "自然镜像", "行动建议", "边界提醒", "理论传统", "参考依据"]) {
+    for (const label of ["专业判断", "白话故事", "得势时", "失衡时", "自然镜像", "此刻可做", "长期练习"]) {
       expect(html).toContain(label);
     }
   });

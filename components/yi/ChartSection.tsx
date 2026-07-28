@@ -13,7 +13,6 @@ import type {
   PillarKey,
   ProfessionalReport,
 } from "../../lib/yi/types";
-import { NameAnalysisSection } from "./NameAnalysisSection";
 
 const pillarOrder: readonly PillarKey[] = ["year", "month", "day", "hour"];
 const pillarNames: Record<PillarKey, string> = {
@@ -435,12 +434,10 @@ function DetailedNarrative({
 }
 
 export function ChartSection({
-  name = "",
   chart,
   report,
   items,
 }: {
-  name?: string;
   chart: FourPillarsResult;
   report: ProfessionalReport;
   items: readonly InterpretationItem[];
@@ -468,15 +465,6 @@ export function ChartSection({
         <div><span>星座</span><b>{report.birthFacts.starSign}</b></div>
         <div><span>时辰状态</span><b>{report.birthFacts.timeConfidence}</b></div>
       </section>
-
-      {name.trim() && (
-        <NameAnalysisSection
-          chart={chart}
-          key={name}
-          name={name}
-          report={report}
-        />
-      )}
 
       <ProfessionalPillarTable grid={grid} />
 

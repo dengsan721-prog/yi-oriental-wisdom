@@ -16,12 +16,14 @@ describe("yi hash router", () => {
     ["#/birth", { page: "birth" }],
     ["#/calculating", { page: "calculating" }],
     ["#/report/chart", { page: "report", section: "chart" }],
+    ["#/report/name", { page: "report", section: "name" }],
     ["#/report/not-real", { page: "report", section: "portrait" }],
     ["#/home", { page: "home" }],
   ])("parses %s", (hash, expected) => expect(parseYiHash(hash)).toEqual(expected));
 
   it("formats report routes", () => {
     expect(formatYiHash({ page: "report", section: "fortune" })).toBe("#/report/fortune");
+    expect(formatYiHash({ page: "report", section: "name" })).toBe("#/report/name");
   });
 
   it("starts the route hook on intro during server rendering", () => {

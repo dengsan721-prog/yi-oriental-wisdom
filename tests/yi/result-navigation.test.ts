@@ -67,7 +67,7 @@ describe("result navigation", () => {
     expect(actions).toBeGreaterThan(facts);
   });
 
-  it("uses a clear fallback for an empty report owner and wraps long owner titles", () => {
+  it("uses a clear fallback for an empty report owner and keeps owner titles on one line", () => {
     const empty = renderResult({ ...exactBirth, name: "" });
     const long = renderResult({ ...exactBirth, name: "欧阳司徒上官诸葛林知夏" });
 
@@ -112,19 +112,26 @@ describe("result navigation", () => {
     expect(html).not.toContain("保存到本机");
   });
 
-  it("keeps the result actions in a bottom-safe dock instead of the mobile reading lead", () => {
+  it("keeps the result actions in a compact inline mobile area without blocking reading", () => {
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
     expect(css).toMatch(/\.result-head-actions\{[^}]*display:flex[^}]*justify-content:flex-end[^}]*gap:8px/);
     expect(css).toMatch(/\.result-head-actions button\{[^}]*min-width:0[^}]*min-height:44px/);
-    expect(css).toContain(".result-shell{padding-bottom:calc(112px + env(safe-area-inset-bottom))}");
-    expect(css).toContain(".result-head>.result-head-actions{position:fixed");
-    expect(css).toContain("bottom:calc(12px + env(safe-area-inset-bottom))");
-    expect(css).toContain("grid-template-columns:minmax(0,1fr) minmax(112px,.72fr)");
-    expect(css).toContain(".result-head-actions button{width:100%");
-    expect(css).toMatch(/\.report-document-title h1\{[^}]*overflow-wrap:anywhere/);
+    expect(css).toContain("@media(max-width:520px){.result-shell{padding-bottom:0}.result-head>.result-head-actions{position:static;display:grid;grid-template-columns:1fr 1fr;margin-top:8px;padding:0;background:transparent;box-shadow:none;backdrop-filter:none}.result-head-actions button{width:100%;padding-inline:10px}}");
+    expect(css).not.toContain(".result-shell{padding-bottom:calc(112px + env(safe-area-inset-bottom))}");
+    expect(css).not.toContain("bottom:calc(12px + env(safe-area-inset-bottom))");
+    expect(css).toMatch(/\.report-document-title h1\{[^}]*font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif[^}]*white-space:nowrap[^}]*text-overflow:ellipsis/);
     expect(css).toMatch(/\.report-title-region\{[^}]*min-width:0/);
+    expect(css).toMatch(/@media\(max-width:700px\)\{[\s\S]*?\.report-document-title h1\{[^}]*font-size:clamp\(22px,7\.2vw,32px\)[^}]*white-space:nowrap/);
     expect(css).not.toMatch(/\.mini-mark\b|\.result-head-main\b/);
+  });
+
+  it("compresses the adopted birth facts on mobile without horizontal overflow", () => {
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+
+    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts\{[^}]*display:grid[^}]*grid-template-columns:auto minmax\(0,1fr\)[^}]*padding:8px 10px[^}]*font-size:12px/);
+    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts span\{[^}]*min-width:0[^}]*white-space:nowrap[^}]*overflow:hidden[^}]*text-overflow:ellipsis/);
+    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts small\{[^}]*grid-column:1\/-1/);
   });
 
   it("shows the adopted report facts and unknown-time scope in the header", () => {
@@ -148,19 +155,48 @@ describe("result navigation", () => {
     expect(html).toContain('class="result-tabs-guide"');
     expect(html).toContain("<small>报告导览</small>");
     expect(html).toContain("<strong>当前章 · 人生画卷</strong>");
-    expect(html).toContain("<span>7章命运全景 · 点击切换重点</span>");
+    expect(html).toContain("<span>8章命运全景 · 点击切换重点</span>");
     expect(html).toContain('class="result-tab-list"');
   });
 
-  it("keeps the seven report sections in a stable reading order", () => {
-    expect(getResultSections().map(([id]) => id)).toEqual([
-      "portrait", "chart", "detail", "fortune", "compatibility", "mirror", "tradition",
-    ]);
-    expect(getResultSections()[0]).toEqual(["portrait", "人生画卷"]);
+  it("frames the life scroll as a movie-like hero growth story", () => {
+    const { html } = renderResult();
+
+    expect(html).toContain("英雄成长记");
+    for (const label of [
+      "开场 · 命运给出的第一道题",
+      "事业副本",
+      "关系副本",
+      "命运转折",
+      "历史导师",
+      "卷尾行动",
+    ]) expect(html).toContain(label);
   });
 
-  it("exposes all seven production sections", () => {
-    expect(getAvailableSections(true)).toHaveLength(7);
+  it("keeps the eight report sections in a stable reading order", () => {
+    expect(getResultSections().map(([id]) => id)).toEqual([
+      "portrait", "chart", "detail", "name", "fortune", "compatibility", "mirror", "tradition",
+    ]);
+    expect(getResultSections()[0]).toEqual(["portrait", "人生画卷"]);
+    expect(getResultSections()[3]).toEqual(["name", "姓名"]);
+  });
+
+  it("exposes all eight production sections", () => {
+    expect(getAvailableSections(true)).toHaveLength(8);
+  });
+
+  it("renders name analysis as its own chapter after detail instead of inside the chart", () => {
+    const { html } = renderResult({ ...exactBirth, name: "林知夏" });
+    const chartPane = html.indexOf('<section class="report-section chart-report"');
+    const detailPane = html.indexOf("<small>专业详批</small>");
+    const namePane = html.indexOf('data-name-analysis="loading"');
+    const fortunePane = html.indexOf('<section class="report-section fortune-report"');
+    const chartEnd = html.indexOf('data-testid="professional-pillar-table"', chartPane);
+
+    expect(namePane).toBeGreaterThan(detailPane);
+    expect(fortunePane).toBeGreaterThan(namePane);
+    expect(html).toContain(">姓名</button>");
+    expect(html.slice(chartPane, chartEnd)).not.toContain("姓名五行参考分");
   });
 
   it("keeps the selected parent-child report role through compatibility changes", () => {
@@ -186,7 +222,7 @@ describe("result navigation", () => {
 
     expect(css).toMatch(/\.result-tabs\{[^}]*position:sticky[^}]*display:grid[^}]*grid-template-columns:minmax\(180px,\.36fr\) minmax\(0,1fr\)/);
     expect(css).toMatch(/\.result-tabs-guide\{[^}]*border:1px solid var\(--yi-accent\)[^}]*background:var\(--yi-accent-soft\)/);
-    expect(css).toMatch(/\.result-tab-list\{[^}]*display:grid[^}]*grid-template-columns:repeat\(7,minmax\(0,1fr\)\)/);
+    expect(css).toMatch(/\.result-tab-list\{[^}]*display:grid[^}]*grid-template-columns:repeat\(8,minmax\(0,1fr\)\)/);
     expect(css).toMatch(/\.result-tabs button\{[^}]*min-width:0[^}]*min-height:48px/);
     expect(css).toContain("@media(max-width:760px){.result-tabs{grid-template-columns:1fr;padding-inline:12px}.result-tab-list{grid-template-columns:repeat(2,minmax(0,1fr))}");
     expect(css).toContain(".result-tabs button{padding:9px 8px}");
@@ -206,8 +242,9 @@ describe("result navigation", () => {
     const source = readFileSync(new URL("../../components/yi/ResultShell.tsx", import.meta.url), "utf8");
 
     expect(source).toContain(
-      "<ChartSection chart={chart} items={interpretations} name={name} report={report} />",
+      "<ChartSection chart={chart} items={interpretations} report={report} />",
     );
+    expect(source).toContain("<NameAnalysisSection chart={chart}");
     expect(source).toContain("<DetailSection items={interpretations} />");
     expect(source).toContain("<SourceNote chart={chart} items={interpretations} />");
   });
