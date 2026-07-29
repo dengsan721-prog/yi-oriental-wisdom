@@ -82,7 +82,8 @@ describe("life home overview", () => {
     expect(source).toContain("称号徽章");
     expect(source).toContain("每一条记录都是一次把命运方向盘拿回来的练习");
     expect(source).toContain("连续填写");
-    expect(source).toContain("立命、改过、积善、谦德");
+    expect(source).toContain("先立一个清楚愿望，再改今天失手的一招");
+    expect(source).not.toContain("了凡四训");
     expect(source).toContain("查看命盘报告");
     expect(css).toContain(".life-record-window");
     expect(css).toContain(".life-change-dashboard");

@@ -12,7 +12,7 @@ import type {
   InterpretationItem,
   ProfessionalReport,
 } from "../../lib/yi/types";
-import { SceneLineArt, type SceneLineArtKind } from "./SceneLineArt";
+import { CollapseSectionButton, SceneLineArt, type SceneLineArtKind } from "./SceneLineArt";
 
 function DaoNote({ note }: { note: DaoStoryNote }) {
   return <aside className="dao-story-note">
@@ -75,6 +75,7 @@ function MirrorInterlude({
       <p><strong>相像的一幕</strong>{mirror.matchingScene}</p>
       <p><strong>重要区别</strong>{mirror.difference}</p>
       <p><strong>带走的方法</strong>{mirror.takeaway}</p>
+      <CollapseSectionButton />
     </div>
   </details>;
 }
@@ -88,14 +89,17 @@ function RecommendationCard({
   artKind: SceneLineArtKind;
   index: string;
   title: string;
-  item: { phrase?: string; title?: string; commentary: string };
+  item: { phrase?: string; title?: string; original?: string; lyricImagery?: string; commentary: string };
 }) {
   const headline = item.phrase ?? item.title ?? title;
   return <details className="life-scroll-part waterfall-card waterfall-card--illustrated life-scroll-recommendation">
     <WaterfallSummary artKind={artKind} index={index} title={title} subtitle={headline} />
     <div className="waterfall-card-body">
       <p className="life-recommendation-headline">{headline}</p>
+      {item.original && <section className="life-recommendation-original"><b>原诗</b><p>{item.original}</p></section>}
+      {item.lyricImagery && <section className="life-recommendation-original"><b>歌词意象</b><p>{item.lyricImagery}</p></section>}
       <p>{item.commentary}</p>
+      <CollapseSectionButton />
     </div>
   </details>;
 }
@@ -107,6 +111,10 @@ function LifeScrollRecommendationCards({ recommendations }: { recommendations: L
     <RecommendationCard artKind="poem" index="趣味签 · 诗" title="推荐一首诗" item={recommendations.poem} />
     <RecommendationCard artKind="music" index="趣味签 · 古典乐" title="传统古典音乐" item={recommendations.classicalMusic} />
     <RecommendationCard artKind="jay" index="趣味签 · 周杰伦" title="周杰伦歌单" item={recommendations.jayChouSong} />
+    <RecommendationCard artKind="herb" index="趣味签 · 药材" title="像哪一味中药材" item={recommendations.herb} />
+    <RecommendationCard artKind="mountain" index="趣味签 · 名山" title="像哪一座名山" item={recommendations.mountain} />
+    <RecommendationCard artKind="book" index="趣味签 · 人生之书" title="推荐一本古代典籍" item={recommendations.lifeBook} />
+    <RecommendationCard artKind="poem" index="趣味签 · 定场诗" title="给人生写一首定场诗" item={recommendations.settingPoem} />
   </>;
 }
 
@@ -223,6 +231,7 @@ export function PortraitSection({
         <div className="waterfall-card-body">
           <blockquote>{narrative.oneLineTheme}</blockquote>
           {narrative.openingScene.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+          <CollapseSectionButton />
         </div>
       </details>
 
@@ -233,6 +242,7 @@ export function PortraitSection({
         <div className="waterfall-card-body">
           {narrative.careerArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
           <PlacedDaoNotes notes={narrative.daoNotes} placement="career" />
+          <CollapseSectionButton />
         </div>
       </details>
 
@@ -241,6 +251,7 @@ export function PortraitSection({
         <div className="waterfall-card-body">
           {narrative.relationshipArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
           <PlacedDaoNotes notes={narrative.daoNotes} placement="relationship" />
+          <CollapseSectionButton />
         </div>
       </details>
 
@@ -249,6 +260,7 @@ export function PortraitSection({
         <div className="waterfall-card-body">
           {narrative.turningPointArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
           <PlacedDaoNotes notes={narrative.daoNotes} placement="turning-point" />
+          <CollapseSectionButton />
         </div>
       </details>
 
@@ -258,6 +270,7 @@ export function PortraitSection({
         <WaterfallSummary artKind="mature" index="后半场" title="中后程" subtitle="成熟之后怎样收束力量" />
         <div className="waterfall-card-body">
           {narrative.matureArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+          <CollapseSectionButton />
         </div>
       </details>
 
@@ -272,6 +285,7 @@ export function PortraitSection({
             <p>{narrative.actionNow}</p>
           </aside>
           <PlacedDaoNotes notes={narrative.daoNotes} placement="closing" />
+          <CollapseSectionButton />
         </div>
       </details>
     </div>

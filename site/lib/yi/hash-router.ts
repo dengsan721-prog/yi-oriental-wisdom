@@ -1,4 +1,4 @@
-export const reportSectionIds = ["portrait", "chart", "detail", "name", "fortune", "compatibility", "mirror", "tradition"] as const;
+export const reportSectionIds = ["portrait", "chart", "detail", "name", "fortune", "draw", "qimen", "compatibility", "mirror", "tradition"] as const;
 
 export type ReportSectionId = typeof reportSectionIds[number];
 

@@ -52,6 +52,10 @@ describe("life scroll view", () => {
       "推荐一首诗",
       "传统古典音乐",
       "周杰伦歌单",
+      "像哪一味中药材",
+      "像哪一座名山",
+      "推荐一本古代典籍",
+      "给人生写一首定场诗",
       "收束",
       "当下行动",
       narrative.oneLineTheme,
@@ -67,11 +71,22 @@ describe("life scroll view", () => {
       narrative.recommendations.proverb.phrase,
       narrative.recommendations.proverb.commentary,
       narrative.recommendations.poem.title,
+      narrative.recommendations.poem.original,
       narrative.recommendations.poem.commentary,
       narrative.recommendations.classicalMusic.title,
       narrative.recommendations.classicalMusic.commentary,
       narrative.recommendations.jayChouSong.title,
+      narrative.recommendations.jayChouSong.lyricImagery,
       narrative.recommendations.jayChouSong.commentary,
+      narrative.recommendations.herb.title,
+      narrative.recommendations.herb.commentary,
+      narrative.recommendations.mountain.title,
+      narrative.recommendations.mountain.commentary,
+      narrative.recommendations.lifeBook.title,
+      narrative.recommendations.lifeBook.commentary,
+      narrative.recommendations.settingPoem.title,
+      narrative.recommendations.settingPoem.original,
+      narrative.recommendations.settingPoem.commentary,
     ]) {
       expect(html).toContain(text);
     }
@@ -88,6 +103,10 @@ describe("life scroll view", () => {
       "<h2>推荐一首诗</h2>",
       "<h2>传统古典音乐</h2>",
       "<h2>周杰伦歌单</h2>",
+      "<h2>像哪一味中药材</h2>",
+      "<h2>像哪一座名山</h2>",
+      "<h2>推荐一本古代典籍</h2>",
+      "<h2>给人生写一首定场诗</h2>",
       "<h2>收束</h2>",
     ].map(token => html.indexOf(token));
     expect(readingOrder).toEqual([...readingOrder].sort((left, right) => left - right));
@@ -97,13 +116,13 @@ describe("life scroll view", () => {
     expect(html).toContain("100");
     expect(html).toContain("36.1%");
     expect(html).toContain("13,192");
-    expect(html.match(/<details class="life-scroll-part waterfall-card/g)).toHaveLength(13);
-    expect(html.match(/class="waterfall-open-hint"/g)).toHaveLength(13);
-    expect(html.match(/class="scene-line-art scene-line-art--/g)).toHaveLength(13);
+    expect(html.match(/<details class="life-scroll-part waterfall-card/g)).toHaveLength(17);
+    expect(html.match(/class="waterfall-open-hint"/g)).toHaveLength(17);
+    expect(html.match(/class="scene-line-art scene-line-art--/g)?.length ?? 0).toBeGreaterThanOrEqual(17);
     expect(html).toContain('class="scene-line-art scene-line-art--animal"');
     expect(html).toContain('class="scene-line-art scene-line-art--history"');
-    expect(html.match(/aria-hidden="true"/g)?.length ?? 0).toBeGreaterThanOrEqual(13);
-    expect(html.match(/focusable="false"/g)?.length ?? 0).toBeGreaterThanOrEqual(13);
+    expect(html.match(/aria-hidden="true"/g)?.length ?? 0).toBeGreaterThanOrEqual(17);
+    expect(html.match(/focusable="false"/g)?.length ?? 0).toBeGreaterThanOrEqual(17);
     expect(html).toContain("点开阅读");
     expect(html).toContain("收起回到总览");
   });

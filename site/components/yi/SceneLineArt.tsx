@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 export type SceneLineArtKind =
   | "opening"
   | "animal"
@@ -15,7 +17,15 @@ export type SceneLineArtKind =
   | "chart"
   | "story"
   | "scene"
-  | "detail";
+  | "detail"
+  | "herb"
+  | "mountain"
+  | "book"
+  | "oracle"
+  | "qimen"
+  | "sprout"
+  | "badge"
+  | "fortune";
 
 const drawings: Record<SceneLineArtKind, ReactNode> = {
   opening: <>
@@ -106,6 +116,53 @@ const drawings: Record<SceneLineArtKind, ReactNode> = {
     <path d="M76 25l14 3-5 14" />
     <path d="M63 56c9-9 18-13 29-13" />
   </>,
+  herb: <>
+    <path d="M58 65V24" />
+    <path d="M58 48c-18-2-29-12-33-29 17 1 28 10 33 29Z" />
+    <path d="M58 38c18-3 30-13 35-28-17 0-30 10-35 28Z" />
+    <path d="M58 62c14-2 24-10 29-23-14 0-24 8-29 23Z" />
+    <path d="M28 67h61" />
+  </>,
+  mountain: <>
+    <path d="M18 64h84" />
+    <path d="M27 63l22-38 16 24 12-16 19 30" />
+    <path d="M49 25l7 15 9-8" />
+    <path d="M40 55c14-6 27-6 40 0" />
+  </>,
+  book: <>
+    <path d="M22 23c15-7 27-5 38 4v43c-11-9-23-11-38-4Z" />
+    <path d="M60 27c11-9 23-11 38-4v43c-15-7-27-5-38 4Z" />
+    <path d="M60 27v43M34 37h14M72 37h14M34 49h18M72 49h18" />
+  </>,
+  oracle: <>
+    <path d="M34 18h52l10 12-36 39-36-39Z" />
+    <path d="M24 30h72M42 30l18 39M78 30 60 69M48 18l-6 12M72 18l6 12" />
+    <path d="M16 63h18M86 63h18" />
+  </>,
+  qimen: <>
+    <circle cx="60" cy="42" r="26" />
+    <path d="M60 16v52M34 42h52M42 24l36 36M78 24 42 60" />
+    <path d="M60 6l6 12h-12ZM60 78l-6-12h12ZM18 42l12-6v12ZM102 42l-12 6V36Z" />
+  </>,
+  sprout: <>
+    <path d="M60 68V36" />
+    <path d="M60 48c-15-1-25-10-30-25 15 0 26 8 30 25Z" />
+    <path d="M60 40c15-1 26-9 30-24-16 0-26 8-30 24Z" />
+    <path d="M31 69h58" />
+    <path d="M25 58c8 6 15 9 23 10M95 58c-8 6-15 9-23 10" />
+  </>,
+  badge: <>
+    <circle cx="60" cy="36" r="22" />
+    <path d="M48 58l-7 15 19-8 19 8-7-15" />
+    <path d="M50 36l7 7 14-16" />
+    <path d="M38 18l-9-8M82 18l9-8" />
+  </>,
+  fortune: <>
+    <path d="M18 64c16-22 34-32 54-30 13 1 23 6 30 16" />
+    <path d="M33 57c9-8 18-12 28-12 9 0 17 3 25 9" />
+    <circle cx="36" cy="24" r="8" />
+    <path d="M36 32v19M28 42h16M36 51l-8 13M36 51l10 13" />
+  </>,
 };
 
 export function SceneLineArt({
@@ -126,4 +183,11 @@ export function SceneLineArt({
     </svg>
   );
 }
-import type { ReactNode } from "react";
+
+export function CollapseSectionButton({
+  label = "收起本章，回到总览",
+}: {
+  label?: string;
+}) {
+  return <button className="collapse-section-button" data-collapse-section="true" type="button">{label}</button>;
+}

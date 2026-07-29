@@ -343,9 +343,10 @@ describe("professional interpretation", () => {
     expect(html).not.toContain(`（${items[0].confidence}）`);
     expect(html).not.toMatch(/高置信|中等置信|有限置信|使用边界|理论传统|参考依据|产品计分|EightCharAPI|排盘引擎|支持结构|规则协商/u);
     expect(html).toContain(firstPlainSentence);
-    for (const label of ["命盘判断", "白话故事", "顺风局", "逆风局", "自然镜像", "今天破局", "长期练功", "破局口诀", "顺口溜"]) {
+    for (const label of ["命盘判断", "白话故事", "顺风局", "逆风局", "自然镜像", "今天破局", "长期练功", "破局口诀"]) {
       expect(html).toContain(label);
     }
+    expect(html).not.toContain("顺口溜");
   });
 
   it("keeps dense detail summaries wrap-safe with a mobile touch target", () => {

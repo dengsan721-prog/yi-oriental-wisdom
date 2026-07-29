@@ -6,6 +6,7 @@ import {
   type FortuneStoryPeriod,
 } from "../../lib/yi/fortune-story";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
+import { SceneLineArt } from "./SceneLineArt";
 
 type AvailableFortuneStoryProps = Readonly<{
   periods: readonly [FortuneStoryPeriod, ...FortuneStoryPeriod[]];
@@ -53,6 +54,7 @@ function AvailableFortuneStory({
 
       <article className="fortune-period-card fortune-story-card">
         <header>
+          <SceneLineArt kind="fortune" />
           <div>
             <small>{period.ageRange} · {period.yearRange}</small>
             <h2>{period.title}</h2>
@@ -132,6 +134,7 @@ function AvailableFortuneStory({
 
       <article className="fortune-year-card fortune-story-card fortune-story-year">
         <header>
+          <SceneLineArt kind="fortune" />
           <div>
             <small>{year.year}年 · {year.age}岁</small>
             <h2>{year.title}</h2>

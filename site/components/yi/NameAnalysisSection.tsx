@@ -113,6 +113,7 @@ export type NameAnalysisViewState = {
   usageRiskReviews: Partial<Record<UsageRiskId, boolean>>;
   detailsOpen: boolean;
   sameNameExitConfirmed: boolean;
+  suggestionBatchIndex: number;
 };
 
 export type NameAnalysisViewAction =
@@ -123,6 +124,7 @@ export type NameAnalysisViewAction =
   | { type: "answer-reality"; dimension: RealityDimension; answer: RealityAnswer }
   | { type: "set-usage-risk-reviewed"; riskId: UsageRiskId; reviewed: boolean }
   | { type: "set-details-open"; open: boolean }
+  | { type: "next-suggestion-batch" }
   | { type: "confirm-same-name-exit" };
 
 export function createNameAnalysisViewState(name: string): NameAnalysisViewState {
@@ -135,6 +137,7 @@ export function createNameAnalysisViewState(name: string): NameAnalysisViewState
     usageRiskReviews: {},
     detailsOpen: false,
     sameNameExitConfirmed: false,
+    suggestionBatchIndex: 0,
   };
 }
 
@@ -160,6 +163,9 @@ export function nameAnalysisViewReducer(state: NameAnalysisViewState, action: Na
   };
   if (action.type === "set-details-open") {
     return state.detailsOpen === action.open ? state : { ...state, detailsOpen: action.open };
+  }
+  if (action.type === "next-suggestion-batch") {
+    return { ...state, suggestionBatchIndex: (state.suggestionBatchIndex + 1) % 5 };
   }
   return { ...state, sameNameExitConfirmed: true };
 }
@@ -268,11 +274,13 @@ function buildNameReference(analysis: NameAnalysisViewResult): {
 function buildClassicSuggestions(
   missingElements: readonly ElementName[],
   nameElements: readonly ElementName[],
+  batchIndex = 0,
 ): readonly ClassicNameSuggestion[] {
   const targets = missingElements.length
     ? missingElements
     : ELEMENTS.filter(element => !nameElements.includes(element));
-  const primary = targets[0] ?? "木";
+  const anchor = ELEMENTS.indexOf(targets[0] ?? "木");
+  const primary = ELEMENTS[(Math.max(0, anchor) + batchIndex) % ELEMENTS.length];
   const singles = CLASSIC_NAME_SUGGESTIONS
     .filter(item => item.element === primary && item.kind === "单字名")
     .slice(0, 2);
@@ -284,6 +292,8 @@ function buildClassicSuggestions(
 
 export function NameAnalysisView({
   analysis,
+  state,
+  onSuggestionBatchChange,
 }: {
   analysis: NameAnalysisViewResult;
   state: NameAnalysisViewState;
@@ -293,10 +303,11 @@ export function NameAnalysisView({
   onReadingSelection: (characterIndex: number, reading: string) => void;
   onRealityAnswer: (dimension: RealityDimension, answer: RealityAnswer) => void;
   onUsageRiskReview?: (riskId: UsageRiskId, reviewed: boolean) => void;
+  onSuggestionBatchChange?: () => void;
   onConfirmSameNameExit: () => void;
 }) {
   const reference = buildNameReference(analysis);
-  const suggestions = buildClassicSuggestions(reference.missingElements, reference.nameElements);
+  const suggestions = buildClassicSuggestions(reference.missingElements, reference.nameElements, state.suggestionBatchIndex);
   const targetElements = reference.missingElements.length
     ? reference.missingElements
     : ELEMENTS.filter(element => !reference.nameElements.includes(element));
@@ -331,7 +342,11 @@ export function NameAnalysisView({
 
     <section className="name-classic-suggestions" aria-label="典籍取名建议">
       <header>
-        <h3>典籍取名建议</h3>
+        <div>
+          <h3>典籍取名建议</h3>
+          <small>第{state.suggestionBatchIndex + 1}/5批</small>
+        </div>
+        <button type="button" onClick={onSuggestionBatchChange}>换一批</button>
         <p>从《诗经》《楚辞》《论语》《尚书》《周易》等典籍意象中挑字，下面给出两个单字名、两个双字名，方便继续试分。</p>
       </header>
       <div>
@@ -404,6 +419,7 @@ export function NameAnalysisSection({ name, chart, report }: {
     onModeChange={mode => dispatch({ type: "set-mode", mode })}
     onReadingSelection={(characterIndex, reading) => dispatch({ type: "select-reading", characterIndex, reading })}
     onRealityAnswer={(dimension, answer) => dispatch({ type: "answer-reality", dimension, answer })}
+    onSuggestionBatchChange={() => dispatch({ type: "next-suggestion-batch" })}
     onUsageRiskReview={(riskId, reviewed) => dispatch({ type: "set-usage-risk-reviewed", riskId, reviewed })}
     onTraditionalSelection={(characterIndex, glyph) => dispatch({ type: "select-traditional", characterIndex, glyph })}
     state={state}

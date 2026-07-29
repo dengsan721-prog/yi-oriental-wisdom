@@ -78,7 +78,20 @@ export function CompatibilitySection({ chart, primaryName, relationship, primary
     : null;
   return <section className="report-section">
     <header><small>关系合盘</small><h1>不打分，拆开看互动</h1><p>第二份出生资料只在本次报告浏览期间保留；刷新或离开后需重新填写。支持阳历、农历、精确时刻、十二时辰或未知时辰。</p></header>
-    <label className="relationship-kind">关系类型<select value={relationship} onChange={event => onRelationshipChange(event.target.value as RelationshipType)}>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+    <section className="relationship-choice-panel" role="group" aria-label="选择关系类型">
+      {Object.entries(labels).map(([value, label]) => (
+        <button
+          key={value}
+          type="button"
+          aria-pressed={relationship === value}
+          className={relationship === value ? "active" : ""}
+          onClick={() => onRelationshipChange(value as RelationshipType)}
+        >
+          <span>{label}</span>
+          <small>{value === "partner" ? "看亲密与磨合" : value === "parent-child" ? "看照顾与成长" : value === "business" ? "看合作与边界" : "看相处与支持"}</small>
+        </button>
+      ))}
+    </section>
     {relationship === "parent-child" && <section className="parent-child-role" role="group" aria-label="报告主人亲子角色"><button type="button" aria-pressed={primaryParentRole === "caregiver"} className={primaryParentRole === "caregiver" ? "active" : ""} onClick={() => onParentChildPrimaryRoleChange("caregiver")}>报告主人是照顾者</button><button type="button" aria-pressed={primaryParentRole === "child"} className={primaryParentRole === "child" ? "active" : ""} onClick={() => onParentChildPrimaryRoleChange("child")}>报告主人是孩子</button></section>}
     <BirthIntake heading="录入对方出生坐标" onSubmit={onSecondBirthChange} />
     {publicView && <aside className="compatibility-participants" aria-label="合盘参与者"><span>报告主人：{participants.first}</span><span>对方：{participants.second}</span></aside>}

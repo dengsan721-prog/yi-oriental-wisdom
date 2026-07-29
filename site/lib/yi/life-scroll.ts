@@ -61,12 +61,24 @@ export type DaoStoryNoteResult = Readonly<{
   uncertaintyFlags: readonly string[];
 }>;
 
-export type LifeScrollRecommendations = Readonly<{
+type BaseLifeScrollRecommendations = Readonly<{
   idiom: Readonly<{ phrase: string; commentary: string }>;
   proverb: Readonly<{ phrase: string; commentary: string }>;
   poem: Readonly<{ title: string; commentary: string }>;
   classicalMusic: Readonly<{ title: string; commentary: string }>;
   jayChouSong: Readonly<{ title: string; commentary: string }>;
+}>;
+
+export type LifeScrollRecommendations = Readonly<{
+  idiom: Readonly<{ phrase: string; commentary: string }>;
+  proverb: Readonly<{ phrase: string; commentary: string }>;
+  poem: Readonly<{ title: string; original: string; commentary: string }>;
+  classicalMusic: Readonly<{ title: string; commentary: string }>;
+  jayChouSong: Readonly<{ title: string; lyricImagery: string; commentary: string }>;
+  herb: Readonly<{ title: string; commentary: string }>;
+  mountain: Readonly<{ title: string; commentary: string }>;
+  lifeBook: Readonly<{ title: string; commentary: string }>;
+  settingPoem: Readonly<{ title: string; original: string; commentary: string }>;
 }>;
 
 export type LifeScrollNarrative = Readonly<{
@@ -168,7 +180,7 @@ const PRIORITY_ORDER: Readonly<Record<SafeStoryInterpretation["priority"], numbe
 const PUBLIC_FORBIDDEN =
   /四柱|日主|十神|月令|旺衰|藏干|纳音|十二长生|干支关系|命理|专业依据|本章来源|可靠级|证据等级|计算规则|规则 ID|数据来源清单/u;
 
-const RECOMMENDATION_LIBRARY: Readonly<Record<ElementName | "neutral", LifeScrollRecommendations>> = {
+const RECOMMENDATION_LIBRARY: Readonly<Record<ElementName | "neutral", BaseLifeScrollRecommendations>> = {
   木: {
     idiom: { phrase: "厚积薄发", commentary: "像树根在土里慢慢铺开，眼前不急着抢一时热闹，先把基本功、关系和节奏养厚；等风来时，枝叶自然会往上走。" },
     proverb: { phrase: "十年树木，百年树人", commentary: "这句俗语提醒你：真正改命不是一夜翻盘，而是每天把念头扶正一点，把行动种深一点，日久自然成林。" },
@@ -212,6 +224,108 @@ const RECOMMENDATION_LIBRARY: Readonly<Record<ElementName | "neutral", LifeScrol
     jayChouSong: { title: "周杰伦《星晴》", commentary: "适合当作轻一点的开场：先把心情抬起来，再去面对具体的事，路就没那么沉。" },
   },
 };
+
+const ELEMENT_ORDER: readonly ElementName[] = ["木", "火", "土", "金", "水"];
+
+const POEM_VARIANTS = [
+  {
+    title: "王之涣《登鹳雀楼》",
+    original: "白日依山尽，黄河入海流。欲穷千里目，更上一层楼。",
+    commentary: "这首诗像一架登高的梯子：眼前不够开阔，就先上一步。不是喊口号，而是把视野、位置和动作一起抬高。",
+  },
+  {
+    title: "《诗经·蒹葭》",
+    original: "蒹葭苍苍，白露为霜。所谓伊人，在水一方。",
+    commentary: "它适合放在寻找方向的时候：目标似乎隔着水雾，但脚步已经开始。人怕的不是远，怕的是心里没了靠近的动作。",
+  },
+  {
+    title: "王维《终南别业》",
+    original: "行到水穷处，坐看云起时。",
+    commentary: "这两句像一口缓下来的气：路到尽头，不一定是败局，也可能是换一种看法、等一阵云起。",
+  },
+  {
+    title: "刘禹锡《酬乐天扬州初逢席上见赠》",
+    original: "沉舟侧畔千帆过，病树前头万木春。",
+    commentary: "它适合经历低潮之后的人：旧船沉了，江面仍有千帆；旧枝病了，春天仍会从旁边长出来。",
+  },
+  {
+    title: "苏轼《定风波》",
+    original: "竹杖芒鞋轻胜马，谁怕？一蓑烟雨任平生。",
+    commentary: "这首词像风雨里的稳步：外面有雨，心里不慌；不靠硬撑赢，而靠把脚步踩稳。",
+  },
+] as const;
+
+const JAY_VARIANTS = [
+  { title: "周杰伦《稻香》", lyricImagery: "田埂、饭香、回家路", commentary: "适合低谷回神：先回到真实生活，吃饭、睡觉、把小事做好，心气会慢慢回来。" },
+  { title: "周杰伦《晴天》", lyricImagery: "雨后校园、少年遗憾", commentary: "适合关系转折：有些雨不用立刻解释，先把遗憾唱完，再决定要不要重新出发。" },
+  { title: "周杰伦《将军》", lyricImagery: "棋盘、落子、局势", commentary: "适合做取舍：别在每个角落用力，先看全局，再落最要紧的一子。" },
+  { title: "周杰伦《七里香》", lyricImagery: "夏天、窗外、风中香气", commentary: "适合慢慢修复：关系里的好东西，有时不是抓住，而是让它在日常里重新有香气。" },
+  { title: "周杰伦《星晴》", lyricImagery: "星空、骑车、轻快心情", commentary: "适合重新点亮自己：先让心情抬头，再谈计划；人亮一点，路也亮一点。" },
+] as const;
+
+const HERB_VARIANTS = [
+  { title: "黄芪", commentary: "像一味补气之药：不抢戏，却能把底气托起来。适合把作息、边界、长期体力补成根基。" },
+  { title: "陈皮", commentary: "像会化开郁结的老皮：经历越多，越知道怎样把堵住的话、堵住的情绪慢慢理顺。" },
+  { title: "当归", commentary: "像把血脉与归处牵回来的药：适合提醒自己别只赶路，也要把身体、家人和来处照顾好。" },
+  { title: "石斛", commentary: "像山石间的清润：外面环境硬，内里仍要养出一口不燥的水气。" },
+  { title: "杜仲", commentary: "像支撑腰骨的树皮：适合扛责任的人，提醒你强不是硬顶，而是有弹性地承重。" },
+] as const;
+
+const MOUNTAIN_VARIANTS = [
+  { title: "泰山", commentary: "像泰山，重在稳、正、能承众望。人生关键不是一时高，而是站得住。" },
+  { title: "华山", commentary: "像华山，险处见胆。适合在选择面前拿出锋芒，但每一步都要踩实。" },
+  { title: "黄山", commentary: "像黄山，奇松怪石云海并存。你的路不必普通，重要的是把奇处长成美处。" },
+  { title: "峨眉山", commentary: "像峨眉，柔中有峰。看似温和，真正遇事时有自己的高度。" },
+  { title: "阿尔卑斯山", commentary: "像雪山长线，清冷、辽阔、需要耐力。适合把人生看成一场慢慢攀登。" },
+] as const;
+
+const BOOK_VARIANTS = [
+  { title: "《论语》", commentary: "适合作为人生之书：把做人、处事、学习、反省都落到每日言行。" },
+  { title: "《道德经》", commentary: "适合作为人生之书：学会不硬争，学会顺势，也学会在柔处藏力量。" },
+  { title: "《庄子》", commentary: "适合作为人生之书：把心从小框里放出来，看见更大的天地。" },
+  { title: "《史记》", commentary: "适合作为人生之书：看成败沉浮，学人情局势，也学人在大风里怎样留名。" },
+  { title: "《大学》", commentary: "适合作为人生之书：从修身起步，把心、事、家、业一层层理顺。" },
+] as const;
+
+const SETTING_POEMS = [
+  { title: "定场诗 · 起枝", original: "一念如芽破旧尘，半窗风雨半窗春。今日先修三寸土，来年自有满庭新。", commentary: "适合生长型人生：先修土，再等芽。别急着看满园，今天把一寸根扎稳。" },
+  { title: "定场诗 · 明灯", original: "灯照长街夜未央，心头一点胜骄阳。开门不必声声急，先把前程说亮堂。", commentary: "适合表达型人生：你要发光，但不是灼人；把话说亮，路就清楚。" },
+  { title: "定场诗 · 厚土", original: "肩上风霜脚下田，慢行也到碧云边。人间万事先安顿，一寸深根一寸天。", commentary: "适合承载型人生：慢，不是弱；稳，是你的大本事。" },
+  { title: "定场诗 · 金声", original: "乱线千头一刃裁，清声落处雾云开。莫嫌取舍无人懂，留得真金照后来。", commentary: "适合取舍型人生：删繁就简，留下真正值钱的部分。" },
+  { title: "定场诗 · 行舟", original: "一舟灯影过寒湾，水转云回路几弯。不与急流争片刻，终将明月载回还。", commentary: "适合流动型人生：绕路不是输，能到岸才是本事。" },
+] as const;
+
+function chartVariantIndex(chart: Readonly<FourPillarsResult>): number {
+  const signature = [
+    chart.pillars.year.stem,
+    chart.pillars.year.branch,
+    chart.pillars.month.stem,
+    chart.pillars.month.branch,
+    chart.pillars.day.stem,
+    chart.pillars.day.branch,
+    chart.pillars.hour?.stem ?? "",
+    chart.pillars.hour?.branch ?? "",
+  ].join("");
+  return [...signature].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 5;
+}
+
+function enrichRecommendations(
+  base: BaseLifeScrollRecommendations,
+  chart: Readonly<FourPillarsResult>,
+): LifeScrollRecommendations {
+  const elementOffset = ELEMENT_ORDER.indexOf(chart.professional.dayMaster.element);
+  const variant = chartVariantIndex(chart);
+  const shifted = (variant + Math.max(0, elementOffset)) % 5;
+  return {
+    ...base,
+    poem: POEM_VARIANTS[shifted],
+    jayChouSong: JAY_VARIANTS[(shifted + 2) % 5],
+    herb: HERB_VARIANTS[(shifted + 1) % 5],
+    mountain: MOUNTAIN_VARIANTS[(shifted + 3) % 5],
+    lifeBook: BOOK_VARIANTS[(shifted + 4) % 5],
+    settingPoem: SETTING_POEMS[shifted],
+  };
+}
 
 const ELEMENT_TEXTURES: Readonly<Record<ElementName, ElementTexture>> = {
   木: {
@@ -989,9 +1103,10 @@ export function buildLifeScrollNarrative(
   const texture = hasAnyMaterial && stable.dayMasterElement
     ? ELEMENT_TEXTURES[stable.dayMasterElement]
     : NEUTRAL_TEXTURE;
-  const recommendations = hasAnyMaterial && stable.dayMasterElement
+  const recommendationBase = hasAnyMaterial && stable.dayMasterElement
     ? RECOMMENDATION_LIBRARY[stable.dayMasterElement]
     : RECOMMENDATION_LIBRARY.neutral;
+  const recommendations = enrichRecommendations(recommendationBase, chart);
   const structure = stable.structureBalance
     ? STRUCTURE_FRAMES[stable.structureBalance]
     : NEUTRAL_STRUCTURE;
@@ -1216,6 +1331,7 @@ export function buildLifeScrollNarrative(
     closingLine: joinCompleteSentences(
       texture.closing,
       "这卷故事不预告结局，只把稳定材料能够支持的当下具体处境、代价、选择和复盘方式放在眼前",
+      `本卷的定场回声落在${recommendations.settingPoem.title}：先记住这一句，再回到今天的行动`,
     ),
     actionNow: completeSentence(
       `今天把“${lessonIntent}”落实到一件正在推进的事上，同时写下完成标准、停止条件和下一次检查时间`,

@@ -17,10 +17,12 @@ import { TraditionSection } from "./TraditionSection";
 import type { YiThemeElement } from "../../lib/yi/theme";
 import { YiBrandMark } from "./YiBrandMark";
 import { NameAnalysisSection } from "./NameAnalysisSection";
+import { DrawSection } from "./DrawSection";
+import { QimenSection } from "./QimenSection";
 
 export const getResultSections = () => [
   ["portrait", "人生画卷"], ["chart", "命盘"], ["detail", "详批"],
-  ["name", "姓名"], ["fortune", "大运"], ["compatibility", "合盘"], ["mirror", "镜像"],
+  ["name", "姓名"], ["fortune", "大运"], ["draw", "抽签"], ["qimen", "奇门"], ["compatibility", "合盘"], ["mirror", "镜像"],
   ["tradition", "传统"],
 ] as const;
 
@@ -90,7 +92,6 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
   const resultSections = getResultSections().filter(([id]) => availableSections.includes(id));
   const activeSectionLabel = resultSections.find(([id]) => id === activeSection)?.[1] ?? "人生画卷";
   const ownerName = name.trim();
-  const reportTitle = ownerName ? `${ownerName}命运全景报告` : "个人命运全景报告";
   const ownerSeal = themeElement === "neutral" ? "待定命印" : `${themeElement}命印`;
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollTop(scrollPositions, activeSection) }));
@@ -99,6 +100,18 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
       scrollPositions.set(activeSection, window.scrollY);
     };
   }, [activeSection, scrollPositions]);
+  useEffect(() => {
+    function collapseOpenSection(event: MouseEvent) {
+      const trigger = (event.target as Element | null)?.closest?.("[data-collapse-section]");
+      if (!trigger) return;
+      const details = trigger.closest("details") as HTMLDetailsElement | null;
+      if (!details) return;
+      details.open = false;
+      details.querySelector("summary")?.scrollIntoView({ block: "nearest" });
+    }
+    document.addEventListener("click", collapseOpenSection);
+    return () => document.removeEventListener("click", collapseOpenSection);
+  }, []);
   function selectSection(next: ReportSectionId) {
     selectResultSection(scrollPositions, activeSection, next, window.scrollY, onSectionChange);
   }
@@ -114,7 +127,11 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
           <span className="report-owner-seal">{ownerSeal}</span>
         </div>
         <div className="report-document-title" data-testid="report-document-title">
-          <h1>{reportTitle}</h1>
+          <h1>
+            {ownerName ? <span className="report-title-name">{ownerName}</span> : <span className="report-title-name">个人</span>}
+            <span className="report-title-core">命运报告</span>
+            <span className="report-title-scope">全景</span>
+          </h1>
         </div>
       </header>
       <aside className="adopted-facts" data-testid="adopted-birth-facts" aria-label="本次采用出生事实"><b>本次采用</b><span>{report.birthFacts.solar}</span><span>{report.birthFacts.timeConfidence}</span><span>{report.birthFacts.location}</span><span>{report.birthFacts.timezone}</span>{report.birthFacts.timeConfidence === "时辰不详" && <small>已关闭：时柱、时柱派生判断与精确大运年份。</small>}</aside>
@@ -134,6 +151,8 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
       <div hidden={activeSection !== "detail"}><DetailSection items={interpretations} /></div>
       <div hidden={activeSection !== "name"}>{ownerName ? <NameAnalysisSection chart={chart} key={ownerName} name={ownerName} report={report} /> : <section className="name-analysis-section name-reference-section"><header className="name-reference-summary"><div><small>姓名文化测分 · 仅供参考</small><h2>姓名五行参考分</h2><p className="name-current-glyphs">填写姓名后展示</p></div></header></section>}</div>
       <div hidden={activeSection !== "fortune"}><FortuneSection chart={chart} birth={birth} /></div>
+      <div hidden={activeSection !== "draw"}><DrawSection chart={chart} birth={birth} /></div>
+      <div hidden={activeSection !== "qimen"}><QimenSection chart={chart} birth={birth} /></div>
       <div hidden={activeSection !== "mirror"}><MirrorSection chart={chart} /></div>
       <div hidden={activeSection !== "compatibility"}><CompatibilitySection chart={chart} primaryName={name} relationship={state.compatibility.relationship} primaryParentRole={state.compatibility.primaryParentRole} secondBirth={state.compatibility.secondBirth} onRelationshipChange={relationship => dispatch({ type: "set-relationship", relationship })} onSecondBirthChange={birth => dispatch({ type: "set-second-birth", birth })} onParentChildPrimaryRoleChange={primaryParentRole => dispatch({ type: "set-parent-child-primary-role", primaryParentRole })} /></div>
       <div hidden={activeSection !== "tradition"}><TraditionSection chart={chart} birth={birth} /></div>

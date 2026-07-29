@@ -115,7 +115,7 @@ it("renders three priority cards with four ordered progressive-reading layers", 
     expect(html).toContain("顺风局");
     expect(html).toContain("逆风局");
     expect(html).toContain("破局口诀");
-    expect(html).toContain("顺口溜");
+    expect(html).not.toContain("顺口溜");
     expect(html).not.toContain("支持结构");
     expect(html).not.toContain("规则协商");
     expect(html).not.toContain("EightCharAPI");

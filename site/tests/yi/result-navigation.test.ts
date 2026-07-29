@@ -54,7 +54,9 @@ describe("result navigation", () => {
 
     expect(html).toContain('data-testid="report-owner-ritual"');
     expect(html).toContain('data-testid="report-document-title"');
-    expect(html).toContain("<h1>林知夏命运全景报告</h1>");
+    expect(html).toContain('<span class="report-title-name">林知夏</span>');
+    expect(html).toContain('<span class="report-title-core">命运报告</span>');
+    expect(html).toContain('<span class="report-title-scope">全景</span>');
     expect(html).toContain('class="yi-brand-mark yi-brand-mark--compact"');
     expect(html).toContain('aria-label="命"');
     expect(html).toContain('data-code-point="U+547D"');
@@ -71,9 +73,10 @@ describe("result navigation", () => {
     const empty = renderResult({ ...exactBirth, name: "" });
     const long = renderResult({ ...exactBirth, name: "欧阳司徒上官诸葛林知夏" });
 
-    expect(empty.html).toContain("<h1>个人命运全景报告</h1>");
+    expect(empty.html).toContain('<span class="report-title-name">个人</span>');
+    expect(empty.html).toContain('<span class="report-title-core">命运报告</span>');
     expect(empty.html).not.toContain("未填写姓名命运全景报告");
-    expect(long.html).toContain("<h1>欧阳司徒上官诸葛林知夏命运全景报告</h1>");
+    expect(long.html).toContain('<span class="report-title-name">欧阳司徒上官诸葛林知夏</span>');
   });
 
   it("keeps neutral evidence neutral in the owner seal", () => {
@@ -158,7 +161,7 @@ describe("result navigation", () => {
     expect(html).toContain('class="result-tabs-guide"');
     expect(html).toContain("<small>报告导览</small>");
     expect(html).toContain("<strong>当前章 · 人生画卷</strong>");
-    expect(html).toContain("<span>8章命运全景 · 点击切换重点</span>");
+    expect(html).toContain("<span>10章命运全景 · 点击切换重点</span>");
     expect(html).toContain('class="result-tab-list"');
   });
 
@@ -176,16 +179,16 @@ describe("result navigation", () => {
     ]) expect(html).toContain(label);
   });
 
-  it("keeps the eight report sections in a stable reading order", () => {
+  it("keeps the ten report sections in a stable reading order", () => {
     expect(getResultSections().map(([id]) => id)).toEqual([
-      "portrait", "chart", "detail", "name", "fortune", "compatibility", "mirror", "tradition",
+      "portrait", "chart", "detail", "name", "fortune", "draw", "qimen", "compatibility", "mirror", "tradition",
     ]);
     expect(getResultSections()[0]).toEqual(["portrait", "人生画卷"]);
     expect(getResultSections()[3]).toEqual(["name", "姓名"]);
   });
 
-  it("exposes all eight production sections", () => {
-    expect(getAvailableSections(true)).toHaveLength(8);
+  it("exposes all ten production sections", () => {
+    expect(getAvailableSections(true)).toHaveLength(10);
   });
 
   it("renders name analysis as its own chapter after detail instead of inside the chart", () => {
@@ -226,6 +229,7 @@ describe("result navigation", () => {
     expect(css).toMatch(/\.result-tabs\{[^}]*position:sticky[^}]*display:grid[^}]*grid-template-columns:minmax\(180px,\.36fr\) minmax\(0,1fr\)/);
     expect(css).toMatch(/\.result-tabs-guide\{[^}]*border:1px solid var\(--yi-accent\)[^}]*background:var\(--yi-accent-soft\)/);
     expect(css).toMatch(/\.result-tab-list\{[^}]*display:grid[^}]*grid-template-columns:repeat\(8,minmax\(0,1fr\)\)/);
+    expect(css).toContain(".result-tab-list{grid-template-columns:repeat(10,minmax(0,1fr))}");
     expect(css).toMatch(/\.result-tabs button\{[^}]*min-width:0[^}]*min-height:48px/);
     expect(css).toContain("@media(max-width:760px){.result-tabs{grid-template-columns:1fr;padding-inline:12px}.result-tab-list{grid-template-columns:repeat(2,minmax(0,1fr))}");
     expect(css).toContain(".result-tabs button{padding:9px 8px}");

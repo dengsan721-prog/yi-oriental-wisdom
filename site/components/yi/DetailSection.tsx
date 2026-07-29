@@ -1,5 +1,5 @@
 import type { InterpretationItem } from "../../lib/yi/types";
-import { SceneLineArt } from "./SceneLineArt";
+import { CollapseSectionButton, SceneLineArt } from "./SceneLineArt";
 
 const domainNames: Record<InterpretationItem["domain"], string> = {
   self: "开局 · 我是谁", talent: "技能 · 手里有什么招", career: "事业 · 去哪里闯关", wealth: "财帛 · 资源怎么流动",
@@ -62,7 +62,7 @@ export function DetailSection({ items }: { items: InterpretationItem[] }) {
                     <section><b>今天破局</b><p>{cleanBackendTerms(item.actionNow)}</p></section>
                     <section><b>长期练功</b><p>{cleanBackendTerms(item.actionLongTerm)}</p></section>
                   </div>
-                  <section className="xiangpi-verse"><b>破局口诀 · 顺口溜</b><p>{detailVerse(item)}</p></section>
+                  <section className="xiangpi-verse"><b>破局口诀</b><p>{detailVerse(item)}</p></section>
                   <aside><b>入心提醒</b><p>{cleanBackendTerms(item.caution)}</p></aside>
                   <details className="reading-evidence">
                     <summary>命盘判断</summary>
@@ -71,6 +71,7 @@ export function DetailSection({ items }: { items: InterpretationItem[] }) {
                     <p><b>命理传统</b>{cleanBackendTerms(item.sourceTradition)}</p>
                     {item.sourceReferences.map(reference => <p key={reference}><b>经典参照</b>{cleanBackendTerms(reference)}</p>)}
                   </details>
+                  <CollapseSectionButton label="收起本节，回到祥批总览" />
                 </div>
               </details>
             ))}

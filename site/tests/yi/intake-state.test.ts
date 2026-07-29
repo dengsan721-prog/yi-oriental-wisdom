@@ -89,7 +89,8 @@ describe("birth intake state", () => {
 
     expect(html).toContain('<div class="step-head"><h1>你的出生坐标</h1></div>');
     expect(html).not.toContain("建立出生坐标");
-    expect(html).toContain("出生地址（选填）");
+    expect(html).toContain("出生地址（必填）");
+    expect(html).toContain('required=""');
     expect(html).toContain('placeholder="城市或区县"');
     expect(html).toContain("出生日期 · 阳历");
     expect(html).not.toContain('class="dual-calendar-line"');

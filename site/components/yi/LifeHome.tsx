@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { buildLifeHome, exportLifeProfile, lifeProfileReducer, type LifeProfile, type StorageResult } from "../../lib/yi/life-profile";
+import { SceneLineArt } from "./SceneLineArt";
 import { YiBrandMark } from "./YiBrandMark";
 
 type HomeSection = "record" | "change";
@@ -88,7 +89,7 @@ export function LifeHome({ profile, onChange, onViewReport, onClear }: {
     <header className="life-head life-head-simple"><div className="life-head-identity"><YiBrandMark variant="compact" /><div><small>欢迎回来</small><b>{home.name}</b></div></div><div className="life-head-actions"><button className="life-report-return" onClick={onViewReport}>回看命盘报告</button><button onClick={() => setSection(section === "change" ? "record" : "change")}>{section === "change" ? "继续记录" : "改命记录"}</button></div></header>
     <div className="life-content">
       {section === "record" && <>
-        <section className="life-purpose"><small>了凡式改命记录</small><h1>今天遇到的小怪，也能变成通关记录</h1><p>把一件事写成一枚经验值：看见当时起了什么念，承认哪里做错，补上一点善意，再定一个明天能做到的小招。念、思、言、行一关一关校正，人就不是被剧情推着走，而是在自己的副本里慢慢升级、转念、改命。</p></section>
+        <section className="life-purpose"><small>改命记录</small><h1>今天遇到的小怪，也能变成通关记录</h1><p>把一件事写成一枚经验值：先看见当时起了什么念，再承认哪里失手，补上一点善意，定一个明天能做到的小招。念、思、言、行一关一关校正，人就不再被剧情推着走，而是在自己的副本里升级、转念、改命。</p></section>
         <section className="life-record-window" aria-label="每日记录窗口">
           <header><small>今日一记</small><h2>先把生活留下一笔</h2><p>不求玄妙，求真实。写得越朴素，复盘时越有力量。</p></header>
           <form action={addDailyRecord} className="life-form life-daily-form">
@@ -99,8 +100,8 @@ export function LifeHome({ profile, onChange, onViewReport, onClear }: {
           </form>
         </section>
       </>}
-      {section === "change" && <section className="life-change-dashboard">
-        <header><small>修行进度</small><h1>把每天的小怪，炼成自己的改命地图</h1><p>每一条记录都是一次把命运方向盘拿回来的练习：按了凡四训的顺序，立命、改过、积善、谦德——先知道自己要往哪走，再修正今天失手的一招，把一个好念头落成行动，最后保持谦下复盘，继续升级。</p></header>
+      <section className="life-change-dashboard" hidden={section !== "change"}>
+        <header><small>修行进度</small><h1>把每天的小怪，炼成自己的改命地图</h1><p>每一条记录都是一次把命运方向盘拿回来的练习：先立一个清楚愿望，再改今天失手的一招，把一个好念头落成行动，最后谦下复盘。小怪打多了，经验值会变成新的气质。</p></header>
         <div className="life-data-cubes" aria-label="数据分析">
           <article className="life-data-cube"><small>本月打怪</small><b>{monthEvents.length}</b><span>条通关记录</span></article>
           <article className="life-data-cube"><small>年度主线</small><b>{yearEvents.length}</b><span>次剧情推进</span></article>
@@ -110,11 +111,11 @@ export function LifeHome({ profile, onChange, onViewReport, onClear }: {
         <div className="life-summary-grid">
           <article><small>本月打怪 · 内容分析</small><h2>{home.monthlyTheme}</h2><p>这个月你已经写下 {monthEvents.length} 条生活线索。它们像副本里的怪物图鉴：哪些事反复牵动情绪，哪些话一出口就变成误会，哪些计划真的能落地，都会慢慢显形。</p></article>
           <article><small>年度主线 · 数据分析</small><h2>{home.annualEntry?.theme ?? "今年的改命账本"}</h2><p>今年累计 {yearEvents.length} 条记录。记录越多，越能看见“我总在什么地方起念、犹豫、用力或退缩”。看见不是责备，是从命运剧情里找到下一次可以改写的分岔口。</p></article>
-          <article className="life-sprout-card"><small>善念发芽</small><h2>相似事件与智慧启发</h2><p>{sprout.similar}</p><p>{sprout.wisdom}</p></article>
-          <article className="life-reward-card"><small>称号徽章</small><h2>{reward.title}</h2><p>{reward.badge}</p></article>
+          <article className="life-sprout-card"><SceneLineArt kind="sprout" /><small>善念发芽</small><h2>相似事件与智慧启发</h2><p>{sprout.similar}</p><p>{sprout.wisdom}</p></article>
+          <article className="life-reward-card"><SceneLineArt kind="badge" /><small>称号徽章</small><h2>{reward.title}</h2><p>{reward.badge}</p></article>
         </div>
         <section className="life-panel life-recent-records"><header><small>最近记录</small><h2>回看不是责备自己，是重新选路</h2></header>{profile.events.slice(-4).reverse().map(event => <article key={event.id}><b>{event.title}</b><button className="record-delete" onClick={() => update(lifeProfileReducer(profile, { type: "delete-event", id: event.id }))}>删除</button><p>{event.date || "未设日期"} · {event.note || "暂无备注"}</p></article>)}<button className="life-report-link" onClick={onViewReport}>查看命盘报告</button></section>
-      </section>}
+      </section>
       {storageError && <p className="storage-error" role="alert">{storageError}</p>}
       <footer className="life-privacy"><p>档案保存在当前网站来源的浏览器存储中；共用此设备及浏览器资料的人可能看到。出生地点不会保存或导出。</p><div className="life-local-actions"><button onClick={downloadProfile}>导出 JSON</button><button onClick={removeLocalProfile}>清除本机档案</button></div></footer>
     </div>
