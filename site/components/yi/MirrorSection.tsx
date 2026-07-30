@@ -7,6 +7,7 @@ import {
   type MirrorPublicView,
 } from "../../lib/yi/mirrors";
 import type { FourPillarsResult } from "../../lib/yi/types";
+import { SceneLineArt } from "./SceneLineArt";
 
 export type MirrorView = MirrorPublicView["id"];
 
@@ -22,8 +23,10 @@ const MIRROR_TABS: readonly {
 
 export function MirrorPublicCards({
   cards,
+  viewId,
 }: {
   cards: readonly MirrorPublicCard[];
+  viewId?: MirrorView;
 }) {
   return <div className="mirror-public-cards">
     {cards.map((card, index) => <article
@@ -31,6 +34,7 @@ export function MirrorPublicCards({
       key={`${card.name}-${index}`}
     >
       <header>
+        {viewId === "zodiac" && <div className="zodiac-totem"><SceneLineArt kind="zodiac" /></div>}
         <small>先认识</small>
         <h2>{card.name}</h2>
         {card.workTitle && <p>{card.workTitle}</p>}
@@ -90,7 +94,7 @@ export function MirrorSectionView({
       {view.lead && <blockquote className="folk-lead">
         {view.lead.attribution}：“{view.lead.saying}”
       </blockquote>}
-      <MirrorPublicCards cards={view.cards} />
+      <MirrorPublicCards cards={view.cards} viewId={view.id} />
     </section>)}
   </section>;
 }

@@ -92,7 +92,7 @@ export function CompatibilitySection({ chart, primaryName, relationship, primary
         </button>
       ))}
     </section>
-    {relationship === "parent-child" && <section className="parent-child-role" role="group" aria-label="报告主人亲子角色"><button type="button" aria-pressed={primaryParentRole === "caregiver"} className={primaryParentRole === "caregiver" ? "active" : ""} onClick={() => onParentChildPrimaryRoleChange("caregiver")}>报告主人是照顾者</button><button type="button" aria-pressed={primaryParentRole === "child"} className={primaryParentRole === "child" ? "active" : ""} onClick={() => onParentChildPrimaryRoleChange("child")}>报告主人是孩子</button></section>}
+    {relationship === "parent-child" && <section className="parent-child-role" role="group" aria-label="报告主人亲子角色"><button type="button" aria-pressed={primaryParentRole === "caregiver"} className={primaryParentRole === "caregiver" ? "active" : ""} onClick={() => onParentChildPrimaryRoleChange("caregiver")}>我是照顾者</button><button type="button" aria-pressed={primaryParentRole === "child"} className={primaryParentRole === "child" ? "active" : ""} onClick={() => onParentChildPrimaryRoleChange("child")}>我是孩子</button></section>}
     <BirthIntake heading="录入对方出生坐标" onSubmit={onSecondBirthChange} />
     {publicView && <aside className="compatibility-participants" aria-label="合盘参与者"><span>报告主人：{participants.first}</span><span>对方：{participants.second}</span></aside>}
     {publicView && <CompatibilityPublicReading

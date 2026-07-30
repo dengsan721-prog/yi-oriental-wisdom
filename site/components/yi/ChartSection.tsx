@@ -13,7 +13,7 @@ import type {
   PillarKey,
   ProfessionalReport,
 } from "../../lib/yi/types";
-import { SceneLineArt } from "./SceneLineArt";
+import { CollapseSectionButton, SceneLineArt } from "./SceneLineArt";
 
 const pillarOrder: readonly PillarKey[] = ["year", "month", "day", "hour"];
 const pillarNames: Record<PillarKey, string> = {
@@ -492,6 +492,7 @@ export function ChartSection({
                   {reading.professionalText}
                 </p>
                 <PlainTranslation translation={translation} />
+                <CollapseSectionButton label="收起，回到命盘总览" quiet />
               </div>
             </details>
           );

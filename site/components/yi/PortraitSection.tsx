@@ -75,7 +75,7 @@ function MirrorInterlude({
       <p><strong>相像的一幕</strong>{mirror.matchingScene}</p>
       <p><strong>重要区别</strong>{mirror.difference}</p>
       <p><strong>带走的方法</strong>{mirror.takeaway}</p>
-      <CollapseSectionButton />
+      <CollapseSectionButton label="收起，回到总览" quiet />
     </div>
   </details>;
 }
@@ -99,7 +99,7 @@ function RecommendationCard({
       {item.original && <section className="life-recommendation-original"><b>原诗</b><p>{item.original}</p></section>}
       {item.lyricImagery && <section className="life-recommendation-original"><b>歌词意象</b><p>{item.lyricImagery}</p></section>}
       <p>{item.commentary}</p>
-      <CollapseSectionButton />
+      <CollapseSectionButton label="收起，回到总览" quiet />
     </div>
   </details>;
 }
@@ -195,7 +195,7 @@ function HundredYearLifeCard({
             <circle cx="0" cy="-23" r="8" />
             <path d="M0-14v24M0-4l-16 10M0-4l15 9M0 10l-12 18M0 10l15 17" />
           </g>
-          <path className="life-progress-sun" d="M176 25h18M185 16v18M172 18l26 24M198 18l-26 24" />
+          <g className="life-progress-sun"><circle cx="185" cy="25" r="8" /><path d="M185 10v7M185 33v7M170 25h7M193 25h7M174 14l5 5M196 14l-5 5M174 36l5-5M196 36l-5-5" /></g>
         </svg>
         <span>{progress.percentText}</span>
       </div>
@@ -220,18 +220,19 @@ export function PortraitSection({
 
   return <section className="report-section portrait-report">
     <header className="life-scroll-heading">
-      <small>第一章 · 英雄成长记</small>
+      <small>自己创造自己</small>
       <h1>人生画卷</h1>
-      <p>把命盘读成一部电影：开场遇见难题，路上遇见镜像和导师，在事业、关系与节奏里闯关，最后带走今天能升级的一招。</p>
+      <p>把命盘读成一条修炼路：先认命题，再破局，再把事业、关系与节奏炼成自己的手艺。主角不是被剧情推着走的人，而是一步步创造自己的人。</p>
     </header>
     <HundredYearLifeCard birth={birth} chart={chart} today={today} />
+    <ol className="life-scroll-order-map" aria-label="人生画卷阅读线索"><li>命题</li><li>破局</li><li>人间现场</li><li>意象映照</li><li>百岁回望</li></ol>
     <div className="life-scroll-reading waterfall-grid">
       <details className="life-scroll-part waterfall-card waterfall-card--illustrated life-scroll-opening">
         <WaterfallSummary artKind="opening" index="开场 · 命运给出的第一道题" title="人生一句话" subtitle={narrative.oneLineTheme} />
         <div className="waterfall-card-body">
           <blockquote>{narrative.oneLineTheme}</blockquote>
           {narrative.openingScene.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
-          <CollapseSectionButton />
+          <CollapseSectionButton label="收起，回到总览" quiet />
         </div>
       </details>
 
@@ -242,7 +243,7 @@ export function PortraitSection({
         <div className="waterfall-card-body">
           {narrative.careerArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
           <PlacedDaoNotes notes={narrative.daoNotes} placement="career" />
-          <CollapseSectionButton />
+          <CollapseSectionButton label="收起，回到总览" quiet />
         </div>
       </details>
 
@@ -251,7 +252,7 @@ export function PortraitSection({
         <div className="waterfall-card-body">
           {narrative.relationshipArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
           <PlacedDaoNotes notes={narrative.daoNotes} placement="relationship" />
-          <CollapseSectionButton />
+          <CollapseSectionButton label="收起，回到总览" quiet />
         </div>
       </details>
 
@@ -260,7 +261,7 @@ export function PortraitSection({
         <div className="waterfall-card-body">
           {narrative.turningPointArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
           <PlacedDaoNotes notes={narrative.daoNotes} placement="turning-point" />
-          <CollapseSectionButton />
+          <CollapseSectionButton label="收起，回到总览" quiet />
         </div>
       </details>
 
@@ -270,7 +271,7 @@ export function PortraitSection({
         <WaterfallSummary artKind="mature" index="后半场" title="中后程" subtitle="成熟之后怎样收束力量" />
         <div className="waterfall-card-body">
           {narrative.matureArc.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
-          <CollapseSectionButton />
+          <CollapseSectionButton label="收起，回到总览" quiet />
         </div>
       </details>
 
@@ -285,7 +286,7 @@ export function PortraitSection({
             <p>{narrative.actionNow}</p>
           </aside>
           <PlacedDaoNotes notes={narrative.daoNotes} placement="closing" />
-          <CollapseSectionButton />
+          <CollapseSectionButton label="收起，回到总览" quiet />
         </div>
       </details>
     </div>

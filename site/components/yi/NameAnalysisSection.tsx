@@ -341,15 +341,15 @@ export function NameAnalysisView({
     </div>
 
     <section className="name-classic-suggestions" aria-label="典籍取名建议">
-      <header>
+      <header className="name-classic-suggestions-head">
         <div>
           <h3>典籍取名建议</h3>
           <small>第{state.suggestionBatchIndex + 1}/5批</small>
         </div>
-        <button type="button" onClick={onSuggestionBatchChange}>换一批</button>
+        <button className="name-batch-button" type="button" onClick={onSuggestionBatchChange}>换一批</button>
         <p>从《诗经》《楚辞》《论语》《尚书》《周易》等典籍意象中挑字，下面给出两个单字名、两个双字名，方便继续试分。</p>
       </header>
-      <div>
+      <div className="name-classic-suggestions-body">
         {suggestions.map(suggestion => (
           <article data-classic-name={suggestion.name} key={`${suggestion.kind}-${suggestion.name}`}>
             <small>{suggestion.kind} · 补{suggestion.element}</small>

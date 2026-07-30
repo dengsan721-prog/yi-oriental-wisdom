@@ -422,8 +422,8 @@ it("names both parent-child roles while keeping engine markers out of public cop
   }));
 
   expect(html).toContain('aria-label="报告主人亲子角色"');
-  expect(html).toMatch(/aria-pressed="true"[^>]*>报告主人是照顾者<\/button>/);
-  expect(html).toMatch(/aria-pressed="false"[^>]*>报告主人是孩子<\/button>/);
+  expect(html).toMatch(/aria-pressed="true"[^>]*>我是照顾者<\/button>/);
+  expect(html).toMatch(/aria-pressed="false"[^>]*>我是孩子<\/button>/);
   expect(html).toContain("报告主人：顾临川（照顾者）");
   expect(html).toContain("对方：小满（孩子）");
   expect(html).toContain("录入对方出生坐标");
@@ -439,8 +439,8 @@ it("names both parent-child roles while keeping engine markers out of public cop
     onParentChildPrimaryRoleChange: () => undefined,
   }));
 
-  expect(childHtml).toMatch(/aria-pressed="false"[^>]*>报告主人是照顾者<\/button>/);
-  expect(childHtml).toMatch(/aria-pressed="true"[^>]*>报告主人是孩子<\/button>/);
+  expect(childHtml).toMatch(/aria-pressed="false"[^>]*>我是照顾者<\/button>/);
+  expect(childHtml).toMatch(/aria-pressed="true"[^>]*>我是孩子<\/button>/);
   expect(childHtml).toContain("报告主人：顾临川（孩子）");
   expect(childHtml).toContain("对方：小满（照顾者）");
 

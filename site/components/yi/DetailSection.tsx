@@ -71,7 +71,7 @@ export function DetailSection({ items }: { items: InterpretationItem[] }) {
                     <p><b>命理传统</b>{cleanBackendTerms(item.sourceTradition)}</p>
                     {item.sourceReferences.map(reference => <p key={reference}><b>经典参照</b>{cleanBackendTerms(reference)}</p>)}
                   </details>
-                  <CollapseSectionButton label="收起本节，回到祥批总览" />
+                  <CollapseSectionButton label="收起，回到祥批总览" quiet />
                 </div>
               </details>
             ))}

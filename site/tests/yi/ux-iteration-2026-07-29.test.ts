@@ -61,19 +61,14 @@ describe("2026-07-29 mobile-first wisdom iteration", () => {
       "tradition",
     ]);
     expect(getAvailableSections(true)).toHaveLength(10);
-    expect(renderReport()).toContain("<span>10章命运全景 · 点击切换重点</span>");
+    expect(renderReport()).toContain("<span>10个命运入口 · 自己创造自己</span>");
   });
 
   it("makes the report title solemn and resilient for three- or four-character names", () => {
     const html = renderReport();
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-    expect(html).toContain('class="report-title-name">欧阳司徒</span>');
-    expect(html).toContain('class="report-title-core">命运报告</span>');
-    expect(html).toContain('class="report-title-scope">全景</span>');
-    expect(css).toContain(".report-title-name{max-width:min(7.2em,46vw)");
-    expect(css).toContain(".report-title-core{white-space:nowrap");
-    expect(css).toMatch(/@media\(max-width:520px\)\{\.report-document-title h1\{[^}]*display:flex[^}]*gap:4px[^}]*font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif[^}]*white-space:nowrap/);
+    expect(html).toContain("命运全景报告");    expect(css).toMatch(/@media\(max-width:520px\)\{\.report-document-title h1\{[^}]*display:flex[^}]*gap:4px[^}]*font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif[^}]*white-space:nowrap/);
   });
 
   it("uses a vertical 本次采用 rail with two mobile chip columns", () => {
@@ -126,7 +121,7 @@ describe("2026-07-29 mobile-first wisdom iteration", () => {
     }));
 
     expect(html.match(/data-collapse-section="true"/g)?.length ?? 0).toBeGreaterThanOrEqual(17);
-    expect(html).toContain("收起本章，回到总览");
+    expect(html).toContain("收起，回到总览");
   });
 
   it("enriches life-scroll recommendations without publishing full song lyrics", () => {

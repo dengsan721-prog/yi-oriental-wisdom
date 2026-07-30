@@ -54,10 +54,7 @@ describe("result navigation", () => {
 
     expect(html).toContain('data-testid="report-owner-ritual"');
     expect(html).toContain('data-testid="report-document-title"');
-    expect(html).toContain('<span class="report-title-name">林知夏</span>');
-    expect(html).toContain('<span class="report-title-core">命运报告</span>');
-    expect(html).toContain('<span class="report-title-scope">全景</span>');
-    expect(html).toContain('class="yi-brand-mark yi-brand-mark--compact"');
+    expect(html).toContain("命运全景报告");    expect(html).toContain('class="yi-brand-mark yi-brand-mark--compact"');
     expect(html).toContain('aria-label="命"');
     expect(html).toContain('data-code-point="U+547D"');
     expect(html).not.toContain("访客的人生报告");
@@ -65,18 +62,16 @@ describe("result navigation", () => {
     expect(titleRegion).not.toContain("本卷主人");
     expect(titleRegion.match(/<h1>/g)).toHaveLength(1);
     expect(reportTitle).toBeGreaterThan(-1);
-    expect(facts).toBeGreaterThan(reportTitle);
-    expect(actions).toBeGreaterThan(facts);
+    expect(facts).toBeLessThan(reportTitle);
+    expect(actions).toBeGreaterThan(reportTitle);
   });
 
   it("uses a clear fallback for an empty report owner and keeps owner titles on one line", () => {
     const empty = renderResult({ ...exactBirth, name: "" });
     const long = renderResult({ ...exactBirth, name: "欧阳司徒上官诸葛林知夏" });
 
-    expect(empty.html).toContain('<span class="report-title-name">个人</span>');
-    expect(empty.html).toContain('<span class="report-title-core">命运报告</span>');
-    expect(empty.html).not.toContain("未填写姓名命运全景报告");
-    expect(long.html).toContain('<span class="report-title-name">欧阳司徒上官诸葛林知夏</span>');
+    expect(empty.html).toContain("个人命运全景报告");    expect(empty.html).not.toContain("未填写姓名命运全景报告");
+    expect(long.html).toContain("命运全景报告");
   });
 
   it("keeps neutral evidence neutral in the owner seal", () => {
@@ -97,36 +92,27 @@ describe("result navigation", () => {
     expect(experienceSource).toContain("overview: buildProfessionalOverview(result)");
   });
 
-  it("places save and restart actions after the adopted facts, outside the title row", () => {
+  it("places compact save and restart actions inside the report navigation", () => {
     const { html } = renderResult();
     const titleStart = html.indexOf('data-testid="report-title-region"');
-    const factsStart = html.indexOf('data-testid="adopted-birth-facts"');
     const actionsStart = html.indexOf('data-testid="report-save-actions"');
-    const titleEnd = html.indexOf("</header>");
+    const navStart = html.indexOf('class="result-tabs"');
 
     expect(titleStart).toBeGreaterThan(-1);
-    expect(factsStart).toBeGreaterThan(titleStart);
-    expect(titleEnd).toBeGreaterThan(titleStart);
-    expect(factsStart).toBeGreaterThan(titleEnd);
-    expect(html.slice(titleStart, titleEnd)).not.toContain("<button");
-    expect(actionsStart).toBeGreaterThan(factsStart);
-    expect(html).toContain('<button class="primary">保存并进入人生首页</button>');
-    expect(html).toContain("<button>修改出生资料</button>");
+    expect(navStart).toBeGreaterThan(titleStart);
+    expect(actionsStart).toBeGreaterThan(navStart);
+    expect(html).toContain('<button class="primary">人生首页</button>');
+    expect(html).toContain('<button>修改坐标</button>');
     expect(html).not.toContain("保存到本机");
   });
 
-  it("keeps the result actions in a compact inline mobile area without blocking reading", () => {
+  it("keeps the result actions in a compact navigation area without blocking reading", () => {
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-    expect(css).toMatch(/\.result-head-actions\{[^}]*display:flex[^}]*justify-content:flex-end[^}]*gap:8px/);
-    expect(css).toMatch(/\.result-head-actions button\{[^}]*min-width:0[^}]*min-height:44px/);
-    expect(css).toContain("@media(max-width:520px){.result-shell{padding-bottom:0}.result-head>.result-head-actions{position:static;display:grid;grid-template-columns:1fr 1fr;margin-top:8px;padding:0;background:transparent;box-shadow:none;backdrop-filter:none}.result-head-actions button{width:100%;padding-inline:10px}}");
-    expect(css).not.toContain(".result-shell{padding-bottom:calc(112px + env(safe-area-inset-bottom))}");
-    expect(css).not.toContain("bottom:calc(12px + env(safe-area-inset-bottom))");
-    expect(css).toMatch(/\.report-document-title h1\{[^}]*font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif[^}]*white-space:nowrap[^}]*text-overflow:ellipsis/);
-    expect(css).toMatch(/\.report-title-region\{[^}]*min-width:0/);
-    expect(css).toMatch(/@media\(max-width:700px\)\{[\s\S]*?\.report-document-title h1\{[^}]*font-size:clamp\(22px,7\.2vw,32px\)[^}]*white-space:nowrap/);
-    expect(css).not.toMatch(/\.mini-mark\b|\.result-head-main\b/);
+    expect(css).toMatch(/.result-tabs-actions{[^}]*display:flex[^}]*gap:8px/);
+    expect(css).toMatch(/.result-tabs-actions button{[^}]*min-height:38px/);
+    expect(css).toMatch(/.report-document-title h1{[^}]*font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif[^}]*white-space:nowrap/);
+    expect(css).not.toMatch(/.mini-mark|.result-head-main/);
   });
 
   it("compresses the adopted birth facts into two tidy chip rows on mobile", () => {
@@ -149,34 +135,27 @@ describe("result navigation", () => {
     expect(html).toContain(report.birthFacts.timeConfidence);
     expect(html).toContain(report.birthFacts.location);
     expect(html).toContain("UTC+8");
-    expect(html).toContain("修改出生资料");
+    expect(html).toContain("修改坐标");
     expect(unknown.html).toContain("已关闭：时柱、时柱派生判断与精确大运年份。");
     expect(renderResult({ ...exactBirth, time: null, timeConfidence: "exact" }).html).toContain("已关闭：时柱、时柱派生判断与精确大运年份。");
   });
 
-  it("presents the report navigation as an important chapter guide", () => {
+  it("presents the report navigation as an important focus guide", () => {
     const { html } = renderResult();
 
     expect(html).toContain('class="result-tabs"');
     expect(html).toContain('class="result-tabs-guide"');
-    expect(html).toContain("<small>报告导览</small>");
-    expect(html).toContain("<strong>当前章 · 人生画卷</strong>");
-    expect(html).toContain("<span>10章命运全景 · 点击切换重点</span>");
+    expect(html).toContain("报告导览");
+    expect(html).toContain("当前焦点");
+    expect(html).toContain("10个命运入口 · 自己创造自己");
     expect(html).toContain('class="result-tab-list"');
   });
 
-  it("frames the life scroll as a movie-like hero growth story", () => {
+  it("frames the life scroll as a self-creation growth path", () => {
     const { html } = renderResult();
 
-    expect(html).toContain("英雄成长记");
-    for (const label of [
-      "开场 · 命运给出的第一道题",
-      "事业副本",
-      "关系副本",
-      "命运转折",
-      "历史导师",
-      "卷尾行动",
-    ]) expect(html).toContain(label);
+    expect(html).toContain("自己创造自己");
+    for (const label of ["命题", "破局", "人间现场", "意象映照", "百岁回望"]) expect(html).toContain(label);
   });
 
   it("keeps the ten report sections in a stable reading order", () => {
@@ -223,16 +202,14 @@ describe("result navigation", () => {
     expect(submitted.compatibility.primaryParentRole).toBe("child");
   });
 
-  it("uses a prominent no-overflow chapter guide on mobile while preserving desktop navigation", () => {
+  it("uses a prominent no-overflow focus guide on mobile while preserving desktop navigation", () => {
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-    expect(css).toMatch(/\.result-tabs\{[^}]*position:sticky[^}]*display:grid[^}]*grid-template-columns:minmax\(180px,\.36fr\) minmax\(0,1fr\)/);
-    expect(css).toMatch(/\.result-tabs-guide\{[^}]*border:1px solid var\(--yi-accent\)[^}]*background:var\(--yi-accent-soft\)/);
-    expect(css).toMatch(/\.result-tab-list\{[^}]*display:grid[^}]*grid-template-columns:repeat\(8,minmax\(0,1fr\)\)/);
-    expect(css).toContain(".result-tab-list{grid-template-columns:repeat(10,minmax(0,1fr))}");
-    expect(css).toMatch(/\.result-tabs button\{[^}]*min-width:0[^}]*min-height:48px/);
-    expect(css).toContain("@media(max-width:760px){.result-tabs{grid-template-columns:1fr;padding-inline:12px}.result-tab-list{grid-template-columns:repeat(2,minmax(0,1fr))}");
-    expect(css).toContain(".result-tabs button{padding:9px 8px}");
+    expect(css).toMatch(/.result-tabs{[^}]*position:sticky[^}]*display:grid/);
+    expect(css).toContain(".result-tabs-guide{min-width:0;display:grid;gap:2px;padding:10px 14px;border:1px solid var(--yi-accent);border-radius:16px;background:var(--yi-accent-soft)");
+    expect(css).toContain(".result-tab-list{grid-template-columns:repeat(3,minmax(0,1fr))");
+    expect(css).toContain(".result-tab--primary{grid-column:1/-1");
+    expect(css).toMatch(/.result-tabs button{[^}]*min-width:0[^}]*min-height:48px/);
   });
 
   it("keeps the simple life-home record window readable at 390px without horizontal scrolling", () => {

@@ -79,6 +79,13 @@ function SaveHomeDialog({ onConfirm, onClose }: { onConfirm: () => void; onClose
   </div>;
 }
 
+function DailyOracleStrip({ onDraw, onQimen, variant }: { onDraw: () => void; onQimen: () => void; variant: "report" | "home" }) {
+  return <section className={`daily-oracle-strip daily-oracle-strip--${variant}`} aria-label="每日灵感入口">
+    <button type="button" data-daily-entry="draw" onClick={onDraw}><span>抽签</span><small>摇一支今日行动签</small></button>
+    <button type="button" data-daily-entry="qimen" onClick={onQimen}><span>奇门</span><small>看当下先开哪扇门</small></button>
+  </section>;
+}
+
 export function ResultShell({ name, chart, birth, report, interpretations, themeElement, activeSection, onSectionChange, onRestart, onSaveHome, storageError }: {
   name: string; chart: FourPillarsResult;
   birth: BirthInput; report: ProfessionalReport; interpretations: InterpretationItem[]; activeSection: ReportSectionId; onSectionChange: (section: ReportSectionId) => void;
@@ -122,27 +129,25 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
   return <section className="result-shell">
     <div className="result-head">
       <header className="report-title-region" data-testid="report-title-region">
-        <div className="report-owner-ritual" data-testid="report-owner-ritual">
-          <YiBrandMark variant="compact" />
-          <span className="report-owner-seal">{ownerSeal}</span>
+        <div className="report-title-topline">
+          <div className="report-fate-mark report-owner-ritual" data-testid="report-owner-ritual">
+            <YiBrandMark variant="compact" />
+            <span className="report-owner-seal">{ownerSeal}</span>
+          </div>
+          <aside className="adopted-facts" data-testid="adopted-birth-facts" aria-label="本次采用出生事实"><b>本次采用</b><span>{report.birthFacts.solar}</span><span>{report.birthFacts.timeConfidence}</span><span>{report.birthFacts.location}</span><span>{report.birthFacts.timezone}</span>{report.birthFacts.timeConfidence === "时辰不详" && <small>已关闭：时柱、时柱派生判断与精确大运年份。</small>}</aside>
         </div>
         <div className="report-document-title" data-testid="report-document-title">
-          <h1>
-            {ownerName ? <span className="report-title-name">{ownerName}</span> : <span className="report-title-name">个人</span>}
-            <span className="report-title-core">命运报告</span>
-            <span className="report-title-scope">全景</span>
-          </h1>
+          <h1>{ownerName ? ownerName + "命运全景报告" : "个人命运全景报告"}</h1>
         </div>
       </header>
-      <aside className="adopted-facts" data-testid="adopted-birth-facts" aria-label="本次采用出生事实"><b>本次采用</b><span>{report.birthFacts.solar}</span><span>{report.birthFacts.timeConfidence}</span><span>{report.birthFacts.location}</span><span>{report.birthFacts.timezone}</span>{report.birthFacts.timeConfidence === "时辰不详" && <small>已关闭：时柱、时柱派生判断与精确大运年份。</small>}</aside>
-      <div className="result-head-actions" data-testid="report-save-actions">{onSaveHome && <button className="primary" ref={saveTriggerRef} onClick={() => setSaveConfirmOpen(true)}>保存并进入人生首页</button>}<button onClick={onRestart}>修改出生资料</button></div>
+      <DailyOracleStrip onDraw={() => selectSection("draw")} onQimen={() => selectSection("qimen")} variant="report" />
     </div>
     {saveConfirmOpen && <SaveHomeDialog onClose={closeSaveDialog} onConfirm={() => { closeSaveDialog(); onSaveHome?.(); }} />}
     {storageError && <p className="storage-error" role="alert">{storageError}</p>}
-    <nav className="result-tabs" aria-label="人生报告章节">
-      <div className="result-tabs-guide" aria-hidden="true"><small>报告导览</small><strong>当前章 · {activeSectionLabel}</strong><span>{resultSections.length}章命运全景 · 点击切换重点</span></div>
+    <nav className="result-tabs" aria-label="人生报告导航">
+      <div className="result-tabs-guide"><div><small>报告导览</small><strong>当前焦点 · {activeSectionLabel}</strong><span>{resultSections.length}个命运入口 · 自己创造自己</span></div><div className="result-tabs-actions" data-testid="report-save-actions">{onSaveHome && <button className="primary" ref={saveTriggerRef} onClick={() => setSaveConfirmOpen(true)}>人生首页</button>}<button onClick={onRestart}>修改坐标</button></div></div>
       <div className="result-tab-list">
-        {resultSections.map(([id, label]) => <button key={id} className={activeSection === id ? "active" : ""} aria-current={activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>{label}</button>)}
+        {resultSections.map(([id, label]) => <button key={id} className={"result-tab" + (id === "portrait" ? " result-tab--primary" : "") + (activeSection === id ? " active" : "")} aria-current={activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>{label}</button>)}
       </div>
     </nav>
     <div className="result-content">

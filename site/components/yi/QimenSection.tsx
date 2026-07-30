@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { deriveYiThemeElement } from "../../lib/yi/theme";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 import { SceneLineArt } from "./SceneLineArt";
@@ -18,6 +21,7 @@ export function QimenSection({
   chart: FourPillarsResult;
   birth: BirthInput;
 }) {
+  const [opened, setOpened] = useState(false);
   const element = deriveYiThemeElement(chart);
   const [direction, method, reading] = qimenCopy[element];
   const hourLabel = chart.pillars.hour ? `${chart.pillars.hour.stem}${chart.pillars.hour.branch}` : "时辰待定";
@@ -28,12 +32,12 @@ export function QimenSection({
       <h1>给当下局势定一个方向</h1>
       <p>这里把奇门当成行动罗盘：看方向、看开门方式、看今天先做哪一步。复杂术语收在后台，页面只留下能听懂、能转述的话。</p>
     </header>
-    <article className="qimen-card">
-      <SceneLineArt kind="qimen" />
+    <article className="qimen-card qimen-card--interactive">
+      <button className="qimen-compass-button" data-testid="qimen-calc-trigger" type="button" onClick={() => setOpened(true)}><SceneLineArt kind="qimen" /><span>奇门起局</span></button>
       <div>
-        <small>{birth.location || "出生地待补"} · {hourLabel}</small>
-        <h2>{direction}向 · {method}</h2>
-        <p>{reading}</p>
+        <small>{birth.location || "出生地待补"} · {hourLabel} · 每日每时不同</small>
+        <h2>{opened ? `${direction}向 · ${method}` : "先起一局，再看开门"}</h2>
+        <p>{opened ? reading : "奇门日常看的是当下门向：同一个人，不同日时来问，先动哪一步也会不同。先把问题收成一句话，再点起局。"}</p>
         <p>今天的用法很简单：选一件正在卡住的事，按这条方向做一个二十分钟动作，再记录结果。能继续，就推进；不顺，就换门。</p>
       </div>
     </article>

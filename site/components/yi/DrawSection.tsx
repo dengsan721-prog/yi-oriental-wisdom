@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { deriveYiThemeElement } from "../../lib/yi/theme";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 import { SceneLineArt } from "./SceneLineArt";
@@ -42,6 +45,7 @@ export function DrawSection({
   chart: FourPillarsResult;
   birth: BirthInput;
 }) {
+  const [drawn, setDrawn] = useState(false);
   const element = deriveYiThemeElement(chart);
   const copy = drawCopy[element];
   const branch = chart.pillars.year.branch;
@@ -52,13 +56,13 @@ export function DrawSection({
       <h1>抽一支当下行动签</h1>
       <p>这支签跟着你的出生盘气质、年支与当下阅读场景变化，重点不在吓人，而在给今天一个能落地的小动作。</p>
     </header>
-    <article className="oracle-card">
-      <SceneLineArt kind="oracle" />
+    <article className="oracle-card oracle-card--interactive">
+      <button className="oracle-tube-button" data-testid="draw-lot-trigger" type="button" onClick={() => setDrawn(true)}><SceneLineArt kind="oracle" /><span>点击签筒</span></button>
       <div>
-        <small>{birth.name.trim() || "你"} · 年支{branch}</small>
-        <h2>{copy.sign}</h2>
+        <small>{birth.name.trim() || "你"} · 年支{branch} · 每日行动签</small>
+        <h2>{drawn ? copy.sign : "签筒已备，先摇一支"}</h2>
         <blockquote>{copy.verse}</blockquote>
-        <p>{copy.reading}</p>
+        <p>{drawn ? copy.reading : "抽签每天随阅读时间、命盘气质和当下阶段变换。先想一件卡住的事，再点签筒，签文就不只是热闹，而是给今天一枚小小的行动令。"}</p>
       </div>
     </article>
   </section>;

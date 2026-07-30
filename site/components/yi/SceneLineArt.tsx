@@ -25,7 +25,8 @@ export type SceneLineArtKind =
   | "qimen"
   | "sprout"
   | "badge"
-  | "fortune";
+  | "fortune"
+  | "zodiac";
 
 const drawings: Record<SceneLineArtKind, ReactNode> = {
   opening: <>
@@ -87,7 +88,6 @@ const drawings: Record<SceneLineArtKind, ReactNode> = {
     <path d="M34 57c0 5-5 9-11 9s-11-4-11-9 5-9 11-9 11 4 11 9Z" />
     <path d="M34 57V25c18 1 32-2 50-10v31" />
     <path d="M84 46c0 5-5 9-11 9s-11-4-11-9 5-9 11-9 11 4 11 9Z" />
-    <path d="M47 37c9 5 18 5 27 0" />
   </>,
   closing: <>
     <path d="M23 62c11-25 28-38 51-38 10 0 19 2 28 7" />
@@ -135,9 +135,10 @@ const drawings: Record<SceneLineArtKind, ReactNode> = {
     <path d="M60 27v43M34 37h14M72 37h14M34 49h18M72 49h18" />
   </>,
   oracle: <>
-    <path d="M34 18h52l10 12-36 39-36-39Z" />
-    <path d="M24 30h72M42 30l18 39M78 30 60 69M48 18l-6 12M72 18l6 12" />
-    <path d="M16 63h18M86 63h18" />
+    <path d="M38 19h44l5 50H33Z" />
+    <path d="M34 27h52M36 60h48" />
+    <path d="M46 18l-5-12M56 18l-1-14M66 18l4-13M76 18l9-10" />
+    <path d="M49 35h22M47 46h26" />
   </>,
   qimen: <>
     <circle cx="60" cy="42" r="26" />
@@ -163,6 +164,13 @@ const drawings: Record<SceneLineArtKind, ReactNode> = {
     <circle cx="36" cy="24" r="8" />
     <path d="M36 32v19M28 42h16M36 51l-8 13M36 51l10 13" />
   </>,
+  zodiac: <>
+    <circle cx="60" cy="39" r="25" />
+    <path d="M31 39c11-22 47-28 58 0" />
+    <path d="M42 54c10 10 26 12 38 0" />
+    <path d="M47 35h1M73 35h1" />
+    <path d="M60 16V7M41 23l-7-7M79 23l7-7M60 64v9" />
+  </>,
 };
 
 export function SceneLineArt({
@@ -185,9 +193,11 @@ export function SceneLineArt({
 }
 
 export function CollapseSectionButton({
-  label = "收起本章，回到总览",
+  label = "收起，回到总览",
+  quiet = false,
 }: {
   label?: string;
+  quiet?: boolean;
 }) {
-  return <button className="collapse-section-button" data-collapse-section="true" type="button">{label}</button>;
+  return <button className={quiet ? "collapse-section-button collapse-section-button--quiet" : "collapse-section-button"} data-collapse-section="true" type="button">{label}</button>;
 }
