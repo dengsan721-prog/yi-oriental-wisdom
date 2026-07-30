@@ -135,7 +135,7 @@ export function YiExperience() {
   }
 
   return <main data-element={themeElement}>
-    {hydrated && route.page === "home" && profile && <LifeHome profile={profile} onChange={updateProfile} onClear={removeProfile} onViewReport={() => push({ page: "report", section: "portrait" })} />}
+    {hydrated && route.page === "home" && profile && <LifeHome profile={profile} onChange={updateProfile} onClear={removeProfile} onViewReport={() => push({ page: "report", section: "portrait" })} onViewDraw={() => push({ page: "report", section: "draw" })} onViewQimen={() => push({ page: "report", section: "qimen" })} />}
     {(!hydrated || route.page === "intro") && <RitualIntro restoring={!hydrated} onStart={() => push({ page: "birth" })} />}
     {hydrated && route.page === "birth" && <section className="intake">
       <header><button onClick={() => push({ page: "intro" })}>← 返回</button></header>

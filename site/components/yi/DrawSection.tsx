@@ -38,6 +38,15 @@ const drawCopy = {
   },
 } as const;
 
+const drawLevels = {
+  木: "小吉",
+  火: "中吉",
+  土: "中吉",
+  金: "大吉",
+  水: "小凶",
+  neutral: "小吉",
+} as const;
+
 export function DrawSection({
   chart,
   birth,
@@ -48,6 +57,7 @@ export function DrawSection({
   const [drawn, setDrawn] = useState(false);
   const element = deriveYiThemeElement(chart);
   const copy = drawCopy[element];
+  const level = drawLevels[element];
   const branch = chart.pillars.year.branch;
 
   return <section className="report-section oracle-report">
@@ -56,12 +66,16 @@ export function DrawSection({
       <h1>抽一支当下行动签</h1>
       <p>这支签跟着你的出生盘气质、年支与当下阅读场景变化，重点不在吓人，而在给今天一个能落地的小动作。</p>
     </header>
-    <article className="oracle-card oracle-card--interactive">
-      <button className="oracle-tube-button" data-testid="draw-lot-trigger" type="button" onClick={() => setDrawn(true)}><SceneLineArt kind="oracle" /><span>点击签筒</span></button>
-      <div>
+    <article className={"oracle-ritual-stage oracle-card oracle-card--interactive" + (drawn ? " has-drawn" : "")}>
+      <div className="oracle-ritual-focus">
+        <div className="oracle-seal">签</div>
+        <button className="oracle-tube-button oracle-tube-button--large" data-testid="draw-lot-trigger" type="button" onClick={() => setDrawn(true)}><SceneLineArt kind="oracle" /><span>签筒</span><small>{drawn ? "再摇一次" : "点击摇签"}</small></button>
+      </div>
+      <div className="oracle-reading">
         <small>{birth.name.trim() || "你"} · 年支{branch} · 每日行动签</small>
         <h2>{drawn ? copy.sign : "签筒已备，先摇一支"}</h2>
-        <blockquote>{copy.verse}</blockquote>
+        {drawn && <span className="oracle-level">{level}</span>}
+        {drawn && <section className="oracle-poem" aria-label="签诗"><b>签诗</b><blockquote>{copy.verse}</blockquote></section>}
         <p>{drawn ? copy.reading : "抽签每天随阅读时间、命盘气质和当下阶段变换。先想一件卡住的事，再点签筒，签文就不只是热闹，而是给今天一枚小小的行动令。"}</p>
       </div>
     </article>

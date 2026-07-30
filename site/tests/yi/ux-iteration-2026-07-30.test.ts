@@ -1,4 +1,5 @@
 ﻿import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -76,8 +77,14 @@ describe("2026-07-30 mobile report system iteration", () => {
     const nav = html.slice(html.indexOf('class="result-tabs"'), html.indexOf('class="result-content"'));
 
     expect(nav).toContain('class="result-tabs-actions"');
+    expect(nav).toContain("\u62a5\u544a\u9884\u89c8");
+    expect(nav).toContain("\u4eba\u751f\u753b\u5377");
     expect(nav).toContain("\u4eba\u751f\u9996\u9875");
     expect(nav).toContain("\u4fee\u6539\u5750\u6807");
+    expect(nav).not.toContain("\u5f53\u524d\u7126\u70b9");
+    expect(nav).not.toContain("10");
+    expect(nav).not.toContain("\u547d\u8fd0\u5165\u53e3");
+    expect(nav).not.toContain("\u81ea\u5df1\u521b\u9020\u81ea\u5df1");
     expect(html).not.toContain("\u4fdd\u5b58\u5e76\u8fdb\u5165\u4eba\u751f\u9996\u9875");
     expect(html).not.toContain("\u4fee\u6539\u51fa\u751f\u8d44\u6599");
   });
@@ -91,8 +98,9 @@ describe("2026-07-30 mobile report system iteration", () => {
     expect(css).toContain(".result-tab-list{grid-template-columns:repeat(3,minmax(0,1fr))");
   });
 
-  it("shows daily draw and qimen entrances below the title and on the life home", () => {
+  it("shows daily draw and qimen only in the report top strip and as direct life-home entries", () => {
     const shell = renderShell();
+    const experienceSource = readFileSync(new URL("../../components/yi/YiExperience.tsx", import.meta.url), "utf8");
     const home = renderToStaticMarkup(createElement(LifeHome, {
       profile: {
         version: 1,
@@ -110,12 +118,21 @@ describe("2026-07-30 mobile report system iteration", () => {
       onChange: () => ({ ok: true as const }),
       onClear: () => ({ ok: true as const }),
       onViewReport: () => undefined,
+      onViewDraw: () => undefined,
+      onViewQimen: () => undefined,
     }));
+    const portraitContent = shell.slice(shell.indexOf('class="result-content"'));
 
     expect(shell).toContain('class="daily-oracle-strip daily-oracle-strip--report"');
     expect(shell).toContain('data-daily-entry="draw"');
     expect(shell).toContain('data-daily-entry="qimen"');
     expect(home).toContain('class="daily-oracle-strip daily-oracle-strip--home"');
+    expect(home).toContain('data-home-entry="draw"');
+    expect(home).toContain('data-home-entry="qimen"');
+    expect(experienceSource).toContain('onViewDraw={() => push({ page: "report", section: "draw" })}');
+    expect(experienceSource).toContain('onViewQimen={() => push({ page: "report", section: "qimen" })}');
+    expect(portraitContent).not.toContain('data-testid="draw-lot-trigger"');
+    expect(portraitContent).not.toContain('data-testid="qimen-calc-trigger"');
   });
 
   it("turns draw and qimen into interactive daily rituals with recognizable icons", () => {
@@ -123,9 +140,18 @@ describe("2026-07-30 mobile report system iteration", () => {
     const draw = renderToStaticMarkup(createElement(DrawSection, { chart, birth }));
     const qimen = renderToStaticMarkup(createElement(QimenSection, { chart, birth }));
 
+    expect(draw).toContain("oracle-ritual-stage");
+    expect(draw).toContain('class="oracle-seal">\u7b7e');
     expect(draw).toContain('data-testid="draw-lot-trigger"');
     expect(draw).toContain("\u7b7e\u7b52");
+    expect(draw).not.toContain("\u7b7e\u8bd7");
     expect(draw).toContain('scene-line-art--oracle');
+    const drawSource = readFileSync(resolve(__dirname, "../../components/yi/DrawSection.tsx"), "utf8");
+    expect(drawSource).toContain('drawn && <span className="oracle-level">{level}</span>');
+    expect(drawSource).toContain('drawn && <section className="oracle-poem"');
+    expect(drawSource).toMatch(/\u5c0f\u51f6|\u5c0f\u5409|\u4e2d\u5409|\u5927\u5409/);
+    expect(qimen).toContain("qimen-ritual-stage");
+    expect(qimen).toContain('class="qimen-seal">\u8d77\u5c40');
     expect(qimen).toContain('data-testid="qimen-calc-trigger"');
     expect(qimen).toContain("\u5947\u95e8\u8d77\u5c40");
     expect(qimen).toContain('scene-line-art--qimen');

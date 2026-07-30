@@ -8,6 +8,7 @@ import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { buildInterpretations } from "../../lib/yi/interpretation";
 import { buildProfessionalReport } from "../../lib/yi/report-model";
 import { deriveYiThemeElement } from "../../lib/yi/theme";
+import type { ReportSectionId } from "../../lib/yi/hash-router";
 import type { BirthInput } from "../../lib/yi/types";
 
 const exactBirth: BirthInput = {
@@ -21,6 +22,7 @@ const exactBirth: BirthInput = {
 
 function renderResult(birth: BirthInput = exactBirth, options: {
   ambiguousDay?: boolean;
+  activeSection?: ReportSectionId;
   storageError?: string;
 } = {}) {
   const chart = calculateFourPillars(birth);
@@ -32,7 +34,7 @@ function renderResult(birth: BirthInput = exactBirth, options: {
     birth,
     report,
     interpretations: buildInterpretations(chart),
-    activeSection: "portrait",
+    activeSection: options.activeSection ?? "portrait",
     onSectionChange: () => {},
     onRestart: () => {},
     onSaveHome: () => {},
@@ -140,14 +142,19 @@ describe("result navigation", () => {
     expect(renderResult({ ...exactBirth, time: null, timeConfidence: "exact" }).html).toContain("已关闭：时柱、时柱派生判断与精确大运年份。");
   });
 
-  it("presents the report navigation as an important focus guide", () => {
+  it("presents the report navigation as a compact report preview", () => {
     const { html } = renderResult();
+    const nav = html.slice(html.indexOf('class="result-tabs"'), html.indexOf('class="result-content"'));
 
     expect(html).toContain('class="result-tabs"');
     expect(html).toContain('class="result-tabs-guide"');
-    expect(html).toContain("报告导览");
-    expect(html).toContain("当前焦点");
-    expect(html).toContain("10个命运入口 · 自己创造自己");
+    expect(nav).toContain("报告预览");
+    expect(nav).toContain("人生画卷");
+    expect(nav).toContain("人生首页");
+    expect(nav).toContain("修改坐标");
+    expect(nav).not.toContain("当前焦点");
+    expect(nav).not.toContain("10个命运入口");
+    expect(nav).not.toContain("自己创造自己");
     expect(html).toContain('class="result-tab-list"');
   });
 
@@ -171,17 +178,18 @@ describe("result navigation", () => {
   });
 
   it("renders name analysis as its own chapter after detail instead of inside the chart", () => {
-    const { html } = renderResult({ ...exactBirth, name: "林知夏" });
-    const chartPane = html.indexOf('<section class="report-section chart-report"');
-    const detailPane = html.indexOf("<small>专业详批</small>");
-    const namePane = html.indexOf('data-name-analysis="loading"');
-    const fortunePane = html.indexOf('<section class="report-section fortune-report"');
-    const chartEnd = html.indexOf('data-testid="professional-pillar-table"', chartPane);
+    const chartHtml = renderResult({ ...exactBirth, name: "林知夏" }, { activeSection: "chart" }).html;
+    const detailHtml = renderResult({ ...exactBirth, name: "林知夏" }, { activeSection: "detail" }).html;
+    const nameHtml = renderResult({ ...exactBirth, name: "林知夏" }, { activeSection: "name" }).html;
+    const fortuneHtml = renderResult({ ...exactBirth, name: "林知夏" }, { activeSection: "fortune" }).html;
+    const chartPane = chartHtml.indexOf('<section class="report-section chart-report"');
+    const chartEnd = chartHtml.indexOf('data-testid="professional-pillar-table"', chartPane);
 
-    expect(namePane).toBeGreaterThan(detailPane);
-    expect(fortunePane).toBeGreaterThan(namePane);
-    expect(html).toContain(">姓名</button>");
-    expect(html.slice(chartPane, chartEnd)).not.toContain("姓名五行参考分");
+    expect(detailHtml).toContain("<small>专业祥批</small>");
+    expect(nameHtml).toContain('data-name-analysis="loading"');
+    expect(fortuneHtml).toContain('<section class="report-section fortune-report"');
+    expect(chartHtml).toContain(">姓名</button>");
+    expect(chartHtml.slice(chartPane, chartEnd)).not.toContain("姓名五行参考分");
   });
 
   it("keeps the selected parent-child report role through compatibility changes", () => {

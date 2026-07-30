@@ -126,7 +126,42 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
     setSaveConfirmOpen(false);
     window.requestAnimationFrame(() => saveTriggerRef.current?.focus());
   }
-  return <section className="result-shell">
+  function renderActiveSection() {
+    switch (activeSection) {
+      case "chart":
+        return <ChartSection chart={chart} items={interpretations} report={report} />;
+      case "detail":
+        return <DetailSection items={interpretations} />;
+      case "name":
+        return ownerName ? <NameAnalysisSection chart={chart} key={ownerName} name={ownerName} report={report} /> : <section className="name-analysis-section name-reference-section"><header className="name-reference-summary"><div><small>姓名文化测分 · 仅供参考</small><h2>姓名五行参考分</h2><p className="name-current-glyphs">填写姓名后展示</p></div></header></section>;
+      case "fortune":
+        return <FortuneSection chart={chart} birth={birth} />;
+      case "draw":
+        return <DrawSection chart={chart} birth={birth} />;
+      case "qimen":
+        return <QimenSection chart={chart} birth={birth} />;
+      case "mirror":
+        return <MirrorSection chart={chart} />;
+      case "compatibility":
+        return <CompatibilitySection chart={chart} primaryName={name} relationship={state.compatibility.relationship} primaryParentRole={state.compatibility.primaryParentRole} secondBirth={state.compatibility.secondBirth} onRelationshipChange={relationship => dispatch({ type: "set-relationship", relationship })} onSecondBirthChange={birth => dispatch({ type: "set-second-birth", birth })} onParentChildPrimaryRoleChange={primaryParentRole => dispatch({ type: "set-parent-child-primary-role", primaryParentRole })} />;
+      case "tradition":
+        return <TraditionSection chart={chart} birth={birth} />;
+      default:
+        return <PortraitSection birth={birth} chart={chart} report={report} items={interpretations} />;
+    }
+  }
+  const isDailyRitualPage = activeSection === "draw" || activeSection === "qimen";
+  const resultContent = <div className={"result-content" + (isDailyRitualPage ? " result-content--daily-ritual" : "")}>
+    {renderActiveSection()}
+    {shouldRenderSourceNote(activeSection) && <SourceNote chart={chart} items={interpretations} />}
+  </div>;
+  const resultNavigation = <nav className="result-tabs" aria-label="人生报告导航">
+    <div className="result-tabs-guide"><div className="result-tabs-copy"><small>报告预览</small><strong>{activeSectionLabel}</strong></div><div className="result-tabs-actions" data-testid="report-save-actions">{onSaveHome && <button className="primary" ref={saveTriggerRef} onClick={() => setSaveConfirmOpen(true)}>人生首页</button>}<button onClick={onRestart}>修改坐标</button></div></div>
+    <div className="result-tab-list">
+      {resultSections.map(([id, label]) => <button key={id} className={"result-tab" + (id === "portrait" ? " result-tab--primary" : "") + (activeSection === id ? " active" : "")} aria-current={activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>{label}</button>)}
+    </div>
+  </nav>;
+  return <section className={"result-shell" + (isDailyRitualPage ? " result-shell--daily-ritual" : "")}>
     <div className="result-head">
       <header className="report-title-region" data-testid="report-title-region">
         <div className="report-title-topline">
@@ -144,24 +179,8 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
     </div>
     {saveConfirmOpen && <SaveHomeDialog onClose={closeSaveDialog} onConfirm={() => { closeSaveDialog(); onSaveHome?.(); }} />}
     {storageError && <p className="storage-error" role="alert">{storageError}</p>}
-    <nav className="result-tabs" aria-label="人生报告导航">
-      <div className="result-tabs-guide"><div><small>报告导览</small><strong>当前焦点 · {activeSectionLabel}</strong><span>{resultSections.length}个命运入口 · 自己创造自己</span></div><div className="result-tabs-actions" data-testid="report-save-actions">{onSaveHome && <button className="primary" ref={saveTriggerRef} onClick={() => setSaveConfirmOpen(true)}>人生首页</button>}<button onClick={onRestart}>修改坐标</button></div></div>
-      <div className="result-tab-list">
-        {resultSections.map(([id, label]) => <button key={id} className={"result-tab" + (id === "portrait" ? " result-tab--primary" : "") + (activeSection === id ? " active" : "")} aria-current={activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>{label}</button>)}
-      </div>
-    </nav>
-    <div className="result-content">
-      <div hidden={activeSection !== "portrait"}><PortraitSection birth={birth} chart={chart} report={report} items={interpretations} /></div>
-      <div hidden={activeSection !== "chart"}><ChartSection chart={chart} items={interpretations} report={report} /></div>
-      <div hidden={activeSection !== "detail"}><DetailSection items={interpretations} /></div>
-      <div hidden={activeSection !== "name"}>{ownerName ? <NameAnalysisSection chart={chart} key={ownerName} name={ownerName} report={report} /> : <section className="name-analysis-section name-reference-section"><header className="name-reference-summary"><div><small>姓名文化测分 · 仅供参考</small><h2>姓名五行参考分</h2><p className="name-current-glyphs">填写姓名后展示</p></div></header></section>}</div>
-      <div hidden={activeSection !== "fortune"}><FortuneSection chart={chart} birth={birth} /></div>
-      <div hidden={activeSection !== "draw"}><DrawSection chart={chart} birth={birth} /></div>
-      <div hidden={activeSection !== "qimen"}><QimenSection chart={chart} birth={birth} /></div>
-      <div hidden={activeSection !== "mirror"}><MirrorSection chart={chart} /></div>
-      <div hidden={activeSection !== "compatibility"}><CompatibilitySection chart={chart} primaryName={name} relationship={state.compatibility.relationship} primaryParentRole={state.compatibility.primaryParentRole} secondBirth={state.compatibility.secondBirth} onRelationshipChange={relationship => dispatch({ type: "set-relationship", relationship })} onSecondBirthChange={birth => dispatch({ type: "set-second-birth", birth })} onParentChildPrimaryRoleChange={primaryParentRole => dispatch({ type: "set-parent-child-primary-role", primaryParentRole })} /></div>
-      <div hidden={activeSection !== "tradition"}><TraditionSection chart={chart} birth={birth} /></div>
-      {shouldRenderSourceNote(activeSection) && <SourceNote chart={chart} items={interpretations} />}
-    </div>
+    {isDailyRitualPage && resultContent}
+    {resultNavigation}
+    {!isDailyRitualPage && resultContent}
   </section>;
 }

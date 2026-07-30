@@ -32,9 +32,12 @@ export function QimenSection({
       <h1>给当下局势定一个方向</h1>
       <p>这里把奇门当成行动罗盘：看方向、看开门方式、看今天先做哪一步。复杂术语收在后台，页面只留下能听懂、能转述的话。</p>
     </header>
-    <article className="qimen-card qimen-card--interactive">
-      <button className="qimen-compass-button" data-testid="qimen-calc-trigger" type="button" onClick={() => setOpened(true)}><SceneLineArt kind="qimen" /><span>奇门起局</span></button>
-      <div>
+    <article className={"qimen-ritual-stage qimen-card qimen-card--interactive" + (opened ? " has-opened" : "")}>
+      <div className="qimen-ritual-focus">
+        <div className="qimen-seal">起局</div>
+        <button className="qimen-compass-button qimen-compass-button--large" data-testid="qimen-calc-trigger" type="button" onClick={() => setOpened(true)}><SceneLineArt kind="qimen" /><span>奇门起局</span><small>{opened ? "再起一局" : "点击起局"}</small></button>
+      </div>
+      <div className="qimen-reading">
         <small>{birth.location || "出生地待补"} · {hourLabel} · 每日每时不同</small>
         <h2>{opened ? `${direction}向 · ${method}` : "先起一局，再看开门"}</h2>
         <p>{opened ? reading : "奇门日常看的是当下门向：同一个人，不同日时来问，先动哪一步也会不同。先把问题收成一句话，再点起局。"}</p>

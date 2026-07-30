@@ -61,7 +61,9 @@ describe("2026-07-29 mobile-first wisdom iteration", () => {
       "tradition",
     ]);
     expect(getAvailableSections(true)).toHaveLength(10);
-    expect(renderReport()).toContain("<span>10个命运入口 · 自己创造自己</span>");
+    expect(renderReport()).toContain("<small>报告预览</small>");
+    expect(renderReport()).toContain('data-daily-entry="draw"');
+    expect(renderReport()).toContain('data-daily-entry="qimen"');
   });
 
   it("makes the report title solemn and resilient for three- or four-character names", () => {
@@ -74,7 +76,7 @@ describe("2026-07-29 mobile-first wisdom iteration", () => {
   it("uses a vertical 本次采用 rail with two mobile chip columns", () => {
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-    expect(css).toContain("@media(max-width:520px){.adopted-facts{grid-template-columns:auto repeat(2,minmax(0,1fr))");
+    expect(css).toContain("@media(max-width:520px){.adopted-facts{grid-template-columns:1.2em repeat(2,minmax(0,1fr))");
     expect(css).toContain(".adopted-facts>b{grid-row:1/span 2;writing-mode:vertical-rl");
     expect(css).toContain(".adopted-facts span{max-width:100%;text-align:center}");
   });
