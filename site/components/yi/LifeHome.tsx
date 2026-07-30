@@ -90,7 +90,7 @@ export function LifeHome({ profile, onChange, onViewReport, onViewDraw, onViewQi
   return <section className="life-home">
     <header className="life-head life-head-simple"><div className="life-head-identity"><YiBrandMark variant="compact" /><div><small>欢迎回来</small><b>{home.name}</b></div></div><div className="life-head-actions"><button className="life-report-return" onClick={onViewReport}>回看命盘报告</button><button onClick={() => setSection(section === "change" ? "record" : "change")}>{section === "change" ? "继续记录" : "改命记录"}</button></div></header>
     <div className="life-content">
-      <section className="daily-oracle-strip daily-oracle-strip--home" aria-label="每日灵感入口"><button type="button" data-home-entry="draw" onClick={onViewDraw ?? onViewReport}><span>抽签</span><small>摇一支今日行动签</small></button><button type="button" data-home-entry="qimen" onClick={onViewQimen ?? onViewReport}><span>奇门</span><small>看当下先开哪扇门</small></button></section>
+      <section className="daily-oracle-strip daily-oracle-strip--home" aria-label="每日灵感入口"><button type="button" data-home-entry="draw" onClick={onViewDraw ?? onViewReport}><span>今日签</span><small>每日一签，平平安安</small></button><button type="button" data-home-entry="qimen" onClick={onViewQimen ?? onViewReport}><span>奇门</span><small>看当下先开哪扇门</small></button></section>
       {section === "record" && <>
         <section className="life-purpose"><small>改命记录</small><h1>今天遇到的小怪，也能变成通关记录</h1><p>把一件事写成一枚经验值：先看见当时起了什么念，再承认哪里失手，补上一点善意，定一个明天能做到的小招。念、思、言、行一关一关校正，人就不再被剧情推着走，而是在自己的副本里升级、转念、改命。</p></section>
         <section className="life-record-window" aria-label="每日记录窗口">

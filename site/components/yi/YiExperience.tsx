@@ -14,8 +14,14 @@ import { clearLifeProfile, createLifeProfile, getBrowserStorage, loadLifeProfile
 import { useYiRoute } from "./useYiRoute";
 import { YiBrandMark } from "./YiBrandMark";
 
+export const HYDRATION_UNLOCK_TIMEOUT_MS = 1000;
+
+export function shouldUnlockIntroAfterDeadline(hydrated: boolean, elapsedMs: number) {
+  return !hydrated && elapsedMs >= HYDRATION_UNLOCK_TIMEOUT_MS;
+}
+
 function RitualIntro({ restoring, onStart }: { restoring: boolean; onStart: () => void }) {
-  return <section className="ritual" aria-busy={restoring}>
+  return <section className="ritual" aria-busy={restoring} data-hydration-fallback-ms={HYDRATION_UNLOCK_TIMEOUT_MS}>
     <div className="ritual-bg" /><YiBrandMark variant="hero" />
     <h1 className="ritual-lines"><span>看见命局</span><span>读懂时运</span></h1>
     <button className="primary" disabled={restoring} onClick={onStart}>开始排盘</button>
@@ -38,6 +44,15 @@ export function YiExperience() {
     [birth, result],
   );
   const themeElement = deriveYiThemeElement(result);
+
+  useEffect(() => {
+    if (hydrated) return;
+    const startedAt = Date.now();
+    const fallbackTimer = window.setTimeout(() => {
+      if (shouldUnlockIntroAfterDeadline(false, Date.now() - startedAt)) setHydrated(true);
+    }, HYDRATION_UNLOCK_TIMEOUT_MS);
+    return () => window.clearTimeout(fallbackTimer);
+  }, [hydrated]);
 
   useEffect(() => {
     const restoreTimer = window.setTimeout(() => {

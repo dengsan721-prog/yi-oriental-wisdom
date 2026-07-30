@@ -45,12 +45,14 @@ describe("birth intake state", () => {
     expect(getReadyBirthSubmission(baseInput, { date: true, time: true })).toEqual(normalizeBirthSubmission(baseInput));
   });
 
-  it("requires explicit date and time confirmation before submission", () => {
+  it("requires name, birth address, explicit date and time confirmation before submission", () => {
     const unconfirmed: BirthConfirmationState = { date: false, time: false };
 
     expect(isBirthSubmissionReady(unconfirmed)).toBe(false);
     expect(isBirthSubmissionReady({ date: true, time: false })).toBe(false);
-    expect(isBirthSubmissionReady({ date: true, time: true })).toBe(true);
+    expect(isBirthSubmissionReady({ date: true, time: true }, "杭州", "")).toBe(false);
+    expect(isBirthSubmissionReady({ date: true, time: true }, "", "小艺")).toBe(false);
+    expect(isBirthSubmissionReady({ date: true, time: true }, "杭州", "小艺")).toBe(true);
   });
 
   it("keeps picker seeds unconfirmed before the visitor explicitly adopts them", () => {
@@ -76,12 +78,12 @@ describe("birth intake state", () => {
     expect(getTimeFocusTarget(null, modeButton)).toBe(modeButton);
   });
 
-  it("accepts an empty optional name and uses the visitor fallback", () => {
-    const submission = normalizeBirthSubmission({ ...baseInput, name: "" });
-    expect(submission.name).toBe("");
+  it("requires the visitor name as a birth coordinate", () => {
     const html = renderToStaticMarkup(createElement(BirthIntake, { onSubmit: () => {} }));
-    expect(html).toContain('placeholder="姓名（选填）"');
-    expect(html).not.toMatch(/<input[^>]+required[^>]+placeholder="姓名（选填）"/);
+    expect(getReadyBirthSubmission({ ...baseInput, name: "" }, { date: true, time: true })).toBeNull();
+    expect(html).toContain("姓名（必填）");
+    expect(html).toMatch(/<input[^>]+required[^>]+placeholder="姓名（必填）"/);
+    expect(html).not.toContain("姓名（选填）");
   });
 
   it("renders only compact summaries before a date or time picker is opened", () => {

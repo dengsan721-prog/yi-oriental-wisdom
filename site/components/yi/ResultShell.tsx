@@ -15,14 +15,13 @@ import { CompatibilitySection } from "./CompatibilitySection";
 import type { ParentChildPrimaryRole } from "./CompatibilitySection";
 import { TraditionSection } from "./TraditionSection";
 import type { YiThemeElement } from "../../lib/yi/theme";
-import { YiBrandMark } from "./YiBrandMark";
 import { NameAnalysisSection } from "./NameAnalysisSection";
 import { DrawSection } from "./DrawSection";
 import { QimenSection } from "./QimenSection";
 
 export const getResultSections = () => [
   ["portrait", "人生画卷"], ["chart", "命盘"], ["detail", "详批"],
-  ["name", "姓名"], ["fortune", "大运"], ["draw", "抽签"], ["qimen", "奇门"], ["compatibility", "合盘"], ["mirror", "镜像"],
+  ["name", "姓名"], ["fortune", "大运"], ["draw", "今日签"], ["qimen", "奇门"], ["compatibility", "合盘"], ["mirror", "镜像"],
   ["tradition", "传统"],
 ] as const;
 
@@ -81,7 +80,7 @@ function SaveHomeDialog({ onConfirm, onClose }: { onConfirm: () => void; onClose
 
 function DailyOracleStrip({ onDraw, onQimen, variant }: { onDraw: () => void; onQimen: () => void; variant: "report" | "home" }) {
   return <section className={`daily-oracle-strip daily-oracle-strip--${variant}`} aria-label="每日灵感入口">
-    <button type="button" data-daily-entry="draw" onClick={onDraw}><span>抽签</span><small>摇一支今日行动签</small></button>
+    <button type="button" data-daily-entry="draw" onClick={onDraw}><span>今日签</span><small>每日一签，平平安安</small></button>
     <button type="button" data-daily-entry="qimen" onClick={onQimen}><span>奇门</span><small>看当下先开哪扇门</small></button>
   </section>;
 }
@@ -99,7 +98,7 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
   const resultSections = getResultSections().filter(([id]) => availableSections.includes(id));
   const activeSectionLabel = resultSections.find(([id]) => id === activeSection)?.[1] ?? "人生画卷";
   const ownerName = name.trim();
-  const ownerSeal = themeElement === "neutral" ? "待定命印" : `${themeElement}命印`;
+  const reportTitle = ownerName ? `${ownerName}人生命运报告` : "人生命运报告";
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollTop(scrollPositions, activeSection) }));
     return () => {
@@ -137,9 +136,9 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
       case "fortune":
         return <FortuneSection chart={chart} birth={birth} />;
       case "draw":
-        return <DrawSection chart={chart} birth={birth} />;
+        return <DrawSection chart={chart} birth={birth} onBackToChart={() => selectSection("chart")} />;
       case "qimen":
-        return <QimenSection chart={chart} birth={birth} />;
+        return <QimenSection chart={chart} birth={birth} onBackToChart={() => selectSection("chart")} />;
       case "mirror":
         return <MirrorSection chart={chart} />;
       case "compatibility":
@@ -150,8 +149,8 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
         return <PortraitSection birth={birth} chart={chart} report={report} items={interpretations} />;
     }
   }
-  const isDailyRitualPage = activeSection === "draw" || activeSection === "qimen";
-  const resultContent = <div className={"result-content" + (isDailyRitualPage ? " result-content--daily-ritual" : "")}>
+  const isStandaloneRitualPage = activeSection === "draw" || activeSection === "qimen";
+  const resultContent = <div className={"result-content" + (isStandaloneRitualPage ? " result-content--daily-ritual" : "")}>
     {renderActiveSection()}
     {shouldRenderSourceNote(activeSection) && <SourceNote chart={chart} items={interpretations} />}
   </div>;
@@ -161,26 +160,28 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
       {resultSections.map(([id, label]) => <button key={id} className={"result-tab" + (id === "portrait" ? " result-tab--primary" : "") + (activeSection === id ? " active" : "")} aria-current={activeSection === id ? "page" : undefined} onClick={() => selectSection(id)}>{label}</button>)}
     </div>
   </nav>;
-  return <section className={"result-shell" + (isDailyRitualPage ? " result-shell--daily-ritual" : "")}>
+  if (isStandaloneRitualPage) {
+    return <section className="result-shell result-shell--standalone-ritual" data-theme-element={themeElement}>
+      {storageError && <p className="storage-error" role="alert">{storageError}</p>}
+      {resultContent}
+    </section>;
+  }
+  return <section className="result-shell" data-theme-element={themeElement}>
     <div className="result-head">
       <header className="report-title-region" data-testid="report-title-region">
-        <div className="report-title-topline">
-          <div className="report-fate-mark report-owner-ritual" data-testid="report-owner-ritual">
-            <YiBrandMark variant="compact" />
-            <span className="report-owner-seal">{ownerSeal}</span>
-          </div>
-          <aside className="adopted-facts" data-testid="adopted-birth-facts" aria-label="本次采用出生事实"><b>本次采用</b><span>{report.birthFacts.solar}</span><span>{report.birthFacts.timeConfidence}</span><span>{report.birthFacts.location}</span><span>{report.birthFacts.timezone}</span>{report.birthFacts.timeConfidence === "时辰不详" && <small>已关闭：时柱、时柱派生判断与精确大运年份。</small>}</aside>
+        <div className="report-title-topline report-brand-line" data-testid="report-brand-line">
+          <span className="report-brand-word">命</span>
+          <span className="report-brand-name">东方人生智慧</span>
         </div>
         <div className="report-document-title" data-testid="report-document-title">
-          <h1>{ownerName ? ownerName + "命运全景报告" : "个人命运全景报告"}</h1>
+          <h1>{reportTitle}</h1>
         </div>
       </header>
       <DailyOracleStrip onDraw={() => selectSection("draw")} onQimen={() => selectSection("qimen")} variant="report" />
     </div>
     {saveConfirmOpen && <SaveHomeDialog onClose={closeSaveDialog} onConfirm={() => { closeSaveDialog(); onSaveHome?.(); }} />}
     {storageError && <p className="storage-error" role="alert">{storageError}</p>}
-    {isDailyRitualPage && resultContent}
     {resultNavigation}
-    {!isDailyRitualPage && resultContent}
+    {resultContent}
   </section>;
 }

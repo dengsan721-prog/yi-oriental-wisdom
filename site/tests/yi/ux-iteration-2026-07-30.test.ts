@@ -53,23 +53,20 @@ function renderShell(section = "portrait" as const) {
 }
 
 describe("2026-07-30 mobile report system iteration", () => {
-  it("puts the fate mark and adopted facts on the top line before the solemn report title", () => {
+  it("puts a clean brand line above the solemn report title", () => {
     const html = renderShell();
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
-    const topLine = html.indexOf('class="report-title-topline"');
-    const facts = html.indexOf('data-testid="adopted-birth-facts"');
+    const topLine = html.indexOf('data-testid="report-brand-line"');
     const title = html.indexOf('data-testid="report-document-title"');
 
     expect(topLine).toBeGreaterThan(-1);
-    expect(facts).toBeGreaterThan(topLine);
-    expect(facts).toBeLessThan(title);
-    expect(html).toContain("report-fate-mark");
-    expect(html).toContain("\u6b27\u9633\u53f8\u5f92\u547d\u8fd0\u5168\u666f\u62a5\u544a");
-    expect(css).toContain(".report-title-topline{display:grid;grid-template-columns:auto minmax(0,1fr)");
+    expect(topLine).toBeLessThan(title);
+    expect(html).toContain("report-brand-line");
+    expect(html).toContain("\u6b27\u9633\u53f8\u5f92\u4eba\u751f\u547d\u8fd0\u62a5\u544a");
+    expect(html).toContain("\u4e1c\u65b9\u4eba\u751f\u667a\u6167");
+    expect(html).not.toContain("\u672c\u6b21\u91c7\u7528");
+    expect(css).toContain(".report-brand-line{display:flex");
     expect(css).not.toContain(".report-title-topline{grid-template-columns:1fr}");
-    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts\{[^}]*grid-template-columns:1\.2em repeat\(2,minmax\(0,1fr\)\)/);
-    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts>b\{[^}]*writing-mode:vertical-rl/);
-    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts>b\{[^}]*text-orientation:upright[^}]*width:1\.2em/);
   });
 
   it("moves compact save and restart actions into the right side of report navigation", () => {
@@ -135,26 +132,26 @@ describe("2026-07-30 mobile report system iteration", () => {
     expect(portraitContent).not.toContain('data-testid="qimen-calc-trigger"');
   });
 
-  it("turns draw and qimen into interactive daily rituals with recognizable icons", () => {
+  it("turns today sign and qimen into standalone classical ritual pages", () => {
     const { chart } = model();
     const draw = renderToStaticMarkup(createElement(DrawSection, { chart, birth }));
     const qimen = renderToStaticMarkup(createElement(QimenSection, { chart, birth }));
 
-    expect(draw).toContain("oracle-ritual-stage");
-    expect(draw).toContain('class="oracle-seal">\u7b7e');
+    expect(draw).toContain("ritual-standalone-page");
+    expect(draw).toContain("realistic-oracle-tube");
+    expect(draw).toContain('class="oracle-tube-inscription">\u7b7e');
     expect(draw).toContain('data-testid="draw-lot-trigger"');
-    expect(draw).toContain("\u7b7e\u7b52");
-    expect(draw).not.toContain("\u7b7e\u8bd7");
-    expect(draw).toContain('scene-line-art--oracle');
+    expect(draw).toContain("\u7b7e\u8bd7");
+    expect(draw).not.toContain('scene-line-art--oracle');
     const drawSource = readFileSync(resolve(__dirname, "../../components/yi/DrawSection.tsx"), "utf8");
-    expect(drawSource).toContain('drawn && <span className="oracle-level">{level}</span>');
-    expect(drawSource).toContain('drawn && <section className="oracle-poem"');
+    expect(drawSource).toContain("dailySignDatabase");
+    expect(drawSource).toContain("selectDailyDrawRecord");
     expect(drawSource).toMatch(/\u5c0f\u51f6|\u5c0f\u5409|\u4e2d\u5409|\u5927\u5409/);
-    expect(qimen).toContain("qimen-ritual-stage");
-    expect(qimen).toContain('class="qimen-seal">\u8d77\u5c40');
+    expect(qimen).toContain("ritual-standalone-page");
+    expect(qimen).toContain('class="qimen-plate-center">\u8d77\u5c40');
     expect(qimen).toContain('data-testid="qimen-calc-trigger"');
-    expect(qimen).toContain("\u5947\u95e8\u8d77\u5c40");
-    expect(qimen).toContain('scene-line-art--qimen');
+    expect(qimen).toContain("\u4eca\u65e5\u5947\u95e8");
+    expect(qimen).not.toContain('scene-line-art--qimen');
   });
 
   it("uses self-creation growth stages, a sun animation, and no loud life-scroll collapse label", () => {

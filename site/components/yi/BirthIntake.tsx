@@ -35,8 +35,8 @@ export function clampWheelDate(current: Pick<BirthDateSelection, "year" | "month
   return { year, month, day: Math.min(patch.day ?? current.day, maxDay) };
 }
 
-export function isBirthSubmissionReady(state: BirthConfirmationState, location = "已填写") {
-  return state.date && state.time && location.trim().length > 0;
+export function isBirthSubmissionReady(state: BirthConfirmationState, location = "已填写", name = "已填写") {
+  return state.date && state.time && location.trim().length > 0 && name.trim().length > 0;
 }
 
 export function transitionBirthSelection(state: BirthSelectionState, action: BirthSelectionAction): BirthSelectionState {
@@ -66,7 +66,7 @@ export function normalizeBirthSubmission(draft: BirthSubmissionDraft): BirthSubm
 }
 
 export function getReadyBirthSubmission(draft: BirthSubmissionDraft, confirmation: BirthConfirmationState) {
-  return isBirthSubmissionReady(confirmation, draft.location) ? normalizeBirthSubmission(draft) : null;
+  return isBirthSubmissionReady(confirmation, draft.location, draft.name) ? normalizeBirthSubmission(draft) : null;
 }
 
 export function BirthIntake({ onSubmit, heading = "你的出生坐标" }: { onSubmit: (value: BirthSubmission) => void; heading?: string }) {
@@ -95,7 +95,7 @@ export function BirthIntake({ onSubmit, heading = "你的出生坐标" }: { onSu
   const labels = getDualCalendarLabel(draft.date);
   const dateSummary = confirmation.date ? (draft.date.mode === "solar" ? labels.solar : labels.lunar) : "请选择出生日期";
   const timeSummary = draft.timeMode === "unknown" ? "时柱未定，仍可排盘" : draft.timeMode === "earthly" ? getEarthlyPeriodLabel(draft.earthlyIndex) : `${String(draft.hour).padStart(2, "0")}:${String(draft.minute).padStart(2, "0")}`;
-  const isReady = isBirthSubmissionReady(confirmation, draft.location);
+  const isReady = isBirthSubmissionReady(confirmation, draft.location, draft.name);
 
   const applyBirthTransition = (action: BirthSelectionAction) => {
     const next = transitionBirthSelection({ draft, confirmation }, action);
@@ -184,7 +184,7 @@ export function BirthIntake({ onSubmit, heading = "你的出生坐标" }: { onSu
     <form className="intake-card wheel-intake" onSubmit={(event) => { event.preventDefault(); const submission = getReadyBirthSubmission(draft, confirmation); if (!submission) return; onSubmit(submission); }}>
       <div className="step-head"><h1>{heading}</h1></div>
       <div className="identity-row">
-        <label><span>姓名（选填）</span><input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="姓名（选填）" /></label>
+        <label><span>姓名（必填）</span><input required value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="姓名（必填）" /></label>
         <label><span>出生地址（必填）</span><input required value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} placeholder="城市或区县" /></label>
       </div>
       <section className="calendar-switch gender-switch" role="group" aria-label="出生性别（用于大运顺逆及面相、面痣参考图）">

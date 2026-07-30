@@ -44,27 +44,30 @@ function renderResult(birth: BirthInput = exactBirth, options: {
 }
 
 describe("result navigation", () => {
-  it("puts the report owner directly into the panoramic report title", () => {
+  it("puts the brand line above the life fate report title", () => {
     const { html } = renderResult({ ...exactBirth, name: "林知夏" });
     const reportTitle = html.indexOf('data-testid="report-document-title"');
-    const facts = html.indexOf('data-testid="adopted-birth-facts"');
+    const brand = html.indexOf('data-testid="report-brand-line"');
     const actions = html.indexOf('data-testid="report-save-actions"');
     const titleRegion = html.slice(
       html.indexOf('data-testid="report-title-region"'),
       html.indexOf("</header>"),
     );
 
-    expect(html).toContain('data-testid="report-owner-ritual"');
+    expect(html).toContain('data-testid="report-brand-line"');
     expect(html).toContain('data-testid="report-document-title"');
-    expect(html).toContain("命运全景报告");    expect(html).toContain('class="yi-brand-mark yi-brand-mark--compact"');
-    expect(html).toContain('aria-label="命"');
-    expect(html).toContain('data-code-point="U+547D"');
+    expect(html).toContain("林知夏人生命运报告");
+    expect(titleRegion).toContain("东方人生智慧");
+    expect(titleRegion).toContain("命");
     expect(html).not.toContain("访客的人生报告");
+    expect(html).not.toContain("本次采用");
+    expect(html).not.toContain("命运全景报告");
     expect(titleRegion).not.toContain("艺｜东方人生智慧");
     expect(titleRegion).not.toContain("本卷主人");
     expect(titleRegion.match(/<h1>/g)).toHaveLength(1);
+    expect(brand).toBeGreaterThan(-1);
     expect(reportTitle).toBeGreaterThan(-1);
-    expect(facts).toBeLessThan(reportTitle);
+    expect(brand).toBeLessThan(reportTitle);
     expect(actions).toBeGreaterThan(reportTitle);
   });
 
@@ -72,15 +75,9 @@ describe("result navigation", () => {
     const empty = renderResult({ ...exactBirth, name: "" });
     const long = renderResult({ ...exactBirth, name: "欧阳司徒上官诸葛林知夏" });
 
-    expect(empty.html).toContain("个人命运全景报告");    expect(empty.html).not.toContain("未填写姓名命运全景报告");
-    expect(long.html).toContain("命运全景报告");
-  });
-
-  it("keeps neutral evidence neutral in the owner seal", () => {
-    const { html } = renderResult(exactBirth, { ambiguousDay: true });
-
-    expect(html).toContain('<span class="report-owner-seal">待定命印</span>');
-    expect(html).not.toMatch(/[木火土金水]命印/);
+    expect(empty.html).toContain("人生命运报告");
+    expect(empty.html).not.toContain("未填写姓名命运全景报告");
+    expect(long.html).toContain("人生命运报告");
   });
 
   it("reuses the compact audited mark on life home and passes the derived theme", () => {
@@ -117,29 +114,22 @@ describe("result navigation", () => {
     expect(css).not.toMatch(/.mini-mark|.result-head-main/);
   });
 
-  it("compresses the adopted birth facts into two tidy chip rows on mobile", () => {
+  it("uses a clean mobile brand line instead of adopted birth fact chips", () => {
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-    expect(css).toMatch(/\.adopted-facts\{[^}]*display:grid[^}]*grid-template-columns:auto repeat\(4,minmax\(0,auto\)\)[^}]*align-items:center/);
-    expect(css).toMatch(/\.adopted-facts span\{[^}]*min-width:0[^}]*white-space:nowrap[^}]*overflow:hidden[^}]*text-overflow:ellipsis/);
-    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)[^}]*gap:6px[^}]*padding:9px 10px/);
-    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts b\{[^}]*grid-column:1\/-1[^}]*text-align:left/);
-    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts span\{[^}]*max-width:100%[^}]*text-align:center/);
-    expect(css).toMatch(/@media\(max-width:520px\)\{[\s\S]*?\.adopted-facts small\{[^}]*grid-column:1\/-1/);
+    expect(css).toContain(".report-brand-line{display:flex");
+    expect(css).toContain(".report-brand-word");
+    expect(css).toContain(".report-brand-name");
   });
 
-  it("shows the adopted report facts and unknown-time scope in the header", () => {
-    const { report, html } = renderResult();
+  it("keeps coordinate editing in navigation without exposing adopted facts in the header", () => {
+    const { html } = renderResult();
     const unknown = renderResult({ ...exactBirth, time: null, timeConfidence: "unknown" as const });
 
-    expect(html).toContain("本次采用");
-    expect(html).toContain(report.birthFacts.solar);
-    expect(html).toContain(report.birthFacts.timeConfidence);
-    expect(html).toContain(report.birthFacts.location);
-    expect(html).toContain("UTC+8");
+    expect(html).not.toContain("本次采用");
+    expect(html).not.toContain("adopted-birth-facts");
     expect(html).toContain("修改坐标");
-    expect(unknown.html).toContain("已关闭：时柱、时柱派生判断与精确大运年份。");
-    expect(renderResult({ ...exactBirth, time: null, timeConfidence: "exact" }).html).toContain("已关闭：时柱、时柱派生判断与精确大运年份。");
+    expect(unknown.html).not.toContain("已关闭：时柱、时柱派生判断与精确大运年份。");
   });
 
   it("presents the report navigation as a compact report preview", () => {
@@ -171,6 +161,7 @@ describe("result navigation", () => {
     ]);
     expect(getResultSections()[0]).toEqual(["portrait", "人生画卷"]);
     expect(getResultSections()[3]).toEqual(["name", "姓名"]);
+    expect(getResultSections()[5]).toEqual(["draw", "今日签"]);
   });
 
   it("exposes all ten production sections", () => {

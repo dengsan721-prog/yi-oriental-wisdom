@@ -47,7 +47,7 @@ function renderReport(input: BirthInput = birth) {
 }
 
 describe("2026-07-29 mobile-first wisdom iteration", () => {
-  it("adds抽签 and奇门 as report chapters while keeping name after详批", () => {
+  it("adds今日签 and奇门 as report chapters while keeping name after详批", () => {
     expect(getResultSections().map(([id]) => id)).toEqual([
       "portrait",
       "chart",
@@ -64,21 +64,24 @@ describe("2026-07-29 mobile-first wisdom iteration", () => {
     expect(renderReport()).toContain("<small>报告预览</small>");
     expect(renderReport()).toContain('data-daily-entry="draw"');
     expect(renderReport()).toContain('data-daily-entry="qimen"');
+    expect(renderReport()).toContain("今日签");
   });
 
   it("makes the report title solemn and resilient for three- or four-character names", () => {
     const html = renderReport();
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-    expect(html).toContain("命运全景报告");    expect(css).toMatch(/@media\(max-width:520px\)\{\.report-document-title h1\{[^}]*display:flex[^}]*gap:4px[^}]*font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif[^}]*white-space:nowrap/);
+    expect(html).toContain("人生命运报告");
+    expect(css).toMatch(/\.report-document-title h1\{[^}]*font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif[^}]*white-space:nowrap/);
   });
 
-  it("uses a vertical 本次采用 rail with two mobile chip columns", () => {
+  it("uses a clean brand line instead of the adopted facts rail", () => {
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+    const html = renderReport();
 
-    expect(css).toContain("@media(max-width:520px){.adopted-facts{grid-template-columns:1.2em repeat(2,minmax(0,1fr))");
-    expect(css).toContain(".adopted-facts>b{grid-row:1/span 2;writing-mode:vertical-rl");
-    expect(css).toContain(".adopted-facts span{max-width:100%;text-align:center}");
+    expect(html).toContain("东方人生智慧");
+    expect(html).not.toContain("本次采用");
+    expect(css).toContain(".report-brand-line{display:flex");
   });
 
   it("requires birth location on the intake form and keeps time-label chips compact", () => {

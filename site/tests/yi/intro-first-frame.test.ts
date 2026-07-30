@@ -3,12 +3,24 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
-import { YiExperience } from "../../components/yi/YiExperience";
+import { HYDRATION_UNLOCK_TIMEOUT_MS, YiExperience, shouldUnlockIntroAfterDeadline } from "../../components/yi/YiExperience";
 
 const siteRoot = new URL("../../", import.meta.url);
 const readOptional = (url: URL) => readFile(url).catch(() => Buffer.alloc(0));
 
 describe("public intro first frame", () => {
+  it("unlocks the opening button when client hydration restoration misses its deadline", () => {
+    expect(shouldUnlockIntroAfterDeadline(false, HYDRATION_UNLOCK_TIMEOUT_MS - 1)).toBe(false);
+    expect(shouldUnlockIntroAfterDeadline(false, HYDRATION_UNLOCK_TIMEOUT_MS)).toBe(true);
+    expect(shouldUnlockIntroAfterDeadline(true, HYDRATION_UNLOCK_TIMEOUT_MS * 3)).toBe(false);
+
+    const html = renderToStaticMarkup(createElement(YiExperience));
+
+    expect(html).toContain(`data-hydration-fallback-ms="${HYDRATION_UNLOCK_TIMEOUT_MS}"`);
+    expect(HYDRATION_UNLOCK_TIMEOUT_MS).toBeGreaterThanOrEqual(600);
+    expect(HYDRATION_UNLOCK_TIMEOUT_MS).toBeLessThanOrEqual(1600);
+  });
+
   it("shows only the ritual identity while local storage is being restored", () => {
     const html = renderToStaticMarkup(createElement(YiExperience));
 
