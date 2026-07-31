@@ -61,7 +61,11 @@ const qimenDatabase: Record<YiThemeElement, DailyQimenBaseRecord[]> = {
   ],
 };
 
-const qimenQuestionPresets = ["事业取舍", "关系推进", "财运取舍", "今日行动"];
+const qimenQuestionPresets = [
+  "事业取舍", "合同谈判", "关系推进", "见面沟通",
+  "财运取舍", "考试学习", "搬家出行", "就医问诊",
+  "今日行动", "合作邀约", "家事安排", "重要决定",
+];
 type QimenQuestionTopic = "career" | "relationship" | "wealth" | "action";
 const qimenPalaces = ["坎一宫", "坤二宫", "震三宫", "巽四宫", "中五宫", "乾六宫", "兑七宫", "艮八宫", "离九宫"];
 const qimenGates = ["休门", "生门", "伤门", "杜门", "景门", "死门", "惊门", "开门", "值门"];
@@ -153,9 +157,9 @@ function formatQimenMoment(now: Date) {
 }
 
 function classifyQimenQuestion(question: string): QimenQuestionTopic {
-  if (/关系|婚|伴侣|亲子|朋友|沟通|推进|感情/u.test(question)) return "relationship";
+  if (/关系|婚|伴侣|亲子|朋友|沟通|推进|感情|见面|家事/u.test(question)) return "relationship";
   if (/财|钱|收入|资源|投资|生意|账/u.test(question)) return "wealth";
-  if (/行动|今日|今天|计划|选择|执行|开始/u.test(question)) return "action";
+  if (/行动|今日|今天|计划|选择|执行|开始|考试|学习|搬家|出行|就医|问诊|决定/u.test(question)) return "action";
   return "career";
 }
 

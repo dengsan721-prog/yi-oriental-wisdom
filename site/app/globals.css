@@ -519,3 +519,22 @@ body{font-family:var(--yi-sans)}
 @keyframes oracle-breathe{0%{opacity:.55;transform:scale(.86)}70%,100%{opacity:0;transform:scale(1.5)}}
 @keyframes qimen-breathe{0%{opacity:.52;transform:scale(.88)}70%,100%{opacity:0;transform:scale(1.45)}}
 @media(max-width:520px){.result-shell .report-document-title h1{font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:calc(clamp(26px,7vw,32px)*var(--report-title-scale));gap:.04em}.report-title-name{max-width:42vw}.report-document-title h1[data-name-length="long"]{--report-title-scale:.68}.oracle-line-tube .oracle-stick-well{top:-110px;width:150px}.oracle-line-tube .oracle-stick{height:134px;width:12px}.oracle-line-tube .oracle-stick--one{left:27px}.oracle-line-tube .oracle-stick--two{left:41px}.oracle-line-tube .oracle-stick--three{left:55px}.oracle-line-tube .oracle-stick--four{left:70px}.oracle-line-tube .oracle-stick--five{left:84px}.oracle-line-tube .oracle-stick--six{left:98px}.oracle-line-tube .oracle-stick--seven{left:112px}.oracle-line-tube .oracle-stick--eight{left:126px}.qimen-classic-summary{grid-template-columns:1fr 1fr}}
+.ritual-question-presets{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;width:100%}
+.ritual-question-presets button{min-height:34px;padding:6px 7px;font-size:12px;letter-spacing:0}
+.oracle-line-tube .oracle-tube-body::after{content:"";position:absolute;left:5px;right:5px;top:13px;bottom:5px;border-radius:14px 14px 29px 29px;background:linear-gradient(180deg,color-mix(in srgb,var(--yi-surface-raised) 72%,#fff7e8),color-mix(in srgb,var(--yi-accent-soft) 58%,var(--yi-surface)));z-index:2;pointer-events:none}
+.oracle-line-tube .oracle-line-rim{z-index:4}
+.oracle-line-tube .oracle-stick-well{top:-92px;width:176px;height:166px;overflow:visible;z-index:1}
+.oracle-line-tube .oracle-stick-pocket{position:absolute;left:50%;top:0;width:176px;height:116px;transform:translateX(-50%);overflow:hidden;z-index:1}
+.oracle-line-tube .oracle-stick-fan{position:absolute;inset:0;display:block}
+.oracle-line-tube .oracle-stick{bottom:-74px;height:158px;width:13px;z-index:1}
+.oracle-line-tube .oracle-tube-inscription{z-index:5}
+.oracle-line-tube .oracle-line-foot{z-index:3}
+.oracle-line-tube .oracle-stick--one{left:34px;transform:rotate(-18deg)}
+.oracle-line-tube .oracle-stick--two{left:50px;transform:rotate(-13deg)}
+.oracle-line-tube .oracle-stick--three{left:66px;transform:rotate(-8deg)}
+.oracle-line-tube .oracle-stick--four{left:83px;transform:rotate(-2deg)}
+.oracle-line-tube .oracle-stick--five{left:99px;transform:rotate(3deg)}
+.oracle-line-tube .oracle-stick--six{left:115px;transform:rotate(8deg)}
+.oracle-line-tube .oracle-stick--seven{left:131px;transform:rotate(13deg)}
+.oracle-line-tube .oracle-stick--eight{left:146px;transform:rotate(18deg)}
+@media(max-width:520px){.ritual-question-presets{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.ritual-question-presets button{min-height:32px;padding:5px 4px;font-size:11px}.oracle-line-tube .oracle-stick-well{top:-86px;width:158px;height:158px}.oracle-line-tube .oracle-stick-pocket{width:158px;height:110px}.oracle-line-tube .oracle-stick{bottom:-72px;height:152px;width:12px}.oracle-line-tube .oracle-stick--one{left:27px}.oracle-line-tube .oracle-stick--two{left:41px}.oracle-line-tube .oracle-stick--three{left:55px}.oracle-line-tube .oracle-stick--four{left:70px}.oracle-line-tube .oracle-stick--five{left:84px}.oracle-line-tube .oracle-stick--six{left:98px}.oracle-line-tube .oracle-stick--seven{left:112px}.oracle-line-tube .oracle-stick--eight{left:126px}}

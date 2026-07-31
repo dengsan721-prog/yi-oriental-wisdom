@@ -20,7 +20,11 @@ type DailyDrawRecord = {
   reading: string;
 };
 
-const drawQuestionPresets = ["事业去留", "关系修复", "财运取舍", "今日行动"];
+const drawQuestionPresets = [
+  "事业去留", "工作沟通", "关系修复", "家庭安排",
+  "财运取舍", "健康作息", "学习考试", "出行办事",
+  "今日行动", "合作邀约", "情绪整理", "重要决定",
+];
 type DrawQuestionTopic = "career" | "relationship" | "wealth" | "action";
 
 const oracleStickClasses = ["one", "two", "three", "four", "five", "six", "seven", "eight"];
@@ -96,9 +100,9 @@ function formatRitualMoment(now: Date) {
 }
 
 function classifyDrawQuestion(question: string): DrawQuestionTopic {
-  if (/关系|婚|伴侣|亲子|朋友|修复|沟通|感情/u.test(question)) return "relationship";
+  if (/关系|婚|伴侣|亲子|朋友|修复|沟通|感情|家庭/u.test(question)) return "relationship";
   if (/财|钱|收入|资源|投资|生意|账/u.test(question)) return "wealth";
-  if (/行动|今日|今天|计划|选择|执行|开始/u.test(question)) return "action";
+  if (/行动|今日|今天|计划|选择|执行|开始|健康|作息|学习|考试|出行|办事|情绪|决定/u.test(question)) return "action";
   return "career";
 }
 
@@ -165,8 +169,10 @@ export function DrawSection({
       <span className="oracle-tube-body">
         <span className="oracle-line-rim" aria-hidden="true" />
         <span className="oracle-stick-well" aria-hidden="true">
-          <span className="oracle-stick-fan">
-            {oracleStickClasses.map(stick => <span className={`oracle-stick oracle-stick--${stick}`} data-oracle-stick={stick} key={stick}><i /></span>)}
+          <span className="oracle-stick-pocket">
+            <span className="oracle-stick-fan">
+              {oracleStickClasses.map(stick => <span className={`oracle-stick oracle-stick--${stick}`} data-oracle-stick={stick} key={stick}><i /></span>)}
+            </span>
           </span>
         </span>
         <span className="oracle-tube-inscription">签</span>

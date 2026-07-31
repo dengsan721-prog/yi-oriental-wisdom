@@ -165,6 +165,48 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(html).not.toContain("is-shaken");
   });
 
+  it("offers richer everyday question presets for today sign and qimen", () => {
+    const { chart } = model();
+    const draw = renderToStaticMarkup(createElement(DrawSection, {
+      chart,
+      birth,
+      onBackToChart: () => undefined,
+      now: new Date("2026-07-31T10:00:00+08:00"),
+    }));
+    const qimen = renderToStaticMarkup(createElement(QimenSection, {
+      chart,
+      birth,
+      onBackToChart: () => undefined,
+      now: new Date("2026-07-31T10:00:00+08:00"),
+    }));
+
+    for (const item of ["工作沟通", "家庭安排", "健康作息", "出行办事"]) {
+      expect(draw).toContain(`>${item}</button>`);
+    }
+    for (const item of ["合同谈判", "见面沟通", "考试学习", "搬家出行"]) {
+      expect(qimen).toContain(`>${item}</button>`);
+    }
+    expect((draw.match(/aria-pressed="false"/g) ?? [])).toHaveLength(12);
+    expect((qimen.match(/aria-pressed="false"/g) ?? [])).toHaveLength(12);
+  });
+
+  it("clips the lower half of every lot stick inside the tube mouth", () => {
+    const { chart } = model();
+    const html = renderToStaticMarkup(createElement(DrawSection, {
+      chart,
+      birth,
+      onBackToChart: () => undefined,
+      now: new Date("2026-07-31T10:00:00+08:00"),
+    }));
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+
+    expect(html).toContain("oracle-stick-pocket");
+    expect(css).toMatch(/\.oracle-line-tube \.oracle-stick-pocket\{[^}]*overflow:hidden/);
+    expect(css).toMatch(/\.oracle-line-tube \.oracle-stick\{[^}]*bottom:-7[0-9]px[^}]*height:15[0-9]px/);
+    expect(css).toMatch(/\.oracle-line-tube \.oracle-tube-body::after\{[^}]*z-index:2/);
+    expect(css).toMatch(/\.oracle-line-tube \.oracle-stick\{[^}]*z-index:1/);
+  });
+
   it("makes qimen question-first with presets and a richer classical plate", () => {
     const { chart } = model();
     const html = renderToStaticMarkup(createElement(QimenSection, {
