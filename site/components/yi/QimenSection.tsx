@@ -1,13 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import { branches, cycle, stems } from "../../lib/yi/stems-branches";
 import { deriveYiThemeElement, type YiThemeElement } from "../../lib/yi/theme";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
+
+type QimenPalaceCell = {
+  palace: string;
+  gate: string;
+  star: string;
+  deity: string;
+};
 
 type DailyQimenRecord = {
   element: YiThemeElement;
   dynamicKey: string;
   invariant: string;
+  solarTerm: string;
+  dayGanzhi: string;
+  hourGanzhi: string;
+  xunshou: string;
+  chief: string;
+  envoy: string;
+  plate: QimenPalaceCell[];
   direction: string;
   gate: string;
   method: string;
@@ -17,7 +32,7 @@ type DailyQimenRecord = {
   timingGuide: string;
 };
 
-type DailyQimenBaseRecord = Omit<DailyQimenRecord, "element" | "dynamicKey" | "invariant" | "actionGuide" | "directionGuide" | "timingGuide">;
+type DailyQimenBaseRecord = Omit<DailyQimenRecord, "element" | "dynamicKey" | "invariant" | "solarTerm" | "dayGanzhi" | "hourGanzhi" | "xunshou" | "chief" | "envoy" | "plate" | "actionGuide" | "directionGuide" | "timingGuide">;
 
 const qimenDatabase: Record<YiThemeElement, DailyQimenBaseRecord[]> = {
   木: [
@@ -48,6 +63,10 @@ const qimenDatabase: Record<YiThemeElement, DailyQimenBaseRecord[]> = {
 
 const qimenQuestionPresets = ["事业取舍", "关系推进", "财运取舍", "今日行动"];
 type QimenQuestionTopic = "career" | "relationship" | "wealth" | "action";
+const qimenPalaces = ["坎一宫", "坤二宫", "震三宫", "巽四宫", "中五宫", "乾六宫", "兑七宫", "艮八宫", "离九宫"];
+const qimenGates = ["休门", "生门", "伤门", "杜门", "景门", "死门", "惊门", "开门", "值门"];
+const qimenStars = ["天蓬", "天芮", "天冲", "天辅", "天禽", "天心", "天柱", "天任", "天英"];
+const qimenDeities = ["值符", "腾蛇", "太阴", "六合", "白虎", "玄武", "九地", "九天", "太常"];
 
 const qimenTopicGuidance: Record<QimenQuestionTopic, { title: string; method: string; prompt: string; index: number }> = {
   career: {
@@ -80,6 +99,49 @@ function hourBranch(now: Date) {
   const hour = now.getHours();
   const branches = ["子", "丑", "丑", "寅", "寅", "卯", "卯", "辰", "辰", "巳", "巳", "午", "午", "未", "未", "申", "申", "酉", "酉", "戌", "戌", "亥", "亥", "子"];
   return branches[hour] ?? "子";
+}
+
+function dayCycleIndex(now: Date) {
+  const base = Date.UTC(1984, 1, 2);
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.floor((today - base) / 86400000);
+}
+
+function dayGanzhi(now: Date) {
+  const item = cycle(dayCycleIndex(now));
+  return `${item.stem}${item.branch}`;
+}
+
+function hourGanzhi(now: Date) {
+  const dayStemIndex = stems.indexOf(cycle(dayCycleIndex(now)).stem);
+  const branch = hourBranch(now) as (typeof branches)[number];
+  const branchIndex = branches.indexOf(branch);
+  const stem = stems[((dayStemIndex % 5) * 2 + branchIndex) % stems.length];
+  return `${stem}${branch}`;
+}
+
+function solarTermLabel(now: Date) {
+  const terms = ["小寒", "立春", "惊蛰", "清明", "立夏", "芒种", "小暑", "立秋", "白露", "寒露", "立冬", "大雪"];
+  const term = terms[now.getMonth()] ?? "节令";
+  return `节气近${term}`;
+}
+
+function buildXunshou(ganzhi: string) {
+  const index = stems.findIndex(stem => stem === ganzhi[0]);
+  const branchIndex = branches.findIndex(branch => branch === ganzhi[1]);
+  const cycleIndex = Array.from({ length: 60 }, (_, item) => cycle(item)).findIndex(item => item.stem === stems[index] && item.branch === branches[branchIndex]);
+  const head = cycle(Math.max(0, cycleIndex - (cycleIndex % 10)));
+  return `旬首${head.stem}${head.branch}`;
+}
+
+function buildQimenPlate(seed: string): QimenPalaceCell[] {
+  const shift = hashText(seed) % qimenPalaces.length;
+  return qimenPalaces.map((palace, index) => ({
+    palace,
+    gate: qimenGates[(index + shift) % qimenGates.length],
+    star: qimenStars[(index + shift * 2) % qimenStars.length],
+    deity: qimenDeities[(index + shift * 3) % qimenDeities.length],
+  }));
 }
 
 function hashText(value: string) {
@@ -120,11 +182,22 @@ export function selectDailyQimenRecord(chart: FourPillarsResult, birth: BirthInp
   const records = qimenDatabase[element];
   const asked = question.trim() || "今日行动";
   const topic = qimenTopicGuidance[classifyQimenQuestion(asked)];
-  const dynamicKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}-${hourBranch(now)}-${birth.name.trim()}-${question.trim()}`;
-  const hourShift = hashText(`${hourBranch(now)}-${chart.pillars.day.branch}-${birth.name.trim()}`) % records.length;
+  const currentDayGanzhi = dayGanzhi(now);
+  const currentHourGanzhi = hourGanzhi(now);
+  const dynamicKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}-${currentHourGanzhi}-${birth.name.trim()}-${question.trim()}-${chart.pillars.day.stem}`;
+  const hourShift = hashText(`${currentHourGanzhi}-${chart.pillars.day.branch}-${birth.name.trim()}`) % records.length;
   const record = records[(topic.index + hourShift) % records.length];
+  const plate = buildQimenPlate(`${dynamicKey}-${element}-${topic.index}`);
+  const envoy = plate.find(cell => cell.gate === record.gate)?.gate ?? plate[0].gate;
   return {
     ...record,
+    solarTerm: solarTermLabel(now),
+    dayGanzhi: currentDayGanzhi,
+    hourGanzhi: currentHourGanzhi,
+    xunshou: buildXunshou(currentDayGanzhi),
+    chief: `值符${plate[0].star}`,
+    envoy: `值使${envoy}`,
+    plate,
     method: `${topic.title} · ${topic.method} · ${record.method}`,
     prompt: `${topic.prompt}\n\n${record.prompt}`,
     actionGuide: explainTwentyMinuteAction(classifyQimenQuestion(asked), `${topic.method} · ${record.method}`, asked),
@@ -132,7 +205,7 @@ export function selectDailyQimenRecord(chart: FourPillarsResult, birth: BirthInp
     timingGuide: explainQimenTiming(now),
     element,
     dynamicKey,
-    invariant: `不变：日主${chart.pillars.day.stem}${chart.pillars.day.branch}、命盘五行气质；变化：今日与${hourBranch(now)}时。`,
+    invariant: `不变：日主${chart.pillars.day.stem}${chart.pillars.day.branch}、命盘五行气质；变化：${currentDayGanzhi}日与${currentHourGanzhi}时。`,
   };
 }
 
@@ -156,7 +229,7 @@ export function QimenSection({
   }
 
   return <section className="ritual-standalone-page qimen-standalone-page">
-    <button className="ritual-back-button ritual-back-button--compact" type="button" onClick={onBackToChart}>‹ 命盘</button>
+    <button className="ritual-back-button ritual-back-button--mini" type="button" onClick={onBackToChart}>‹ 命盘</button>
     <header className="ritual-hero-copy">
       <h1>起局看门，先走一步</h1>
     </header>
@@ -180,7 +253,16 @@ export function QimenSection({
     {openedRecord && <article className="ritual-result-card">
       <small>问事时间 · {formatQimenMoment(now)}｜所问：{question.trim()}｜{openedRecord.invariant}</small>
       <h2>{openedRecord.direction}向 · {openedRecord.gate} · {openedRecord.method}</h2>
+      <section className="qimen-classic-summary" aria-label="奇门盘式">
+        <span>{openedRecord.solarTerm}</span>
+        <span>日干支 {openedRecord.dayGanzhi}</span>
+        <span>时干支 {openedRecord.hourGanzhi}</span>
+        <span>{openedRecord.xunshou}</span>
+        <span>{openedRecord.chief}</span>
+        <span>{openedRecord.envoy}</span>
+      </section>
       <p>{openedRecord.prompt}</p>
+      <section className="qimen-guidance-card qimen-palace-list"><b>九宫盘</b><p>{openedRecord.plate.map(cell => `${cell.palace}${cell.gate}${cell.star}${cell.deity}`).join(" · ")}</p></section>
       <section className="qimen-guidance-card"><b>朝向怎么用</b><p>{openedRecord.directionGuide}</p></section>
       <section className="qimen-guidance-card"><b>二十分钟怎么做</b><p>{openedRecord.actionGuide}</p></section>
       <section className="qimen-guidance-card"><b>什么时候重问</b><p>{openedRecord.timingGuide}</p></section>

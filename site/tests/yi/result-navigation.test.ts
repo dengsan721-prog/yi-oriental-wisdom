@@ -63,7 +63,7 @@ describe("result navigation", () => {
     expect(html).not.toContain("本次采用");
     expect(titleRegion).not.toContain("艺｜东方人生智慧");
     expect(titleRegion).not.toContain("本卷主人");
-    expect(titleRegion.match(/<h1>/g)).toHaveLength(1);
+    expect(titleRegion.match(/<h1\b/g)).toHaveLength(1);
     expect(brand).toBeGreaterThan(-1);
     expect(reportTitle).toBeGreaterThan(-1);
     expect(brand).toBeLessThan(reportTitle);

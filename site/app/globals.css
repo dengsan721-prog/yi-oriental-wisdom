@@ -489,3 +489,33 @@ body{font-family:var(--yi-sans)}
 .qimen-guidance-card p{margin:0;color:var(--yi-text);font-size:16px;line-height:1.85}
 @media(max-width:520px){.oracle-line-tube.realistic-oracle-tube{width:min(220px,62vw);height:min(248px,68vw)}.oracle-line-tube .oracle-tube-body{width:138px;height:120px}.oracle-line-tube .oracle-stick-well{top:-112px;width:140px;height:136px}.oracle-line-tube .oracle-stick{height:124px;width:15px}.oracle-line-tube .oracle-stick--left{left:36px}.oracle-line-tube .oracle-stick--center{left:62px}.oracle-line-tube .oracle-stick--right{left:88px}.oracle-line-tube .oracle-tube-inscription{width:56px;height:56px;font-size:38px}.qimen-guidance-card{padding:12px}.qimen-guidance-card p{font-size:15px;line-height:1.78}}
 body{font-family:var(--yi-sans)}
+.ritual-back-button--mini{min-height:28px;padding:4px 9px;border-radius:999px;background:color-mix(in srgb,var(--yi-surface-raised) 78%,transparent);border-color:color-mix(in srgb,var(--yi-line) 72%,transparent);box-shadow:none;color:color-mix(in srgb,var(--yi-accent-strong) 82%,var(--yi-text-muted));font-size:12px;font-weight:750;line-height:1.2}
+.ritual-back-button--mini:active{transform:translateY(1px)}
+.result-shell .report-document-title h1{--report-title-scale:1;display:flex;justify-content:center;align-items:baseline;gap:.08em;max-width:100%;font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif;font-weight:400;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:clip;letter-spacing:0;font-size:calc(clamp(28px,7.1vw,42px)*var(--report-title-scale))}
+.report-document-title h1[data-name-length="3"]{--report-title-scale:.96}
+.report-document-title h1[data-name-length="4"]{--report-title-scale:.9}
+.report-document-title h1[data-name-length="long"]{--report-title-scale:.78}
+.report-title-name,.report-title-core{display:inline-block;min-width:0;white-space:nowrap}
+.report-title-name{flex:0 1 auto;max-width:48vw;overflow:hidden;text-overflow:clip}
+.report-title-core{flex:0 0 auto}
+.oracle-line-tube .oracle-stick-well{top:-118px;width:166px;height:150px;overflow:hidden}
+.oracle-line-tube .oracle-stick{bottom:-34px;width:13px;height:146px}
+.oracle-line-tube .oracle-stick--one{left:29px;transform:rotate(-17deg)}
+.oracle-line-tube .oracle-stick--two{left:45px;transform:rotate(-11deg)}
+.oracle-line-tube .oracle-stick--three{left:61px;transform:rotate(-6deg)}
+.oracle-line-tube .oracle-stick--four{left:78px;transform:rotate(-1deg)}
+.oracle-line-tube .oracle-stick--five{left:94px;transform:rotate(4deg)}
+.oracle-line-tube .oracle-stick--six{left:110px;transform:rotate(9deg)}
+.oracle-line-tube .oracle-stick--seven{left:126px;transform:rotate(14deg)}
+.oracle-line-tube .oracle-stick--eight{left:141px;transform:rotate(18deg)}
+.oracle-line-tube.has-shaken-sticks .oracle-stick-fan{animation:ritual-stick-shake .72s ease-in-out both}
+.oracle-line-tube .oracle-tube-inscription{width:48px;height:48px;font-size:31px}
+.oracle-line-tube .oracle-tube-inscription::after{content:"";position:absolute;inset:-15px;border:1px solid color-mix(in srgb,var(--yi-accent-strong) 42%,transparent);border-radius:50%;animation:oracle-breathe 1.9s ease-out infinite;pointer-events:none}
+.qimen-plate-center{position:relative}
+.qimen-plate-center::after{content:"";position:absolute;inset:-13px;border:1px solid color-mix(in srgb,var(--yi-accent-strong) 42%,transparent);border-radius:50%;animation:qimen-breathe 2s ease-out infinite;pointer-events:none}
+.qimen-classic-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0;padding:12px;border:1px solid var(--yi-line);border-radius:16px;background:color-mix(in srgb,var(--yi-accent-soft) 38%,var(--yi-surface))}
+.qimen-classic-summary span{min-width:0;color:var(--yi-accent-strong);font-size:13px;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@keyframes ritual-stick-shake{0%,100%{transform:translateX(0) rotate(0)}18%{transform:translateX(-4px) rotate(-2deg)}38%{transform:translateX(5px) rotate(3deg)}58%{transform:translateX(-3px) rotate(-2deg)}78%{transform:translateX(2px) rotate(1deg)}}
+@keyframes oracle-breathe{0%{opacity:.55;transform:scale(.86)}70%,100%{opacity:0;transform:scale(1.5)}}
+@keyframes qimen-breathe{0%{opacity:.52;transform:scale(.88)}70%,100%{opacity:0;transform:scale(1.45)}}
+@media(max-width:520px){.result-shell .report-document-title h1{font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:calc(clamp(26px,7vw,32px)*var(--report-title-scale));gap:.04em}.report-title-name{max-width:42vw}.report-document-title h1[data-name-length="long"]{--report-title-scale:.68}.oracle-line-tube .oracle-stick-well{top:-110px;width:150px}.oracle-line-tube .oracle-stick{height:134px;width:12px}.oracle-line-tube .oracle-stick--one{left:27px}.oracle-line-tube .oracle-stick--two{left:41px}.oracle-line-tube .oracle-stick--three{left:55px}.oracle-line-tube .oracle-stick--four{left:70px}.oracle-line-tube .oracle-stick--five{left:84px}.oracle-line-tube .oracle-stick--six{left:98px}.oracle-line-tube .oracle-stick--seven{left:112px}.oracle-line-tube .oracle-stick--eight{left:126px}.qimen-classic-summary{grid-template-columns:1fr 1fr}}

@@ -100,6 +100,8 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
   const activeSectionLabel = resultSections.find(([id]) => id === activeSection)?.[1] ?? "人生画卷";
   const ownerName = name.trim();
   const reportTitle = ownerName ? `${ownerName}命运全景报告` : "命运全景报告";
+  const titleNameLength = Array.from(ownerName).length;
+  const titleLengthBucket = titleNameLength >= 5 ? "long" : String(Math.max(titleNameLength, 2));
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollTop(scrollPositions, activeSection) }));
     return () => {
@@ -182,7 +184,10 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
           </span>
         </div>
         <div className="report-document-title" data-testid="report-document-title">
-          <h1>{reportTitle}</h1>
+          <h1 aria-label={reportTitle} data-name-length={titleLengthBucket} data-report-title-name={ownerName} title={reportTitle}>
+            {ownerName && <span className="report-title-name">{ownerName}</span>}
+            <span className="report-title-core">命运全景报告</span>
+          </h1>
         </div>
       </header>
       <DailyOracleStrip onDraw={() => selectSection("draw")} onQimen={() => selectSection("qimen")} variant="report" />

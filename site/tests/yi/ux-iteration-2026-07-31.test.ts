@@ -90,7 +90,8 @@ describe("2026-07-31 clean mobile report and daily ritual pages", () => {
     expect(html).toContain("每日一签，平平安安");
     expect(html).toContain("‹ 命盘");
     expect(html).toContain("realistic-oracle-tube");
-    expect(html).toContain('class="oracle-stick oracle-stick--center"');
+    expect((html.match(/data-oracle-stick=/g) ?? [])).toHaveLength(8);
+    expect(html).toContain('class="oracle-stick oracle-stick--seven"');
     expect(html).toContain('class="oracle-tube-inscription">签');
     expect(html).not.toContain("scene-line-art--oracle");
     expect(html).not.toContain("结合生辰签");
