@@ -107,6 +107,9 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(html).toContain("写下今天要问的一件事");
     expect(html).toContain("oracle-stick-fan");
     expect(html).toContain("oracle-stick-well");
+    expect(html).toContain("oracle-line-tube");
+    expect(html).toContain("oracle-line-rim");
+    expect(html).toContain("oracle-line-foot");
     expect(html).toContain("oracle-tube-front");
     expect(html).toContain('class="oracle-tube-inscription">签');
     expect(html).not.toContain("<i>签</i>");
@@ -137,6 +140,11 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(html).not.toContain("问事时间");
     expect(career.dynamicKey).not.toBe(money.dynamicKey);
     expect(career.gate + career.direction + career.prompt).not.toBe(money.gate + money.direction + money.prompt);
+    expect(career.actionGuide).toContain("二十分钟");
+    expect(career.actionGuide).toContain("朝向");
+    expect(career.actionGuide).toContain("顺");
+    expect(career.directionGuide).toContain(career.direction);
+    expect(career.timingGuide).toContain("普通人");
   });
 
   it("shows classic name suggestions as complete names with the detected surname", async () => {

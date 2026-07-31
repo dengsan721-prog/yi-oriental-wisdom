@@ -468,3 +468,24 @@ body{font-family:var(--yi-sans)}
 @media(max-width:520px){.report-brand-stack{gap:2px}.report-brand-element{font-size:11px;padding:3px 7px}.result-shell .report-document-title h1{font-size:clamp(29px,7.2vw,34px);letter-spacing:-.02em}.oracle-tube-body .oracle-stick-well{top:-110px;width:142px;height:128px}.oracle-tube-body .oracle-stick{height:122px;width:16px}.oracle-tube-body .oracle-stick--left{left:40px}.oracle-tube-body .oracle-stick--center{left:63px}.oracle-tube-body .oracle-stick--right{left:86px}}
 .report-document-title h1{font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 body{font-family:var(--yi-sans)}
+
+/* 2026-07-31 ritual upgrade: refined line-art lot tube and plain-language qimen guides */
+.oracle-line-tube.realistic-oracle-tube{width:min(238px,64vw);height:min(262px,70vw);background:transparent;box-shadow:none;border:0;overflow:visible}
+.oracle-line-tube.realistic-oracle-tube::before,.oracle-line-tube.realistic-oracle-tube::after{content:none}
+.oracle-line-tube .oracle-tube-body{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:154px;height:132px;border:2px solid color-mix(in srgb,var(--yi-accent-strong) 88%,#2d1a0c);border-radius:20px 20px 34px 34px;background:linear-gradient(180deg,color-mix(in srgb,var(--yi-surface-raised) 86%,#fff7e8),color-mix(in srgb,var(--yi-accent-soft) 52%,var(--yi-surface)));box-shadow:0 18px 34px color-mix(in srgb,var(--yi-accent) 12%,transparent)}
+.oracle-line-tube .oracle-tube-body::before{content:none}
+.oracle-line-tube .oracle-line-rim{position:absolute;left:8px;right:8px;top:-15px;height:30px;border:2px solid color-mix(in srgb,var(--yi-accent-strong) 88%,#2d1a0c);border-radius:50%;background:linear-gradient(180deg,#fffaf0,var(--yi-surface-raised));box-shadow:inset 0 -5px 0 color-mix(in srgb,var(--yi-accent-soft) 58%,transparent)}
+.oracle-line-tube .oracle-line-foot{position:absolute;left:20px;right:20px;bottom:-9px;height:18px;border:2px solid color-mix(in srgb,var(--yi-accent-strong) 82%,#2d1a0c);border-top:0;border-radius:0 0 18px 18px;background:color-mix(in srgb,var(--yi-accent-soft) 54%,var(--yi-surface))}
+.oracle-line-tube .oracle-stick-well{top:-124px;width:156px;height:150px;z-index:1}
+.oracle-line-tube .oracle-stick{bottom:-18px;width:16px;height:136px;border:2px solid color-mix(in srgb,var(--yi-accent-strong) 90%,#2d1a0c);border-radius:999px;background:linear-gradient(180deg,#fff8d8,#d59b55);box-shadow:0 8px 18px color-mix(in srgb,var(--yi-accent) 10%,transparent)}
+.oracle-line-tube .oracle-stick::before{content:"";position:absolute;left:3px;right:3px;top:7px;height:26px;border-radius:999px;background:color-mix(in srgb,var(--yi-accent-soft) 75%,#fff)}
+.oracle-line-tube .oracle-stick::after{content:"";position:absolute;left:50%;top:42px;bottom:13px;width:1.5px;transform:translateX(-50%);background:color-mix(in srgb,var(--yi-accent-strong) 48%,transparent)}
+.oracle-line-tube .oracle-stick--left{left:40px;transform:rotate(-13deg)}
+.oracle-line-tube .oracle-stick--center{left:70px;transform:rotate(0)}
+.oracle-line-tube .oracle-stick--right{left:100px;transform:rotate(13deg)}
+.oracle-line-tube .oracle-tube-inscription{position:absolute;left:50%;top:51%;transform:translate(-50%,-50%);width:62px;height:62px;border:2px solid color-mix(in srgb,var(--yi-accent-strong) 72%,var(--yi-line));border-radius:50%;background:radial-gradient(circle,#fff6d6,var(--yi-accent-soft));box-shadow:none;color:var(--yi-accent-strong);font:900 42px/1 "LiSu","隶书","STLiti","STKaiti","KaiTi",serif}
+.qimen-guidance-card{margin:12px 0 0;padding:13px 14px;border:1px solid color-mix(in srgb,var(--yi-accent) 44%,var(--yi-line));border-radius:16px;background:linear-gradient(135deg,var(--yi-surface),color-mix(in srgb,var(--yi-accent-soft) 62%,var(--yi-surface-raised)))}
+.qimen-guidance-card b{display:block;margin-bottom:5px;color:var(--yi-accent-strong);font:850 15px/1.35 var(--yi-serif)}
+.qimen-guidance-card p{margin:0;color:var(--yi-text);font-size:16px;line-height:1.85}
+@media(max-width:520px){.oracle-line-tube.realistic-oracle-tube{width:min(220px,62vw);height:min(248px,68vw)}.oracle-line-tube .oracle-tube-body{width:138px;height:120px}.oracle-line-tube .oracle-stick-well{top:-112px;width:140px;height:136px}.oracle-line-tube .oracle-stick{height:124px;width:15px}.oracle-line-tube .oracle-stick--left{left:36px}.oracle-line-tube .oracle-stick--center{left:62px}.oracle-line-tube .oracle-stick--right{left:88px}.oracle-line-tube .oracle-tube-inscription{width:56px;height:56px;font-size:38px}.qimen-guidance-card{padding:12px}.qimen-guidance-card p{font-size:15px;line-height:1.78}}
+body{font-family:var(--yi-sans)}

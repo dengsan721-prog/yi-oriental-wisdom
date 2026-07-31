@@ -144,8 +144,9 @@ export function DrawSection({
       </div>
       <textarea value={question} onChange={(event) => updateQuestion(event.target.value)} placeholder="写下今天要问的一件事" aria-label="今天要问的一件事" />
     </label>
-    <button className={"realistic-oracle-tube oracle-tube-front" + (shaken ? " is-shaken" : "")} data-testid="draw-lot-trigger" type="button" disabled={!question.trim()} onClick={() => { setDrawnRecord(selectDailyDrawRecord(chart, birth, now, question)); setDrawnAt(now); }} aria-label="摇动今日签筒">
+    <button className={"realistic-oracle-tube oracle-tube-front oracle-line-tube" + (shaken ? " is-shaken" : "")} data-testid="draw-lot-trigger" type="button" disabled={!question.trim()} onClick={() => { setDrawnRecord(selectDailyDrawRecord(chart, birth, now, question)); setDrawnAt(now); }} aria-label="摇动今日签筒">
       <span className="oracle-tube-body">
+        <span className="oracle-line-rim" aria-hidden="true" />
         <span className="oracle-stick-well" aria-hidden="true">
           <span className="oracle-stick-fan">
             <span className="oracle-stick oracle-stick--left"><i /></span>
@@ -154,6 +155,7 @@ export function DrawSection({
           </span>
         </span>
         <span className="oracle-tube-inscription">签</span>
+        <span className="oracle-line-foot" aria-hidden="true" />
       </span>
     </button>
     {drawnAt && drawnRecord && <article className="ritual-result-card">

@@ -12,9 +12,14 @@ type DailyQimenRecord = {
   gate: string;
   method: string;
   prompt: string;
+  actionGuide: string;
+  directionGuide: string;
+  timingGuide: string;
 };
 
-const qimenDatabase: Record<YiThemeElement, Omit<DailyQimenRecord, "element" | "dynamicKey" | "invariant">[]> = {
+type DailyQimenBaseRecord = Omit<DailyQimenRecord, "element" | "dynamicKey" | "invariant" | "actionGuide" | "directionGuide" | "timingGuide">;
+
+const qimenDatabase: Record<YiThemeElement, DailyQimenBaseRecord[]> = {
   木: [
     { direction: "东", gate: "生门", method: "先开小门", prompt: "当下提示：找一个容易长出新枝的小入口。先联系一个人，先做一个样品，先让事情见一点光。" },
     { direction: "东南", gate: "景门", method: "先立画面", prompt: "当下提示：把愿景画清楚，再谈步骤。木要向上长，先给它一幅能攀的墙。" },
@@ -92,6 +97,24 @@ function classifyQimenQuestion(question: string): QimenQuestionTopic {
   return "career";
 }
 
+function explainQimenDirection(direction: string, gate: string) {
+  return `朝向说的是做事的发力方向，不是一定要搬椅子、改门窗。${direction}向 · ${gate}，普通人可以这样用：先找这件事里最像“${direction}”的入口——可能是一个人、一通电话、一份资料、一个场景。若方便，也可以面向这个方向坐定一分钟，把问题写成一句话，再动手。方向只是帮你收心、定焦点，不替你决定结果。`;
+}
+
+function explainTwentyMinuteAction(topic: QimenQuestionTopic, method: string, question: string) {
+  const topicAction: Record<QimenQuestionTopic, string> = {
+    career: "写下目标、拍板人、验收标准各一句；然后只推进最小的一步，比如发一条确认消息、整理一页材料、约一个十分钟沟通。",
+    relationship: "先写事实、感受、请求三句话；然后选一句最不伤人的话发出或当面说，别在二十分钟里翻旧账。",
+    wealth: "打开账本或备忘录，只做一件事：止一处漏、清一笔账、确认一次收支。二十分钟结束就停，先求账面清楚。",
+    action: "把问题缩到今天能开始的第一步，计时二十分钟，只做不评判；完成后记录卡点和下一步。",
+  };
+  return `二十分钟的意思是给行动设一个小局，不是让你硬熬。所问“${question}”，先按“${method}”做一个可停、可看、可复盘的小动作：${topicAction[topic]}做之前用朝向帮自己定焦点，做的时候只看眼前这一步。顺，是做完之后心更定、信息更清、人更愿意配合；不顺，是越做越乱、越说越僵、越算越慌，那就停下来，改小问题，重新起局。`;
+}
+
+function explainQimenTiming(now: Date) {
+  return `普通人不用背奇门盘。你只要记住：奇门看的是“此时此刻问这件事”的气口。现在是${formatQimenMoment(now)}，先按这一局做一次小验证；过了一个时辰、换了问题、情绪明显变化，都可以重新问，不要拿旧局硬套新事。`;
+}
+
 export function selectDailyQimenRecord(chart: FourPillarsResult, birth: BirthInput, now = new Date(), question = ""): DailyQimenRecord {
   const element = deriveYiThemeElement(chart);
   const records = qimenDatabase[element];
@@ -104,6 +127,9 @@ export function selectDailyQimenRecord(chart: FourPillarsResult, birth: BirthInp
     ...record,
     method: `${topic.title} · ${topic.method} · ${record.method}`,
     prompt: `${topic.prompt}\n\n${record.prompt}`,
+    actionGuide: explainTwentyMinuteAction(classifyQimenQuestion(asked), `${topic.method} · ${record.method}`, asked),
+    directionGuide: explainQimenDirection(record.direction, record.gate),
+    timingGuide: explainQimenTiming(now),
     element,
     dynamicKey,
     invariant: `不变：日主${chart.pillars.day.stem}${chart.pillars.day.branch}、命盘五行气质；变化：今日与${hourBranch(now)}时。`,
@@ -155,7 +181,9 @@ export function QimenSection({
       <small>问事时间 · {formatQimenMoment(now)}｜所问：{question.trim()}｜{openedRecord.invariant}</small>
       <h2>{openedRecord.direction}向 · {openedRecord.gate} · {openedRecord.method}</h2>
       <p>{openedRecord.prompt}</p>
-      <p>用法：照这个门向做一个二十分钟动作。顺，就推进；不顺，就再问一次事、重新起局，不硬撞。</p>
+      <section className="qimen-guidance-card"><b>朝向怎么用</b><p>{openedRecord.directionGuide}</p></section>
+      <section className="qimen-guidance-card"><b>二十分钟怎么做</b><p>{openedRecord.actionGuide}</p></section>
+      <section className="qimen-guidance-card"><b>什么时候重问</b><p>{openedRecord.timingGuide}</p></section>
     </article>}
   </section>;
 }
