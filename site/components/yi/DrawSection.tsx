@@ -16,6 +16,34 @@ type DailyDrawRecord = {
 };
 
 const drawQuestionPresets = ["事业去留", "关系修复", "财运取舍", "今日行动"];
+type DrawQuestionTopic = "career" | "relationship" | "wealth" | "action";
+
+const drawTopicGuidance: Record<DrawQuestionTopic, { title: string; verse: string; reading: string; index: number }> = {
+  career: {
+    title: "事业问路",
+    verse: "灯照案头卷，刀分眼前枝；先明一日事，再看百步棋。",
+    reading: "问事业，先别急着赌输赢。今天只抓三件事：谁拍板、验收看什么、第一步交给谁。把这三件写清，路就从雾里露出边。",
+    index: 0,
+  },
+  relationship: {
+    title: "关系问心",
+    verse: "一语先藏火，三分留晚晴；慢把心门叩，旧路也生春。",
+    reading: "问关系，先把情绪和事实分开。今天不争谁对谁错，先说一件具体事、一个真实感受、一个可执行请求。话说得清，心才有台阶下。",
+    index: 1,
+  },
+  wealth: {
+    title: "财路问筹",
+    verse: "米入仓中稳，泉从石上来；先守三分本，再开一寸财。",
+    reading: "问财运，先看现金流、时间账、人情账。今天不贪远利，先止一处漏、清一笔账、定一个可复盘的小动作。财不是猛冲来的，是一格一格守出来的。",
+    index: 2,
+  },
+  action: {
+    title: "今日问行",
+    verse: "晨光催脚起，暮鼓点心回；只行当下一步，明日自然开。",
+    reading: "问今日行动，答案不在玄处，在手边。挑一件二十分钟能开始的事，做完就记录结果；若卡住，换小一步，不把一天耗在空想里。",
+    index: 3,
+  },
+};
 
 const dailySignDatabase: Record<YiThemeElement, Omit<DailyDrawRecord, "element" | "dynamicKey" | "invariant" | "text">[]> = {
   木: [
@@ -56,15 +84,27 @@ function formatRitualMoment(now: Date) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
+function classifyDrawQuestion(question: string): DrawQuestionTopic {
+  if (/关系|婚|伴侣|亲子|朋友|修复|沟通|感情/u.test(question)) return "relationship";
+  if (/财|钱|收入|资源|投资|生意|账/u.test(question)) return "wealth";
+  if (/行动|今日|今天|计划|选择|执行|开始/u.test(question)) return "action";
+  return "career";
+}
+
 export function selectDailyDrawRecord(chart: FourPillarsResult, birth: BirthInput, now = new Date(), question = ""): DailyDrawRecord {
   const element = deriveYiThemeElement(chart);
   const records = dailySignDatabase[element];
   const asked = question.trim() || "今日平安";
+  const topic = drawTopicGuidance[classifyDrawQuestion(asked)];
   const dynamicKey = `${dayKey(now)}-${chart.pillars.year.branch}-${birth.name.trim()}-${asked}`;
-  const record = records[hashText(dynamicKey) % records.length];
+  const dayShift = hashText(`${dayKey(now)}-${birth.name.trim()}-${chart.pillars.day.branch}`) % records.length;
+  const record = records[(topic.index + dayShift) % records.length];
   return {
     ...record,
-    text: `${record.sign}，${record.level}。问${asked}，先把心定住，再取眼前能做的一步；签不替人决定，只借一句话照亮当下。`,
+    sign: `${topic.title} · ${record.sign}`,
+    text: `${topic.title}，${record.level}。所问：${asked}。先把心定住，再取眼前能做的一步；签不替人决定，只把当下的门槛、机会和提醒照出来。`,
+    verse: `${record.verse}\n${topic.verse}`,
+    reading: `${record.reading}\n\n${topic.reading}`,
     element,
     dynamicKey,
     invariant: `不变：年支${chart.pillars.year.branch}、日主${chart.pillars.day.stem}${chart.pillars.day.branch}；变化：今日日期与阅读时刻。`,
@@ -86,6 +126,11 @@ export function DrawSection({
   const [drawnRecord, setDrawnRecord] = useState<DailyDrawRecord | null>(null);
   const [drawnAt, setDrawnAt] = useState<Date | null>(null);
   const shaken = drawnAt !== null;
+  function updateQuestion(next: string) {
+    setQuestion(next);
+    setDrawnRecord(null);
+    setDrawnAt(null);
+  }
 
   return <section className="ritual-standalone-page today-sign-page">
     <button className="ritual-back-button ritual-back-button--compact" type="button" onClick={onBackToChart}>‹ 命盘</button>
@@ -95,17 +140,21 @@ export function DrawSection({
     <label className="ritual-question-field">
       <span>问事</span>
       <div className="ritual-question-presets">
-        {drawQuestionPresets.map(item => <button key={item} type="button" aria-pressed={question === item} onClick={() => setQuestion(item)}>{item}</button>)}
+        {drawQuestionPresets.map(item => <button key={item} type="button" aria-pressed={question === item} onClick={() => updateQuestion(item)}>{item}</button>)}
       </div>
-      <textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="写下今天要问的一件事" aria-label="今天要问的一件事" />
+      <textarea value={question} onChange={(event) => updateQuestion(event.target.value)} placeholder="写下今天要问的一件事" aria-label="今天要问的一件事" />
     </label>
     <button className={"realistic-oracle-tube oracle-tube-front" + (shaken ? " is-shaken" : "")} data-testid="draw-lot-trigger" type="button" disabled={!question.trim()} onClick={() => { setDrawnRecord(selectDailyDrawRecord(chart, birth, now, question)); setDrawnAt(now); }} aria-label="摇动今日签筒">
-      <span className="oracle-stick-fan" aria-hidden="true">
-        <span className="oracle-stick oracle-stick--left"><i>签</i></span>
-        <span className="oracle-stick oracle-stick--center"><i>签</i></span>
-        <span className="oracle-stick oracle-stick--right"><i>签</i></span>
+      <span className="oracle-tube-body">
+        <span className="oracle-stick-well" aria-hidden="true">
+          <span className="oracle-stick-fan">
+            <span className="oracle-stick oracle-stick--left"><i /></span>
+            <span className="oracle-stick oracle-stick--center"><i /></span>
+            <span className="oracle-stick oracle-stick--right"><i /></span>
+          </span>
+        </span>
+        <span className="oracle-tube-inscription">签</span>
       </span>
-      <span className="oracle-tube-body"><span className="oracle-tube-inscription">签</span></span>
     </button>
     {drawnAt && drawnRecord && <article className="ritual-result-card">
       <small>抽签时间 · {formatRitualMoment(drawnAt)}｜所问：{question.trim()}｜{drawnRecord.invariant}</small>

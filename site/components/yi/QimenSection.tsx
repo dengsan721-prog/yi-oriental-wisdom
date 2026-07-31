@@ -42,6 +42,34 @@ const qimenDatabase: Record<YiThemeElement, Omit<DailyQimenRecord, "element" | "
 };
 
 const qimenQuestionPresets = ["事业取舍", "关系推进", "财运取舍", "今日行动"];
+type QimenQuestionTopic = "career" | "relationship" | "wealth" | "action";
+
+const qimenTopicGuidance: Record<QimenQuestionTopic, { title: string; method: string; prompt: string; index: number }> = {
+  career: {
+    title: "事业局",
+    method: "先定主线",
+    prompt: "问事业，先看门在哪里，再看人站在哪边。今天把目标、权限、验收三项写成一页纸；能写清，就推进，写不清，就先补证据。",
+    index: 0,
+  },
+  relationship: {
+    title: "关系局",
+    method: "先通人心",
+    prompt: "问关系，先不急着断输赢。把事实、感受、请求分成三句话，说完留一次复盘时间。门开在人心，不在嘴硬。",
+    index: 1,
+  },
+  wealth: {
+    title: "财路局",
+    method: "先守仓门",
+    prompt: "问财路，先看进出账，再看机会。今天适合止漏、盘点、留余地；钱路怕乱，先稳仓，再谈扩张。",
+    index: 2,
+  },
+  action: {
+    title: "行动局",
+    method: "先走小步",
+    prompt: "问今日行动，先做二十分钟能落地的一步。动起来，局才有回声；卡住就缩小动作，不硬撞门。",
+    index: 3,
+  },
+};
 
 function hourBranch(now: Date) {
   const hour = now.getHours();
@@ -57,13 +85,25 @@ function formatQimenMoment(now: Date) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
+function classifyQimenQuestion(question: string): QimenQuestionTopic {
+  if (/关系|婚|伴侣|亲子|朋友|沟通|推进|感情/u.test(question)) return "relationship";
+  if (/财|钱|收入|资源|投资|生意|账/u.test(question)) return "wealth";
+  if (/行动|今日|今天|计划|选择|执行|开始/u.test(question)) return "action";
+  return "career";
+}
+
 export function selectDailyQimenRecord(chart: FourPillarsResult, birth: BirthInput, now = new Date(), question = ""): DailyQimenRecord {
   const element = deriveYiThemeElement(chart);
   const records = qimenDatabase[element];
+  const asked = question.trim() || "今日行动";
+  const topic = qimenTopicGuidance[classifyQimenQuestion(asked)];
   const dynamicKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}-${hourBranch(now)}-${birth.name.trim()}-${question.trim()}`;
-  const record = records[hashText(dynamicKey) % records.length];
+  const hourShift = hashText(`${hourBranch(now)}-${chart.pillars.day.branch}-${birth.name.trim()}`) % records.length;
+  const record = records[(topic.index + hourShift) % records.length];
   return {
     ...record,
+    method: `${topic.title} · ${topic.method} · ${record.method}`,
+    prompt: `${topic.prompt}\n\n${record.prompt}`,
     element,
     dynamicKey,
     invariant: `不变：日主${chart.pillars.day.stem}${chart.pillars.day.branch}、命盘五行气质；变化：今日与${hourBranch(now)}时。`,
@@ -84,6 +124,10 @@ export function QimenSection({
   const [question, setQuestion] = useState("");
   const [openedRecord, setOpenedRecord] = useState<DailyQimenRecord | null>(null);
   const opened = openedRecord !== null;
+  function updateQuestion(next: string) {
+    setQuestion(next);
+    setOpenedRecord(null);
+  }
 
   return <section className="ritual-standalone-page qimen-standalone-page">
     <button className="ritual-back-button ritual-back-button--compact" type="button" onClick={onBackToChart}>‹ 命盘</button>
@@ -93,9 +137,9 @@ export function QimenSection({
     <label className="ritual-question-field qimen-question-field">
       <span>问事</span>
       <div className="ritual-question-presets">
-        {qimenQuestionPresets.map(item => <button key={item} type="button" aria-pressed={question === item} onClick={() => setQuestion(item)}>{item}</button>)}
+        {qimenQuestionPresets.map(item => <button key={item} type="button" aria-pressed={question === item} onClick={() => updateQuestion(item)}>{item}</button>)}
       </div>
-      <textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="写下今天要问的一件事" aria-label="今天要问的事情" />
+      <textarea value={question} onChange={(event) => updateQuestion(event.target.value)} placeholder="写下今天要问的一件事" aria-label="今天要问的事情" />
     </label>
     <button className={"realistic-qimen-plate qimen-plate-classic" + (opened ? " is-opened" : "")} data-testid="qimen-calc-trigger" type="button" disabled={!question.trim()} onClick={() => setOpenedRecord(selectDailyQimenRecord(chart, birth, now, question))} aria-label="奇门起局">
       <span className="qimen-cardinal qimen-cardinal--north">坎</span>

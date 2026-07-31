@@ -49,10 +49,15 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     const html = renderShell("portrait");
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
     const title = html.slice(html.indexOf('data-testid="report-document-title"'), html.indexOf("</h1>"));
+    const brand = html.slice(html.indexOf('data-testid="report-brand-line"'), html.indexOf('data-testid="report-document-title"'));
 
     expect(title).toContain("欧阳司徒命运全景报告");
-    expect(css).toContain(".report-title-region{justify-items:center");
+    expect(brand).toContain("东方人生智慧");
+    expect(brand).toContain("命");
+    expect(brand).toMatch(/[木火土金水]命/u);
+    expect(css).toContain(".report-brand-line{justify-self:start");
     expect(css).toContain(".report-document-title{text-align:center");
+    expect(css).toMatch(/\.result-shell \.report-document-title h1\{[^}]*font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif/);
     expect(css).toMatch(/\.report-document-title h1\{[^}]*font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif/);
   });
 
@@ -101,11 +106,15 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(html).toContain("事业去留");
     expect(html).toContain("写下今天要问的一件事");
     expect(html).toContain("oracle-stick-fan");
+    expect(html).toContain("oracle-stick-well");
     expect(html).toContain("oracle-tube-front");
     expect(html).toContain('class="oracle-tube-inscription">签');
+    expect(html).not.toContain("<i>签</i>");
     expect(html).not.toContain("签文");
     expect(html).not.toContain("签诗");
     expect(career.dynamicKey).not.toBe(relation.dynamicKey);
+    expect(career.sign).not.toBe(relation.sign);
+    expect(career.reading).not.toBe(relation.reading);
     expect(career).toHaveProperty("text");
   });
 
@@ -127,6 +136,7 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(html).toContain("qimen-cardinal qimen-cardinal--north");
     expect(html).not.toContain("问事时间");
     expect(career.dynamicKey).not.toBe(money.dynamicKey);
+    expect(career.gate + career.direction + career.prompt).not.toBe(money.gate + money.direction + money.prompt);
   });
 
   it("shows classic name suggestions as complete names with the detected surname", async () => {

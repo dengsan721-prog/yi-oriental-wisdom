@@ -176,7 +176,10 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
       <header className="report-title-region" data-testid="report-title-region">
         <div className="report-title-topline report-brand-line" data-testid="report-brand-line">
           <span className="report-brand-word">命</span>
-          <span className="report-brand-name">东方人生智慧</span>
+          <span className="report-brand-stack">
+            <span className="report-brand-name">东方人生智慧</span>
+            <span className="report-brand-element">{themeElement}命</span>
+          </span>
         </div>
         <div className="report-document-title" data-testid="report-document-title">
           <h1>{reportTitle}</h1>
