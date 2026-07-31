@@ -56,12 +56,11 @@ describe("result navigation", () => {
 
     expect(html).toContain('data-testid="report-brand-line"');
     expect(html).toContain('data-testid="report-document-title"');
-    expect(html).toContain("林知夏人生命运报告");
+    expect(html).toContain("林知夏命运全景报告");
     expect(titleRegion).toContain("东方人生智慧");
     expect(titleRegion).toContain("命");
     expect(html).not.toContain("访客的人生报告");
     expect(html).not.toContain("本次采用");
-    expect(html).not.toContain("命运全景报告");
     expect(titleRegion).not.toContain("艺｜东方人生智慧");
     expect(titleRegion).not.toContain("本卷主人");
     expect(titleRegion.match(/<h1>/g)).toHaveLength(1);
@@ -75,9 +74,9 @@ describe("result navigation", () => {
     const empty = renderResult({ ...exactBirth, name: "" });
     const long = renderResult({ ...exactBirth, name: "欧阳司徒上官诸葛林知夏" });
 
-    expect(empty.html).toContain("人生命运报告");
+    expect(empty.html).toContain("命运全景报告");
     expect(empty.html).not.toContain("未填写姓名命运全景报告");
-    expect(long.html).toContain("人生命运报告");
+    expect(long.html).toContain("命运全景报告");
   });
 
   it("reuses the compact audited mark on life home and passes the derived theme", () => {
@@ -155,17 +154,19 @@ describe("result navigation", () => {
     for (const label of ["命题", "破局", "人间现场", "意象映照", "百岁回望"]) expect(html).toContain(label);
   });
 
-  it("keeps the ten report sections in a stable reading order", () => {
+  it("keeps the lower report sections in a stable reading order without daily ritual entries", () => {
     expect(getResultSections().map(([id]) => id)).toEqual([
-      "portrait", "chart", "detail", "name", "fortune", "draw", "qimen", "compatibility", "mirror", "tradition",
+      "portrait", "chart", "detail", "name", "fortune", "compatibility", "mirror", "tradition",
     ]);
     expect(getResultSections()[0]).toEqual(["portrait", "人生画卷"]);
     expect(getResultSections()[3]).toEqual(["name", "姓名"]);
-    expect(getResultSections()[5]).toEqual(["draw", "今日签"]);
+    const sectionIds = getResultSections().map(([id]) => String(id));
+    expect(sectionIds).not.toContain("draw");
+    expect(sectionIds).not.toContain("qimen");
   });
 
-  it("exposes all ten production sections", () => {
-    expect(getAvailableSections(true)).toHaveLength(10);
+  it("exposes the eight lower production sections", () => {
+    expect(getAvailableSections(true)).toHaveLength(8);
   });
 
   it("renders name analysis as its own chapter after detail instead of inside the chart", () => {

@@ -47,20 +47,18 @@ function renderReport(input: BirthInput = birth) {
 }
 
 describe("2026-07-29 mobile-first wisdom iteration", () => {
-  it("adds今日签 and奇门 as report chapters while keeping name after详批", () => {
+  it("keeps today sign and qimen as upper entries while keeping name after详批", () => {
     expect(getResultSections().map(([id]) => id)).toEqual([
       "portrait",
       "chart",
       "detail",
       "name",
       "fortune",
-      "draw",
-      "qimen",
       "compatibility",
       "mirror",
       "tradition",
     ]);
-    expect(getAvailableSections(true)).toHaveLength(10);
+    expect(getAvailableSections(true)).toHaveLength(8);
     expect(renderReport()).toContain("<small>报告预览</small>");
     expect(renderReport()).toContain('data-daily-entry="draw"');
     expect(renderReport()).toContain('data-daily-entry="qimen"');
@@ -71,7 +69,7 @@ describe("2026-07-29 mobile-first wisdom iteration", () => {
     const html = renderReport();
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-    expect(html).toContain("人生命运报告");
+    expect(html).toContain("命运全景报告");
     expect(css).toMatch(/\.report-document-title h1\{[^}]*font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif[^}]*white-space:nowrap/);
   });
 

@@ -21,7 +21,7 @@ import { QimenSection } from "./QimenSection";
 
 export const getResultSections = () => [
   ["portrait", "人生画卷"], ["chart", "命盘"], ["detail", "详批"],
-  ["name", "姓名"], ["fortune", "大运"], ["draw", "今日签"], ["qimen", "奇门"], ["compatibility", "合盘"], ["mirror", "镜像"],
+  ["name", "姓名"], ["fortune", "大运"], ["compatibility", "合盘"], ["mirror", "镜像"],
   ["tradition", "传统"],
 ] as const;
 
@@ -98,7 +98,7 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
   const resultSections = getResultSections().filter(([id]) => availableSections.includes(id));
   const activeSectionLabel = resultSections.find(([id]) => id === activeSection)?.[1] ?? "人生画卷";
   const ownerName = name.trim();
-  const reportTitle = ownerName ? `${ownerName}人生命运报告` : "人生命运报告";
+  const reportTitle = ownerName ? `${ownerName}命运全景报告` : "命运全景报告";
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => window.scrollTo({ top: restoreScrollTop(scrollPositions, activeSection) }));
     return () => {

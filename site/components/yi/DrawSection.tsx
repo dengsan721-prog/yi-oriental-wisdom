@@ -49,6 +49,10 @@ function hashText(value: string) {
   return [...value].reduce((sum, char) => sum + char.charCodeAt(0), 0);
 }
 
+function formatRitualMoment(now: Date) {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
+
 export function selectDailyDrawRecord(chart: FourPillarsResult, birth: BirthInput, now = new Date()): DailyDrawRecord {
   const element = deriveYiThemeElement(chart);
   const records = dailySignDatabase[element];
@@ -73,30 +77,27 @@ export function DrawSection({
   onBackToChart?: () => void;
   now?: Date;
 }) {
-  const [shaken, setShaken] = useState(false);
+  const [drawnAt, setDrawnAt] = useState<Date | null>(null);
+  const shaken = drawnAt !== null;
   const record = selectDailyDrawRecord(chart, birth, now);
 
   return <section className="ritual-standalone-page today-sign-page">
     <button className="ritual-back-button" type="button" onClick={onBackToChart}>回到命盘</button>
     <header className="ritual-hero-copy">
-      <small>今日签</small>
-      <h1>每日一签</h1>
-      <p>平平安安</p>
+      <h1>每日一签，平平安安</h1>
     </header>
-    <button className={"realistic-oracle-tube" + (shaken ? " is-shaken" : "")} data-testid="draw-lot-trigger" type="button" onClick={() => setShaken(true)} aria-label="摇动今日签筒">
-      <span className="oracle-tube-inscription">签</span>
-      <i className="oracle-stick oracle-stick--one" />
-      <i className="oracle-stick oracle-stick--two" />
-      <i className="oracle-stick oracle-stick--three" />
-      <b>今日签</b>
-      <small>{shaken ? "签已落定" : "轻点签筒"}</small>
+    <button className={"realistic-oracle-tube" + (shaken ? " is-shaken" : "")} data-testid="draw-lot-trigger" type="button" disabled={shaken} onClick={() => setDrawnAt(now)} aria-label={shaken ? "今日签已落定" : "摇动今日签筒"}>
+      <span className="oracle-stick oracle-stick--left" />
+      <span className="oracle-stick oracle-stick--center" />
+      <span className="oracle-stick oracle-stick--right" />
+      <span className="oracle-tube-body"><span className="oracle-tube-inscription">签</span></span>
     </button>
-    <article className="ritual-result-card">
-      <small>结合生辰签 · {record.invariant}</small>
+    {drawnAt && <article className="ritual-result-card">
+      <small>抽签时间 · {formatRitualMoment(drawnAt)}｜结合生辰签 · {record.invariant}</small>
       <h2>{record.sign}</h2>
       <span className="oracle-level">{record.level}</span>
       <section className="oracle-poem" aria-label="签诗"><b>签诗</b><blockquote>{record.verse}</blockquote></section>
       <p>{record.reading}</p>
-    </article>
+    </article>}
   </section>;
 }

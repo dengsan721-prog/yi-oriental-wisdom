@@ -101,7 +101,7 @@ describe("life home overview", () => {
     const html = renderToStaticMarkup(createElement(LifeHome, { profile: { ...profile, name: "欧阳司徒" }, onChange: () => ({ ok: true as const }), onClear: () => ({ ok: true as const }), onViewReport: () => undefined }));
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-    expect(html).toContain("<small>欢迎回来</small><b>欧阳司徒</b>");
+    expect(html).toContain("<b>欧阳司徒</b><small>欢迎回来</small>");
     expect(html).not.toContain("欧阳司徒，欢迎回来");
     expect(css).toContain("@media(max-width:520px){.life-head-identity small{white-space:nowrap}.life-head-identity b{max-width:4.4em;font-size:16px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.life-head-actions{flex:0 0 auto}}");
   });

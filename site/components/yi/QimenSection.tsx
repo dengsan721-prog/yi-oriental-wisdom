@@ -51,10 +51,14 @@ function hashText(value: string) {
   return [...value].reduce((sum, char) => sum + char.charCodeAt(0), 0);
 }
 
-export function selectDailyQimenRecord(chart: FourPillarsResult, birth: BirthInput, now = new Date()): DailyQimenRecord {
+function formatQimenMoment(now: Date) {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+}
+
+export function selectDailyQimenRecord(chart: FourPillarsResult, birth: BirthInput, now = new Date(), question = ""): DailyQimenRecord {
   const element = deriveYiThemeElement(chart);
   const records = qimenDatabase[element];
-  const dynamicKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}-${hourBranch(now)}-${birth.name.trim()}`;
+  const dynamicKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}-${hourBranch(now)}-${birth.name.trim()}-${question.trim()}`;
   const record = records[hashText(dynamicKey) % records.length];
   return {
     ...record,
@@ -75,28 +79,29 @@ export function QimenSection({
   onBackToChart?: () => void;
   now?: Date;
 }) {
-  const [opened, setOpened] = useState(false);
-  const record = selectDailyQimenRecord(chart, birth, now);
+  const [question, setQuestion] = useState("");
+  const [openedRecord, setOpenedRecord] = useState<DailyQimenRecord | null>(null);
+  const opened = openedRecord !== null;
 
   return <section className="ritual-standalone-page qimen-standalone-page">
     <button className="ritual-back-button" type="button" onClick={onBackToChart}>回到命盘</button>
     <header className="ritual-hero-copy">
-      <small>奇门</small>
-      <h1>今日奇门</h1>
-      <p>起局看门，先走一步</p>
+      <h1>起局看门，先走一步</h1>
     </header>
-    <button className={"realistic-qimen-plate" + (opened ? " is-opened" : "")} data-testid="qimen-calc-trigger" type="button" onClick={() => setOpened(true)} aria-label="今日奇门起局">
+    <label className="qimen-question-field">
+      <span>问事</span>
+      <textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="先写下今天要问的一件事" aria-label="今天要问的事情" />
+    </label>
+    <button className={"realistic-qimen-plate" + (opened ? " is-opened" : "")} data-testid="qimen-calc-trigger" type="button" disabled={!question.trim()} onClick={() => setOpenedRecord(selectDailyQimenRecord(chart, birth, now, question))} aria-label="奇门起局">
       <span className="qimen-plate-center">起局</span>
       <i className="qimen-ring qimen-ring--outer" />
       <i className="qimen-ring qimen-ring--inner" />
-      <b>{record.direction}向</b>
-      <small>{opened ? "局已展开" : "轻点起局"}</small>
     </button>
-    <article className="ritual-result-card">
-      <small>{record.invariant}</small>
-      <h2>{record.gate} · {record.method}</h2>
-      <p>{record.prompt}</p>
-      <p>用法：把眼前最卡的一件事写成一句话，照这个门向做一个二十分钟动作。顺，就推进；不顺，就换门，不硬撞。</p>
-    </article>
+    {openedRecord && <article className="ritual-result-card">
+      <small>问事时间 · {formatQimenMoment(now)}｜所问：{question.trim()}｜{openedRecord.invariant}</small>
+      <h2>{openedRecord.direction}向 · {openedRecord.gate} · {openedRecord.method}</h2>
+      <p>{openedRecord.prompt}</p>
+      <p>用法：照这个门向做一个二十分钟动作。顺，就推进；不顺，就再问一次事、重新起局，不硬撞。</p>
+    </article>}
   </section>;
 }

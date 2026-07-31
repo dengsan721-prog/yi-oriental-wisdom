@@ -88,7 +88,7 @@ export function LifeHome({ profile, onChange, onViewReport, onViewDraw, onViewQi
   }
 
   return <section className="life-home">
-    <header className="life-head life-head-simple"><div className="life-head-identity"><YiBrandMark variant="compact" /><div><small>欢迎回来</small><b>{home.name}</b></div></div><div className="life-head-actions"><button className="life-report-return" onClick={onViewReport}>回看命盘报告</button><button onClick={() => setSection(section === "change" ? "record" : "change")}>{section === "change" ? "继续记录" : "改命记录"}</button></div></header>
+    <header className="life-head life-head-simple"><div className="life-head-identity"><YiBrandMark variant="compact" /><div><b>{home.name}</b><small>欢迎回来</small></div></div><div className="life-head-actions"><button className="life-report-return" onClick={onViewReport}>回看命盘报告</button><button onClick={() => setSection(section === "change" ? "record" : "change")}>{section === "change" ? "继续记录" : "改命记录"}</button></div></header>
     <div className="life-content">
       <section className="daily-oracle-strip daily-oracle-strip--home" aria-label="每日灵感入口"><button type="button" data-home-entry="draw" onClick={onViewDraw ?? onViewReport}><span>今日签</span><small>每日一签，平平安安</small></button><button type="button" data-home-entry="qimen" onClick={onViewQimen ?? onViewReport}><span>奇门</span><small>看当下先开哪扇门</small></button></section>
       {section === "record" && <>

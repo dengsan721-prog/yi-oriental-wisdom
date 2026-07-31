@@ -62,7 +62,7 @@ describe("2026-07-30 mobile report system iteration", () => {
     expect(topLine).toBeGreaterThan(-1);
     expect(topLine).toBeLessThan(title);
     expect(html).toContain("report-brand-line");
-    expect(html).toContain("\u6b27\u9633\u53f8\u5f92\u4eba\u751f\u547d\u8fd0\u62a5\u544a");
+    expect(html).toContain("欧阳司徒命运全景报告");
     expect(html).toContain("\u4e1c\u65b9\u4eba\u751f\u667a\u6167");
     expect(html).not.toContain("\u672c\u6b21\u91c7\u7528");
     expect(css).toContain(".report-brand-line{display:flex");
@@ -123,6 +123,8 @@ describe("2026-07-30 mobile report system iteration", () => {
     expect(shell).toContain('class="daily-oracle-strip daily-oracle-strip--report"');
     expect(shell).toContain('data-daily-entry="draw"');
     expect(shell).toContain('data-daily-entry="qimen"');
+    expect(shell.slice(shell.indexOf('class="result-tabs"'), shell.indexOf('class="result-content"'))).not.toContain('>今日签</button>');
+    expect(shell.slice(shell.indexOf('class="result-tabs"'), shell.indexOf('class="result-content"'))).not.toContain('>奇门</button>');
     expect(home).toContain('class="daily-oracle-strip daily-oracle-strip--home"');
     expect(home).toContain('data-home-entry="draw"');
     expect(home).toContain('data-home-entry="qimen"');
@@ -141,7 +143,7 @@ describe("2026-07-30 mobile report system iteration", () => {
     expect(draw).toContain("realistic-oracle-tube");
     expect(draw).toContain('class="oracle-tube-inscription">\u7b7e');
     expect(draw).toContain('data-testid="draw-lot-trigger"');
-    expect(draw).toContain("\u7b7e\u8bd7");
+    expect(draw).not.toContain("\u7b7e\u8bd7");
     expect(draw).not.toContain('scene-line-art--oracle');
     const drawSource = readFileSync(resolve(__dirname, "../../components/yi/DrawSection.tsx"), "utf8");
     expect(drawSource).toContain("dailySignDatabase");
@@ -150,7 +152,9 @@ describe("2026-07-30 mobile report system iteration", () => {
     expect(qimen).toContain("ritual-standalone-page");
     expect(qimen).toContain('class="qimen-plate-center">\u8d77\u5c40');
     expect(qimen).toContain('data-testid="qimen-calc-trigger"');
-    expect(qimen).toContain("\u4eca\u65e5\u5947\u95e8");
+    expect(qimen).toContain("起局看门，先走一步");
+    expect(qimen).toContain("先写下今天要问的一件事");
+    expect(qimen).not.toContain("当下提示");
     expect(qimen).not.toContain('scene-line-art--qimen');
   });
 
