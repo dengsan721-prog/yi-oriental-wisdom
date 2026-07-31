@@ -41,6 +41,8 @@ const qimenDatabase: Record<YiThemeElement, Omit<DailyQimenRecord, "element" | "
   ],
 };
 
+const qimenQuestionPresets = ["事业取舍", "关系推进", "财运取舍", "今日行动"];
+
 function hourBranch(now: Date) {
   const hour = now.getHours();
   const branches = ["子", "丑", "丑", "寅", "寅", "卯", "卯", "辰", "辰", "巳", "巳", "午", "午", "未", "未", "申", "申", "酉", "酉", "戌", "戌", "亥", "亥", "子"];
@@ -84,15 +86,23 @@ export function QimenSection({
   const opened = openedRecord !== null;
 
   return <section className="ritual-standalone-page qimen-standalone-page">
-    <button className="ritual-back-button" type="button" onClick={onBackToChart}>回到命盘</button>
+    <button className="ritual-back-button ritual-back-button--compact" type="button" onClick={onBackToChart}>‹ 命盘</button>
     <header className="ritual-hero-copy">
       <h1>起局看门，先走一步</h1>
     </header>
-    <label className="qimen-question-field">
+    <label className="ritual-question-field qimen-question-field">
       <span>问事</span>
-      <textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="先写下今天要问的一件事" aria-label="今天要问的事情" />
+      <div className="ritual-question-presets">
+        {qimenQuestionPresets.map(item => <button key={item} type="button" aria-pressed={question === item} onClick={() => setQuestion(item)}>{item}</button>)}
+      </div>
+      <textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="写下今天要问的一件事" aria-label="今天要问的事情" />
     </label>
-    <button className={"realistic-qimen-plate" + (opened ? " is-opened" : "")} data-testid="qimen-calc-trigger" type="button" disabled={!question.trim()} onClick={() => setOpenedRecord(selectDailyQimenRecord(chart, birth, now, question))} aria-label="奇门起局">
+    <button className={"realistic-qimen-plate qimen-plate-classic" + (opened ? " is-opened" : "")} data-testid="qimen-calc-trigger" type="button" disabled={!question.trim()} onClick={() => setOpenedRecord(selectDailyQimenRecord(chart, birth, now, question))} aria-label="奇门起局">
+      <span className="qimen-cardinal qimen-cardinal--north">坎</span>
+      <span className="qimen-cardinal qimen-cardinal--east">震</span>
+      <span className="qimen-cardinal qimen-cardinal--south">离</span>
+      <span className="qimen-cardinal qimen-cardinal--west">兑</span>
+      <span className="qimen-nine-grid" aria-hidden="true">{Array.from({ length: 9 }, (_, index) => <i key={index} />)}</span>
       <span className="qimen-plate-center">起局</span>
       <i className="qimen-ring qimen-ring--outer" />
       <i className="qimen-ring qimen-ring--inner" />

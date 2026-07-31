@@ -18,10 +18,11 @@ import type { YiThemeElement } from "../../lib/yi/theme";
 import { NameAnalysisSection } from "./NameAnalysisSection";
 import { DrawSection } from "./DrawSection";
 import { QimenSection } from "./QimenSection";
+import { ReferenceAtlasSection } from "./ReferenceAtlasSection";
 
 export const getResultSections = () => [
   ["portrait", "人生画卷"], ["chart", "命盘"], ["detail", "详批"],
-  ["name", "姓名"], ["fortune", "大运"], ["compatibility", "合盘"], ["mirror", "镜像"],
+  ["name", "姓名"], ["fortune", "大运"], ["face", "相面"], ["star", "星座"], ["compatibility", "合盘"], ["mirror", "镜像"],
   ["tradition", "传统"],
 ] as const;
 
@@ -135,6 +136,10 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
         return ownerName ? <NameAnalysisSection chart={chart} key={ownerName} name={ownerName} report={report} /> : <section className="name-analysis-section name-reference-section"><header className="name-reference-summary"><div><small>姓名文化测分 · 仅供参考</small><h2>姓名五行参考分</h2><p className="name-current-glyphs">填写姓名后展示</p></div></header></section>;
       case "fortune":
         return <FortuneSection chart={chart} birth={birth} />;
+      case "face":
+        return <ReferenceAtlasSection chart={chart} birth={birth} title="相面" initialMethod="face" allowedMethods={["face"]} />;
+      case "star":
+        return <ReferenceAtlasSection chart={chart} birth={birth} title="星座" initialMethod="star" allowedMethods={["star"]} />;
       case "draw":
         return <DrawSection chart={chart} birth={birth} onBackToChart={() => selectSection("chart")} />;
       case "qimen":

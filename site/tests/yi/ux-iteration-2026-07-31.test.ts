@@ -88,8 +88,8 @@ describe("2026-07-31 clean mobile report and daily ritual pages", () => {
 
     expect(shell).not.toContain('class="result-head"');
     expect(html).toContain("每日一签，平平安安");
-    expect(html).toContain("回到命盘");
-    expect(html).toContain('class="realistic-oracle-tube"');
+    expect(html).toContain("‹ 命盘");
+    expect(html).toContain("realistic-oracle-tube");
     expect(html).toContain('class="oracle-stick oracle-stick--center"');
     expect(html).toContain('class="oracle-tube-inscription">签');
     expect(html).not.toContain("scene-line-art--oracle");
@@ -108,10 +108,10 @@ describe("2026-07-31 clean mobile report and daily ritual pages", () => {
     }));
 
     expect(html).toContain("起局看门，先走一步");
-    expect(html).toContain("先写下今天要问的一件事");
+    expect(html).toContain("写下今天要问的一件事");
     expect(html).toContain("起局");
-    expect(html).toContain("回到命盘");
-    expect(html).toContain('class="realistic-qimen-plate"');
+    expect(html).toContain("‹ 命盘");
+    expect(html).toContain("realistic-qimen-plate");
     expect(html).not.toContain("浙江杭州");
     expect(html).not.toContain("scene-line-art--qimen");
     expect(html).not.toContain("当下提示");

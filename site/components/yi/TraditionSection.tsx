@@ -27,6 +27,6 @@ export function TraditionSection({ chart, birth }: { chart: FourPillarsResult; b
   const intro = buildTraditionPublicIntro();
   return <section className="report-section tradition-section">
     <TraditionPublicIntroView view={intro} />
-    <ReferenceAtlasSection chart={chart} birth={birth} />
+    <ReferenceAtlasSection chart={chart} birth={birth} title="传统图谱" initialMethod="mole" allowedMethods={["mole", "palm"]} />
   </section>;
 }

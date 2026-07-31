@@ -153,7 +153,7 @@ describe("2026-07-30 mobile report system iteration", () => {
     expect(qimen).toContain('class="qimen-plate-center">\u8d77\u5c40');
     expect(qimen).toContain('data-testid="qimen-calc-trigger"');
     expect(qimen).toContain("起局看门，先走一步");
-    expect(qimen).toContain("先写下今天要问的一件事");
+    expect(qimen).toContain("写下今天要问的一件事");
     expect(qimen).not.toContain("当下提示");
     expect(qimen).not.toContain('scene-line-art--qimen');
   });

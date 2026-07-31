@@ -48,12 +48,20 @@ export function AtlasPublicReadingCard({
 
 export function ReferenceAtlasSection({
   birth,
+  title = "传统图谱",
+  initialMethod = "face",
+  allowedMethods,
 }: {
   chart: FourPillarsResult;
   birth: BirthInput;
+  title?: string;
+  initialMethod?: AtlasMethodId;
+  allowedMethods?: AtlasMethodId[];
 }) {
-  const [method, setMethod] = useState<AtlasMethodId>("face");
-  const [selectedId, setSelectedId] = useState("face-oval");
+  const methods = getAtlasMethods().filter(item => !allowedMethods || allowedMethods.includes(item.id));
+  const defaultMethod = methods.some(item => item.id === initialMethod) ? initialMethod : methods[0]?.id ?? "face";
+  const [method, setMethod] = useState<AtlasMethodId>(defaultMethod);
+  const [selectedId, setSelectedId] = useState(getAtlasGroups(defaultMethod)[0].options[0].id);
   const [genderOverride, setGenderOverride] =
     useState<ReferenceGender | undefined>();
   const groups = getAtlasGroups(method);
@@ -88,15 +96,20 @@ export function ReferenceAtlasSection({
   }
 
   return <section className="reference-atlas">
-    <div className="atlas-methods" aria-label="传统图谱与星座文化模型">
-      {getAtlasMethods().map(item => <button
+    <header className="atlas-module-head">
+      <small>传统图谱</small>
+      <h1>{title}</h1>
+      <p>先看形，再看部位，最后放回生活场景；外形与星座只作文化镜子，不替你下结论。</p>
+    </header>
+    {methods.length > 1 && <div className="atlas-methods" aria-label="传统图谱与星座文化模型">
+      {methods.map(item => <button
         type="button"
         className={method === item.id ? "active" : ""}
         aria-pressed={method === item.id}
         onClick={() => selectMethod(item.id)}
         key={item.id}
       ><b>{item.label}</b><small>{item.subtitle}</small></button>)}
-    </div>
+    </div>}
     <p className="atlas-boundary">标准照片与图谱仅供自行对照；本页不会读取、上传或识别你的照片。</p>
     <p className="atlas-version-note">
       版本说明：传统图谱采用固定公开参考图与文字卡；相学文化名目参照《新刊图相麻衣相法》页面标注明代佚名编纂，只作文化自查，不回到人生故事判断。

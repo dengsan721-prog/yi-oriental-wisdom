@@ -308,6 +308,7 @@ export function NameAnalysisView({
 }) {
   const reference = buildNameReference(analysis);
   const suggestions = buildClassicSuggestions(reference.missingElements, reference.nameElements, state.suggestionBatchIndex);
+  const suggestionSurname = analysis.surname.value.trim();
   const targetElements = reference.missingElements.length
     ? reference.missingElements
     : ELEMENTS.filter(element => !reference.nameElements.includes(element));
@@ -350,14 +351,16 @@ export function NameAnalysisView({
         <p>从《诗经》《楚辞》《论语》《尚书》《周易》等典籍意象中挑字，下面给出两个单字名、两个双字名，方便继续试分。</p>
       </header>
       <div className="name-classic-suggestions-body">
-        {suggestions.map(suggestion => (
-          <article data-classic-name={suggestion.name} key={`${suggestion.kind}-${suggestion.name}`}>
+        {suggestions.map(suggestion => {
+          const fullSuggestionName = suggestionSurname ? `${suggestionSurname}${suggestion.name}` : suggestion.name;
+          return (
+          <article data-classic-name={fullSuggestionName} key={`${suggestion.kind}-${fullSuggestionName}`}>
             <small>{suggestion.kind} · 补{suggestion.element}</small>
-            <h4>{suggestion.name}</h4>
+            <h4>{fullSuggestionName}</h4>
             <p>{suggestion.meaning}</p>
             <span>{suggestion.source}</span>
           </article>
-        ))}
+        );})}
       </div>
     </section>
   </section>;

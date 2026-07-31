@@ -10,11 +10,14 @@ type DailyDrawRecord = {
   invariant: string;
   level: "小凶" | "小吉" | "中吉" | "大吉";
   sign: string;
+  text: string;
   verse: string;
   reading: string;
 };
 
-const dailySignDatabase: Record<YiThemeElement, Omit<DailyDrawRecord, "element" | "dynamicKey" | "invariant">[]> = {
+const drawQuestionPresets = ["事业去留", "关系修复", "财运取舍", "今日行动"];
+
+const dailySignDatabase: Record<YiThemeElement, Omit<DailyDrawRecord, "element" | "dynamicKey" | "invariant" | "text">[]> = {
   木: [
     { level: "小吉", sign: "新枝得雨签", verse: "旧土藏根，新枝向明；先修一寸，春风自临。", reading: "这支签看见的是生发之气。今天不求大开大合，先把一件小事扶正：回一条该回的消息，补一页该补的功课，给关系留一点水分。枝条长得慢，但只要方向朝阳，明天就有新芽。" },
     { level: "中吉", sign: "青藤攀壁签", verse: "青藤不争高，借势自上墙；心稳手勤处，贵人递梯来。", reading: "木局重在借势。今天适合请教、协作、补连接，不适合硬撑面子。把姿态放柔，把问题问清，身边能借的梯子就会显出来。" },
@@ -53,13 +56,15 @@ function formatRitualMoment(now: Date) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
 }
 
-export function selectDailyDrawRecord(chart: FourPillarsResult, birth: BirthInput, now = new Date()): DailyDrawRecord {
+export function selectDailyDrawRecord(chart: FourPillarsResult, birth: BirthInput, now = new Date(), question = ""): DailyDrawRecord {
   const element = deriveYiThemeElement(chart);
   const records = dailySignDatabase[element];
-  const dynamicKey = `${dayKey(now)}-${chart.pillars.year.branch}-${birth.name.trim()}`;
+  const asked = question.trim() || "今日平安";
+  const dynamicKey = `${dayKey(now)}-${chart.pillars.year.branch}-${birth.name.trim()}-${asked}`;
   const record = records[hashText(dynamicKey) % records.length];
   return {
     ...record,
+    text: `${record.sign}，${record.level}。问${asked}，先把心定住，再取眼前能做的一步；签不替人决定，只借一句话照亮当下。`,
     element,
     dynamicKey,
     invariant: `不变：年支${chart.pillars.year.branch}、日主${chart.pillars.day.stem}${chart.pillars.day.branch}；变化：今日日期与阅读时刻。`,
@@ -77,27 +82,38 @@ export function DrawSection({
   onBackToChart?: () => void;
   now?: Date;
 }) {
+  const [question, setQuestion] = useState("");
+  const [drawnRecord, setDrawnRecord] = useState<DailyDrawRecord | null>(null);
   const [drawnAt, setDrawnAt] = useState<Date | null>(null);
   const shaken = drawnAt !== null;
-  const record = selectDailyDrawRecord(chart, birth, now);
 
   return <section className="ritual-standalone-page today-sign-page">
-    <button className="ritual-back-button" type="button" onClick={onBackToChart}>回到命盘</button>
+    <button className="ritual-back-button ritual-back-button--compact" type="button" onClick={onBackToChart}>‹ 命盘</button>
     <header className="ritual-hero-copy">
       <h1>每日一签，平平安安</h1>
     </header>
-    <button className={"realistic-oracle-tube" + (shaken ? " is-shaken" : "")} data-testid="draw-lot-trigger" type="button" disabled={shaken} onClick={() => setDrawnAt(now)} aria-label={shaken ? "今日签已落定" : "摇动今日签筒"}>
-      <span className="oracle-stick oracle-stick--left" />
-      <span className="oracle-stick oracle-stick--center" />
-      <span className="oracle-stick oracle-stick--right" />
+    <label className="ritual-question-field">
+      <span>问事</span>
+      <div className="ritual-question-presets">
+        {drawQuestionPresets.map(item => <button key={item} type="button" aria-pressed={question === item} onClick={() => setQuestion(item)}>{item}</button>)}
+      </div>
+      <textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="写下今天要问的一件事" aria-label="今天要问的一件事" />
+    </label>
+    <button className={"realistic-oracle-tube oracle-tube-front" + (shaken ? " is-shaken" : "")} data-testid="draw-lot-trigger" type="button" disabled={!question.trim()} onClick={() => { setDrawnRecord(selectDailyDrawRecord(chart, birth, now, question)); setDrawnAt(now); }} aria-label="摇动今日签筒">
+      <span className="oracle-stick-fan" aria-hidden="true">
+        <span className="oracle-stick oracle-stick--left"><i>签</i></span>
+        <span className="oracle-stick oracle-stick--center"><i>签</i></span>
+        <span className="oracle-stick oracle-stick--right"><i>签</i></span>
+      </span>
       <span className="oracle-tube-body"><span className="oracle-tube-inscription">签</span></span>
     </button>
-    {drawnAt && <article className="ritual-result-card">
-      <small>抽签时间 · {formatRitualMoment(drawnAt)}｜结合生辰签 · {record.invariant}</small>
-      <h2>{record.sign}</h2>
-      <span className="oracle-level">{record.level}</span>
-      <section className="oracle-poem" aria-label="签诗"><b>签诗</b><blockquote>{record.verse}</blockquote></section>
-      <p>{record.reading}</p>
+    {drawnAt && drawnRecord && <article className="ritual-result-card">
+      <small>抽签时间 · {formatRitualMoment(drawnAt)}｜所问：{question.trim()}｜{drawnRecord.invariant}</small>
+      <h2>{drawnRecord.sign}</h2>
+      <span className="oracle-level">{drawnRecord.level}</span>
+      <section className="oracle-poem" aria-label="签文"><b>签文</b><p>{drawnRecord.text}</p></section>
+      <section className="oracle-poem" aria-label="签诗"><b>签诗</b><blockquote>{drawnRecord.verse}</blockquote></section>
+      <p>{drawnRecord.reading}</p>
     </article>}
   </section>;
 }

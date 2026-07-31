@@ -330,6 +330,43 @@ main[data-element] .name-analysis-section :focus-visible{outline:3px solid var(-
 /* Readability and product tone refresh */
 :root{--yi-sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;--yi-serif:"STKaiti","KaiTi","Kaiti SC","Songti SC","Noto Serif CJK SC",serif}
 body{font-family:var(--yi-sans)}
+
+/* 2026-07-31 ritual polish: centered title, extracted atlas modules, question-first daily tools */
+.report-title-region{justify-items:center;text-align:center;width:100%}
+.report-document-title{text-align:center;width:100%}
+.report-document-title h1{font-family:"LiSu","隶书","STLiti","STKaiti","KaiTi",serif;font-weight:400;text-align:center;letter-spacing:.02em;text-wrap:balance}
+.atlas-module-head{margin:0 0 18px;text-align:left}
+.atlas-module-head small{color:var(--yi-accent-strong);letter-spacing:.16em}
+.atlas-module-head h1{margin:8px 0 6px;font:400 clamp(30px,6vw,48px)/1.08 "LiSu","隶书","STLiti","STKaiti","KaiTi",serif;color:var(--yi-text)}
+.atlas-module-head p{max-width:720px;margin:0;color:var(--yi-text-muted);font-size:16px;line-height:1.8}
+.ritual-back-button--compact{min-height:34px;padding:5px 10px;border-radius:999px;font-size:13px;box-shadow:none}
+.ritual-question-field{width:100%;display:grid;gap:10px;text-align:left}
+.ritual-question-field>span{color:var(--yi-accent-strong);font-size:13px;font-weight:850;letter-spacing:.18em}
+.ritual-question-field textarea{width:100%;min-height:72px;border:1px solid var(--yi-line);border-radius:18px;background:var(--yi-surface-raised);color:var(--yi-text);padding:13px 14px;line-height:1.6;resize:vertical}
+.ritual-question-presets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.ritual-question-presets button{min-width:0;min-height:38px;border:1px solid var(--yi-line);border-radius:999px;background:var(--yi-surface-raised);color:var(--yi-text);font-size:13px;white-space:nowrap}
+.ritual-question-presets button[aria-pressed="true"]{border-color:var(--yi-accent);background:var(--yi-accent-soft);color:var(--yi-accent-strong)}
+.oracle-tube-front{margin:4px auto 2px}
+.oracle-stick-fan{position:absolute;inset:0;display:block;pointer-events:none}
+.oracle-stick i{position:absolute;left:50%;top:12px;transform:translateX(-50%);font-style:normal;color:#7c3a18;font-size:11px;font-weight:900}
+.oracle-tube-front .oracle-stick{height:142px;background:linear-gradient(180deg,#f8ddaa,#b77736 72%,#7d3b1b);border-color:#8b4a22;box-shadow:inset 3px 0 5px #fff2c655,inset -3px 0 5px #3a160a55,0 10px 18px #2c100830}
+.oracle-tube-front .oracle-stick--left{left:76px;transform:rotate(-14deg)}
+.oracle-tube-front .oracle-stick--center{left:108px;transform:rotate(0)}
+.oracle-tube-front .oracle-stick--right{left:140px;transform:rotate(13deg)}
+.oracle-tube-front .oracle-tube-body{width:166px;height:132px;border-color:#9a6326;background:linear-gradient(110deg,#80501d,#d2a14b 34%,#8b541e 64%,#f1c978);box-shadow:inset 16px 0 22px #4b260c75,inset -10px 0 18px #fff0b966,0 20px 40px color-mix(in srgb,var(--yi-accent) 18%,transparent)}
+.oracle-tube-front .oracle-tube-body::before{border-color:#9a6326;background:radial-gradient(ellipse at center,#301507 0 42%,#d6a653 45%,#8e541f 78%)}
+.oracle-tube-front .oracle-tube-inscription{width:62px;height:62px;border:2px solid #f5d690;border-radius:50%;background:radial-gradient(circle,#f4dc9e,#b87431 72%);box-shadow:0 6px 14px #2b100944;color:#5a2110}
+.qimen-plate-classic{overflow:hidden}
+.qimen-nine-grid{position:absolute;z-index:1;width:116px;height:116px;display:grid;grid-template-columns:repeat(3,1fr);border:1px solid color-mix(in srgb,var(--yi-accent-strong) 72%,transparent);transform:rotate(45deg)}
+.qimen-nine-grid i{border:1px solid color-mix(in srgb,var(--yi-accent-strong) 35%,transparent);background:color-mix(in srgb,var(--yi-surface-raised) 45%,transparent)}
+.qimen-cardinal{position:absolute;z-index:2;color:var(--yi-accent-strong);font:800 13px/1 var(--yi-serif)}
+.qimen-cardinal--north{top:24px;left:50%;transform:translateX(-50%)}
+.qimen-cardinal--east{right:24px;top:50%;transform:translateY(-50%)}
+.qimen-cardinal--south{bottom:24px;left:50%;transform:translateX(-50%)}
+.qimen-cardinal--west{left:24px;top:50%;transform:translateY(-50%)}
+.qimen-plate-classic .qimen-plate-center{z-index:3}
+@media(max-width:520px){.report-title-region{justify-items:center}.report-document-title{text-align:center}.report-document-title h1{font-size:clamp(27px,7vw,32px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ritual-question-presets{grid-template-columns:repeat(2,minmax(0,1fr))}.oracle-tube-front .oracle-stick--left{left:68px}.oracle-tube-front .oracle-stick--center{left:98px}.oracle-tube-front .oracle-stick--right{left:128px}}
+body{font-family:var(--yi-sans)}
 .result-tab-list{min-width:0;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
 .report-section>header h1{font-weight:500;font-family:var(--yi-serif)}
 .detail-report>header{max-width:780px}

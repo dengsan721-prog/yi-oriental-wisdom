@@ -156,7 +156,7 @@ describe("result navigation", () => {
 
   it("keeps the lower report sections in a stable reading order without daily ritual entries", () => {
     expect(getResultSections().map(([id]) => id)).toEqual([
-      "portrait", "chart", "detail", "name", "fortune", "compatibility", "mirror", "tradition",
+      "portrait", "chart", "detail", "name", "fortune", "face", "star", "compatibility", "mirror", "tradition",
     ]);
     expect(getResultSections()[0]).toEqual(["portrait", "人生画卷"]);
     expect(getResultSections()[3]).toEqual(["name", "姓名"]);
@@ -165,8 +165,8 @@ describe("result navigation", () => {
     expect(sectionIds).not.toContain("qimen");
   });
 
-  it("exposes the eight lower production sections", () => {
-    expect(getAvailableSections(true)).toHaveLength(8);
+  it("exposes the ten lower production sections", () => {
+    expect(getAvailableSections(true)).toHaveLength(10);
   });
 
   it("renders name analysis as its own chapter after detail instead of inside the chart", () => {
