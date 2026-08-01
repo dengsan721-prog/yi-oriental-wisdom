@@ -141,7 +141,8 @@ describe("2026-07-30 mobile report system iteration", () => {
 
     expect(draw).toContain("ritual-standalone-page");
     expect(draw).toContain("realistic-oracle-tube");
-    expect(draw).toContain('class="oracle-tube-inscription">\u7b7e');
+    expect(draw).toContain("oracle-tube-breathe-target");
+    expect(draw).not.toContain("oracle-tube-inscription");
     expect(draw).toContain('data-testid="draw-lot-trigger"');
     expect(draw).not.toContain("\u7b7e\u8bd7");
     expect(draw).not.toContain('scene-line-art--oracle');
@@ -150,7 +151,8 @@ describe("2026-07-30 mobile report system iteration", () => {
     expect(drawSource).toContain("selectDailyDrawRecord");
     expect(drawSource).toMatch(/\u5c0f\u51f6|\u5c0f\u5409|\u4e2d\u5409|\u5927\u5409/);
     expect(qimen).toContain("ritual-standalone-page");
-    expect(qimen).toContain('class="qimen-plate-center">\u8d77\u5c40');
+    expect(qimen).toContain("qimen-breathe-target");
+    expect(qimen).not.toContain('class="qimen-plate-center">\u8d77\u5c40');
     expect(qimen).toContain('data-testid="qimen-calc-trigger"');
     expect(qimen).toContain("起局看门，先走一步");
     expect(qimen).toContain("写下今天要问的一件事");

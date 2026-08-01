@@ -249,7 +249,7 @@ export function QimenSection({
       <span className="qimen-scene-asset-shell" aria-hidden="true">
         <img className="qimen-scene-reference-asset" src="qimen-scene-reference.png" alt="" />
       </span>
-      <span className="qimen-plate-center">起局</span>
+      <span className="qimen-breathe-target" aria-hidden="true" />
     </button>
     {openedRecord && <article className="ritual-result-card">
       <small>问事时间 · {formatQimenMoment(now)}｜所问：{question.trim()}｜{openedRecord.invariant}</small>

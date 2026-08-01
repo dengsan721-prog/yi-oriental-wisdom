@@ -168,7 +168,7 @@ export function DrawSection({
       <span className="oracle-tube-asset-shell" aria-hidden="true">
         <img className="oracle-tube-reference-asset" src="oracle-lot-tube-reference.png" alt="" />
       </span>
-      <span className="oracle-tube-inscription">签</span>
+      <span className="oracle-tube-breathe-target" aria-hidden="true" />
     </button>
     {drawnAt && drawnRecord && <article className="ritual-result-card">
       <small>抽签时间 · {formatRitualMoment(drawnAt)}｜所问：{question.trim()}｜{drawnRecord.invariant}</small>

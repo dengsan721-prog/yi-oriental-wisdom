@@ -117,10 +117,11 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(html).toContain("oracle-fortune-asset-tube");
     expect(html).toContain("oracle-tube-asset-shell");
     expect(html).toContain("oracle-tube-reference-asset");
+    expect(html).toContain("oracle-tube-breathe-target");
     expect(html).toContain('src="oracle-lot-tube-reference.png"');
     expect(html).toContain("oracle-line-tube");
     expect(html).toContain("oracle-tube-front");
-    expect(html).toContain('class="oracle-tube-inscription">签');
+    expect(html).not.toContain("oracle-tube-inscription");
     expect(html).not.toContain("<i>签</i>");
     expect(html).not.toContain("签文");
     expect(html).not.toContain("签诗");
@@ -175,18 +176,19 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(tube).toContain("oracle-tube-asset-shell");
     expect(tube).toContain('class="oracle-tube-reference-asset"');
     expect(tube).toContain('src="oracle-lot-tube-reference.png"');
-    expect(tube).toContain('class="oracle-tube-inscription">\u7b7e</span>');
-    expect(tube).not.toContain('class="oracle-tube-inscription">\u62bd</span>');
+    expect(tube).toContain("oracle-tube-breathe-target");
+    expect(tube).not.toContain("oracle-tube-inscription");
+    expect(tube).not.toContain('>\u7b7e</span>');
     expect(tube).not.toContain("data-oracle-stick");
     expect(css).toContain(".oracle-line-tube .oracle-tube-reference-asset{display:block;width:100%;height:100%;object-fit:contain");
     expect(css).toContain(".oracle-line-tube.has-shaken-sticks .oracle-tube-reference-asset{animation:ritual-stick-shake");
-    expect(css).toMatch(/\.oracle-line-tube \.oracle-tube-inscription\{[^}]*bottom:37px/);
-    expect(css).toContain(".oracle-line-tube .oracle-tube-inscription::after");
+    expect(css).toMatch(/\.oracle-line-tube \.oracle-tube-breathe-target\{[^}]*bottom:37px/);
+    expect(css).toContain(".oracle-line-tube .oracle-tube-breathe-target::after");
     expect(css).toContain("oracle-breathe");
     expect(html).not.toContain("is-shaken");
   });
 
-  it("keeps the lot tube inscription as sign with the original breathing cue", () => {
+  it("keeps the lot tube source artwork unobscured with the original breathing cue", () => {
     const { chart } = model();
     const html = renderToStaticMarkup(createElement(DrawSection, {
       chart,
@@ -199,9 +201,10 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     const buttonStart = html.lastIndexOf("<button", tubeStart);
     const tube = html.slice(buttonStart, html.indexOf("</button>", tubeStart) + "</button>".length);
 
-    expect(tube).toContain('class="oracle-tube-inscription">\u7b7e</span>');
-    expect(tube).not.toContain('class="oracle-tube-inscription">\u62bd</span>');
-    expect(css).toMatch(/\.oracle-line-tube \.oracle-tube-inscription::after\{[^}]*animation:oracle-breathe/);
+    expect(tube).toContain("oracle-tube-breathe-target");
+    expect(tube).not.toContain("oracle-tube-inscription");
+    expect(tube).not.toContain('>\u7b7e</span>');
+    expect(css).toMatch(/\.oracle-line-tube \.oracle-tube-breathe-target::after\{[^}]*animation:oracle-breathe/);
   });
 
   it("offers richer everyday question presets for today sign and qimen", () => {
@@ -244,9 +247,10 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(tube).toContain('aria-hidden="true"');
     expect(tube).not.toContain("oracle-stick-pocket");
     expect(tube).not.toContain("oracle-line-rim");
+    expect(tube).not.toContain("oracle-tube-inscription");
     expect(css).toMatch(/\.oracle-line-tube\.oracle-fortune-asset-tube\{[^}]*overflow:visible/);
     expect(css).toMatch(/\.oracle-line-tube \.oracle-tube-asset-shell\{[^}]*z-index:1/);
-    expect(css).toMatch(/\.oracle-line-tube \.oracle-tube-inscription\{[^}]*z-index:5/);
+    expect(css).toMatch(/\.oracle-line-tube \.oracle-tube-breathe-target\{[^}]*z-index:5/);
   });
 
   it("makes qimen question-first with presets and a richer classical plate", () => {
@@ -271,7 +275,9 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(html).toContain("qimen-scene-asset-plate");
     expect(html).toContain("qimen-scene-asset-shell");
     expect(html).toContain("qimen-scene-reference-asset");
+    expect(html).toContain("qimen-breathe-target");
     expect(html).toContain('src="qimen-scene-reference.png"');
+    expect(html).not.toContain('class="qimen-plate-center">\u8d77\u5c40</span>');
     expect(html).not.toContain("qimen-nine-grid");
     expect(html).not.toContain("qimen-cardinal qimen-cardinal--north");
     expect(html).not.toContain("问事时间");
@@ -324,8 +330,8 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(css).toContain(".ritual-back-button--mini");
     expect(css).toContain(".realistic-qimen-plate.qimen-scene-asset-plate{width:min(520px,100%)");
     expect(css).toContain(".qimen-scene-reference-asset{display:block;width:100%;height:100%;object-fit:cover");
-    expect(css).toContain(".qimen-scene-asset-plate .qimen-plate-center{position:relative;z-index:3;width:78px;height:78px;border:1px solid color-mix(in srgb,#d7bc72");
-    expect(css).toContain(".qimen-plate-center::after");
+    expect(css).toContain(".qimen-scene-asset-plate .qimen-breathe-target{position:absolute;left:54%;top:35%");
+    expect(css).toContain(".qimen-breathe-target::after");
     expect(css).toContain("qimen-breathe");
   });
 

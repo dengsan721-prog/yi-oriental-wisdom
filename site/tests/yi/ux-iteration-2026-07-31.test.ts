@@ -92,8 +92,9 @@ describe("2026-07-31 clean mobile report and daily ritual pages", () => {
     expect(html).toContain("realistic-oracle-tube");
     expect(html).toContain("oracle-fortune-asset-tube");
     expect(html).toContain('src="oracle-lot-tube-reference.png"');
+    expect(html).toContain("oracle-tube-breathe-target");
     expect(html).not.toContain("data-oracle-stick");
-    expect(html).toContain('class="oracle-tube-inscription">签');
+    expect(html).not.toContain("oracle-tube-inscription");
     expect(html).not.toContain("scene-line-art--oracle");
     expect(html).not.toContain("结合生辰签");
     expect(html).not.toMatch(/小凶|小吉|中吉|大吉/);
@@ -116,6 +117,8 @@ describe("2026-07-31 clean mobile report and daily ritual pages", () => {
     expect(html).toContain("realistic-qimen-plate");
     expect(html).toContain("qimen-scene-asset-plate");
     expect(html).toContain('src="qimen-scene-reference.png"');
+    expect(html).toContain("qimen-breathe-target");
+    expect(html).not.toContain('class="qimen-plate-center">起局');
     expect(html).not.toContain("浙江杭州");
     expect(html).not.toContain("scene-line-art--qimen");
     expect(html).not.toContain("当下提示");
