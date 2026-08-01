@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- ritual assets are static public files shared by GitHub Pages and Sites */
 import { useState } from "react";
 import { deriveYiThemeElement, type YiThemeElement } from "../../lib/yi/theme";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
@@ -26,8 +27,6 @@ const drawQuestionPresets = [
   "今日行动", "合作邀约", "情绪整理", "重要决定",
 ];
 type DrawQuestionTopic = "career" | "relationship" | "wealth" | "action";
-
-const oracleStickClasses = ["one", "two", "three", "four", "five", "six", "seven", "eight"];
 
 const drawTopicGuidance: Record<DrawQuestionTopic, { title: string; category: DailyDrawRecord["category"]; verse: string; reading: string; index: number }> = {
   career: {
@@ -165,19 +164,11 @@ export function DrawSection({
       </div>
       <textarea value={question} onChange={(event) => updateQuestion(event.target.value)} placeholder="写下今天要问的一件事" aria-label="今天要问的一件事" />
     </label>
-    <button className={"realistic-oracle-tube oracle-tube-front oracle-line-tube" + (shaken ? " has-shaken-sticks" : "")} data-testid="draw-lot-trigger" type="button" disabled={!question.trim()} onClick={() => { setDrawnRecord(selectDailyDrawRecord(chart, birth, now, question)); setDrawnAt(now); }} aria-label="摇动今日签筒">
-      <span className="oracle-tube-body">
-        <span className="oracle-line-rim" aria-hidden="true" />
-        <span className="oracle-stick-well" aria-hidden="true">
-          <span className="oracle-stick-pocket">
-            <span className="oracle-stick-fan">
-              {oracleStickClasses.map(stick => <span className={`oracle-stick oracle-stick--${stick}`} data-oracle-stick={stick} key={stick}><i /></span>)}
-            </span>
-          </span>
-        </span>
-        <span className="oracle-tube-inscription">签</span>
-        <span className="oracle-line-foot" aria-hidden="true" />
+    <button className={"realistic-oracle-tube oracle-tube-front oracle-line-tube oracle-fortune-asset-tube" + (shaken ? " has-shaken-sticks" : "")} data-testid="draw-lot-trigger" type="button" disabled={!question.trim()} onClick={() => { setDrawnRecord(selectDailyDrawRecord(chart, birth, now, question)); setDrawnAt(now); }} aria-label="摇动今日签筒">
+      <span className="oracle-tube-asset-shell" aria-hidden="true">
+        <img className="oracle-tube-reference-asset" src="oracle-lot-tube-reference.png" alt="" />
       </span>
+      <span className="oracle-tube-inscription">签</span>
     </button>
     {drawnAt && drawnRecord && <article className="ritual-result-card">
       <small>抽签时间 · {formatRitualMoment(drawnAt)}｜所问：{question.trim()}｜{drawnRecord.invariant}</small>

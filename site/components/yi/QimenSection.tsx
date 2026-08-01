@@ -1,5 +1,6 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- ritual assets are static public files shared by GitHub Pages and Sites */
 import { useState } from "react";
 import { branches, cycle, stems } from "../../lib/yi/stems-branches";
 import { deriveYiThemeElement, type YiThemeElement } from "../../lib/yi/theme";
@@ -244,15 +245,11 @@ export function QimenSection({
       </div>
       <textarea value={question} onChange={(event) => updateQuestion(event.target.value)} placeholder="写下今天要问的一件事" aria-label="今天要问的事情" />
     </label>
-    <button className={"realistic-qimen-plate qimen-plate-classic" + (opened ? " is-opened" : "")} data-testid="qimen-calc-trigger" type="button" disabled={!question.trim()} onClick={() => setOpenedRecord(selectDailyQimenRecord(chart, birth, now, question))} aria-label="奇门起局">
-      <span className="qimen-cardinal qimen-cardinal--north">坎</span>
-      <span className="qimen-cardinal qimen-cardinal--east">震</span>
-      <span className="qimen-cardinal qimen-cardinal--south">离</span>
-      <span className="qimen-cardinal qimen-cardinal--west">兑</span>
-      <span className="qimen-nine-grid" aria-hidden="true">{Array.from({ length: 9 }, (_, index) => <i key={index} />)}</span>
+    <button className={"realistic-qimen-plate qimen-plate-classic qimen-scene-asset-plate" + (opened ? " is-opened" : "")} data-testid="qimen-calc-trigger" type="button" disabled={!question.trim()} onClick={() => setOpenedRecord(selectDailyQimenRecord(chart, birth, now, question))} aria-label="奇门起局">
+      <span className="qimen-scene-asset-shell" aria-hidden="true">
+        <img className="qimen-scene-reference-asset" src="qimen-scene-reference.png" alt="" />
+      </span>
       <span className="qimen-plate-center">起局</span>
-      <i className="qimen-ring qimen-ring--outer" />
-      <i className="qimen-ring qimen-ring--inner" />
     </button>
     {openedRecord && <article className="ritual-result-card">
       <small>问事时间 · {formatQimenMoment(now)}｜所问：{question.trim()}｜{openedRecord.invariant}</small>
