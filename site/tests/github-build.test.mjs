@@ -28,6 +28,17 @@ test("GitHub build uses the current product title", async () => {
   assert.doesNotMatch(html, /<title>艺｜东方人生智慧<\/title>/);
 });
 
+test("GitHub build declares the existing SVG favicon", async () => {
+  const html = await readFile(new URL("../../docs/index.html", import.meta.url), "utf8");
+  const [sourceIcon, deployedIcon] = await Promise.all([
+    readFile(new URL("../public/favicon.svg", import.meta.url), "utf8"),
+    readFile(new URL("../../docs/favicon.svg", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(html, /<link rel="icon" type="image\/svg\+xml" href="\/yi-oriental-wisdom\/favicon\.svg">/);
+  assert.equal(deployedIcon, sourceIcon);
+});
+
 test("GitHub build is the full bundled React app", async () => {
   const html = await readFile(new URL("../../docs/index.html", import.meta.url), "utf8");
   const assets = await readdir(new URL("../../docs/assets/", import.meta.url));

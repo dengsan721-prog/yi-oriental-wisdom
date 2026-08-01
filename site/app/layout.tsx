@@ -4,6 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "命|东方人生智慧",
   description: "把深奥命理转化为看得懂的人生故事、关系洞察与顺势行动。",
+  icons: { icon: "/favicon.svg" },
   openGraph: {
     title: "命|东方人生智慧",
     description: "看见命运的脉络，活出人生的智慧。",
