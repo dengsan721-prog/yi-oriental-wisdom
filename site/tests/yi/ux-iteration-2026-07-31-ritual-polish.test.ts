@@ -182,7 +182,7 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(tube).not.toContain("data-oracle-stick");
     expect(css).toContain(".oracle-line-tube .oracle-tube-reference-asset{display:block;width:100%;height:100%;object-fit:contain");
     expect(css).toContain(".oracle-line-tube.has-shaken-sticks .oracle-tube-reference-asset{animation:ritual-stick-shake");
-    expect(css).toMatch(/\.oracle-line-tube \.oracle-tube-breathe-target\{[^}]*bottom:37px/);
+    expect(css).toMatch(/\.oracle-line-tube \.oracle-tube-breathe-target\{[^}]*left:50%;top:76\.5%/);
     expect(css).toContain(".oracle-line-tube .oracle-tube-breathe-target::after");
     expect(css).toContain("oracle-breathe");
     expect(html).not.toContain("is-shaken");
@@ -330,9 +330,26 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(css).toContain(".ritual-back-button--mini");
     expect(css).toContain(".realistic-qimen-plate.qimen-scene-asset-plate{width:min(520px,100%)");
     expect(css).toContain(".qimen-scene-reference-asset{display:block;width:100%;height:100%;object-fit:cover");
-    expect(css).toContain(".qimen-scene-asset-plate .qimen-breathe-target{position:absolute;left:54%;top:35%");
+    expect(css).toContain(".qimen-scene-asset-plate .qimen-breathe-target{position:absolute;left:64%;top:39.5%");
     expect(css).toContain(".qimen-breathe-target::after");
     expect(css).toContain("qimen-breathe");
+  });
+
+  it("adds faint ink-wash background patterns that vary with report and ritual contexts", () => {
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+
+    expect(css).toContain("--yi-ink-wash");
+    expect(css).toContain("--yi-page-pattern");
+    expect(css).toContain("main[data-element] :where(.result-shell,.life-home,.intake)::before");
+    expect(css).toContain(".result-content::before");
+    expect(css).toContain(".result-content:has(.portrait-report)");
+    expect(css).toContain(".result-content:has(.chart-report)");
+    expect(css).toContain(".result-content:has(.fortune-report)");
+    expect(css).toContain(".result-content:has(.name-analysis-section)");
+    expect(css).toContain(".result-content:has(.oracle-report),.result-content:has(.today-sign-page)");
+    expect(css).toContain(".result-content:has(.qimen-report),.result-content:has(.qimen-standalone-page)");
+    expect(css).toContain("repeating-linear-gradient(115deg");
+    expect(css).toContain("color-mix(in srgb,var(--yi-accent-soft)");
   });
 
   it("keeps long panoramic report titles centered on one mobile line with lishu sizing hooks", () => {
