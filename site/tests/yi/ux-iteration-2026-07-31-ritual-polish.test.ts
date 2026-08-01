@@ -335,21 +335,28 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(css).toContain("qimen-breathe");
   });
 
-  it("adds faint ink-wash background patterns that vary with report and ritual contexts", () => {
+  it("adds palace and mogao inspired pastel cloud backgrounds that vary with report and ritual contexts", () => {
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-    expect(css).toContain("--yi-ink-wash");
-    expect(css).toContain("--yi-page-pattern");
+    expect(css).toContain("--yi-palace-cloud");
+    expect(css).toContain("--yi-mogao-caisson");
+    expect(css).toContain("--yi-pastel-wash");
     expect(css).toContain("main[data-element] :where(.result-shell,.life-home,.intake)::before");
     expect(css).toContain(".result-content::before");
+    expect(css).toContain("repeating-radial-gradient(ellipse at");
+    expect(css).toContain("repeating-conic-gradient(from");
+    expect(css).toContain("#d88b5f");
+    expect(css).toContain("#7fa99a");
+    expect(css).toContain("#6d93b2");
     expect(css).toContain(".result-content:has(.portrait-report)");
     expect(css).toContain(".result-content:has(.chart-report)");
     expect(css).toContain(".result-content:has(.fortune-report)");
     expect(css).toContain(".result-content:has(.name-analysis-section)");
     expect(css).toContain(".result-content:has(.oracle-report),.result-content:has(.today-sign-page)");
     expect(css).toContain(".result-content:has(.qimen-report),.result-content:has(.qimen-standalone-page)");
-    expect(css).toContain("repeating-linear-gradient(115deg");
-    expect(css).toContain("color-mix(in srgb,var(--yi-accent-soft)");
+    expect(css).toContain("radial-gradient(circle at 50% 38%,color-mix(in srgb,#d88b5f");
+    expect(css).toContain("repeating-radial-gradient(circle at 50% 46%,color-mix(in srgb,#7fa99a");
+    expect(css).toContain("linear-gradient(135deg,transparent 0 38%,color-mix(in srgb,#6d93b2");
   });
 
   it("keeps long panoramic report titles centered on one mobile line with lishu sizing hooks", () => {
