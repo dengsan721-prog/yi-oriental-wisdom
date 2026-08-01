@@ -17,6 +17,7 @@ export function parseYiHash(hash: string): YiRoute {
   if (path === "/birth") return { page: "birth" };
   if (path === "/calculating") return { page: "calculating" };
   if (path === "/home") return { page: "home" };
+  if (path === "/report") return { page: "report", section: "portrait" };
 
   const report = /^\/report\/([^/]+)$/.exec(path);
   if (report) {

@@ -15,6 +15,7 @@ describe("yi hash router", () => {
     ["#/", { page: "intro" }],
     ["#/birth", { page: "birth" }],
     ["#/calculating", { page: "calculating" }],
+    ["#/report", { page: "report", section: "portrait" }],
     ["#/report/chart", { page: "report", section: "chart" }],
     ["#/report/name", { page: "report", section: "name" }],
     ["#/report/not-real", { page: "report", section: "portrait" }],

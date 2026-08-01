@@ -165,6 +165,23 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(html).not.toContain("is-shaken");
   });
 
+  it("keeps the lot tube inscription as sign with the original breathing cue", () => {
+    const { chart } = model();
+    const html = renderToStaticMarkup(createElement(DrawSection, {
+      chart,
+      birth,
+      onBackToChart: () => undefined,
+      now: new Date("2026-07-31T10:00:00+08:00"),
+    }));
+    const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+    const tubeStart = html.indexOf('data-testid="draw-lot-trigger"');
+    const tube = html.slice(tubeStart, html.indexOf("</button>", tubeStart) + "</button>".length);
+
+    expect(tube).toContain('class="oracle-tube-inscription">\u7b7e</span>');
+    expect(tube).not.toContain('class="oracle-tube-inscription">\u62bd</span>');
+    expect(css).toMatch(/\.oracle-line-tube \.oracle-tube-inscription::after\{[^}]*animation:oracle-breathe/);
+  });
+
   it("offers richer everyday question presets for today sign and qimen", () => {
     const { chart } = model();
     const draw = renderToStaticMarkup(createElement(DrawSection, {
