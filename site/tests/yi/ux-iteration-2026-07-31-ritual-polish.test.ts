@@ -44,6 +44,15 @@ function renderShell(activeSection: "portrait" | "face" | "star" | "tradition" =
   }));
 }
 
+function readPngInfo(asset: URL) {
+  const bytes = readFileSync(asset);
+  return {
+    width: bytes.readUInt32BE(16),
+    height: bytes.readUInt32BE(20),
+    colorType: bytes[25],
+  };
+}
+
 describe("2026-07-31 ritual polish and atlas module extraction", () => {
   it("centers the panoramic fate title with a lishu tuned font contract", () => {
     const html = renderShell("portrait");
@@ -155,11 +164,13 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     }));
     const css = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
     const asset = new URL("../../public/oracle-lot-tube-reference.png", import.meta.url);
+    const png = readPngInfo(asset);
     const tubeStart = html.indexOf('data-testid="draw-lot-trigger"');
     const buttonStart = html.lastIndexOf("<button", tubeStart);
     const tube = html.slice(buttonStart, html.indexOf("</button>", tubeStart) + "</button>".length);
 
     expect(existsSync(asset)).toBe(true);
+    expect(png).toMatchObject({ width: 800, height: 800, colorType: 6 });
     expect(tube).toContain("oracle-fortune-asset-tube");
     expect(tube).toContain("oracle-tube-asset-shell");
     expect(tube).toContain('class="oracle-tube-reference-asset"');
@@ -249,11 +260,14 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     const career = selectDailyQimenRecord(chart, birth, new Date("2026-07-31T10:00:00+08:00"), "事业取舍");
     const money = selectDailyQimenRecord(chart, birth, new Date("2026-07-31T10:00:00+08:00"), "财运取舍");
     const asset = new URL("../../public/qimen-scene-reference.png", import.meta.url);
+    const png = readPngInfo(asset);
 
     expect(html).toContain("问事");
     expect(html).toContain("事业取舍");
     expect(html).toContain("写下今天要问的一件事");
     expect(existsSync(asset)).toBe(true);
+    expect(png.width).toBeLessThan(1040);
+    expect(png.height).toBe(694);
     expect(html).toContain("qimen-scene-asset-plate");
     expect(html).toContain("qimen-scene-asset-shell");
     expect(html).toContain("qimen-scene-reference-asset");
@@ -310,6 +324,7 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(css).toContain(".ritual-back-button--mini");
     expect(css).toContain(".realistic-qimen-plate.qimen-scene-asset-plate{width:min(520px,100%)");
     expect(css).toContain(".qimen-scene-reference-asset{display:block;width:100%;height:100%;object-fit:cover");
+    expect(css).toContain(".qimen-scene-asset-plate .qimen-plate-center{position:relative;z-index:3;width:78px;height:78px;border:1px solid color-mix(in srgb,#d7bc72");
     expect(css).toContain(".qimen-plate-center::after");
     expect(css).toContain("qimen-breathe");
   });

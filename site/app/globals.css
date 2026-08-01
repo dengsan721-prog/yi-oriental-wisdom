@@ -550,7 +550,7 @@ body{font-family:var(--yi-sans)}
 .realistic-qimen-plate.qimen-scene-asset-plate::before,.realistic-qimen-plate.qimen-scene-asset-plate::after{content:none}
 .qimen-scene-asset-shell{position:absolute;inset:0;display:block;z-index:1;pointer-events:none}
 .qimen-scene-reference-asset{display:block;width:100%;height:100%;object-fit:cover;object-position:center center;filter:saturate(1.04) contrast(1.02)}
-.qimen-scene-asset-plate .qimen-plate-center{position:relative;z-index:3;width:78px;height:78px;border:1px solid color-mix(in srgb,#f8dda0 72%,var(--yi-line));background:radial-gradient(circle at 35% 30%,#fff2bd 0 18%,#d8a653 58%,#6f3b18 100%);box-shadow:0 12px 28px #2b120a66,inset 0 2px 6px #fff3bd77;color:#35170c;text-shadow:0 1px 0 #fff1b8;font:900 24px/1 "LiSu","隶书","STLiti","STKaiti","KaiTi",serif}
+.qimen-scene-asset-plate .qimen-plate-center{position:relative;z-index:3;width:78px;height:78px;border:1px solid color-mix(in srgb,#d7bc72 70%,#23483f);background:radial-gradient(circle at 35% 30%,#f7e6ac 0 18%,#b99049 52%,#315347 100%);box-shadow:0 12px 28px #1d160a66,inset 0 2px 7px #fff1b177;color:#2c1a0c;text-shadow:0 1px 0 #f8e6a8;font:900 24px/1 "LiSu","隶书","STLiti","STKaiti","KaiTi",serif}
 .qimen-scene-asset-plate.is-opened{animation:ritual-scene-settle .72s ease-in-out both}
 @keyframes ritual-scene-settle{0%,100%{transform:translateY(0) scale(1)}42%{transform:translateY(-2px) scale(1.01)}}
 @media(max-width:520px){.realistic-qimen-plate.qimen-scene-asset-plate{width:100%;height:220px;border-radius:16px}.qimen-scene-reference-asset{object-position:center center}.qimen-scene-asset-plate .qimen-plate-center{width:70px;height:70px;font-size:22px}}
