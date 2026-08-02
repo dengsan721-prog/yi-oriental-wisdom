@@ -54,15 +54,14 @@ describe("2026-07-29 mobile-first wisdom iteration", () => {
       "detail",
       "name",
       "fortune",
+      "compatibility",
       "face",
       "marks",
       "fengshui",
       "star",
-      "compatibility",
       "mirror",
-      "tradition",
     ]);
-    expect(getAvailableSections(true)).toHaveLength(12);
+    expect(getAvailableSections(true)).toHaveLength(11);
     expect(renderReport()).toContain("<small>报告预览</small>");
     expect(renderReport()).toContain('data-daily-entry="draw"');
     expect(renderReport()).toContain('data-daily-entry="qimen"');

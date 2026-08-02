@@ -18,8 +18,10 @@ describe("yi hash router", () => {
     ["#/report", { page: "report", section: "portrait" }],
     ["#/report/chart", { page: "report", section: "chart" }],
     ["#/report/name", { page: "report", section: "name" }],
+    ["#/report/compatibility", { page: "report", section: "compatibility" }],
     ["#/report/fengshui", { page: "report", section: "fengshui" }],
     ["#/report/marks", { page: "report", section: "marks" }],
+    ["#/report/tradition", { page: "report", section: "portrait" }],
     ["#/report/not-real", { page: "report", section: "portrait" }],
     ["#/home", { page: "home" }],
   ])("parses %s", (hash, expected) => expect(parseYiHash(hash)).toEqual(expected));

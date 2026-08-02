@@ -14,7 +14,7 @@ const items = buildInterpretations(chart);
 describe("section-owned source note", () => {
   it("belongs only to the detailed interpretation chapter", () => {
     expect(shouldRenderSourceNote("detail")).toBe(true);
-    for (const section of ["portrait", "chart", "fortune", "mirror", "compatibility", "tradition"] as const) {
+    for (const section of ["portrait", "chart", "fortune", "mirror", "compatibility"] as const) {
       expect(shouldRenderSourceNote(section)).toBe(false);
     }
   });

@@ -28,7 +28,7 @@ function model(input: BirthInput = birth) {
   return { chart, report, items: buildInterpretations(chart) };
 }
 
-function renderShell(activeSection: "portrait" | "face" | "marks" | "fengshui" | "star" | "tradition" = "portrait") {
+function renderShell(activeSection: "portrait" | "face" | "marks" | "fengshui" | "star" = "portrait") {
   const { chart, report, items } = model();
   return renderToStaticMarkup(createElement(ResultShell, {
     name: birth.name,
@@ -76,9 +76,10 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     const nav = html.slice(html.indexOf('class="result-tabs"'), html.indexOf('class="result-content"'));
 
     expect(ids).toEqual([
-      "portrait", "chart", "detail", "name", "fortune", "face", "marks", "fengshui", "star", "compatibility", "mirror", "tradition",
+      "portrait", "chart", "detail", "name", "fortune", "compatibility", "face", "marks", "fengshui", "star", "mirror",
     ]);
-    expect(getAvailableSections(true)).toHaveLength(12);
+    expect(getAvailableSections(true)).toHaveLength(11);
+    expect(ids).not.toContain("tradition");
     expect(nav).toContain(">相面</button>");
     expect(nav).toContain(">痣纹</button>");
     expect(nav).toContain(">风水</button>");
@@ -92,7 +93,6 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     const marks = renderShell("marks");
     const fengshui = renderShell("fengshui");
     const star = renderShell("star");
-    const tradition = renderShell("tradition");
 
     expect(face).toContain("相面");
     expect(face).toContain("面型");
@@ -110,11 +110,6 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     expect(star).toContain("星座");
     expect(star).toContain("白羊座");
     expect(star).not.toContain("<b>相面</b>");
-    expect(tradition).not.toContain("<b>星座</b>");
-    expect(tradition).not.toContain("<b>相面</b>");
-    expect(tradition).not.toContain("传统风水规划建议");
-    expect(tradition).not.toContain("面痣");
-    expect(tradition).not.toContain("手纹");
   });
 
   it("makes today sign question-first, repeatable by question, and structured as sign text, poem and interpretation", () => {
