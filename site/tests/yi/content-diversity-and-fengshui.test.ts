@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { DrawSection, selectDailyDrawRecord } from "../../components/yi/DrawSection";
 import { QimenSection, selectDailyQimenRecord } from "../../components/yi/QimenSection";
-import { TraditionSection } from "../../components/yi/TraditionSection";
+import { FengshuiSection } from "../../components/yi/TraditionSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { buildInterpretations } from "../../lib/yi/interpretation";
 import { simulatePersonalizedReportCorpus } from "../../lib/yi/report-personalization";
@@ -143,10 +143,10 @@ describe("content diversity expansion and feng shui planning", () => {
   });
 
 
-  it("renders six actionable feng shui planning modules with visual diagrams in the tradition section", () => {
+  it("renders six actionable feng shui planning modules with visual diagrams in the feng shui section", () => {
     const birth = births[0];
     const chart = calculateFourPillars(birth);
-    const html = renderToStaticMarkup(createElement(TraditionSection, { chart, birth }));
+    const html = renderToStaticMarkup(createElement(FengshuiSection, { chart, birth }));
 
     for (const title of ["工位风水", "办公室风水", "居家风水", "卧室风水", "阳宅风水", "阴宅风水"]) {
       expect(html).toContain(title);

@@ -13,7 +13,7 @@ import { FortuneSection } from "./FortuneSection";
 import { MirrorSection } from "./MirrorSection";
 import { CompatibilitySection } from "./CompatibilitySection";
 import type { ParentChildPrimaryRole } from "./CompatibilitySection";
-import { TraditionSection } from "./TraditionSection";
+import { FengshuiSection, TraditionSection } from "./TraditionSection";
 import type { YiThemeElement } from "../../lib/yi/theme";
 import { NameAnalysisSection } from "./NameAnalysisSection";
 import { DrawSection } from "./DrawSection";
@@ -22,7 +22,7 @@ import { ReferenceAtlasSection } from "./ReferenceAtlasSection";
 
 export const getResultSections = () => [
   ["portrait", "人生画卷"], ["chart", "命盘"], ["detail", "详批"],
-  ["name", "姓名"], ["fortune", "大运"], ["face", "相面"], ["star", "星座"], ["compatibility", "合盘"], ["mirror", "镜像"],
+  ["name", "姓名"], ["fortune", "大运"], ["face", "相面"], ["marks", "痣纹"], ["fengshui", "风水"], ["star", "星座"], ["compatibility", "合盘"], ["mirror", "镜像"],
   ["tradition", "传统"],
 ] as const;
 
@@ -140,6 +140,10 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
         return <FortuneSection chart={chart} birth={birth} />;
       case "face":
         return <ReferenceAtlasSection chart={chart} birth={birth} title="相面" initialMethod="face" allowedMethods={["face"]} />;
+      case "marks":
+        return <ReferenceAtlasSection chart={chart} birth={birth} title="痣纹" initialMethod="mole" allowedMethods={["mole", "palm"]} />;
+      case "fengshui":
+        return <FengshuiSection chart={chart} birth={birth} />;
       case "star":
         return <ReferenceAtlasSection chart={chart} birth={birth} title="星座" initialMethod="star" allowedMethods={["star"]} />;
       case "draw":
@@ -151,7 +155,7 @@ export function ResultShell({ name, chart, birth, report, interpretations, theme
       case "compatibility":
         return <CompatibilitySection chart={chart} primaryName={name} relationship={state.compatibility.relationship} primaryParentRole={state.compatibility.primaryParentRole} secondBirth={state.compatibility.secondBirth} onRelationshipChange={relationship => dispatch({ type: "set-relationship", relationship })} onSecondBirthChange={birth => dispatch({ type: "set-second-birth", birth })} onParentChildPrimaryRoleChange={primaryParentRole => dispatch({ type: "set-parent-child-primary-role", primaryParentRole })} />;
       case "tradition":
-        return <TraditionSection chart={chart} birth={birth} />;
+        return <TraditionSection />;
       default:
         return <PortraitSection birth={birth} chart={chart} report={report} items={interpretations} />;
     }

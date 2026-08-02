@@ -4,7 +4,6 @@ import {
 } from "../../lib/yi/traditional-content";
 import { buildFengshuiPlans, type FengshuiPlan } from "../../lib/yi/fengshui-planning";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
-import { ReferenceAtlasSection } from "./ReferenceAtlasSection";
 
 export function TraditionPublicIntroView({
   view,
@@ -54,12 +53,15 @@ export function FengshuiPlanningView({ plans }: { plans: FengshuiPlan[] }) {
   </section>;
 }
 
-export function TraditionSection({ chart, birth }: { chart: FourPillarsResult; birth: BirthInput }) {
+export function TraditionSection() {
   const intro = buildTraditionPublicIntro();
-  const fengshuiPlans = buildFengshuiPlans(chart, birth);
   return <section className="report-section tradition-section">
     <TraditionPublicIntroView view={intro} />
-    <FengshuiPlanningView plans={fengshuiPlans} />
-    <ReferenceAtlasSection chart={chart} birth={birth} title="传统图谱" initialMethod="mole" allowedMethods={["mole", "palm"]} />
+  </section>;
+}
+
+export function FengshuiSection({ chart, birth }: { chart: FourPillarsResult; birth: BirthInput }) {
+  return <section className="report-section tradition-section fengshui-section">
+    <FengshuiPlanningView plans={buildFengshuiPlans(chart, birth)} />
   </section>;
 }

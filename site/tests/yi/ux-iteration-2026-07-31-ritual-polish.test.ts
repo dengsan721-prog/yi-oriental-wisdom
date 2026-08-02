@@ -28,7 +28,7 @@ function model(input: BirthInput = birth) {
   return { chart, report, items: buildInterpretations(chart) };
 }
 
-function renderShell(activeSection: "portrait" | "face" | "star" | "tradition" = "portrait") {
+function renderShell(activeSection: "portrait" | "face" | "marks" | "fengshui" | "star" | "tradition" = "portrait") {
   const { chart, report, items } = model();
   return renderToStaticMarkup(createElement(ResultShell, {
     name: birth.name,
@@ -76,28 +76,45 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     const nav = html.slice(html.indexOf('class="result-tabs"'), html.indexOf('class="result-content"'));
 
     expect(ids).toEqual([
-      "portrait", "chart", "detail", "name", "fortune", "face", "star", "compatibility", "mirror", "tradition",
+      "portrait", "chart", "detail", "name", "fortune", "face", "marks", "fengshui", "star", "compatibility", "mirror", "tradition",
     ]);
-    expect(getAvailableSections(true)).toHaveLength(10);
+    expect(getAvailableSections(true)).toHaveLength(12);
     expect(nav).toContain(">相面</button>");
+    expect(nav).toContain(">痣纹</button>");
+    expect(nav).toContain(">风水</button>");
     expect(nav).toContain(">星座</button>");
     expect(nav).not.toContain(">今日签</button>");
     expect(nav).not.toContain(">奇门</button>");
   });
 
-  it("renders face and star as direct modules with focused atlas methods", () => {
+  it("renders face, mole-palm marks, feng shui and star as direct focused modules", () => {
     const face = renderShell("face");
+    const marks = renderShell("marks");
+    const fengshui = renderShell("fengshui");
     const star = renderShell("star");
     const tradition = renderShell("tradition");
 
     expect(face).toContain("相面");
     expect(face).toContain("面型");
+    expect(face).not.toContain("<b>面痣</b>");
+    expect(face).not.toContain("<b>手纹</b>");
     expect(face).not.toContain("<b>星座</b>");
+    expect(marks).toContain("痣纹");
+    expect(marks).toContain("面痣");
+    expect(marks).toContain("手纹");
+    expect(marks).not.toContain("传统风水规划建议");
+    expect(fengshui).toContain("传统风水规划建议");
+    expect(fengshui).toContain("工位风水");
+    expect(fengshui).not.toContain("面痣");
+    expect(fengshui).not.toContain("手纹");
     expect(star).toContain("星座");
     expect(star).toContain("白羊座");
     expect(star).not.toContain("<b>相面</b>");
     expect(tradition).not.toContain("<b>星座</b>");
     expect(tradition).not.toContain("<b>相面</b>");
+    expect(tradition).not.toContain("传统风水规划建议");
+    expect(tradition).not.toContain("面痣");
+    expect(tradition).not.toContain("手纹");
   });
 
   it("makes today sign question-first, repeatable by question, and structured as sign text, poem and interpretation", () => {

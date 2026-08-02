@@ -156,17 +156,36 @@ describe("result navigation", () => {
 
   it("keeps the lower report sections in a stable reading order without daily ritual entries", () => {
     expect(getResultSections().map(([id]) => id)).toEqual([
-      "portrait", "chart", "detail", "name", "fortune", "face", "star", "compatibility", "mirror", "tradition",
+      "portrait", "chart", "detail", "name", "fortune", "face", "marks", "fengshui", "star", "compatibility", "mirror", "tradition",
     ]);
     expect(getResultSections()[0]).toEqual(["portrait", "人生画卷"]);
     expect(getResultSections()[3]).toEqual(["name", "姓名"]);
+    expect(getResultSections()[6]).toEqual(["marks", "痣纹"]);
+    expect(getResultSections()[7]).toEqual(["fengshui", "风水"]);
     const sectionIds = getResultSections().map(([id]) => String(id));
     expect(sectionIds).not.toContain("draw");
     expect(sectionIds).not.toContain("qimen");
   });
 
-  it("exposes the ten lower production sections", () => {
-    expect(getAvailableSections(true)).toHaveLength(10);
+  it("exposes the twelve lower production sections", () => {
+    expect(getAvailableSections(true)).toHaveLength(12);
+  });
+
+  it("renders feng shui and mole-palm marks as sibling report modules", () => {
+    const fengshui = renderResult(exactBirth, { activeSection: "fengshui" }).html;
+    const marks = renderResult(exactBirth, { activeSection: "marks" }).html;
+    const tradition = renderResult(exactBirth, { activeSection: "tradition" }).html;
+
+    expect(fengshui).toContain("传统风水规划建议");
+    expect(fengshui).toContain("工位风水");
+    expect(fengshui).not.toContain("面痣");
+    expect(fengshui).not.toContain("手纹");
+    expect(marks).toContain("面痣");
+    expect(marks).toContain("手纹");
+    expect(marks).not.toContain("传统风水规划建议");
+    expect(tradition).not.toContain("传统风水规划建议");
+    expect(tradition).not.toContain("面痣");
+    expect(tradition).not.toContain("手纹");
   });
 
   it("renders name analysis as its own chapter after detail instead of inside the chart", () => {

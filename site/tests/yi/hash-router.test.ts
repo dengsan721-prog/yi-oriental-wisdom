@@ -18,6 +18,8 @@ describe("yi hash router", () => {
     ["#/report", { page: "report", section: "portrait" }],
     ["#/report/chart", { page: "report", section: "chart" }],
     ["#/report/name", { page: "report", section: "name" }],
+    ["#/report/fengshui", { page: "report", section: "fengshui" }],
+    ["#/report/marks", { page: "report", section: "marks" }],
     ["#/report/not-real", { page: "report", section: "portrait" }],
     ["#/home", { page: "home" }],
   ])("parses %s", (hash, expected) => expect(parseYiHash(hash)).toEqual(expected));
@@ -25,6 +27,8 @@ describe("yi hash router", () => {
   it("formats report routes", () => {
     expect(formatYiHash({ page: "report", section: "fortune" })).toBe("#/report/fortune");
     expect(formatYiHash({ page: "report", section: "name" })).toBe("#/report/name");
+    expect(formatYiHash({ page: "report", section: "fengshui" })).toBe("#/report/fengshui");
+    expect(formatYiHash({ page: "report", section: "marks" })).toBe("#/report/marks");
   });
 
   it("starts the route hook on intro during server rendering", () => {
