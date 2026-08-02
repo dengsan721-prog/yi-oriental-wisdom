@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- ritual assets are static public files shared by GitHub Pages and Sites */
 import { useState } from "react";
+import { buildQimenExpansion, expandedQimenQuestionPresets } from "../../lib/yi/ritual-expansion";
 import { branches, cycle, stems } from "../../lib/yi/stems-branches";
 import { deriveYiThemeElement, type YiThemeElement } from "../../lib/yi/theme";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
@@ -62,11 +63,7 @@ const qimenDatabase: Record<YiThemeElement, DailyQimenBaseRecord[]> = {
   ],
 };
 
-const qimenQuestionPresets = [
-  "事业取舍", "合同谈判", "关系推进", "见面沟通",
-  "财运取舍", "考试学习", "搬家出行", "就医问诊",
-  "今日行动", "合作邀约", "家事安排", "重要决定",
-];
+const qimenQuestionPresets = expandedQimenQuestionPresets;
 type QimenQuestionTopic = "career" | "relationship" | "wealth" | "action";
 const qimenPalaces = ["坎一宫", "坤二宫", "震三宫", "巽四宫", "中五宫", "乾六宫", "兑七宫", "艮八宫", "离九宫"];
 const qimenGates = ["休门", "生门", "伤门", "杜门", "景门", "死门", "惊门", "开门", "值门"];
@@ -140,17 +137,19 @@ function buildXunshou(ganzhi: string) {
 }
 
 function buildQimenPlate(seed: string): QimenPalaceCell[] {
-  const shift = hashText(seed) % qimenPalaces.length;
+  const gateShift = hashText(`${seed}-gate`) % qimenPalaces.length;
+  const starShift = hashText(`${seed}-star`) % qimenStars.length;
+  const deityShift = hashText(`${seed}-deity`) % qimenDeities.length;
   return qimenPalaces.map((palace, index) => ({
     palace,
-    gate: qimenGates[(index + shift) % qimenGates.length],
-    star: qimenStars[(index + shift * 2) % qimenStars.length],
-    deity: qimenDeities[(index + shift * 3) % qimenDeities.length],
+    gate: qimenGates[(index + gateShift) % qimenGates.length],
+    star: qimenStars[(index * 2 + starShift) % qimenStars.length],
+    deity: qimenDeities[(qimenDeities.length - 1 - index + deityShift) % qimenDeities.length],
   }));
 }
 
 function hashText(value: string) {
-  return [...value].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return [...value].reduce((sum, char) => (sum * 131 + char.charCodeAt(0)) % 1000003, 17);
 }
 
 function formatQimenMoment(now: Date) {
@@ -193,6 +192,13 @@ export function selectDailyQimenRecord(chart: FourPillarsResult, birth: BirthInp
   const hourShift = hashText(`${currentHourGanzhi}-${chart.pillars.day.branch}-${birth.name.trim()}`) % records.length;
   const record = records[(topic.index + hourShift) % records.length];
   const plate = buildQimenPlate(`${dynamicKey}-${element}-${topic.index}`);
+  const expansion = buildQimenExpansion({
+    seed: dynamicKey,
+    topic: classifyQimenQuestion(asked),
+    question: asked,
+    hourGanzhi: currentHourGanzhi,
+    dayGanzhi: currentDayGanzhi,
+  });
   const envoy = plate.find(cell => cell.gate === record.gate)?.gate ?? plate[0].gate;
   return {
     ...record,
@@ -203,10 +209,10 @@ export function selectDailyQimenRecord(chart: FourPillarsResult, birth: BirthInp
     chief: `值符${plate[0].star}`,
     envoy: `值使${envoy}`,
     plate,
-    method: `${topic.title} · ${topic.method} · ${record.method}`,
-    prompt: `${topic.prompt}\n\n${record.prompt}`,
-    actionGuide: explainTwentyMinuteAction(classifyQimenQuestion(asked), `${topic.method} · ${record.method}`, asked),
-    directionGuide: explainQimenDirection(record.direction, record.gate),
+    method: `${topic.title} · ${topic.method} · ${record.method} · ${expansion.method}`,
+    prompt: `${topic.prompt}\n\n${record.prompt}\n\n${expansion.prompt}`,
+    actionGuide: `${explainTwentyMinuteAction(classifyQimenQuestion(asked), `${topic.method} · ${record.method}`, asked)}\n\n${expansion.actionGuide}`,
+    directionGuide: `${explainQimenDirection(record.direction, record.gate)}\n\n${expansion.directionNote}`,
     timingGuide: explainQimenTiming(now),
     element,
     dynamicKey,

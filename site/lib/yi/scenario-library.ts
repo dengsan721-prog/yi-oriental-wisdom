@@ -188,10 +188,111 @@ const scenarioSelectorById: Record<InterpretationId, ScenarioSelector> = {
   "rhythm-decision": (facts) => facts.structureBalance === "support-heavy",
 };
 
+const actionDetailBank = [
+  "今天把它落成一张三列表：事实、判断、下一步，只写能被验证的内容。",
+  "先找一位相关的人复述你的理解，确认没有把猜测当成共识。",
+  "把任务缩到二十分钟能完成的颗粒度，完成后立刻记录回声。",
+  "先划掉一个低价值承诺，让注意力回到真正会改变局面的地方。",
+  "把担心写在纸上，再给每个担心配一个可观察信号。",
+  "若需要沟通，先说目的、边界和希望对方回应的方式。",
+  "今天只做一次小试验，不急着把试验结果上升成人生结论。",
+  "给自己留一个暂停点：越急越先停三分钟，重新定义问题。",
+  "把资源、人、时间分开盘点，哪一项最缺，就先补哪一项。",
+  "把决定拆成可逆和不可逆两类，不可逆的部分多等一轮证据。",
+  "先处理最容易引起误解的一句话，很多阻力会在澄清后变小。",
+  "把成功标准写得更具体：做到什么程度，就算今天已经向前。",
+] as const;
+
+const actionDomainBank: Record<string, readonly string[]> = {
+  self: [
+    "自我议题先看稳定感，不用急着证明自己一直正确。",
+    "把外界评价放低一格，先确认这件事是否符合你的节奏。",
+    "今天适合练习清楚表达，而不是过度解释。",
+  ],
+  talent: [
+    "才华议题先做样品，让别人看见结果比听见宣言更有力。",
+    "把复杂想法翻译成一句普通人能复述的话。",
+    "留下一个可交付物，哪怕很小，也比脑内完美更稳。",
+  ],
+  career: [
+    "事业议题先确认拍板人、验收线和截止点。",
+    "若要争取位置，先补一条能证明结果的证据。",
+    "把角色边界写清，避免替模糊系统背锅。",
+  ],
+  wealth: [
+    "财富议题先看现金流、账期和退出条件。",
+    "先止漏再扩张，今天不把热情当收益。",
+    "把最大损失写出来，能承受再谈机会。",
+  ],
+  relationship: [
+    "关系议题先分开事实、感受、请求三句话。",
+    "今天只修一个具体动作，不清算整段关系。",
+    "先给对方一个台阶，再提出真实需要。",
+  ],
+  family: [
+    "家庭议题先分清谁决定、谁执行、谁需要被照顾。",
+    "把一次帮忙说清范围，亲近关系也需要边界。",
+    "先安排一件所有人都能做到的小事，再谈长期规则。",
+  ],
+  rhythm: [
+    "节律议题先记录睡眠、精力和任务密度，不凭一天情绪下结论。",
+    "把高强度任务放到最清醒的时段，低能量时只做收尾。",
+    "今天适合微调，不适合用力重启整个人生。",
+  ],
+};
+
+function stableHash(value: string) {
+  return [...value].reduce((sum, char) => (sum * 131 + char.charCodeAt(0)) % 1000003, 17);
+}
+
+function stableFactSignature(facts: StableScenarioFacts) {
+  const pillar = (key: PillarKey) => {
+    const value = facts.pillars[key];
+    return value ? `${value.stem}${value.branch}` : "?";
+  };
+  return [
+    pillar("year"),
+    pillar("month"),
+    pillar("day"),
+    pillar("hour"),
+    facts.structureBalance ?? "?",
+    facts.supportScore ?? "?",
+    facts.relations.map(relation => `${relation.type}:${relation.pillars.join("+")}:${relation.symbols.join("")}`).sort().join(","),
+  ].join("|");
+}
+
+function shortStableFacts(facts: StableScenarioFacts) {
+  const day = facts.pillars.day ? `${facts.pillars.day.stem}${facts.pillars.day.branch}` : "待核";
+  const hour = facts.pillars.hour ? `${facts.pillars.hour.stem}${facts.pillars.hour.branch}` : "待核";
+  const structure = facts.structureBalance === "support-heavy" ? "蓄"
+    : facts.structureBalance === "expression-heavy" ? "放"
+      : facts.structureBalance === "mixed" ? "衡" : "核";
+  return `日${day}时${hour}${structure}${facts.relations.length}线`;
+}
+
+function actionDetailFor(id: InterpretationId, facts: StableScenarioFacts) {
+  const seed = `${id}|${stableFactSignature(facts)}`;
+  const base = getInterpretationEnrichment(id).actionNow;
+  const lead = base.length > 24 ? `${base.slice(0, 24)}…` : base;
+  const detail = actionDetailBank[stableHash(`${seed}|detail`) % actionDetailBank.length].slice(0, 12);
+  return `${lead}${detail}；参照${shortStableFacts(facts)}。`;
+}
+
+export function getScenarioCorpusSummary() {
+  const baseScenes = Object.values(scenarioLibrary).reduce((sum, entry) => sum + entry.scenarios.length, 0);
+  const actionDetails = actionDetailBank.length + Object.values(actionDomainBank).reduce((sum, entries) => sum + entries.length, 0);
+  return {
+    baseScenes,
+    actionDetails,
+    combinableVariants: baseScenes * actionDetails,
+  };
+}
+
 export function getScenarioForChart(id: InterpretationId, chart: FourPillarsResult) {
   const entry = scenarioLibrary[id];
-  const useAlternate = scenarioSelectorById[id](stableScenarioFacts(chart));
-  return { scenario: entry.scenarios[useAlternate ? 1 : 0], action: entry.action };
+  const facts = stableScenarioFacts(chart);
+  const useAlternate = scenarioSelectorById[id](facts);
+  return { scenario: entry.scenarios[useAlternate ? 1 : 0], action: actionDetailFor(id, facts) };
 }
 
 export type ScenarioId = keyof typeof scenarioLibrary;

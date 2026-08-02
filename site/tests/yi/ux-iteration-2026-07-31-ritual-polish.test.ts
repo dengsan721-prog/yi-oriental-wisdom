@@ -228,8 +228,8 @@ describe("2026-07-31 ritual polish and atlas module extraction", () => {
     for (const item of ["合同谈判", "见面沟通", "考试学习", "搬家出行"]) {
       expect(qimen).toContain(`>${item}</button>`);
     }
-    expect((draw.match(/aria-pressed="false"/g) ?? [])).toHaveLength(12);
-    expect((qimen.match(/aria-pressed="false"/g) ?? [])).toHaveLength(12);
+    expect((draw.match(/aria-pressed="false"/g) ?? [])).toHaveLength(24);
+    expect((qimen.match(/aria-pressed="false"/g) ?? [])).toHaveLength(24);
   });
 
   it("layers the sign overlay above the provided asset without exposing the old draw label", () => {

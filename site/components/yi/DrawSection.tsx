@@ -2,6 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- ritual assets are static public files shared by GitHub Pages and Sites */
 import { useState } from "react";
+import { buildDrawExpansion, expandedDrawQuestionPresets } from "../../lib/yi/ritual-expansion";
 import { deriveYiThemeElement, type YiThemeElement } from "../../lib/yi/theme";
 import type { BirthInput, FourPillarsResult } from "../../lib/yi/types";
 
@@ -21,11 +22,7 @@ type DailyDrawRecord = {
   reading: string;
 };
 
-const drawQuestionPresets = [
-  "事业去留", "工作沟通", "关系修复", "家庭安排",
-  "财运取舍", "健康作息", "学习考试", "出行办事",
-  "今日行动", "合作邀约", "情绪整理", "重要决定",
-];
+const drawQuestionPresets = expandedDrawQuestionPresets;
 type DrawQuestionTopic = "career" | "relationship" | "wealth" | "action";
 
 const drawTopicGuidance: Record<DrawQuestionTopic, { title: string; category: DailyDrawRecord["category"]; verse: string; reading: string; index: number }> = {
@@ -91,7 +88,7 @@ function dayKey(now: Date) {
 }
 
 function hashText(value: string) {
-  return [...value].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return [...value].reduce((sum, char) => (sum * 131 + char.charCodeAt(0)) % 1000003, 17);
 }
 
 function formatRitualMoment(now: Date) {
@@ -113,18 +110,26 @@ export function selectDailyDrawRecord(chart: FourPillarsResult, birth: BirthInpu
   const dynamicKey = `${dayKey(now)}-${chart.pillars.year.branch}-${birth.name.trim()}-${asked}`;
   const dayShift = hashText(`${dayKey(now)}-${birth.name.trim()}-${chart.pillars.day.branch}`) % records.length;
   const record = records[(topic.index + dayShift) % records.length];
+  const expansion = buildDrawExpansion({
+    seed: dynamicKey,
+    category: topic.category,
+    element,
+    question: asked,
+    name: birth.name,
+  });
   const signNumber = `第${(hashText(`${dynamicKey}-${topic.index}`) % 64) + 1}签`;
-  const poem = `${record.verse}\n${topic.verse}`;
+  const poem = `${record.verse}\n${expansion.poemLine}\n${topic.verse}`;
   return {
     ...record,
     signNumber,
     category: topic.category,
     fortune: record.level,
-    sign: `${topic.title} · ${record.sign}`,
-    text: `${topic.title}，${record.level}。所问：${asked}。先把心定住，再取眼前能做的一步；签不替人决定，只把当下的门槛、机会和提醒照出来。`,
+    sign: `${topic.title} · ${record.sign} · ${expansion.signSuffix}`,
+    text: `${topic.title}，${record.level}。所问：${asked}。先把心定住，再取眼前能做的一步；签不替人决定，只把当下的门槛、机会和提醒照出来。\n${expansion.textLine}`,
     poem,
     verse: poem,
-    reading: `${record.reading}\n\n${topic.reading}`,
+    allusion: `${record.allusion}${expansion.allusion}`,
+    reading: `${record.reading}\n\n${expansion.reading}\n\n${topic.reading}`,
     element,
     dynamicKey,
     invariant: `不变：年支${chart.pillars.year.branch}、日主${chart.pillars.day.stem}${chart.pillars.day.branch}；变化：今日日期与阅读时刻。`,

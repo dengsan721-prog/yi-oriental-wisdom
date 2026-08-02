@@ -577,3 +577,32 @@ main[data-element] :where(.result-shell,.life-home,.intake)>*{position:relative;
 .qimen-scene-asset-plate .qimen-breathe-target{position:absolute;left:64%;top:39.5%;transform:translate(-50%,-50%);z-index:3;width:72px;height:48px;border-radius:50%;pointer-events:none}
 .qimen-scene-asset-plate .qimen-breathe-target::after{content:"";position:absolute;inset:-8px;border:2px solid color-mix(in srgb,#df4d4b 62%,#f1d27c);border-radius:50%;box-shadow:0 0 16px color-mix(in srgb,#f1d27c 32%,transparent);animation:qimen-breathe 2s ease-out infinite;transform-origin:50% 50%;pointer-events:none}
 @media(max-width:520px){.oracle-line-tube .oracle-tube-breathe-target{top:76.5%;width:50px;height:50px}.oracle-line-tube .oracle-tube-breathe-target::after{inset:-13px}.qimen-scene-asset-plate .qimen-breathe-target{left:64%;top:39.5%;width:62px;height:42px}.result-content::before{inset:12px -8px auto;height:320px;border-radius:24px}}
+.fengshui-planning{margin:18px 0 22px;padding:16px;border:1px solid color-mix(in srgb,var(--yi-line) 78%,transparent);border-radius:20px;background:linear-gradient(180deg,color-mix(in srgb,var(--yi-surface-raised) 88%,#fff8ec),color-mix(in srgb,var(--yi-surface) 92%,#f4ead6));box-shadow:0 18px 44px color-mix(in srgb,var(--yi-ink) 6%,transparent)}
+.fengshui-planning-head{display:grid;gap:6px;margin-bottom:14px}
+.fengshui-planning-head small,.fengshui-plan-copy small{color:var(--yi-accent-strong);font-size:12px;letter-spacing:.08em}
+.fengshui-planning-head h2{margin:0;font:800 24px/1.18 "LiSu","隶书","STLiti","STKaiti","KaiTi",serif;color:var(--yi-ink)}
+.fengshui-planning-head p{margin:0;color:var(--yi-muted);line-height:1.7}
+.fengshui-planning-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fengshui-plan-card{display:grid;grid-template-columns:minmax(108px,34%) minmax(0,1fr);gap:12px;align-items:stretch;min-width:0;padding:12px;border:1px solid color-mix(in srgb,var(--yi-line) 72%,transparent);border-radius:16px;background:color-mix(in srgb,var(--yi-surface-raised) 86%,#fbf0db)}
+.fengshui-diagram{position:relative;min-height:154px;overflow:hidden;border-radius:14px;border:1px solid color-mix(in srgb,#c8a45d 44%,var(--yi-line));background:radial-gradient(ellipse at 20% 16%,color-mix(in srgb,#d88b5f 26%,transparent),transparent 42%),radial-gradient(ellipse at 76% 22%,color-mix(in srgb,#7fa99a 24%,transparent),transparent 40%),linear-gradient(160deg,#fff6df,#e7dcc4);box-shadow:inset 0 0 0 1px #fff7}
+.fengshui-diagram::before{content:"";position:absolute;inset:16px;border:2px solid color-mix(in srgb,#8f6d38 38%,transparent);border-radius:10px}
+.fengshui-diagram::after{content:"";position:absolute;inset:0;background:repeating-radial-gradient(ellipse at 24% 22%,color-mix(in srgb,#c8a45d 16%,transparent) 0 1px,transparent 2px 24px),repeating-conic-gradient(from 18deg at 62% 40%,transparent 0 24deg,color-mix(in srgb,#7fa99a 10%,transparent) 24deg 25deg,transparent 25deg 50deg);opacity:.75}
+.fengshui-diagram-path,.fengshui-diagram-anchor,.fengshui-diagram-light{position:absolute;z-index:2;display:block}
+.fengshui-diagram-path{left:18%;right:18%;bottom:24px;height:16px;border-radius:999px;background:linear-gradient(90deg,color-mix(in srgb,#7fa99a 46%,transparent),color-mix(in srgb,#d8a45f 48%,transparent))}
+.fengshui-diagram-anchor{left:22%;top:28%;width:42%;height:28%;border-radius:8px;background:linear-gradient(135deg,color-mix(in srgb,#9b6b48 64%,#fff0d2),color-mix(in srgb,#c44b36 34%,#f6d58a));box-shadow:0 10px 22px #8b5b2e30}
+.fengshui-diagram-light{right:18%;top:18%;width:32px;height:32px;border-radius:50%;background:radial-gradient(circle,#fff6ba 0 28%,#d8a45f 52%,transparent 72%);box-shadow:0 0 22px #d8a45f88}
+.fengshui-diagram--desk .fengshui-diagram-anchor{left:28%;top:42%;width:48%;height:18%}
+.fengshui-diagram--desk .fengshui-diagram-path{left:26%;right:26%;bottom:40px}
+.fengshui-diagram--office .fengshui-diagram-anchor{left:18%;top:24%;width:24%;height:52%}
+.fengshui-diagram--office .fengshui-diagram-light{right:22%;top:36%;width:46px;height:46px}
+.fengshui-diagram--home .fengshui-diagram-anchor{left:22%;top:30%;width:56%;height:42%;border-radius:4px 4px 12px 12px}
+.fengshui-diagram--bedroom .fengshui-diagram-anchor{left:24%;top:46%;width:54%;height:24%;border-radius:14px}
+.fengshui-diagram--yang-house .fengshui-diagram-anchor{left:24%;top:26%;width:52%;height:44%;clip-path:polygon(50% 0,100% 34%,100% 100%,0 100%,0 34%)}
+.fengshui-diagram--yin-house .fengshui-diagram-anchor{left:36%;top:26%;width:28%;height:48%;border-radius:999px 999px 8px 8px;background:linear-gradient(180deg,#d8c79f,#9eb6a9)}
+.fengshui-plan-copy{display:grid;gap:7px;min-width:0}
+.fengshui-plan-copy h3{margin:0;font-size:18px;line-height:1.25;color:var(--yi-ink)}
+.fengshui-plan-copy p{margin:0;color:var(--yi-muted);line-height:1.65}
+.fengshui-plan-copy ul{margin:2px 0 0;padding-left:18px;color:var(--yi-ink);line-height:1.55}
+.fengshui-plan-copy li+li{margin-top:4px}
+.fengshui-plan-copy b{color:var(--yi-accent-strong);font-size:13px}
+@media(max-width:780px){.fengshui-planning-grid{grid-template-columns:1fr}.fengshui-plan-card{grid-template-columns:1fr}.fengshui-diagram{min-height:132px}.fengshui-planning{padding:13px;border-radius:18px}.fengshui-planning-head h2{font-size:22px}}
