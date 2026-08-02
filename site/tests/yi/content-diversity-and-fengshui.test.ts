@@ -6,6 +6,8 @@ import { QimenSection, selectDailyQimenRecord } from "../../components/yi/QimenS
 import { TraditionSection } from "../../components/yi/TraditionSection";
 import { calculateFourPillars } from "../../lib/yi/four-pillars";
 import { buildInterpretations } from "../../lib/yi/interpretation";
+import { simulatePersonalizedReportCorpus } from "../../lib/yi/report-personalization";
+import { getRitualCorpusSummary } from "../../lib/yi/ritual-expansion";
 import { getScenarioCorpusSummary } from "../../lib/yi/scenario-library";
 import type { BirthInput } from "../../lib/yi/types";
 
@@ -32,7 +34,26 @@ function uniqueCount(values: readonly string[]) {
   return new Set(values).size;
 }
 
+function charBigramSimilarity(left: string, right: string) {
+  const normalize = (value: string) => value.replace(/\s+/g, "");
+  const toBigrams = (value: string) => new Set(Array.from(normalize(value)).slice(0, -1).map((char, index, chars) => `${char}${chars[index + 1]}`));
+  const a = toBigrams(left);
+  const b = toBigrams(right);
+  const intersection = [...a].filter(item => b.has(item)).length;
+  const union = new Set([...a, ...b]).size;
+  return union === 0 ? 0 : intersection / union;
+}
+
 describe("content diversity expansion and feng shui planning", () => {
+  it("declares a large auditable combinational corpus for daily sign and qimen", () => {
+    const summary = getRitualCorpusSummary();
+
+    expect(summary.draw.combinableVariants).toBeGreaterThanOrEqual(500000);
+    expect(summary.draw.atomicEntries).toBeGreaterThanOrEqual(180);
+    expect(summary.qimen.combinableVariants).toBeGreaterThanOrEqual(1000000);
+    expect(summary.qimen.atomicEntries).toBeGreaterThanOrEqual(200);
+  });
+
   it("keeps daily sign outcomes varied across people, topics and questions", () => {
     const outcomes = births.flatMap((birth, birthIndex) => {
       const chart = calculateFourPillars(birth);
@@ -84,6 +105,43 @@ describe("content diversity expansion and feng shui planning", () => {
     expect(uniqueCount(reportSignatures)).toBe(births.length);
     expect(uniqueCount(reportSignatures.flatMap(signature => signature.split("\n")))).toBeGreaterThanOrEqual(78);
   });
+
+  it("personalizes reports below fifty percent similarity for the same birth moment with different identity and location", () => {
+    const sameMomentBirths: BirthInput[] = [
+      { name: "林予安", date: "1992-09-18", time: "10:20", location: "杭州滨江", gender: "female", timeConfidence: "exact" },
+      { name: "周明远", date: "1992-09-18", time: "10:20", location: "成都高新区", gender: "male", timeConfidence: "exact" },
+      { name: "陈知白", date: "1992-09-18", time: "10:20", location: "广州天河", gender: "unspecified", timeConfidence: "exact" },
+      { name: "赵若水", date: "1992-09-18", time: "10:20", location: "北京朝阳", gender: "female", timeConfidence: "exact" },
+    ];
+    const signatures = sameMomentBirths.map((birth) => {
+      const chart = calculateFourPillars(birth);
+      return buildInterpretations(chart, birth).map(item => [
+        item.id,
+        item.plainLanguage,
+        item.scenario,
+        item.advantageVersion,
+        item.shadowVersion,
+        item.action,
+        item.actionLongTerm,
+      ].join("。")).join("\n");
+    });
+
+    for (let left = 0; left < signatures.length; left += 1) {
+      for (let right = left + 1; right < signatures.length; right += 1) {
+        expect(charBigramSimilarity(signatures[left], signatures[right])).toBeLessThan(0.5);
+      }
+    }
+  });
+
+  it("keeps personalized report combination duplicates below ten percent in a one hundred thousand person simulation", () => {
+    const simulation = simulatePersonalizedReportCorpus({ count: 100000 });
+
+    expect(simulation.count).toBe(100000);
+    expect(simulation.atomicEntries).toBeGreaterThanOrEqual(260);
+    expect(simulation.combinableVariants).toBeGreaterThanOrEqual(1000000000);
+    expect(simulation.duplicateRate).toBeLessThan(0.1);
+  });
+
 
   it("renders six actionable feng shui planning modules with visual diagrams in the tradition section", () => {
     const birth = births[0];

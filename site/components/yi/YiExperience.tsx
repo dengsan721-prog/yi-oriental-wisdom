@@ -118,7 +118,7 @@ export function YiExperience() {
 
   function saveAndOpenHome() {
     if (!result || !birth) return;
-    const next = createLifeProfile({ name, birth, chart: result, overview: buildProfessionalOverview(result), interpretations: buildInterpretations(result), existing: profile });
+    const next = createLifeProfile({ name, birth, chart: result, overview: buildProfessionalOverview(result), interpretations: buildInterpretations(result, birth), existing: profile });
     const storage = getBrowserStorage(window);
     const saved = storage ? saveLifeProfile(storage, next) : { ok: false as const, reason: "security" as const };
     if (!saved.ok) {
@@ -165,7 +165,7 @@ export function YiExperience() {
       chart={result}
       birth={birth}
       report={professionalReport}
-      interpretations={buildInterpretations(result)}
+      interpretations={buildInterpretations(result, birth)}
       themeElement={themeElement}
       activeSection={route.section}
       onSectionChange={section => push({ page: "report", section })}

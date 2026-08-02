@@ -1,7 +1,8 @@
 import { getInterpretationEnrichment, type InterpretationId } from "./interpretation-enrichment";
+import { personalizeInterpretation } from "./report-personalization";
 import { getScenarioForChart } from "./scenario-library";
 import { YI_RULE_SOURCES } from "./sources";
-import type { FourPillarsResult, InterpretationItem, PillarKey, ProfessionalOverview } from "./types";
+import type { BirthInput, FourPillarsResult, InterpretationItem, PillarKey, ProfessionalOverview } from "./types";
 
 type Domain = InterpretationItem["domain"];
 type Draft = Omit<InterpretationItem,
@@ -275,8 +276,8 @@ export function buildProfessionalOverview(chart: FourPillarsResult): Professiona
   };
 }
 
-export function buildInterpretations(chart: FourPillarsResult): InterpretationItem[] {
-  return (Object.entries(domainSelectors) as [Domain, DomainSelector][]).flatMap(([domain, selector]) => selector(chart).map(draft => {
+export function buildInterpretations(chart: FourPillarsResult, birth?: BirthInput): InterpretationItem[] {
+  return (Object.entries(domainSelectors) as [Domain, DomainSelector][]).flatMap(([domain, selector]) => selector(chart).map((draft, index) => {
     const sources = draft.ruleIds.map(id => YI_RULE_SOURCES[id]);
     const enrichment = getInterpretationEnrichment(draft.id);
     const scene = getScenarioForChart(draft.id, chart);
@@ -286,7 +287,7 @@ export function buildInterpretations(chart: FourPillarsResult): InterpretationIt
     const basis = affected && dependencies.some(pillar => pillar !== "hour")
       ? `${draft.basis}；相关柱位随未知时辰或交节边界可能变化，当前值仅作有限参考`
       : draft.basis;
-    return {
+    const item: InterpretationItem = {
       ...draft,
       ...enrichment,
       basis,
@@ -301,5 +302,6 @@ export function buildInterpretations(chart: FourPillarsResult): InterpretationIt
       pillarDependencies: dependencies,
       affectedByUnknownHour: affected,
     };
+    return birth ? personalizeInterpretation(item, chart, birth, index) : item;
   }));
 }
